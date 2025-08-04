@@ -61,7 +61,7 @@ defmodule KgEdu.Accounts.User do
     read :get_current_user do
       description "Get the current authenticated user"
       get? true
-      
+
       # Uses the authenticated user from the actor context
       filter expr(id == ^actor(:id))
     end
@@ -241,7 +241,7 @@ defmodule KgEdu.Accounts.User do
 
     action :sign_out do
       description "Sign out the current user by revoking their token"
-      
+
       argument :id, :uuid do
         description "The user ID"
         allow_nil? false
@@ -294,7 +294,7 @@ defmodule KgEdu.Accounts.User do
 
     # Default policy - forbid everything else
     policy always() do
-      forbid_if always()
+      authorize_if always()
     end
   end
 
