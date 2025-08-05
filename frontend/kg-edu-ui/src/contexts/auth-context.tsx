@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '../lib/api/types.gen';
-import { getToken, setToken, removeToken, getCurrentUser, isAuthenticated } from '../lib/api/auth';
+import { getToken, setToken, removeToken, getCurrentUser, isAuthenticated } from '../lib/auth/auth';
 
 interface AuthContextType {
   user: User | null;

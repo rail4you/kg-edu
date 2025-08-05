@@ -1,6 +1,6 @@
 import { createAuthenticatedClient } from './client';
-import { getApiJsonUsersMe } from './sdk.gen';
-import type { User } from './types.gen';
+import { getApiJsonUsersMe } from '../api/sdk.gen';
+import type { User } from '../api/types.gen';
 
 // Token management
 export const getToken = (): string | null => {

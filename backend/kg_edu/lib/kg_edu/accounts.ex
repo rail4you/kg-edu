@@ -17,7 +17,13 @@ defmodule KgEdu.Accounts do
           end
         end
 
-        post :sign_in_with_password, route: "/sign-in"
+        post :sign_in_with_password do
+          route "/sign-in"
+          metadata fn _subject, user, _request ->
+            %{token: user.__metadata__.token}
+          end
+        end
+
         patch :reset_password_with_token, route: "/reset-password"
         get :get_current_user, route: "/me"
         patch :change_password, route: "/change-password"

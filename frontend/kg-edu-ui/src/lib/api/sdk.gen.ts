@@ -55,7 +55,7 @@ export const getApiJsonUsersMe = <ThrowOnError extends boolean = false>(options?
 };
 
 /**
- * Register a new user with a email and password.
+ * Register a new user with a student ID and password.
  */
 export const postApiJsonUsersRegister = <ThrowOnError extends boolean = false>(options: Options<PostApiJsonUsersRegisterData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).post<PostApiJsonUsersRegisterResponses, PostApiJsonUsersRegisterErrors, ThrowOnError>({
@@ -95,7 +95,7 @@ export const patchApiJsonUsersResetPassword = <ThrowOnError extends boolean = fa
 };
 
 /**
- * Attempt to sign in using a email and password.
+ * Attempt to sign in using a student ID and password.
  */
 export const postApiJsonUsersSignIn = <ThrowOnError extends boolean = false>(options: Options<PostApiJsonUsersSignInData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).post<PostApiJsonUsersSignInResponses, PostApiJsonUsersSignInErrors, ThrowOnError>({

@@ -56,7 +56,11 @@ export type User = {
         /**
          * Field included by default.
          */
-        email: string;
+        email?: (string | null) | unknown;
+        /**
+         * Field included by default.
+         */
+        student_id: string;
     };
     id: string;
     /**
@@ -93,6 +97,20 @@ export type UserFilterId = {
     is_nil?: boolean;
     less_than?: string;
     less_than_or_equal?: string;
+    not_eq?: string;
+};
+
+export type UserFilterStudentId = {
+    contains?: string;
+    eq?: string;
+    greater_than?: string;
+    greater_than_or_equal?: string;
+    ilike?: string;
+    in?: Array<string>;
+    is_nil?: boolean;
+    less_than?: string;
+    less_than_or_equal?: string;
+    like?: string;
     not_eq?: string;
 };
 
@@ -211,7 +229,6 @@ export type PostApiJsonUsersRegisterData = {
     body: {
         data: {
             attributes?: {
-                email: string;
                 /**
                  * The proposed password for the user, in plain text.
                  */
@@ -220,6 +237,7 @@ export type PostApiJsonUsersRegisterData = {
                  * The proposed password for the user (again), in plain text.
                  */
                 password_confirmation: string;
+                student_id: string;
             };
             relationships?: {
                 [key: string]: never;
@@ -347,13 +365,13 @@ export type PostApiJsonUsersSignInData = {
         data: {
             attributes?: {
                 /**
-                 * The email to use for retrieving the user.
-                 */
-                email: string;
-                /**
                  * The password to check for the matching user.
                  */
                 password: string;
+                /**
+                 * The student ID to use for retrieving the user.
+                 */
+                student_id: string;
             };
             relationships?: {
                 [key: string]: never;

@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../contexts/auth-context';
-import { apiClient } from '../../lib/api/client';
+import { apiClient } from '../../lib/auth/client';
 import { postApiJsonUsersRegister } from '../../lib/api/sdk.gen';
 import {
   Box,
@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 
 const registerSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  studentId: z.string().min(1, 'Please enter your student ID'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   passwordConfirmation: z.string().min(8, 'Password confirmation is required'),
 }).refine((data) => data.password === data.passwordConfirmation, {
@@ -58,7 +58,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
           data: {
             type: 'user',
             attributes: {
-              email: data.email,
+              student_id: data.studentId,
               password: data.password,
               password_confirmation: data.passwordConfirmation,
             },
@@ -101,7 +101,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
         
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 3, width: '100%' }}>
           <Controller
-            name="email"
+            name="studentId"
             control={control}
             render={({ field }) => (
               <TextField
@@ -109,12 +109,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
                 margin="normal"
                 required
                 fullWidth
-                id="email"
-                label="Email Address"
-                autoComplete="email"
+                id="studentId"
+                label="Student ID"
+                autoComplete="student-id"
                 autoFocus
-                error={!!errors.email}
-                helperText={errors.email?.message}
+                error={!!errors.studentId}
+                helperText={errors.studentId?.message}
                 disabled={isLoading}
               />
             )}

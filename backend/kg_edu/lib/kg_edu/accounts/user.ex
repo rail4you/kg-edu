@@ -13,16 +13,6 @@ defmodule KgEdu.Accounts.User do
       log_out_everywhere do
         apply_on_password_change? true
       end
-
-      confirmation :confirm_new_user do
-        monitor_fields [:email]
-        confirm_on_create? true
-        confirm_on_update? false
-        require_interaction? true
-        confirmed_at_field :confirmed_at
-        auto_confirm_actions [:sign_in_with_magic_link, :reset_password_with_token]
-        sender KgEdu.Accounts.User.Senders.SendNewUserConfirmationEmail
-      end
     end
 
     tokens do
@@ -35,7 +25,7 @@ defmodule KgEdu.Accounts.User do
 
     strategies do
       password :password do
-        identity_field :email
+        identity_field :student_id
         hash_provider AshAuthentication.BcryptProvider
 
         resettable do
@@ -99,11 +89,11 @@ defmodule KgEdu.Accounts.User do
     end
 
     read :sign_in_with_password do
-      description "Attempt to sign in using a email and password."
+      description "Attempt to sign in using a student ID and password."
       get? true
 
-      argument :email, :ci_string do
-        description "The email to use for retrieving the user."
+      argument :student_id, :string do
+        description "The student ID to use for retrieving the user."
         allow_nil? false
       end
 
@@ -111,9 +101,12 @@ defmodule KgEdu.Accounts.User do
         description "The password to check for the matching user."
         allow_nil? false
         sensitive? true
+
+
+
       end
 
-      # validates the provided email and password and generates a token
+      # validates the provided student_id and password and generates a token
       prepare AshAuthentication.Strategy.Password.SignInPreparation
 
       metadata :token, :string do
@@ -150,9 +143,9 @@ defmodule KgEdu.Accounts.User do
     end
 
     create :register_with_password do
-      description "Register a new user with a email and password."
+      description "Register a new user with a student ID and password."
 
-      argument :email, :ci_string do
+      argument :student_id, :string do
         allow_nil? false
       end
 
@@ -169,8 +162,8 @@ defmodule KgEdu.Accounts.User do
         sensitive? true
       end
 
-      # Sets the email from the argument
-      change set_attribute(:email, arg(:email))
+      # Sets the student_id from the argument
+      change set_attribute(:student_id, arg(:student_id))
 
       # Hashes the provided password
       change AshAuthentication.Strategy.Password.HashPasswordChange
@@ -193,23 +186,23 @@ defmodule KgEdu.Accounts.User do
     action :request_password_reset_token do
       description "Send password reset instructions to a user if they exist."
 
-      argument :email, :ci_string do
+      argument :student_id, :string do
         allow_nil? false
       end
 
       # creates a reset token and invokes the relevant senders
-      run {AshAuthentication.Strategy.Password.RequestPasswordReset, action: :get_by_email}
+      run {AshAuthentication.Strategy.Password.RequestPasswordReset, action: :get_by_student_id}
     end
 
-    read :get_by_email do
-      description "Looks up a user by their email"
+    read :get_by_student_id do
+      description "Looks up a user by their student ID"
       get? true
 
-      argument :email, :ci_string do
+      argument :student_id, :string do
         allow_nil? false
       end
 
-      filter expr(email == ^arg(:email))
+      filter expr(student_id == ^arg(:student_id))
     end
 
     update :reset_password_with_token do
@@ -306,8 +299,13 @@ defmodule KgEdu.Accounts.User do
   attributes do
     uuid_primary_key :id
 
-    attribute :email, :ci_string do
+    attribute :student_id, :string do
       allow_nil? false
+      public? true
+    end
+
+    attribute :email, :ci_string do
+      allow_nil? true
       public? true
     end
 
@@ -315,8 +313,6 @@ defmodule KgEdu.Accounts.User do
       allow_nil? false
       sensitive? true
     end
-
-    attribute :confirmed_at, :utc_datetime_usec
   end
 
   calculations do
@@ -326,7 +322,7 @@ defmodule KgEdu.Accounts.User do
   end
 
   identities do
-    identity :unique_email, [:email]
+    identity :unique_student_id, [:student_id]
   end
 
   code_interface do

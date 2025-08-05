@@ -1,0 +1,214 @@
+[info] Running KgEduWeb.Endpoint with Bandit 1.7.0 at 127.0.0.1:4002 (http)
+[info] Access KgEduWeb.Endpoint at http://localhost:4002
+▲ [WARNING] The condition "types" here will never be used as it comes after "default" [package.json]
+
+    ../deps/phoenix_live_view/package.json:14:6:
+      14 │       "types": "./assets/js/types/index.d.ts"
+         ╵       ~~~~~~~
+
+  The "default" condition comes earlier and will always be chosen:
+
+    ../deps/phoenix_live_view/package.json:13:6:
+      13 │       "default": "./priv/static/phoenix_live_view.esm.js",
+         ╵       ~~~~~~~~~
+
+1 warning
+[watch] build finished, watching for changes...
+≈ tailwindcss v4.1.7
+
+/*! 🌼 daisyUI 5.0.35 */
+Done in 102ms
+Getting extensions in current project...
+[info] POST /api/json/users/register
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{"data" => %{"attributes" => %{"password" => "[FILTERED]", "password_confirmation" => "[FILTERED]", "student_id" => "test123"}, "type" => "user"}}
+  Pipelines: [:api]
+[debug] unacceptable_media_type: Unacceptable Media Type | No description
+[info] Sent 406 in 39ms
+[info] POST /api/json/users/register
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{"data" => %{"attributes" => %{"password" => "[FILTERED]", "password_confirmation" => "[FILTERED]", "student_id" => "test123"}, "type" => "user"}}
+  Pipelines: [:api]
+[warning] User registration attempted without email
+[debug] QUERY OK db=0.2ms idle=1832.7ms
+begin []
+[90m↳ anonymous fn/3 in Ash.Changeset.with_hooks/3, at: lib/ash/changeset/changeset.ex:4155[0m
+[debug] QUERY OK source="users" db=33.4ms
+INSERT INTO "users" ("id","student_id","hashed_password") VALUES ($1,$2,$3) RETURNING "confirmed_at","hashed_password","email","student_id","id" ["5ffd12af-0fed-4442-bc41-5d96b4be6698", "test123", "$2b$12$oUCNpRyQf4.dHokGOJBbwea6zO8Kq3NrUDt6boyR4f1e6geVdPfkC"]
+[90m↳ anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4, at: lib/ecto/adapters/sql.ex:1458[0m
+[debug] QUERY OK source="tokens" db=19.2ms
+INSERT INTO "tokens" AS t0 ("subject","expires_at","purpose","created_at","updated_at","jti") VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT ("jti") DO UPDATE SET "subject" = EXCLUDED."subject", "expires_at" = EXCLUDED."expires_at", "purpose" = EXCLUDED."purpose", "updated_at" = COALESCE(EXCLUDED."updated_at", $7) RETURNING "updated_at","created_at","extra_data","purpose","expires_at","subject","jti" ["user?id=5ffd12af-0fed-4442-bc41-5d96b4be6698", ~U[2025-08-19 06:24:35Z], "user", ~U[2025-08-05 06:24:35.447801Z], ~U[2025-08-05 06:24:35.447801Z], "31ccllg5gmj9rkq2f0000016", ~U[2025-08-05 06:24:35.450929Z]]
+[debug] QUERY OK source="tokens" db=1.0ms
+INSERT INTO "tokens" AS t0 ("subject","expires_at","purpose","created_at","updated_at","jti") VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT ("jti") DO UPDATE SET "subject" = EXCLUDED."subject", "expires_at" = EXCLUDED."expires_at", "purpose" = EXCLUDED."purpose", "updated_at" = COALESCE(EXCLUDED."updated_at", $7) RETURNING "updated_at","created_at","extra_data","purpose","expires_at","subject","jti" ["user?id=5ffd12af-0fed-4442-bc41-5d96b4be6698", ~U[2025-08-08 06:24:35Z], "user", ~U[2025-08-05 06:24:35.492188Z], ~U[2025-08-05 06:24:35.492188Z], "31ccllg9g2r67kq2f0000026", ~U[2025-08-05 06:24:35.492259Z]]
+[debug] QUERY OK source="tokens" db=3.4ms
+INSERT INTO "tokens" AS t0 ("subject","expires_at","purpose","extra_data","created_at","updated_at","jti") VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ("jti") DO UPDATE SET "subject" = EXCLUDED."subject", "expires_at" = EXCLUDED."expires_at", "purpose" = EXCLUDED."purpose", "extra_data" = EXCLUDED."extra_data", "updated_at" = COALESCE(EXCLUDED."updated_at", $8) RETURNING "updated_at","created_at","extra_data","purpose","expires_at","subject","jti" ["user?id=5ffd12af-0fed-4442-bc41-5d96b4be6698", ~U[2025-08-08 06:24:35Z], "confirm_new_user", %{student_id: "test123"}, ~U[2025-08-05 06:24:35.493569Z], ~U[2025-08-05 06:24:35.493569Z], "31ccllg9g2r67kq2f0000026", ~U[2025-08-05 06:24:35.493605Z]]
+[debug] QUERY OK db=1.0ms
+rollback []
+[90m↳ anonymous fn/3 in Ash.Changeset.with_hooks/3, at: lib/ash/changeset/changeset.ex:4155[0m
+[info] Sent 500 in 1114ms
+[error] ** (Ash.Error.Unknown) 
+Bread Crumbs:
+  > Exception raised in: KgEdu.Accounts.User.register_with_password
+
+Unknown Error
+
+* ** (ArgumentError) Cannot format empty string into a Recipient.
+
+  (swoosh 1.19.5) lib/swoosh/email/recipient.ex:111: Swoosh.Email.Recipient.BitString.format/1
+  (elixir 1.18.4) lib/enum.ex:1714: Enum."-map/2-lists^map/1-1-"/2
+  (swoosh 1.19.5) lib/swoosh/email.ex:370: Swoosh.Email.to/2
+  (kg_edu 0.1.0) lib/kg_edu/accounts/user/senders/send_new_user_confirmation_email.ex:18: KgEdu.Accounts.User.Senders.SendNewUserConfirmationEmail.send/3
+  (ash_authentication 4.9.9) lib/ash_authentication/add_ons/confirmation/confirmation_hook_change.ex:337: anonymous fn/5 in AshAuthentication.AddOn.Confirmation.ConfirmationHookChange.maybe_perform_confirmation/4
+  (ash 3.5.33) lib/ash/changeset/changeset.ex:4679: anonymous fn/2 in Ash.Changeset.run_after_actions/3
+  (elixir 1.18.4) lib/enum.ex:4968: Enumerable.List.reduce/3
+  (elixir 1.18.4) lib/enum.ex:2600: Enum.reduce_while/3
+  (ash 3.5.33) lib/ash/changeset/changeset.ex:4157: anonymous fn/3 in Ash.Changeset.with_hooks/3
+  (kg_edu 0.1.0) lib/kg_edu/repo.ex:2: anonymous fn/1 in KgEdu.Repo."transaction (overridable 1)"/2
+  (ecto 3.13.2) lib/ecto/repo/transaction.ex:7: anonymous fn/2 in Ecto.Repo.Transaction.transact/4
+  (ecto_sql 3.13.2) lib/ecto/adapters/sql.ex:1458: anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4
+  (db_connection 2.8.0) lib/db_connection.ex:1753: DBConnection.run_transaction/4
+  (ash 3.5.33) lib/ash/changeset/changeset.ex:4155: anonymous fn/3 in Ash.Changeset.with_hooks/3
+  (ash 3.5.33) lib/ash/changeset/changeset.ex:4299: anonymous fn/2 in Ash.Changeset.transaction_hooks/2
+  (ash 3.5.33) lib/ash/changeset/changeset.ex:4142: Ash.Changeset.with_hooks/3
+  (ash 3.5.33) lib/ash/actions/create/create.ex:261: Ash.Actions.Create.commit/3
+  (ash 3.5.33) lib/ash/actions/create/create.ex:132: Ash.Actions.Create.do_run/4
+  (ash 3.5.33) lib/ash/actions/create/create.ex:50: Ash.Actions.Create.run/4
+  (ash_json_api 1.4.39) lib/ash_json_api/controllers/helpers.ex:329: anonymous fn/1 in AshJsonApi.Controllers.Helpers.create_record/1
+    (swoosh 1.19.5) lib/swoosh/email/recipient.ex:111: Swoosh.Email.Recipient.BitString.format/1
+    (elixir 1.18.4) lib/enum.ex:1714: Enum."-map/2-lists^map/1-1-"/2
+    (swoosh 1.19.5) lib/swoosh/email.ex:370: Swoosh.Email.to/2
+    (kg_edu 0.1.0) lib/kg_edu/accounts/user/senders/send_new_user_confirmation_email.ex:18: KgEdu.Accounts.User.Senders.SendNewUserConfirmationEmail.send/3
+    (ash_authentication 4.9.9) lib/ash_authentication/add_ons/confirmation/confirmation_hook_change.ex:337: anonymous fn/5 in AshAuthentication.AddOn.Confirmation.ConfirmationHookChange.maybe_perform_confirmation/4
+    (ash 3.5.33) lib/ash/changeset/changeset.ex:4679: anonymous fn/2 in Ash.Changeset.run_after_actions/3
+    (elixir 1.18.4) lib/enum.ex:4968: Enumerable.List.reduce/3
+    (elixir 1.18.4) lib/enum.ex:2600: Enum.reduce_while/3
+    (ash 3.5.33) lib/ash/changeset/changeset.ex:4157: anonymous fn/3 in Ash.Changeset.with_hooks/3
+    (kg_edu 0.1.0) lib/kg_edu/repo.ex:2: anonymous fn/1 in KgEdu.Repo."transaction (overridable 1)"/2
+    (ecto 3.13.2) lib/ecto/repo/transaction.ex:7: anonymous fn/2 in Ecto.Repo.Transaction.transact/4
+    (ecto_sql 3.13.2) lib/ecto/adapters/sql.ex:1458: anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4
+    (db_connection 2.8.0) lib/db_connection.ex:1753: DBConnection.run_transaction/4
+    (ash 3.5.33) lib/ash/changeset/changeset.ex:4155: anonymous fn/3 in Ash.Changeset.with_hooks/3
+    (ash 3.5.33) lib/ash/changeset/changeset.ex:4299: anonymous fn/2 in Ash.Changeset.transaction_hooks/2
+    (ash 3.5.33) lib/ash/changeset/changeset.ex:4142: Ash.Changeset.with_hooks/3
+    (ash 3.5.33) lib/ash/actions/create/create.ex:261: Ash.Actions.Create.commit/3
+    (ash 3.5.33) lib/ash/actions/create/create.ex:132: Ash.Actions.Create.do_run/4
+    (ash 3.5.33) lib/ash/actions/create/create.ex:50: Ash.Actions.Create.run/4
+    (ash_json_api 1.4.39) lib/ash_json_api/controllers/helpers.ex:329: anonymous fn/1 in AshJsonApi.Controllers.Helpers.create_record/1
+
+Compiling 4 files (.ex)
+
+== Compilation error in file lib/kg_edu/accounts/user.ex ==
+** (Spark.Error.DslError) [KgEdu.Accounts.User]
+authentication -> add_ons -> confirmation:
+  `require_interaction?` must be set to true on the
+:confirm_new_user confirmation for KgEdu.Accounts.User.
+Without it, confirmation links use a `GET` endpoint for confirmation. Some
+email clients and security tools (e.g., Outlook, virus scanners, and email
+previewers) may automatically follow these links, unintentionally
+confirming the account. This allows an attacker to register an account
+using another user’s email and potentially have it auto-confirmed by the
+victim’s email client.
+
+If you are *positive* that you are not affected , and *absolutely
+must*, you can bypass this warning by setting `config
+:ash_authentication, :bypass_require_interaction_for_confirmation?,
+true` in your configuration.
+
+Read the security advisory and follow patch the steps closely if you need to upgrade:
+
+https://github.com/team-alembic/ash_authentication/security/advisories/GHSA-3988-q8q7-p787
+
+    (elixir 1.18.4) lib/process.ex:896: Process.info/2
+    (spark 2.2.67) lib/spark/error/dsl_error.ex:30: Spark.Error.DslError.exception/1
+    (ash_authentication 4.9.9) lib/ash_authentication/add_ons/confirmation/transformer.ex:91: AshAuthentication.AddOn.Confirmation.Transformer.warn_on_require_interaction/1
+    (ash_authentication 4.9.9) lib/ash_authentication/add_ons/confirmation/transformer.ex:35: AshAuthentication.AddOn.Confirmation.Transformer.transform/2
+    (ash_authentication 4.9.9) lib/ash_authentication/strategies/custom/transformer.ex:100: AshAuthentication.Strategy.Custom.Transformer.do_transform/3
+    (ash_authentication 4.9.9) lib/ash_authentication/strategies/custom/transformer.ex:55: anonymous fn/2 in AshAuthentication.Strategy.Custom.Transformer.do_add_on_transforms/1
+    (elixir 1.18.4) lib/enum.ex:4968: Enumerable.List.reduce/3
+    (elixir 1.18.4) lib/enum.ex:2600: Enum.reduce_while/3
+    (spark 2.2.67) lib/spark/dsl/extension.ex:661: anonymous fn/4 in Spark.Dsl.Extension.run_transformers/4
+    (elixir 1.18.4) lib/enum.ex:4968: Enumerable.List.reduce/3
+    (elixir 1.18.4) lib/enum.ex:2600: Enum.reduce_while/3
+    /Users/bai/projects/kg-edu/backend/kg_edu/lib/kg_edu/accounts/user.ex:1: (file)
+    (stdlib 6.2.2) erl_eval.erl:919: :erl_eval.do_apply/7
+    (stdlib 6.2.2) erl_eval.erl:1207: :erl_eval.expr_list/7
+    (stdlib 6.2.2) erl_eval.erl:625: :erl_eval.expr/6
+    (stdlib 6.2.2) erl_eval.erl:1207: :erl_eval.expr_list/7
+    (stdlib 6.2.2) erl_eval.erl:625: :erl_eval.expr/6
+    (stdlib 6.2.2) erl_eval.erl:271: :erl_eval.exprs/6
+    (stdlib 6.2.2) erl_eval.erl:436: :erl_eval.expr/6
+[watch] build started (change: "../_build/dev/phoenix-colocated/kg_edu/index.js")
+▲ [WARNING] The condition "types" here will never be used as it comes after "default" [package.json]
+
+    ../deps/phoenix_live_view/package.json:14:6:
+      14 │       "types": "./assets/js/types/index.d.ts"
+         ╵       ~~~~~~~
+
+  The "default" condition comes earlier and will always be chosen:
+
+    ../deps/phoenix_live_view/package.json:13:6:
+      13 │       "default": "./priv/static/phoenix_live_view.esm.js",
+         ╵       ~~~~~~~~~
+
+1 warning
+[watch] build finished
+Compiling 4 files (.ex)
+Generated kg_edu app
+[info] POST /api/json/users/register
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{"data" => %{"attributes" => %{"password" => "[FILTERED]", "password_confirmation" => "[FILTERED]", "student_id" => "test789"}, "type" => "user"}}
+  Pipelines: [:api]
+[warning] User registration attempted without email
+[debug] QUERY OK db=1.2ms idle=1416.1ms
+begin []
+[90m↳ anonymous fn/3 in Ash.Changeset.with_hooks/3, at: lib/ash/changeset/changeset.ex:4155[0m
+[debug] QUERY OK source="users" db=4.0ms
+INSERT INTO "users" ("id","student_id","confirmed_at","hashed_password") VALUES ($1,$2,$3,$4) RETURNING "confirmed_at","hashed_password","email","student_id","id" ["3082002a-b259-4e45-beea-d97b5d203e37", "test789", ~U[2025-08-05 06:37:52.401185Z], "$2b$12$2PajsWv9RolGdTG77zpZ/OvJbSdgyxEQ5u6i/xtbaFubfagvwmzwW"]
+[90m↳ anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4, at: lib/ecto/adapters/sql.ex:1458[0m
+[debug] QUERY OK source="tokens" db=1.8ms
+INSERT INTO "tokens" AS t0 ("subject","expires_at","purpose","created_at","updated_at","jti") VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT ("jti") DO UPDATE SET "subject" = EXCLUDED."subject", "expires_at" = EXCLUDED."expires_at", "purpose" = EXCLUDED."purpose", "updated_at" = COALESCE(EXCLUDED."updated_at", $7) RETURNING "updated_at","created_at","extra_data","purpose","expires_at","subject","jti" ["user?id=3082002a-b259-4e45-beea-d97b5d203e37", ~U[2025-08-19 06:37:52Z], "user", ~U[2025-08-05 06:37:52.577214Z], ~U[2025-08-05 06:37:52.577214Z], "31ccn3sve0qvv5cj080003b1", ~U[2025-08-05 06:37:52.577294Z]]
+[debug] QUERY OK db=1.4ms
+commit []
+[90m↳ anonymous fn/3 in Ash.Changeset.with_hooks/3, at: lib/ash/changeset/changeset.ex:4155[0m
+[info] Sent 201 in 186ms
+[error] ** (Ash.Error.Framework.PendingCodegen) Pending Code Generation Detected for 2 files
+
+Don't worry! This just means Ash needs to generate some files based on your recent changes.
+
+Here's what you can do:
+
+🚀 Ready to generate the files? Create temporary development files so you can keep working:
+
+       mix ash.codegen --dev
+
+🔍 Want to see what will be generated?
+
+       mix ash.codegen --dry-run
+
+✅ Finished with your changes? Create final production-ready files:
+
+       mix ash.codegen <describe_your_changes>
+
+‼️ Don't forget to run `mix ash.codegen` without the `--dev` flag before you
+   wrap up!
+
+   Add the following to your CI pipeline to ensure you've always generated up
+   to date files, and that no --dev files are left behind.
+
+       mix ash.codegen --check
+
+
+    (ash_phoenix 2.3.12) lib/ash_phoenix/plug/check_codegen_status.ex:41: AshPhoenix.Plug.CheckCodegenStatus.call/2
+    (kg_edu 0.1.0) lib/kg_edu_web/endpoint.ex:1: KgEduWeb.Endpoint.plug_builder_call/2
+    (kg_edu 0.1.0) deps/plug/lib/plug/debugger.ex:155: KgEduWeb.Endpoint."call (overridable 3)"/2
+    (kg_edu 0.1.0) lib/kg_edu_web/endpoint.ex:1: KgEduWeb.Endpoint.call/2
+    (phoenix 1.8.0-rc.4) lib/phoenix/endpoint/sync_code_reload_plug.ex:22: Phoenix.Endpoint.SyncCodeReloadPlug.do_call/4
+    (bandit 1.7.0) lib/bandit/pipeline.ex:131: Bandit.Pipeline.call_plug!/2
+    (bandit 1.7.0) lib/bandit/pipeline.ex:42: Bandit.Pipeline.run/5
+    (bandit 1.7.0) lib/bandit/http1/handler.ex:13: Bandit.HTTP1.Handler.handle_data/3
+    (bandit 1.7.0) lib/bandit/delegating_handler.ex:18: Bandit.DelegatingHandler.handle_data/3
+    (bandit 1.7.0) lib/bandit/delegating_handler.ex:8: Bandit.DelegatingHandler.handle_continue/2
+    (stdlib 6.2.2) gen_server.erl:2335: :gen_server.try_handle_continue/3
+    (stdlib 6.2.2) gen_server.erl:2244: :gen_server.loop/7
+    (stdlib 6.2.2) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+

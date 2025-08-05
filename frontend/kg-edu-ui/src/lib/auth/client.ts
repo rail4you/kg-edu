@@ -1,4 +1,4 @@
-import { createClient } from './client/index';
+import { createClient } from '../api/client/index';
 
 // Create a configured client instance
 export const apiClient = createClient({

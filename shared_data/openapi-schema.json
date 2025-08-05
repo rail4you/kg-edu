@@ -81,12 +81,24 @@
             "description": "An attributes object for a user",
             "properties": {
               "email": {
+                "anyOf": [
+                  {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Field included by default."
+              },
+              "student_id": {
                 "description": "Field included by default.",
                 "type": "string"
               }
             },
             "required": [
-              "email"
+              "student_id"
             ],
             "type": "object"
           },
@@ -136,6 +148,9 @@
             },
             "type": "array",
             "uniqueItems": true
+          },
+          "student_id": {
+            "$ref": "#/components/schemas/user-filter-student_id"
           }
         },
         "type": "deepObject"
@@ -215,6 +230,48 @@
           }
         },
         "type": "object"
+      },
+      "user-filter-student_id": {
+        "additionalProperties": false,
+        "properties": {
+          "contains": {
+            "type": "string"
+          },
+          "eq": {
+            "type": "string"
+          },
+          "greater_than": {
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "type": "string"
+          },
+          "ilike": {
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "type": "string"
+          },
+          "like": {
+            "type": "string"
+          },
+          "not_eq": {
+            "type": "string"
+          }
+        },
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -258,12 +315,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,email"
+                "user": "id,student_id,email"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,email",
+                  "example": "id,student_id,email",
                   "type": "string"
                 }
               },
@@ -393,12 +450,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,email"
+                "user": "id,student_id,email"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,email",
+                  "example": "id,student_id,email",
                   "type": "string"
                 }
               },
@@ -447,7 +504,7 @@
       "post": {
         "callbacks": {},
         "deprecated": false,
-        "description": "Register a new user with a email and password.",
+        "description": "Register a new user with a student ID and password.",
         "parameters": [
           {
             "description": "Relationship paths to include in the response",
@@ -469,12 +526,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,email"
+                "user": "id,student_id,email"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,email",
+                  "example": "id,student_id,email",
                   "type": "string"
                 }
               },
@@ -495,9 +552,6 @@
                       "attributes": {
                         "additionalProperties": false,
                         "properties": {
-                          "email": {
-                            "type": "string"
-                          },
                           "password": {
                             "description": "The proposed password for the user, in plain text.",
                             "type": "string"
@@ -505,10 +559,13 @@
                           "password_confirmation": {
                             "description": "The proposed password for the user (again), in plain text.",
                             "type": "string"
+                          },
+                          "student_id": {
+                            "type": "string"
                           }
                         },
                         "required": [
-                          "email",
+                          "student_id",
                           "password",
                           "password_confirmation"
                         ],
@@ -600,12 +657,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,email"
+                "user": "id,student_id,email"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,email",
+                  "example": "id,student_id,email",
                   "type": "string"
                 }
               },
@@ -715,7 +772,7 @@
       "post": {
         "callbacks": {},
         "deprecated": false,
-        "description": "Attempt to sign in using a email and password.",
+        "description": "Attempt to sign in using a student ID and password.",
         "parameters": [
           {
             "description": "Relationship paths to include in the response",
@@ -737,12 +794,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,email"
+                "user": "id,student_id,email"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,email",
+                  "example": "id,student_id,email",
                   "type": "string"
                 }
               },
@@ -763,17 +820,17 @@
                       "attributes": {
                         "additionalProperties": false,
                         "properties": {
-                          "email": {
-                            "description": "The email to use for retrieving the user.",
-                            "type": "string"
-                          },
                           "password": {
                             "description": "The password to check for the matching user.",
+                            "type": "string"
+                          },
+                          "student_id": {
+                            "description": "The student ID to use for retrieving the user.",
                             "type": "string"
                           }
                         },
                         "required": [
-                          "email",
+                          "student_id",
                           "password"
                         ],
                         "type": "object"
