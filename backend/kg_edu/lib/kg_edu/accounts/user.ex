@@ -6,6 +6,8 @@ defmodule KgEdu.Accounts.User do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication, AshJsonApi.Resource]
 
+  require Logger
+
   authentication do
     add_ons do
       log_out_everywhere do
@@ -183,6 +185,9 @@ defmodule KgEdu.Accounts.User do
         description "A JWT that can be used to authenticate the user."
         allow_nil? false
       end
+
+      # Log user registration data
+      change {__MODULE__.Changes.LogUserRegistration, []}
     end
 
     action :request_password_reset_token do
@@ -314,6 +319,12 @@ defmodule KgEdu.Accounts.User do
     attribute :confirmed_at, :utc_datetime_usec
   end
 
+  calculations do
+    calculate :auth_token, :string do
+      calculation expr(context[:token])
+    end
+  end
+
   identities do
     identity :unique_email, [:email]
   end
@@ -327,4 +338,5 @@ defmodule KgEdu.Accounts.User do
     define :request_password_reset, action: :request_password_reset_token
     define :reset_password, action: :reset_password_with_token
   end
-end
+
+  end

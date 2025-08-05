@@ -1,0 +1,9 @@
+[2025-08-04T06:44:17.185Z] Error: unknown plugin dependency "@hey-api/openapi-ts" - do you need to register a custom plugin with this name?
+Stack:
+Error: unknown plugin dependency "@hey-api/openapi-ts" - do you need to register a custom plugin with this name?
+    at a (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:36:141672)
+    at ph (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:36:142333)
+    at hm (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:36:142950)
+    at xm (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:36:144025)
+    at async rL (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:1338:4492)
+    at async start (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/bin/index.cjs:139:21)

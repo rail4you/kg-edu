@@ -1,0 +1,13 @@
+[2025-08-04T06:44:27.429Z] Error: Error opening file "/Users/bai/projects/kg-edu/frontend/shared_data/openapi-schema.json" 
+ENOENT: no such file or directory, open '/Users/bai/projects/kg-edu/frontend/shared_data/openapi-schema.json'
+Stack:
+ResolverError: Error opening file "/Users/bai/projects/kg-edu/frontend/shared_data/openapi-schema.json" 
+ENOENT: no such file or directory, open '/Users/bai/projects/kg-edu/frontend/shared_data/openapi-schema.json'
+    at Object.handler (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/json-schema-ref-parser/dist/lib/resolvers/file.js:58:19)
+    at async $RefParser.parse (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/json-schema-ref-parser/dist/lib/index.js:195:17)
+    at async $RefParser.bundle (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/json-schema-ref-parser/dist/lib/index.js:122:9)
+    at async Em (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:42:1892)
+    at async bi (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:42:8669)
+    at async Promise.all (index 0)
+    at async rL (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/dist/index.cjs:1338:4660)
+    at async start (/Users/bai/projects/kg-edu/frontend/kg-edu-ui/node_modules/@hey-api/openapi-ts/bin/index.cjs:139:21)
