@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (token: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  userRole: 'admin' | 'user' | 'teacher' | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<'admin' | 'user' | 'teacher' | null>(null);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -28,6 +30,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const currentUser = await getCurrentUser();
           setUser(currentUser);
+          setUserRole(currentUser?.attributes?.role || 'user');
         } catch (error) {
           console.error('Failed to initialize auth:', error);
           removeToken();
@@ -44,6 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+      setUserRole(currentUser?.attributes?.role || 'user');
     } catch (error) {
       console.error('Failed to get user after login:', error);
       removeToken();
@@ -54,6 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = (): void => {
     removeToken();
     setUser(null);
+    setUserRole(null);
   };
 
   const value: AuthContextType = {
@@ -62,6 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!user,
+    userRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

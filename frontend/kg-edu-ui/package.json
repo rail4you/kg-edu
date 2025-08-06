@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-api": "openapi-ts"
+    "generate-api": "npx openapi-ts -i ../../shared_data/openapi-schema.json -o src/lib/api"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

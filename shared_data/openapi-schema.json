@@ -13,6 +13,509 @@
       }
     },
     "schemas": {
+      "course": {
+        "additionalProperties": false,
+        "description": "A \"Resource object\" representing a course",
+        "properties": {
+          "attributes": {
+            "additionalProperties": false,
+            "description": "An attributes object for a course",
+            "properties": {
+              "description": {
+                "anyOf": [
+                  {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Field included by default."
+              },
+              "teacher_id": {
+                "description": "Field included by default.",
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": {
+                "description": "Field included by default.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "teacher_id"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "relationships": {
+            "additionalProperties": false,
+            "description": "A relationships object for a course",
+            "properties": {},
+            "type": "object"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "course-filter": {
+        "additionalProperties": false,
+        "description": "Filters the query to results matching the given filter object",
+        "example": "",
+        "properties": {
+          "and": {
+            "items": {
+              "$ref": "#/components/schemas/course-filter"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "description": {
+            "$ref": "#/components/schemas/course-filter-description"
+          },
+          "id": {
+            "$ref": "#/components/schemas/course-filter-id"
+          },
+          "not": {
+            "$ref": "#/components/schemas/course-filter"
+          },
+          "or": {
+            "items": {
+              "$ref": "#/components/schemas/course-filter"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "teacher_id": {
+            "$ref": "#/components/schemas/course-filter-teacher_id"
+          },
+          "title": {
+            "$ref": "#/components/schemas/course-filter-title"
+          }
+        },
+        "type": "deepObject"
+      },
+      "course-filter-description": {
+        "additionalProperties": false,
+        "properties": {
+          "contains": {
+            "type": "string"
+          },
+          "eq": {
+            "type": "string"
+          },
+          "greater_than": {
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "type": "string"
+          },
+          "ilike": {
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "type": "string"
+          },
+          "like": {
+            "type": "string"
+          },
+          "not_eq": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course-filter-id": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "not_eq": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course-filter-teacher_id": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "not_eq": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course-filter-title": {
+        "additionalProperties": false,
+        "properties": {
+          "contains": {
+            "type": "string"
+          },
+          "eq": {
+            "type": "string"
+          },
+          "greater_than": {
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "type": "string"
+          },
+          "ilike": {
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "type": "string"
+          },
+          "like": {
+            "type": "string"
+          },
+          "not_eq": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course_enrollment": {
+        "additionalProperties": false,
+        "description": "A \"Resource object\" representing a course_enrollment",
+        "properties": {
+          "attributes": {
+            "additionalProperties": false,
+            "description": "An attributes object for a course_enrollment",
+            "properties": {
+              "course_id": {
+                "description": "Field included by default.",
+                "format": "uuid",
+                "type": "string"
+              },
+              "enrolled_at": {
+                "description": "Field included by default.",
+                "format": "date-time",
+                "type": "string"
+              },
+              "student_id": {
+                "description": "Field included by default.",
+                "format": "uuid",
+                "type": "string"
+              }
+            },
+            "required": [
+              "course_id",
+              "student_id",
+              "enrolled_at"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "relationships": {
+            "additionalProperties": false,
+            "description": "A relationships object for a course_enrollment",
+            "properties": {},
+            "type": "object"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "course_enrollment-filter": {
+        "additionalProperties": false,
+        "description": "Filters the query to results matching the given filter object",
+        "example": "",
+        "properties": {
+          "and": {
+            "items": {
+              "$ref": "#/components/schemas/course_enrollment-filter"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "course_id": {
+            "$ref": "#/components/schemas/course_enrollment-filter-course_id"
+          },
+          "enrolled_at": {
+            "$ref": "#/components/schemas/course_enrollment-filter-enrolled_at"
+          },
+          "id": {
+            "$ref": "#/components/schemas/course_enrollment-filter-id"
+          },
+          "not": {
+            "$ref": "#/components/schemas/course_enrollment-filter"
+          },
+          "or": {
+            "items": {
+              "$ref": "#/components/schemas/course_enrollment-filter"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "student_id": {
+            "$ref": "#/components/schemas/course_enrollment-filter-student_id"
+          }
+        },
+        "type": "deepObject"
+      },
+      "course_enrollment-filter-course_id": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "not_eq": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course_enrollment-filter-enrolled_at": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "greater_than": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "not_eq": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course_enrollment-filter-id": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "not_eq": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "course_enrollment-filter-student_id": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "not_eq": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "error": {
         "additionalProperties": false,
         "properties": {
@@ -92,13 +595,23 @@
                 ],
                 "description": "Field included by default."
               },
+              "role": {
+                "description": "Field included by default.",
+                "enum": [
+                  "admin",
+                  "user",
+                  "teacher"
+                ],
+                "type": "string"
+              },
               "student_id": {
                 "description": "Field included by default.",
                 "type": "string"
               }
             },
             "required": [
-              "student_id"
+              "student_id",
+              "role"
             ],
             "type": "object"
           },
@@ -148,6 +661,9 @@
             },
             "type": "array",
             "uniqueItems": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/user-filter-role"
           },
           "student_id": {
             "$ref": "#/components/schemas/user-filter-student_id"
@@ -231,6 +747,69 @@
         },
         "type": "object"
       },
+      "user-filter-role": {
+        "additionalProperties": false,
+        "properties": {
+          "eq": {
+            "enum": [
+              "admin",
+              "user",
+              "teacher"
+            ],
+            "type": "string"
+          },
+          "greater_than": {
+            "enum": [
+              "admin",
+              "user",
+              "teacher"
+            ],
+            "type": "string"
+          },
+          "greater_than_or_equal": {
+            "enum": [
+              "admin",
+              "user",
+              "teacher"
+            ],
+            "type": "string"
+          },
+          "in": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "is_nil": {
+            "type": "boolean"
+          },
+          "less_than": {
+            "enum": [
+              "admin",
+              "user",
+              "teacher"
+            ],
+            "type": "string"
+          },
+          "less_than_or_equal": {
+            "enum": [
+              "admin",
+              "user",
+              "teacher"
+            ],
+            "type": "string"
+          },
+          "not_eq": {
+            "enum": [
+              "admin",
+              "user",
+              "teacher"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "user-filter-student_id": {
         "additionalProperties": false,
         "properties": {
@@ -289,6 +868,1228 @@
   },
   "openapi": "3.0.0",
   "paths": {
+    "/api/json/course-enrollments": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/course-enrollments operation on course_enrollment resource",
+        "parameters": [
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course_enrollment": "id,course_id,student_id,enrolled_at"
+              },
+              "properties": {
+                "course_enrollment": {
+                  "description": "Comma separated field names for course_enrollment",
+                  "example": "id,course_id,student_id,enrolled_at",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/course_enrollment"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course_enrollment"
+        ]
+      },
+      "post": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/course-enrollments operation on course_enrollment resource",
+        "parameters": [
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course_enrollment": "id,course_id,student_id,enrolled_at"
+              },
+              "properties": {
+                "course_enrollment": {
+                  "description": "Comma separated field names for course_enrollment",
+                  "example": "id,course_id,student_id,enrolled_at",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "attributes": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "course_id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "student_id": {
+                            "format": "uuid",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "course_id",
+                          "student_id"
+                        ],
+                        "type": "object"
+                      },
+                      "relationships": {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "type": "object"
+                      },
+                      "type": {
+                        "enum": [
+                          "course_enrollment"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Request body for the /course-enrollments operation on course_enrollment resource",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/course_enrollment"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course_enrollment"
+        ]
+      }
+    },
+    "/api/json/course-enrollments/course/{course_id}": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "Get enrollments for a specific course",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Filters the query to results with attributes matching the given filter object",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/course_enrollment-filter"
+            },
+            "style": "deepObject"
+          },
+          {
+            "description": "Sort order to apply to the results",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "pattern": "^(id|-id|\\+\\+id|--id|course_id|-course_id|\\+\\+course_id|--course_id|student_id|-student_id|\\+\\+student_id|--student_id|enrolled_at|-enrolled_at|\\+\\+enrolled_at|--enrolled_at)(,(id|-id|\\+\\+id|--id|course_id|-course_id|\\+\\+course_id|--course_id|student_id|-student_id|\\+\\+student_id|--student_id|enrolled_at|-enrolled_at|\\+\\+enrolled_at|--enrolled_at))*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course_enrollment": "id,course_id,student_id,enrolled_at"
+              },
+              "properties": {
+                "course_enrollment": {
+                  "description": "Comma separated field names for course_enrollment",
+                  "example": "id,course_id,student_id,enrolled_at",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "description": "An array of resource objects representing a course_enrollment",
+                      "items": {
+                        "$ref": "#/components/schemas/course_enrollment"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course_enrollment"
+        ]
+      }
+    },
+    "/api/json/course-enrollments/student/{student_id}": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "Get enrollments for a specific student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Filters the query to results with attributes matching the given filter object",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/course_enrollment-filter"
+            },
+            "style": "deepObject"
+          },
+          {
+            "description": "Sort order to apply to the results",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "pattern": "^(id|-id|\\+\\+id|--id|course_id|-course_id|\\+\\+course_id|--course_id|student_id|-student_id|\\+\\+student_id|--student_id|enrolled_at|-enrolled_at|\\+\\+enrolled_at|--enrolled_at)(,(id|-id|\\+\\+id|--id|course_id|-course_id|\\+\\+course_id|--course_id|student_id|-student_id|\\+\\+student_id|--student_id|enrolled_at|-enrolled_at|\\+\\+enrolled_at|--enrolled_at))*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course_enrollment": "id,course_id,student_id,enrolled_at"
+              },
+              "properties": {
+                "course_enrollment": {
+                  "description": "Comma separated field names for course_enrollment",
+                  "example": "id,course_id,student_id,enrolled_at",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "description": "An array of resource objects representing a course_enrollment",
+                      "items": {
+                        "$ref": "#/components/schemas/course_enrollment"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course_enrollment"
+        ]
+      }
+    },
+    "/api/json/course-enrollments/{id}": {
+      "delete": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/course-enrollments/:id operation on course_enrollment resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course_enrollment": "id,course_id,student_id,enrolled_at"
+              },
+              "properties": {
+                "course_enrollment": {
+                  "description": "Comma separated field names for course_enrollment",
+                  "example": "id,course_id,student_id,enrolled_at",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted successfully"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course_enrollment"
+        ]
+      }
+    },
+    "/api/json/courses": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/courses operation on course resource",
+        "parameters": [
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course": "id,title,description,teacher_id"
+              },
+              "properties": {
+                "course": {
+                  "description": "Comma separated field names for course",
+                  "example": "id,title,description,teacher_id",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/course"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course"
+        ]
+      },
+      "post": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/courses operation on course resource",
+        "parameters": [
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course": "id,title,description,teacher_id"
+              },
+              "properties": {
+                "course": {
+                  "description": "Comma separated field names for course",
+                  "example": "id,title,description,teacher_id",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "attributes": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "description": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "teacher_id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "teacher_id"
+                        ],
+                        "type": "object"
+                      },
+                      "relationships": {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "type": "object"
+                      },
+                      "type": {
+                        "enum": [
+                          "course"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Request body for the /courses operation on course resource",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/course"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course"
+        ]
+      }
+    },
+    "/api/json/courses/student/{student_id}": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "Get courses assigned to a specific student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Filters the query to results with attributes matching the given filter object",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/course-filter"
+            },
+            "style": "deepObject"
+          },
+          {
+            "description": "Sort order to apply to the results",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "pattern": "^(id|-id|\\+\\+id|--id|title|-title|\\+\\+title|--title|description|-description|\\+\\+description|--description|teacher_id|-teacher_id|\\+\\+teacher_id|--teacher_id)(,(id|-id|\\+\\+id|--id|title|-title|\\+\\+title|--title|description|-description|\\+\\+description|--description|teacher_id|-teacher_id|\\+\\+teacher_id|--teacher_id))*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course": "id,title,description,teacher_id"
+              },
+              "properties": {
+                "course": {
+                  "description": "Comma separated field names for course",
+                  "example": "id,title,description,teacher_id",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "description": "An array of resource objects representing a course",
+                      "items": {
+                        "$ref": "#/components/schemas/course"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course"
+        ]
+      }
+    },
+    "/api/json/courses/teacher/{teacher_id}": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "Get courses taught by a specific teacher",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "teacher_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Filters the query to results with attributes matching the given filter object",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/course-filter"
+            },
+            "style": "deepObject"
+          },
+          {
+            "description": "Sort order to apply to the results",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "pattern": "^(id|-id|\\+\\+id|--id|title|-title|\\+\\+title|--title|description|-description|\\+\\+description|--description|teacher_id|-teacher_id|\\+\\+teacher_id|--teacher_id)(,(id|-id|\\+\\+id|--id|title|-title|\\+\\+title|--title|description|-description|\\+\\+description|--description|teacher_id|-teacher_id|\\+\\+teacher_id|--teacher_id))*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course": "id,title,description,teacher_id"
+              },
+              "properties": {
+                "course": {
+                  "description": "Comma separated field names for course",
+                  "example": "id,title,description,teacher_id",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "description": "An array of resource objects representing a course",
+                      "items": {
+                        "$ref": "#/components/schemas/course"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course"
+        ]
+      }
+    },
+    "/api/json/courses/{id}": {
+      "delete": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/courses/:id operation on course resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course": "id,title,description,teacher_id"
+              },
+              "properties": {
+                "course": {
+                  "description": "Comma separated field names for course",
+                  "example": "id,title,description,teacher_id",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted successfully"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course"
+        ]
+      },
+      "patch": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/courses/:id operation on course resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "course": "id,title,description,teacher_id"
+              },
+              "properties": {
+                "course": {
+                  "description": "Comma separated field names for course",
+                  "example": "id,title,description,teacher_id",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "attributes": {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "type": "object"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "relationships": {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "type": "object"
+                      },
+                      "type": {
+                        "enum": [
+                          "course"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Request body for the /courses/:id operation on course resource",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/course"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "course"
+        ]
+      }
+    },
+    "/api/json/users": {
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "Get all users",
+        "parameters": [
+          {
+            "description": "Filters the query to results with attributes matching the given filter object",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/user-filter"
+            },
+            "style": "deepObject"
+          },
+          {
+            "description": "Sort order to apply to the results",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "pattern": "^(id|-id|\\+\\+id|--id|student_id|-student_id|\\+\\+student_id|--student_id|email|-email|\\+\\+email|--email|role|-role|\\+\\+role|--role)(,(id|-id|\\+\\+id|--id|student_id|-student_id|\\+\\+student_id|--student_id|email|-email|\\+\\+email|--email|role|-role|\\+\\+role|--role))*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "user": "id,student_id,email,role"
+              },
+              "properties": {
+                "user": {
+                  "description": "Comma separated field names for user",
+                  "example": "id,student_id,email,role",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "description": "An array of resource objects representing a user",
+                      "items": {
+                        "$ref": "#/components/schemas/user"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "user"
+        ]
+      }
+    },
     "/api/json/users/change-password": {
       "patch": {
         "callbacks": {},
@@ -315,12 +2116,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,student_id,email"
+                "user": "id,student_id,email,role"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,student_id,email",
+                  "example": "id,student_id,email,role",
                   "type": "string"
                 }
               },
@@ -450,12 +2251,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,student_id,email"
+                "user": "id,student_id,email,role"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,student_id,email",
+                  "example": "id,student_id,email,role",
                   "type": "string"
                 }
               },
@@ -526,12 +2327,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,student_id,email"
+                "user": "id,student_id,email,role"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,student_id,email",
+                  "example": "id,student_id,email,role",
                   "type": "string"
                 }
               },
@@ -559,6 +2360,22 @@
                           "password_confirmation": {
                             "description": "The proposed password for the user (again), in plain text.",
                             "type": "string"
+                          },
+                          "role": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  "admin",
+                                  "user",
+                                  "teacher"
+                                ],
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The role of the user (admin, user, teacher). Defaults to :user."
                           },
                           "student_id": {
                             "type": "string"
@@ -657,12 +2474,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,student_id,email"
+                "user": "id,student_id,email,role"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,student_id,email",
+                  "example": "id,student_id,email,role",
                   "type": "string"
                 }
               },
@@ -794,12 +2611,12 @@
             "schema": {
               "additionalProperties": true,
               "example": {
-                "user": "id,student_id,email"
+                "user": "id,student_id,email,role"
               },
               "properties": {
                 "user": {
                   "description": "Comma separated field names for user",
-                  "example": "id,student_id,email",
+                  "example": "id,student_id,email,role",
                   "type": "string"
                 }
               },
@@ -861,6 +2678,279 @@
         },
         "responses": {
           "201": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/user"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "user"
+        ]
+      }
+    },
+    "/api/json/users/{id}": {
+      "delete": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/users/:id operation on user resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "user": "id,student_id,email,role"
+              },
+              "properties": {
+                "user": {
+                  "description": "Comma separated field names for user",
+                  "example": "id,student_id,email,role",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted successfully"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "user"
+        ]
+      },
+      "get": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "Get a user by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "user": "id,student_id,email,role"
+              },
+              "properties": {
+                "user": {
+                  "description": "Comma separated field names for user",
+                  "example": "id,student_id,email,role",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/user"
+                    },
+                    "included": {
+                      "items": {
+                        "oneOf": []
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "meta": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/components/responses/errors"
+          }
+        },
+        "tags": [
+          "user"
+        ]
+      },
+      "patch": {
+        "callbacks": {},
+        "deprecated": false,
+        "description": "/users/:id operation on user resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Relationship paths to include in the response",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "pattern": "^()(,())*$",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Limits the response fields to only those listed for each type",
+            "in": "query",
+            "name": "fields",
+            "required": false,
+            "schema": {
+              "additionalProperties": true,
+              "example": {
+                "user": "id,student_id,email,role"
+              },
+              "properties": {
+                "user": {
+                  "description": "Comma separated field names for user",
+                  "example": "id,student_id,email,role",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "style": "deepObject"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "attributes": {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "type": "object"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "relationships": {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "type": "object"
+                      },
+                      "type": {
+                        "enum": [
+                          "user"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Request body for the /users/:id operation on user resource",
+          "required": false
+        },
+        "responses": {
+          "200": {
             "content": {
               "application/vnd.api+json": {
                 "schema": {

@@ -212,3 +212,8 @@ Here's what you can do:
     (stdlib 6.2.2) gen_server.erl:2244: :gen_server.loop/7
     (stdlib 6.2.2) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
 
+Done in 2ms
+Done in 10ms
+[debug] QUERY OK source="tokens" db=5.6ms queue=15.7ms idle=1256.8ms
+DELETE FROM "tokens" AS t0 WHERE (t0."expires_at"::timestamp < $1::timestamp::timestamp) RETURNING t0."jti", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."updated_at" [~U[2025-08-05 18:12:56.966488Z]]
+[90m↳ AshPostgres.DataLayer.destroy_query/4, at: lib/data_layer.ex:1865[0m

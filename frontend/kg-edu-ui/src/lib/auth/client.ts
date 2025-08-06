@@ -10,6 +10,7 @@ export const apiClient = createClient({
 
 // Helper function to create authenticated client
 export const createAuthenticatedClient = (token: string) => {
+  console.log('Creating authenticated client with token:', token);
   return createClient({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000',
     headers: {
@@ -20,4 +21,4 @@ export const createAuthenticatedClient = (token: string) => {
 };
 
 // Export the client for direct use
-export { apiClient as client };
+export { createAuthenticatedClient as client };

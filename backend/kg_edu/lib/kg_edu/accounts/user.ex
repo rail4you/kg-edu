@@ -48,7 +48,20 @@ defmodule KgEdu.Accounts.User do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :create, :update, :destroy]
+    read :get_users do
+      description "Get all users"
+
+      # This action is used to retrieve all users, typically for admin purposes
+      # filter expr(true) # No filter, retrieves all users
+    end
+
+    read :by_id do
+      description "Get a user by ID"
+      get? true
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id))
+    end
 
     read :get_current_user do
       description "Get the current authenticated user"
@@ -162,8 +175,18 @@ defmodule KgEdu.Accounts.User do
         sensitive? true
       end
 
+      argument :role, :atom do
+        description "The role of the user (admin, user, teacher). Defaults to :user."
+        allow_nil? true
+        default :user
+        constraints one_of: [:admin, :user, :teacher]
+      end
+
       # Sets the student_id from the argument
       change set_attribute(:student_id, arg(:student_id))
+
+      # Sets the role from the argument
+      change set_attribute(:role, arg(:role))
 
       # Hashes the provided password
       change AshAuthentication.Strategy.Password.HashPasswordChange
@@ -290,6 +313,25 @@ defmodule KgEdu.Accounts.User do
       authorize_if actor_present()
     end
 
+    # Admin can manage all users and roles
+    policy [action(:read), action(:create), action(:update), action(:destroy)] do
+      description "Admin can manage all users"
+      authorize_if actor_attribute_equals(:role, "admin")
+    end
+
+    # Users can only read their own profile
+    # policy [action(:read)] do
+    #   description "Users can read their own profile"
+    #   authorize_if expr(id == ^actor(:id))
+    # end
+
+    # Users can update their own profile (but not role)
+    policy [action(:update)] do
+      description "Users can update their own profile (except role)"
+      authorize_if expr(id == ^actor(:id))
+      forbid_if changing_attributes(:role)
+    end
+
     # Default policy - forbid everything else
     policy always() do
       authorize_if always()
@@ -313,6 +355,13 @@ defmodule KgEdu.Accounts.User do
       allow_nil? false
       sensitive? true
     end
+
+    attribute :role, :atom do
+      allow_nil? false
+      default :user
+      constraints one_of: [:admin, :user, :teacher]
+      public? true
+    end
   end
 
   calculations do
@@ -333,6 +382,11 @@ defmodule KgEdu.Accounts.User do
     define :change_password, action: :change_password
     define :request_password_reset, action: :request_password_reset_token
     define :reset_password, action: :reset_password_with_token
+    define :create_user, action: :create
+    define :update_user, action: :update
+    define :delete_user, action: :destroy
+    define :get_user, action: :read, get_by: [:id]
+    define :get_users, action: :read
   end
 
   end

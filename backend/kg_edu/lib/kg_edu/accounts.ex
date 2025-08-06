@@ -27,6 +27,10 @@ defmodule KgEdu.Accounts do
         patch :reset_password_with_token, route: "/reset-password"
         get :get_current_user, route: "/me"
         patch :change_password, route: "/change-password"
+        get :by_id, route: "/:id"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+        index :get_users, route: "/"
       end
     end
   end
