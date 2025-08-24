@@ -36,7 +36,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (user && userRole) {
-      // Redirect based on user role
+      // Redirect based on user role with backward compatibility
       switch (userRole) {
         case 'admin':
           router.push('/admin');
@@ -44,8 +44,11 @@ export default function Home() {
         case 'teacher':
           router.push('/teacher');
           break;
-        case 'user':
+        case 'student':
           router.push('/student');
+          break;
+        case 'user':
+          router.push('/student'); // Treat 'user' as 'student' for backward compatibility
           break;
         default:
           // Fallback to student dashboard

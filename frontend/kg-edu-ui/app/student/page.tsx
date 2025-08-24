@@ -123,7 +123,7 @@ function StudentDashboardContent() {
 
 export default function StudentDashboard() {
   return (
-    <ProtectedRoute allowedRoles={['user']}>
+    <ProtectedRoute allowedRoles={['user', 'student']}>
       <StudentDashboardContent />
     </ProtectedRoute>
   );

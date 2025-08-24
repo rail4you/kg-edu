@@ -122,3 +122,5 @@ For detailed information about any package used in this project, consult the `.r
 5. **Review** - Ensure compliance with Ash and Elixir best practices
 
 The `.rules` file is your primary reference for understanding how to work effectively with this Ash-based application.
+
+development server is aleary run in the 4000 port

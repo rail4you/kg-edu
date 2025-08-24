@@ -79,9 +79,11 @@ defmodule KgEduWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", KgEduWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", KgEduWeb do
+    pipe_through :api
+
+    post "/files/upload", FileUploadController, :upload
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:kg_edu, :dev_routes) do

@@ -70,6 +70,11 @@ defmodule KgEdu.Courses.Course do
     has_many :course_enrollments, KgEdu.Courses.CourseEnrollment do
       destination_attribute :course_id
     end
+
+    
+    has_many :knowledge_resources, KgEdu.Knowledge.Resource do
+      destination_attribute :course_id
+    end
   end
 
   policies do

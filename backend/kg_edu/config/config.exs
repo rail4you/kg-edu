@@ -9,7 +9,7 @@ import Config
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
-  types: %{"application/vnd.api+json" => ["json"]}
+  types: %{"application/vnd.api+json" => ["json"], "multipart/x.ash+form-data" => ["json"]}
 
 config :ash_json_api,
   show_public_calculations_when_loaded?: false,
@@ -68,7 +68,7 @@ config :spark,
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Accounts, KgEdu.Courses]
+  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,
@@ -118,6 +118,12 @@ config :logger, :default_formatter,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Waffle configuration for file uploads
+config :waffle,
+  storage: Waffle.Storage.Local,
+  asset_host: "http://localhost:4000",
+  uploads_dir: "priv/uploads"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

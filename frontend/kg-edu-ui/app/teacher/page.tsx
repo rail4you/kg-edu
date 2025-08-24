@@ -116,6 +116,31 @@ function TeacherDashboardContent() {
             </Card>
           </Grid>
 
+          {/* Knowledge Resources */}
+          <Grid item xs={12} md={4}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                  <Assignment color="secondary" fontSize="large" />
+                  <Typography variant="h5" component="h2">
+                    Knowledge Resources
+                  </Typography>
+                </Box>
+                <Typography variant="body1" color="text.secondary" paragraph>
+                  Manage knowledge resources and build relationships.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  fullWidth
+                  onClick={() => router.push('/teacher/knowledge')}
+                >
+                  Manage Resources
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
           {/* Assignments */}
           <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%' }}>

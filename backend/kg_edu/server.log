@@ -217,3 +217,6 @@ Done in 10ms
 [debug] QUERY OK source="tokens" db=5.6ms queue=15.7ms idle=1256.8ms
 DELETE FROM "tokens" AS t0 WHERE (t0."expires_at"::timestamp < $1::timestamp::timestamp) RETURNING t0."jti", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."updated_at" [~U[2025-08-05 18:12:56.966488Z]]
 [90m↳ AshPostgres.DataLayer.destroy_query/4, at: lib/data_layer.ex:1865[0m
+[debug] QUERY OK source="tokens" db=34.3ms queue=0.2ms idle=1507.3ms
+DELETE FROM "tokens" AS t0 WHERE (t0."expires_at"::timestamp < $1::timestamp::timestamp) RETURNING t0."jti", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."updated_at" [~U[2025-08-06 06:12:57.031154Z]]
+[90m↳ AshPostgres.DataLayer.destroy_query/4, at: lib/data_layer.ex:1865[0m
