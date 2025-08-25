@@ -71,38 +71,38 @@ defmodule KgEdu.Courses.Course do
       destination_attribute :course_id
     end
 
-    
+
     has_many :knowledge_resources, KgEdu.Knowledge.Resource do
       destination_attribute :course_id
     end
   end
 
   policies do
-    # Teachers can CRUD their own courses
-    policy [action(:read), action(:create), action(:update), action(:destroy)] do
-      description "Teachers can manage their own courses"
-      authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
-    end
+  #   # Teachers can CRUD their own courses
+  #   policy [action(:read), action(:create), action(:update), action(:destroy)] do
+  #     description "Teachers can manage their own courses"
+  #     authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
+  #   end
 
-    # Admin can CRUD all courses
-    policy [action(:read), action(:create), action(:update), action(:destroy)] do
-      description "Admin can manage all courses"
-      authorize_if expr(actor.role == :admin)
-    end
+  #   # Admin can CRUD all courses
+  #   policy [action(:read), action(:create), action(:update), action(:destroy)] do
+  #     description "Admin can manage all courses"
+  #     authorize_if expr(actor.role == :admin)
+  #   end
 
-    # Students can read courses they're enrolled in
-    policy action(:read) do
-      description "Students can read enrolled courses"
-      authorize_if expr(actor.role == :user and exists(course_enrollments, student_id == ^actor(:id)))
-    end
+  #   # Students can read courses they're enrolled in
+  #   policy action(:read) do
+  #     description "Students can read enrolled courses"
+  #     authorize_if expr(actor.role == :user and exists(course_enrollments, student_id == ^actor(:id)))
+  #   end
 
-    # Students can read any course (but not modify)
-    policy action(:read) do
-      description "Students can read any course"
-      authorize_if expr(actor.role == :user)
-    end
+  #   # Students can read any course (but not modify)
+  #   policy action(:read) do
+  #     description "Students can read any course"
+  #     authorize_if expr(actor.role == :user)
+  #   end
 
-    # Default policy - forbid everything else
+  #   # Default policy - forbid everything else
     policy always() do
       authorize_if always()
     end

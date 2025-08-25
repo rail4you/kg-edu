@@ -16,6 +16,8 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+config :langchain, openai_key: System.fetch_env!("OPENAI_API_KEY")
+
 if System.get_env("PHX_SERVER") do
   config :kg_edu, KgEduWeb.Endpoint, server: true
 end

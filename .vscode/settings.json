@@ -1,0 +1,29 @@
+{
+    "python.defaultInterpreterPath": "./agent/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "./agent",
+        "${workspaceFolder}/agent"
+    ],
+    // "python.analysis.autoSearchPaths": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.stubPath": "./agent",
+    "python.envFile": "./agent/.env",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintPath": "./agent/.venv/bin/pylint",
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "./agent/.venv/bin/black",
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "./agent/.venv/bin/pytest",
+    "python.testing.pytestArgs": [
+        "./agent"
+    ],
+    "files.associations": {
+        "*.py": "python"
+    },
+    "terminal.integrated.cwd": "./agent",
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "pylance.insidersChannel": "off",
+    "python.analysis.typeCheckingMode": "basic"
+}

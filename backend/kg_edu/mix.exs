@@ -35,6 +35,7 @@ defmodule KgEdu.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ash_ai, "~> 0.2"},
       {:usage_rules, "~> 0.1", only: [:dev]},
       {:bcrypt_elixir, "~> 3.0"},
       {:picosat_elixir, "~> 0.2"},
@@ -77,7 +78,7 @@ defmodule KgEdu.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:cors_plug, "~> 3.0"},
+      {:cors_plug, "~> 3.0"}
     ]
   end
 

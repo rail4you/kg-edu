@@ -4,6 +4,7 @@ import React from 'react';
 import { useAuth } from '@/src/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/src/components/auth/protected-route';
+import { ChatComponent } from '@/src/components/chat/chat-component';
 import {
   Box,
   Container,
@@ -13,7 +14,7 @@ import {
   CardContent,
   Grid,
 } from '@mui/material';
-import { School, Book, Grade } from '@mui/icons-material';
+import { School, Book, Grade, Chat } from '@mui/icons-material';
 
 function StudentDashboardContent() {
   const { user, logout } = useAuth();
@@ -39,7 +40,7 @@ function StudentDashboardContent() {
                   Student Dashboard
                 </Typography>
                 <Typography variant="body1">
-                  Welcome, Student
+                  Welcome, {user?.attributes?.email || 'Student'}
                 </Typography>
               </Box>
             </Box>
@@ -112,6 +113,26 @@ function StudentDashboardContent() {
                 >
                   Coming Soon
                 </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* AI Assistant */}
+          <Grid item xs={12}>
+            <Card sx={{ height: '600px' }}>
+              <CardContent sx={{ height: '100%', p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2} mb={3}>
+                  <Chat color="primary" fontSize="large" />
+                  <Typography variant="h5" component="h2">
+                    AI Assistant
+                  </Typography>
+                </Box>
+                <Box sx={{ height: 'calc(100% - 60px)' }}>
+                  <ChatComponent
+                    title="Educational AI Assistant"
+                    placeholder="Ask me anything about your courses, homework, or study topics..."
+                  />
+                </Box>
               </CardContent>
             </Card>
           </Grid>
