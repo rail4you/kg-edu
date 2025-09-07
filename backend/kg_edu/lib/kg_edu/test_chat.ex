@@ -1,4 +1,4 @@
-defmodule KgEdu.Chat do
+defmodule KgEdu.TestChat do
   alias LangChain.Message
   alias LangChain.ChatModels.ChatOpenAI
   alias LangChain.Chains.LLMChain
