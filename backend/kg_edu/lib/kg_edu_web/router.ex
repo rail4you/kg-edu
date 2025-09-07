@@ -37,11 +37,7 @@ defmodule KgEduWeb.Router do
       # on_mount {KgEduWeb.LiveUserAuth, :live_no_user}
 
       # Accounts CRUD
-      live "/accounts", AccountsLive.Index, :index
-      live "/accounts/new", AccountsLive.Index, :new
-      live "/accounts/:id/edit", AccountsLive.Index, :edit
-
-            live "/users", UserLive.Index, :index
+      live "/users", UserLive.Index, :index
       live "/users/new", UserLive.Form, :new
       live "/users/:id/edit", UserLive.Form, :edit
 
@@ -49,19 +45,16 @@ defmodule KgEduWeb.Router do
       live "/users/:id/show/edit", UserLive.Show, :edit
 
       # Courses CRUD
-      live "/courses", CoursesLive.Index, :index
-      live "/courses/new", CoursesLive.Index, :new
-      live "/courses/:id/edit", CoursesLive.Index, :edit
+      live "/courses", CourseLive.Index, :index
+      live "/courses/new", CourseLive.Form, :new
+      live "/courses/:id/edit", CourseLive.Form, :edit
+
+      live "/courses/:id", CourseLive.Show, :show
+      live "/courses/:id/show/edit", CourseLive.Show, :edit
 
       # Files CRUD
-      live "/files", FilesLive.Index, :index
-      live "/files/new", FilesLive.Index, :new
-      live "/files/:id/edit", FilesLive.Index, :edit
 
       # Knowledge Resources CRUD
-      live "/knowledge", KnowledgeLive.Index, :index
-      live "/knowledge/new", KnowledgeLive.Index, :new
-      live "/knowledge/:id/edit", KnowledgeLive.Index, :edit
     end
   end
 

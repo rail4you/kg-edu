@@ -16,9 +16,13 @@ defmodule KgEdu.Courses.Course do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
 
     create :create do
+      accept [:title, :description, :teacher_id]
+    end
+
+    update :update do
       accept [:title, :description, :teacher_id]
     end
 
