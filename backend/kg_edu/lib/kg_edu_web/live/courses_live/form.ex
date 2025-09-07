@@ -5,6 +5,12 @@ defmodule KgEduWeb.CoursesLive.Form do
 
   @impl true
   def mount(_params, _session, socket) do
+    teachers =
+      KgEdu.Accounts.get_users()
+      |> Enum.filter(&(&1.role == :teacher))
+      |> Enum.map(&{&1.full_name || &1.email, &1.id})
+
+    socket = assign(socket, teachers: teachers)
     {:ok, socket}
   end
 

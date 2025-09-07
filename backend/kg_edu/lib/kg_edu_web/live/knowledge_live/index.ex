@@ -29,7 +29,7 @@ defmodule KgEduWeb.KnowledgeLive.Index do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     resource = Knowledge.get_resource!(id)
-    
+
     socket
     |> assign(:page_title, "Edit Knowledge Resource")
     |> assign(:resource, resource)

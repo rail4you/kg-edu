@@ -7,17 +7,9 @@
 >
   <.input field={@form[:title]} type="text" label="Title" />
   <.input field={@form[:description]} type="textarea" label="Description" />
-  <.input field={@form[:teacher_id]} type="select" label="Teacher" options={list_teachers()} />
+  <.input field={@form[:teacher_id]} type="select" label="Teacher" options={@teachers} />
   
   <:actions>
     <.button phx-disable-with="Saving...">Save Course</.button>
   </:actions>
 </.simple_form>
-
-<%
-defp list_teachers do
-  KgEdu.Accounts.get_users()
-  |> Enum.filter(&(&1.role == :teacher))
-  |> Enum.map(&{&1.full_name || &1.email, &1.id})
-end
-%>

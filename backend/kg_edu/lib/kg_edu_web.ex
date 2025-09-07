@@ -85,7 +85,8 @@ defmodule KgEduWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
-      import KgEduWeb.CoreComponents
+      use DaisyUIComponents, core_components: true
+      # import KgEduWeb.CoreComponents
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
