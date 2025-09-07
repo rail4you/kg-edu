@@ -9,7 +9,7 @@ defmodule KgEdu.Courses.File do
     repo KgEdu.Repo
   end
 
-  
+
   code_interface do
     define :create_file, action: :create
     define :upload_file, action: :upload
@@ -42,31 +42,31 @@ defmodule KgEdu.Courses.File do
       end
 
       change manage_relationship(:course_id, :course, type: :append_and_remove)
-      
+
       change fn changeset, _context ->
         case Ash.Changeset.get_argument(changeset, :file) do
           nil ->
             Ash.Changeset.add_error(changeset, "File is required")
-          
+
           file_upload ->
             # Generate file metadata
             filename = file_upload.filename
             file_size = file_upload |> File.stat!() |> Map.get(:size)
             file_type = MIME.from_path(filename)
-            
+
             # Store file using Waffle
             case KgEdu.FileUpload.store_file({file_upload.path, changeset}) do
               {:ok, stored_filename} ->
                 # Get the file path from Waffle
                 file_path = KgEdu.FileUpload.url({stored_filename, changeset}, :original)
-                
+
                 changeset
                 |> Ash.Changeset.change_attribute(:filename, filename)
                 |> Ash.Changeset.change_attribute(:path, file_path)
                 |> Ash.Changeset.change_attribute(:size, file_size)
                 |> Ash.Changeset.change_attribute(:file_type, file_type)
                 |> Ash.Changeset.change_attribute(:purpose, Ash.Changeset.get_argument(changeset, :purpose))
-              
+
               {:error, reason} ->
                 Ash.Changeset.add_error(changeset, "Failed to store file: #{inspect(reason)}")
             end
@@ -115,7 +115,7 @@ defmodule KgEdu.Courses.File do
 
       authorize_if expr(
                      actor.role == :user and
-                       exists(course.course_enrollments, student_id == ^actor(:id))
+                       exists(course.course_enrollments, member_id == ^actor(:id))
                    )
     end
 

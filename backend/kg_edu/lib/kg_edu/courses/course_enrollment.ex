@@ -19,7 +19,7 @@ defmodule KgEdu.Courses.CourseEnrollment do
     defaults [:read, :update, :destroy]
 
     create :create do
-      accept [:course_id, :student_id]
+      accept [:course_id, :member_id]
       primary? true
       changes [
         set_attribute(:enrolled_at, &DateTime.utc_now/0)
@@ -35,10 +35,10 @@ defmodule KgEdu.Courses.CourseEnrollment do
 
     read :by_student do
       description "Get enrollments for a specific student"
-      argument :student_id, :uuid do
+      argument :member_id, :uuid do
         allow_nil? false
       end
-      filter expr(student_id == ^arg(:student_id))
+      filter expr(member_id == ^arg(:member_id))
     end
   end
 
@@ -50,7 +50,7 @@ defmodule KgEdu.Courses.CourseEnrollment do
       public? true
     end
 
-    attribute :student_id, :uuid do
+    attribute :member_id, :uuid do
       allow_nil? false
       public? true
     end
@@ -77,7 +77,7 @@ defmodule KgEdu.Courses.CourseEnrollment do
   end
 
   identities do
-    identity :unique_course_student, [:course_id, :student_id]
+    identity :unique_course_student, [:course_id, :member_id]
   end
 
   policies do
@@ -96,7 +96,7 @@ defmodule KgEdu.Courses.CourseEnrollment do
     # Students can read their own enrollments
     # policy action(:read) do
     #   description "Students can read their own enrollments"
-    #   authorize_if expr(:user == ^actor(:role) and student_id == ^actor(:id))
+    #   authorize_if expr(:user == ^actor(:role) and member_id == ^actor(:id))
     # end
 
     # Default policy - forbid everything else

@@ -13,12 +13,12 @@ defmodule KgEdu.Accounts.User.Senders.SendPasswordResetEmail do
   @impl true
   def send(user, token, _) do
     require Logger
-    
+
     case user.email do
       nil ->
-        Logger.info("Password reset requested for student_id: #{user.student_id}, but no email address available")
+        Logger.info("Password reset requested for member_id: #{user.member_id}, but no email address available")
         :ok
-        
+
       email ->
         new()
         # TODO: Replace with your email

@@ -92,6 +92,6 @@ defmodule KgEduWeb.CourseLive.Form do
   def teacher_list do
     Ash.read!(KgEdu.Accounts.User, actor: nil)
     |> Enum.filter(fn user -> user.role == :teacher end)
-    |> Enum.map(fn user -> {user.student_id, user.id} end)
+    |> Enum.map(fn user -> {user.member_id, user.id} end)
   end
 end

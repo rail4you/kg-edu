@@ -36,10 +36,10 @@ defmodule KgEdu.Courses.Course do
 
     read :by_student do
       description "Get courses assigned to a specific student"
-      argument :student_id, :uuid do
+      argument :member_id, :uuid do
         allow_nil? false
       end
-      filter expr(course_enrollments.student_id == ^arg(:student_id))
+      filter expr(course_enrollments.member_id == ^arg(:member_id))
     end
   end
 
@@ -97,7 +97,7 @@ defmodule KgEdu.Courses.Course do
   #   # Students can read courses they're enrolled in
   #   policy action(:read) do
   #     description "Students can read enrolled courses"
-  #     authorize_if expr(actor.role == :user and exists(course_enrollments, student_id == ^actor(:id)))
+  #     authorize_if expr(actor.role == :user and exists(course_enrollments, member_id == ^actor(:id)))
   #   end
 
   #   # Students can read any course (but not modify)

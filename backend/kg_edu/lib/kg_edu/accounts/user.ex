@@ -25,7 +25,7 @@ defmodule KgEdu.Accounts.User do
 
     strategies do
       password :password do
-        identity_field :student_id
+        identity_field :member_id
         hash_provider AshAuthentication.BcryptProvider
 
         resettable do
@@ -105,7 +105,7 @@ defmodule KgEdu.Accounts.User do
       description "Attempt to sign in using a student ID and password."
       get? true
 
-      argument :student_id, :string do
+      argument :member_id, :string do
         description "The student ID to use for retrieving the user."
         allow_nil? false
       end
@@ -158,7 +158,7 @@ defmodule KgEdu.Accounts.User do
     create :register_with_password do
       description "Register a new user with a student ID and password."
 
-      argument :student_id, :string do
+      argument :member_id, :string do
         allow_nil? false
       end
 
@@ -183,7 +183,7 @@ defmodule KgEdu.Accounts.User do
       end
 
       # Sets the student_id from the argument
-      change set_attribute(:student_id, arg(:student_id))
+      change set_attribute(:member_id, arg(:member_id))
 
       # Sets the role from the argument
       change set_attribute(:role, arg(:role))
@@ -209,23 +209,23 @@ defmodule KgEdu.Accounts.User do
     action :request_password_reset_token do
       description "Send password reset instructions to a user if they exist."
 
-      argument :student_id, :string do
+      argument :member_id, :string do
         allow_nil? false
       end
 
       # creates a reset token and invokes the relevant senders
-      run {AshAuthentication.Strategy.Password.RequestPasswordReset, action: :get_by_student_id}
+      run {AshAuthentication.Strategy.Password.RequestPasswordReset, action: :get_by_member_id}
     end
 
-    read :get_by_student_id do
+    read :get_by_member_id do
       description "Looks up a user by their student ID"
       get? true
 
-      argument :student_id, :string do
+      argument :member_id, :string do
         allow_nil? false
       end
 
-      filter expr(student_id == ^arg(:student_id))
+      filter expr(member_id == ^arg(:member_id))
     end
 
     update :reset_password_with_token do
@@ -341,8 +341,13 @@ defmodule KgEdu.Accounts.User do
   attributes do
     uuid_primary_key :id
 
-    attribute :student_id, :string do
+    attribute :member_id, :string do
       allow_nil? false
+      public? true
+    end
+
+    attribute :name, :string do
+      allow_nil? true
       public? true
     end
 
@@ -371,7 +376,7 @@ defmodule KgEdu.Accounts.User do
   end
 
   identities do
-    identity :unique_student_id, [:student_id]
+    identity :unique_member_id, [:member_id]
   end
 
   code_interface do

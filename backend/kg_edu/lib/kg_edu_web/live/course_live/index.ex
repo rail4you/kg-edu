@@ -4,7 +4,7 @@ defmodule KgEduWeb.CourseLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_page={@current_page}>
       <.header>
         Listing Courses
         <:actions>
@@ -25,7 +25,7 @@ defmodule KgEduWeb.CourseLive.Index do
 
         <:col :let={{_id, course}} label="Description">{course.description}</:col>
 
-        <:col :let={{_id, course}} label="Teacher">{course.teacher.student_id}</:col>
+        <:col :let={{_id, course}} label="Teacher">{course.teacher.member_id}</:col>
 
         <:action :let={{_id, course}}>
           <div class="sr-only">
@@ -53,6 +53,7 @@ defmodule KgEduWeb.CourseLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Courses")
+     |> assign(:current_page, :courses)
      |> assign_new(:current_user, fn -> nil end)
      |> stream(:courses, Ash.read!(KgEdu.Courses.Course, actor: socket.assigns[:current_user], load: [:teacher]))}
   end

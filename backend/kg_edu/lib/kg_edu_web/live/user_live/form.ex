@@ -13,7 +13,7 @@ defmodule KgEduWeb.UserLive.Form do
       <.form for={@form} id="user-form" phx-change="validate" phx-submit="save">
         <fieldset>
           <.input field={@form[:email]} type="email" label="Email" />
-          <.input field={@form[:student_id]} type="text" label="Student Id" />
+          <.input field={@form[:member_id]} type="text" label="Student Id" />
           <.input field={@form[:role]} type="select" label="Role" options={["user", "teacher", "admin"]} />
           <.input field={@form[:password]} type="password" label="Password" autocomplete="new-password" />
           <.input

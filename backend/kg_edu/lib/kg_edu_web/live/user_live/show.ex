@@ -22,7 +22,7 @@ defmodule KgEduWeb.UserLive.Show do
       <.list>
         <:item title="Id">{@user.id}</:item>
 
-        <:item title="Student">{@user.student_id}</:item>
+        <:item title="Student">{@user.member_id}</:item>
 
         <:item title="Email">{@user.email}</:item>
 
