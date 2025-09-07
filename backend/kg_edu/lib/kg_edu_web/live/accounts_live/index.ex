@@ -28,8 +28,8 @@ defmodule KgEduWeb.AccountsLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    user = Accounts.get_user!(id)
-    
+    user = Accounts.User.get_user!(id)
+
     socket
     |> assign(:page_title, "Edit User")
     |> assign(:user, user)
@@ -37,13 +37,13 @@ defmodule KgEduWeb.AccountsLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    user = Accounts.get_user!(id)
-    {:ok, _} = Accounts.destroy_user(user)
+    user = Accounts.User.get_user!(id)
+    {:ok, _} = Accounts.User.delete_user(user)
 
     {:noreply, assign(socket, :users, list_users())}
   end
 
   defp list_users do
-    Accounts.get_users()
+    Accounts.User.get_users!()
   end
 end

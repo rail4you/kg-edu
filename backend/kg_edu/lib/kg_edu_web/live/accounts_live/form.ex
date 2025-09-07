@@ -22,7 +22,7 @@ defmodule KgEduWeb.AccountsLive.Form do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    user = KgEdu.Accounts.get_user!(id)
+    user = KgEdu.Accounts.User.get_user!(id)
     form = AshPhoenix.Form.for_update(user, :update) |> to_form()
 
     socket

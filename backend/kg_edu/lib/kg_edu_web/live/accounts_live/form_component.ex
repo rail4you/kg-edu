@@ -23,7 +23,7 @@ defmodule KgEduWeb.AccountsLive.FormComponent do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case KgEdu.Accounts.update_user(socket.assigns.user, user_params) do
+    case KgEdu.Accounts.User.update_user(socket.assigns.user, user_params) do
       {:ok, _user} ->
         {:noreply,
          socket
