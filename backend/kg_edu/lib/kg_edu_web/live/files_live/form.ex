@@ -5,6 +5,9 @@ defmodule KgEduWeb.FilesLive.Form do
 
   @impl true
   def mount(_params, _session, socket) do
+    courses = KgEdu.Courses.read_course()
+      |> Enum.map(&{&1.title, &1.id})
+    socket = assign(socket, :courses, courses)
     {:ok, socket}
   end
 
@@ -51,4 +54,8 @@ defmodule KgEduWeb.FilesLive.Form do
         {:noreply, assign(socket, :form, form)}
     end
   end
+
+  defp file_size(size) when size > 1_000_000, do: "#{Float.round(size / 1_000_000, 2)} MB"
+  defp file_size(size) when size > 1_000, do: "#{Float.round(size / 1_000, 2)} KB"
+  defp file_size(size), do: "#{size} B"
 end

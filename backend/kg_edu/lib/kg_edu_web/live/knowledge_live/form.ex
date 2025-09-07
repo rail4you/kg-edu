@@ -5,6 +5,9 @@ defmodule KgEduWeb.KnowledgeLive.Form do
 
   @impl true
   def mount(_params, _session, socket) do
+    courses = KgEdu.Courses.read_course()
+      |> Enum.map(&{&1.title, &1.id})
+    socket = assign(socket, :courses, courses)
     {:ok, socket}
   end
 
@@ -38,6 +41,9 @@ defmodule KgEduWeb.KnowledgeLive.Form do
   end
 
   def handle_event("save", %{"form" => params}, socket) do
+    # The defp function causing the error in form.html.heex should be moved here
+    # and defined as a regular function (def) if it's a component,
+    # or a defp if it's a private helper function.
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, resource} ->
         socket =
