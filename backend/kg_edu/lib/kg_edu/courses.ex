@@ -1,5 +1,5 @@
 defmodule KgEdu.Courses do
-  use Ash.Domain, otp_app: :kg_edu, extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshAi]
+  use Ash.Domain, otp_app: :kg_edu, extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshAi, AshPhoenix]
 
   admin do
     show? true

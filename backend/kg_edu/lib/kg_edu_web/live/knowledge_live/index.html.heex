@@ -1,0 +1,47 @@
+<.header>
+  Knowledge Resources
+  <:actions>
+    <.link patch={~p"/knowledge/new"}>
+      <.button>New Knowledge Resource</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="resources"
+  rows={@resources}
+  row_click={fn resource -> JS.navigate(~p"/knowledge/#{resource}") end}
+>
+  <:col :let={resource} label="ID"><%= resource.id %></:col>
+  <:col :let={resource} label="Name"><%= resource.name %></:col>
+  <:col :let={resource} label="Description"><%= String.slice(resource.description || "", 0..50) %>...</:col>
+  <:col :let={resource} label="Course ID"><%= resource.course_id %></:col>
+  <:col :let={resource} label="Created By"><%= resource.created_by_id %></:col>
+  <:action :let={resource}>
+    <.link patch={~p"/knowledge/#{resource}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={resource}>
+    <.link
+      phx-click={JS.push("delete") |> hide("##{resource.id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="resource-modal"
+  show
+  on_cancel={JS.patch(~p"/knowledge")}
+>
+  <.live_component
+    module={KgEduWeb.KnowledgeLive.FormComponent}
+    id={@resource.id || :new}
+    title={@page_title}
+    action={@live_action}
+    resource={@resource}
+    patch={~p"/knowledge"}
+  />
+</.modal>

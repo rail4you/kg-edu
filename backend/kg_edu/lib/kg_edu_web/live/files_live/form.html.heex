@@ -1,0 +1,22 @@
+<.simple_form
+  for={@form}
+  id="file-form"
+  phx-target={@myself}
+  phx-change="validate"
+  phx-submit="save"
+>
+  <.input field={@form[:filename]} type="text" label="Filename" />
+  <.input field={@form[:course_id]} type="select" label="Course" options={list_courses()} />
+  <.input field={@form[:purpose]} type="select" label="Purpose" options={["course_file", "course_image"]} />
+  
+  <:actions>
+    <.button phx-disable-with="Saving...">Save File</.button>
+  </:actions>
+</.simple_form>
+
+<%
+defp list_courses do
+  KgEdu.Courses.read_course()
+  |> Enum.map(&{&1.title, &1.id})
+end
+%>

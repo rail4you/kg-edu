@@ -35,6 +35,26 @@ defmodule KgEduWeb.Router do
       #
       # If an authenticated user must *not* be present:
       # on_mount {KgEduWeb.LiveUserAuth, :live_no_user}
+      
+      # Accounts CRUD
+      live "/accounts", AccountsLive.Index, :index
+      live "/accounts/new", AccountsLive.Index, :new
+      live "/accounts/:id/edit", AccountsLive.Index, :edit
+      
+      # Courses CRUD
+      live "/courses", CoursesLive.Index, :index
+      live "/courses/new", CoursesLive.Index, :new
+      live "/courses/:id/edit", CoursesLive.Index, :edit
+      
+      # Files CRUD
+      live "/files", FilesLive.Index, :index
+      live "/files/new", FilesLive.Index, :new
+      live "/files/:id/edit", FilesLive.Index, :edit
+      
+      # Knowledge Resources CRUD
+      live "/knowledge", KnowledgeLive.Index, :index
+      live "/knowledge/new", KnowledgeLive.Index, :new
+      live "/knowledge/:id/edit", KnowledgeLive.Index, :edit
     end
   end
 
