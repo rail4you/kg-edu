@@ -35,6 +35,8 @@ defmodule KgEdu.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mdex, "~> 0.7"},
+      {:ash_oban, "~> 0.4"},
       {:ash_ai, "~> 0.2"},
       {:usage_rules, "~> 0.1", only: [:dev]},
       {:bcrypt_elixir, "~> 3.0"},

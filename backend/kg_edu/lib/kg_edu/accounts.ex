@@ -19,6 +19,7 @@ defmodule KgEdu.Accounts do
 
         post :sign_in_with_password do
           route "/sign-in"
+
           metadata fn _subject, user, _request ->
             %{token: user.__metadata__.token}
           end

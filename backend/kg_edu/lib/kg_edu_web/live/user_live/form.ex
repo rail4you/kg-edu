@@ -14,8 +14,18 @@ defmodule KgEduWeb.UserLive.Form do
         <fieldset>
           <.input field={@form[:email]} type="email" label="Email" />
           <.input field={@form[:member_id]} type="text" label="Student Id" />
-          <.input field={@form[:role]} type="select" label="Role" options={["user", "teacher", "admin"]} />
-          <.input field={@form[:password]} type="password" label="Password" autocomplete="new-password" />
+          <.input
+            field={@form[:role]}
+            type="select"
+            label="Role"
+            options={["user", "teacher", "admin"]}
+          />
+          <.input
+            field={@form[:password]}
+            type="password"
+            label="Password"
+            autocomplete="new-password"
+          />
           <.input
             field={@form[:password_confirmation]}
             type="password"

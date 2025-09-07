@@ -47,8 +47,24 @@ defmodule KgEdu.Accounts.User do
     type "user"
   end
 
+  code_interface do
+    define :register_user, action: :register_with_password
+    define :sign_in, action: :sign_in_with_password
+    define :sign_out, action: :sign_out
+    define :get_current_user, action: :get_current_user
+    define :change_password, action: :change_password
+    define :request_password_reset, action: :request_password_reset_token
+    define :reset_password, action: :reset_password_with_token
+    define :create_user, action: :create
+    define :update_user, action: :update
+    define :delete_user, action: :destroy
+    define :get_user, action: :read, get_by: [:id]
+    define :get_users, action: :read
+  end
+
   actions do
     defaults [:read, :create, :update, :destroy]
+
     read :get_users do
       description "Get all users"
 
@@ -114,9 +130,6 @@ defmodule KgEdu.Accounts.User do
         description "The password to check for the matching user."
         allow_nil? false
         sensitive? true
-
-
-
       end
 
       # validates the provided student_id and password and generates a token
@@ -378,20 +391,4 @@ defmodule KgEdu.Accounts.User do
   identities do
     identity :unique_member_id, [:member_id]
   end
-
-  code_interface do
-    define :register_user, action: :register_with_password
-    define :sign_in, action: :sign_in_with_password
-    define :sign_out, action: :sign_out
-    define :get_current_user, action: :get_current_user
-    define :change_password, action: :change_password
-    define :request_password_reset, action: :request_password_reset_token
-    define :reset_password, action: :reset_password_with_token
-    define :create_user, action: :create
-    define :update_user, action: :update
-    define :delete_user, action: :destroy
-    define :get_user, action: :read, get_by: [:id]
-    define :get_users, action: :read
-  end
-
-  end
+end

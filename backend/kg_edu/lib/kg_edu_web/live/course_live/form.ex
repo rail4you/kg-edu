@@ -14,7 +14,7 @@ defmodule KgEduWeb.CourseLive.Form do
         <fieldset>
           <.input field={@form[:title]} type="text" label="Title" />
           <.input field={@form[:description]} type="text" label="Description" />
-          <.input field={@form[:teacher_id]} type="select" label="Id" options={teacher_list()}/>
+          <.input field={@form[:teacher_id]} type="select" label="Id" options={teacher_list()} />
         </fieldset>
         <.button phx-disable-with="Saving..." variant="primary">Save Course</.button>
         <.button navigate={return_path(@return_to, @course)}>Cancel</.button>

@@ -5,12 +5,15 @@ defmodule KgEduWeb.FileUploadController do
 
   def upload(conn, %{"file" => file_upload, "course_id" => course_id} = params) do
     purpose = Map.get(params, "purpose", "course_file")
-    
-    case File.upload_file(%{
-      file: file_upload,
-      course_id: course_id,
-      purpose: purpose
-    }, actor: conn.assigns.current_user) do
+
+    case File.upload_file(
+           %{
+             file: file_upload,
+             course_id: course_id,
+             purpose: purpose
+           },
+           actor: conn.assigns.current_user
+         ) do
       {:ok, file} ->
         json(conn, %{
           success: true,
@@ -25,7 +28,7 @@ defmodule KgEduWeb.FileUploadController do
             inserted_at: file.inserted_at
           }
         })
-      
+
       {:error, changeset} ->
         conn
         |> put_status(:unprocessable_entity)

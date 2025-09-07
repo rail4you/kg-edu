@@ -9,7 +9,6 @@ defmodule KgEdu.Courses.File do
     repo KgEdu.Repo
   end
 
-
   code_interface do
     define :create_file, action: :create
     define :upload_file, action: :upload
@@ -65,7 +64,10 @@ defmodule KgEdu.Courses.File do
                 |> Ash.Changeset.change_attribute(:path, file_path)
                 |> Ash.Changeset.change_attribute(:size, file_size)
                 |> Ash.Changeset.change_attribute(:file_type, file_type)
-                |> Ash.Changeset.change_attribute(:purpose, Ash.Changeset.get_argument(changeset, :purpose))
+                |> Ash.Changeset.change_attribute(
+                  :purpose,
+                  Ash.Changeset.get_argument(changeset, :purpose)
+                )
 
               {:error, reason} ->
                 Ash.Changeset.add_error(changeset, "Failed to store file: #{inspect(reason)}")
@@ -73,7 +75,6 @@ defmodule KgEdu.Courses.File do
         end
       end
     end
-
 
     read :by_course do
       description "Get files for a specific course"

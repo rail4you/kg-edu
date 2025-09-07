@@ -7,6 +7,15 @@
 # General application configuration
 import Config
 
+config :ash_oban, pro?: false
+
+config :kg_edu, Oban,
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  queues: [default: 10, chat_responses: [limit: 10], conversations: [limit: 10]],
+  repo: KgEdu.Repo,
+  plugins: [{Oban.Plugins.Cron, []}]
+
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
   types: %{"application/vnd.api+json" => ["json"], "multipart/x.ash+form-data" => ["json"]}
@@ -68,7 +77,7 @@ config :spark,
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge]
+  ash_domains: [KgEdu.Chat, KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,

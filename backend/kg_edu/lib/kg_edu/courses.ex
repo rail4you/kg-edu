@@ -1,5 +1,7 @@
 defmodule KgEdu.Courses do
-  use Ash.Domain, otp_app: :kg_edu, extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshAi, AshPhoenix]
+  use Ash.Domain,
+    otp_app: :kg_edu,
+    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshAi, AshPhoenix]
 
   admin do
     show? true
@@ -26,11 +28,6 @@ defmodule KgEdu.Courses do
         delete :destroy, route: "/:id"
       end
     end
-  end
-
-  resources do
-    resource KgEdu.Courses.Course
-    resource KgEdu.Courses.CourseEnrollment
   end
 
   tools do
@@ -83,5 +80,10 @@ defmodule KgEdu.Courses do
     tool :list_enrollments_by_student, KgEdu.Courses.CourseEnrollment, :by_student do
       description "Get enrollments for a specific student"
     end
+  end
+
+  resources do
+    resource KgEdu.Courses.Course
+    resource KgEdu.Courses.CourseEnrollment
   end
 end

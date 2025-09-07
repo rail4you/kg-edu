@@ -55,7 +55,10 @@ defmodule KgEduWeb.CourseLive.Index do
      |> assign(:page_title, "Listing Courses")
      |> assign(:current_page, :courses)
      |> assign_new(:current_user, fn -> nil end)
-     |> stream(:courses, Ash.read!(KgEdu.Courses.Course, actor: socket.assigns[:current_user], load: [:teacher]))}
+     |> stream(
+       :courses,
+       Ash.read!(KgEdu.Courses.Course, actor: socket.assigns[:current_user], load: [:teacher])
+     )}
   end
 
   @impl true

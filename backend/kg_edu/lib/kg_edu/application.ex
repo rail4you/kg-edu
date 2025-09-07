@@ -11,6 +11,11 @@ defmodule KgEdu.Application do
       KgEduWeb.Telemetry,
       KgEdu.Repo,
       {DNSCluster, query: Application.get_env(:kg_edu, :dns_cluster_query) || :ignore},
+      {Oban,
+       AshOban.config(
+         Application.fetch_env!(:kg_edu, :ash_domains),
+         Application.fetch_env!(:kg_edu, Oban)
+       )},
       {Phoenix.PubSub, name: KgEdu.PubSub},
       # Start a worker by calling: KgEdu.Worker.start_link(arg)
       # {KgEdu.Worker, arg},

@@ -15,47 +15,14 @@ defmodule KgEdu.Knowledge.Resource do
     type "knowledge_resource"
   end
 
-  attributes do
-    uuid_primary_key :id
-
-    attribute :name, :string do
-      allow_nil? false
-      constraints min_length: 3, max_length: 100
-      public? true
-    end
-
-    attribute :description, :string do
-      allow_nil? true
-      constraints max_length: 1000
-      public? true
-    end
-
-    timestamps()
-  end
-
-  relationships do
-    belongs_to :course, KgEdu.Courses.Course do
-      public? true
-      allow_nil? false
-    end
-
-    belongs_to :created_by, KgEdu.Accounts.User do
-      public? true
-    end
-
-    has_many :outgoing_relations, KgEdu.Knowledge.Relation do
-      public? true
-      destination_attribute :source_knowledge_id
-    end
-
-    has_many :incoming_relations, KgEdu.Knowledge.Relation do
-      public? true
-      destination_attribute :target_knowledge_id
-    end
-  end
-
-  identities do
-    identity :unique_name_per_course, [:name, :course_id]
+  code_interface do
+    define :get_knowledge_resource, action: :by_id
+    define :list_knowledge_resources, action: :read
+    define :get_knowledge_resources_by_course, action: :by_course
+    define :search_knowledge_resources, action: :search
+    define :create_knowledge_resource, action: :create_knowledge_resource
+    define :update_knowledge_resource, action: :update_knowledge_resource
+    define :delete_knowledge_resource, action: :destroy
   end
 
   actions do
@@ -137,13 +104,46 @@ defmodule KgEdu.Knowledge.Resource do
     end
   end
 
-  code_interface do
-    define :get_knowledge_resource, action: :by_id
-    define :list_knowledge_resources, action: :read
-    define :get_knowledge_resources_by_course, action: :by_course
-    define :search_knowledge_resources, action: :search
-    define :create_knowledge_resource, action: :create_knowledge_resource
-    define :update_knowledge_resource, action: :update_knowledge_resource
-    define :delete_knowledge_resource, action: :destroy
+  attributes do
+    uuid_primary_key :id
+
+    attribute :name, :string do
+      allow_nil? false
+      constraints min_length: 3, max_length: 100
+      public? true
+    end
+
+    attribute :description, :string do
+      allow_nil? true
+      constraints max_length: 1000
+      public? true
+    end
+
+    timestamps()
+  end
+
+  relationships do
+    belongs_to :course, KgEdu.Courses.Course do
+      public? true
+      allow_nil? false
+    end
+
+    belongs_to :created_by, KgEdu.Accounts.User do
+      public? true
+    end
+
+    has_many :outgoing_relations, KgEdu.Knowledge.Relation do
+      public? true
+      destination_attribute :source_knowledge_id
+    end
+
+    has_many :incoming_relations, KgEdu.Knowledge.Relation do
+      public? true
+      destination_attribute :target_knowledge_id
+    end
+  end
+
+  identities do
+    identity :unique_name_per_course, [:name, :course_id]
   end
 end

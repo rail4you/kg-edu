@@ -15,6 +15,16 @@ defmodule KgEdu.Courses.Course do
     type "course"
   end
 
+  code_interface do
+    define :create_course, action: :create
+    define :update_course, action: :update
+    define :delete_course, action: :destroy
+    define :get_course, action: :read, get_by: [:id]
+    define :list_courses, action: :read
+    define :list_courses_by_teacher, action: :by_teacher
+    define :list_courses_by_student, action: :by_student
+  end
+
   actions do
     defaults [:read, :destroy]
 
@@ -28,18 +38,53 @@ defmodule KgEdu.Courses.Course do
 
     read :by_teacher do
       description "Get courses taught by a specific teacher"
+
       argument :teacher_id, :uuid do
         allow_nil? false
       end
+
       filter expr(teacher_id == ^arg(:teacher_id))
     end
 
     read :by_student do
       description "Get courses assigned to a specific student"
+
       argument :member_id, :uuid do
         allow_nil? false
       end
+
       filter expr(course_enrollments.member_id == ^arg(:member_id))
+    end
+  end
+
+  policies do
+    #   # Teachers can CRUD their own courses
+    #   policy [action(:read), action(:create), action(:update), action(:destroy)] do
+    #     description "Teachers can manage their own courses"
+    #     authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
+    #   end
+
+    #   # Admin can CRUD all courses
+    #   policy [action(:read), action(:create), action(:update), action(:destroy)] do
+    #     description "Admin can manage all courses"
+    #     authorize_if expr(actor.role == :admin)
+    #   end
+
+    #   # Students can read courses they're enrolled in
+    #   policy action(:read) do
+    #     description "Students can read enrolled courses"
+    #     authorize_if expr(actor.role == :user and exists(course_enrollments, member_id == ^actor(:id)))
+    #   end
+
+    #   # Students can read any course (but not modify)
+    #   policy action(:read) do
+    #     description "Students can read any course"
+    #     authorize_if expr(actor.role == :user)
+    #   end
+
+    #   # Default policy - forbid everything else
+    policy always() do
+      authorize_if always()
     end
   end
 
@@ -75,50 +120,8 @@ defmodule KgEdu.Courses.Course do
       destination_attribute :course_id
     end
 
-
     has_many :knowledge_resources, KgEdu.Knowledge.Resource do
       destination_attribute :course_id
     end
-  end
-
-  policies do
-  #   # Teachers can CRUD their own courses
-  #   policy [action(:read), action(:create), action(:update), action(:destroy)] do
-  #     description "Teachers can manage their own courses"
-  #     authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
-  #   end
-
-  #   # Admin can CRUD all courses
-  #   policy [action(:read), action(:create), action(:update), action(:destroy)] do
-  #     description "Admin can manage all courses"
-  #     authorize_if expr(actor.role == :admin)
-  #   end
-
-  #   # Students can read courses they're enrolled in
-  #   policy action(:read) do
-  #     description "Students can read enrolled courses"
-  #     authorize_if expr(actor.role == :user and exists(course_enrollments, member_id == ^actor(:id)))
-  #   end
-
-  #   # Students can read any course (but not modify)
-  #   policy action(:read) do
-  #     description "Students can read any course"
-  #     authorize_if expr(actor.role == :user)
-  #   end
-
-  #   # Default policy - forbid everything else
-    policy always() do
-      authorize_if always()
-    end
-  end
-
-  code_interface do
-    define :create_course, action: :create
-    define :update_course, action: :update
-    define :delete_course, action: :destroy
-    define :get_course, action: :read, get_by: [:id]
-    define :list_courses, action: :read
-    define :list_courses_by_teacher, action: :by_teacher
-    define :list_courses_by_student, action: :by_student
   end
 end

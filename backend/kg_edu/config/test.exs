@@ -1,4 +1,5 @@
 import Config
+config :kg_edu, Oban, testing: :manual
 config :kg_edu, token_signing_secret: "VzGUxFFeCE4u51FSV2zEpCAR/tYXGuHo"
 config :bcrypt_elixir, log_rounds: 1
 config :ash, policies: [show_policy_breakdowns?: true]

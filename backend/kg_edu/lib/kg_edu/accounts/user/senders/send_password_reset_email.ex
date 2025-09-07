@@ -16,7 +16,10 @@ defmodule KgEdu.Accounts.User.Senders.SendPasswordResetEmail do
 
     case user.email do
       nil ->
-        Logger.info("Password reset requested for member_id: #{user.member_id}, but no email address available")
+        Logger.info(
+          "Password reset requested for member_id: #{user.member_id}, but no email address available"
+        )
+
         :ok
 
       email ->

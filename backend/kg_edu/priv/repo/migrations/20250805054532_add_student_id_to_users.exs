@@ -15,14 +15,15 @@ defmodule KgEdu.Repo.Migrations.AddStudentIdToUsers do
 
     # Update existing records to have a temporary student_id based on email
     execute """
-    UPDATE users 
-    SET student_id = 'temp_' || REPLACE(email, '@', '_') 
-    WHERE student_id IS NULL
-    """, """
-    UPDATE users 
-    SET student_id = NULL 
-    WHERE student_id LIKE 'temp_%'
-    """
+            UPDATE users 
+            SET student_id = 'temp_' || REPLACE(email, '@', '_') 
+            WHERE student_id IS NULL
+            """,
+            """
+            UPDATE users 
+            SET student_id = NULL 
+            WHERE student_id LIKE 'temp_%'
+            """
 
     # Drop the old unique constraint
     drop_if_exists unique_index(:users, [:email], name: "users_unique_email_index")

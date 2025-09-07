@@ -28,10 +28,11 @@ defmodule KgEdu.FileUpload do
       filename: Path.basename(path),
       content_type: MIME.from_path(path)
     }
-    
+
     case store({upload, scope}) do
       {:ok, filename} ->
         {:ok, filename}
+
       {:error, reason} ->
         {:error, reason}
     end
