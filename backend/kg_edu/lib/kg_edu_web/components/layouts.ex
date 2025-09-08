@@ -31,10 +31,12 @@ defmodule KgEduWeb.Layouts do
 
   defp menu() do
     [
+      %{name: "Chat", path: "chat", icon: "hero-chat-bubble-left-right", page: :chat},
       %{name: "Courses", path: "courses", icon: "hero-home", page: :courses},
       %{name: "Files", path: "files", icon: "hero-folder", page: :files},
       %{name: "Users", path: "users", icon: "hero-users", page: :users},
-      %{name: "Resources", path: "resources", icon: "hero-book-open", page: :resources}
+      %{name: "Resources", path: "resources", icon: "hero-book-open", page: :resources},
+      %{name: "Exercises", path: "exercises", icon: "hero-pencil-square", page: :exercises}
     ]
   end
 

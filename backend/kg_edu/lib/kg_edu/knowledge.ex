@@ -23,11 +23,21 @@ defmodule KgEdu.Knowledge do
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
       end
+      # Exercise endpoints
+      base_route "/exercises", KgEdu.Knowledge.Exercise do
+        get :read, route: "/"
+        index :by_knowledge, route: "/knowledge/:knowledge_resource_id"
+        index :by_course, route: "/course/:course_id"
+        post :create, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
     end
   end
 
   resources do
     resource KgEdu.Knowledge.Resource
     resource KgEdu.Knowledge.Relation
+    resource KgEdu.Knowledge.Exercise
   end
 end
