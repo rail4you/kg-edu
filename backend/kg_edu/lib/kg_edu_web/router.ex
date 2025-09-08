@@ -57,6 +57,12 @@ defmodule KgEduWeb.Router do
       # Files CRUD
 
       # Knowledge Resources CRUD
+      live "/resources", ResourceLive.Index, :index
+      live "/resources/new", ResourceLive.Form, :new
+      live "/resources/:id/edit", ResourceLive.Form, :edit
+
+      live "/resources/:id", ResourceLive.Show, :show
+      live "/resources/:id/show/edit", ResourceLive.Show, :edit
     end
   end
 

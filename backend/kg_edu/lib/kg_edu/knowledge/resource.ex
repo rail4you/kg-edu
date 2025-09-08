@@ -20,13 +20,13 @@ defmodule KgEdu.Knowledge.Resource do
     define :list_knowledge_resources, action: :read
     define :get_knowledge_resources_by_course, action: :by_course
     define :search_knowledge_resources, action: :search
-    define :create_knowledge_resource, action: :create_knowledge_resource
+    define :create_knowledge_resource, action: :create
     define :update_knowledge_resource, action: :update_knowledge_resource
     define :delete_knowledge_resource, action: :destroy
   end
 
   actions do
-    defaults [:read, :create, :update, :destroy]
+    defaults [:read, :update, :destroy]
 
     read :by_id do
       description "Get a knowledge resource by ID"
@@ -47,11 +47,11 @@ defmodule KgEdu.Knowledge.Resource do
       filter expr(contains(name, ^arg(:query)))
     end
 
-    create :create_knowledge_resource do
+    create :create do
       description "Create a new knowledge resource"
       accept [:name, :description, :course_id]
 
-      change relate_actor(:created_by)
+      # change relate_actor(:created_by)
     end
 
     update :update_knowledge_resource do
@@ -61,47 +61,52 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   policies do
-    bypass AshAuthentication.Checks.AshAuthenticationInteraction do
-      authorize_if always()
-    end
+    # policy always() do
+    #   authorize_if always()
+    # end
+    # bypass AshAuthentication.Checks.AshAuthenticationInteraction do
+    #   authorize_if always()
+    # end
+
+
 
     # All authenticated users can read knowledge resources
-    policy [action(:read), action(:by_id), action(:search)] do
+    policy action_type([:read, :create, :update]) do
       description "All authenticated users can read knowledge resources"
       authorize_if actor_present()
     end
 
-    # Admin can create, update, and delete any knowledge resource
-    policy [action(:create), action(:update), action(:destroy)] do
-      description "Admin can manage all knowledge resources"
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
+    # # Admin can create, update, and delete any knowledge resource
+    # policy [action(:create), action(:update), action(:destroy)] do
+    #   description "Admin can manage all knowledge resources"
+    #   authorize_if actor_attribute_equals(:role, :admin)
+    # end
 
-    # Teacher can create knowledge resources in courses they teach
-    policy action(:create) do
-      description "Teachers can create knowledge resources in courses they teach"
-      authorize_if actor_attribute_equals(:role, :teacher)
-      # TODO: Add course enrollment check when actor/arg references are resolved
-      authorize_if always()
-    end
+    # # Teacher can create knowledge resources in courses they teach
+    # policy action(:create) do
+    #   description "Teachers can create knowledge resources in courses they teach"
+    #   authorize_if actor_attribute_equals(:role, :teacher)
+    #   # TODO: Add course enrollment check when actor/arg references are resolved
+    #   authorize_if always()
+    # end
 
-    # Teacher can update their own knowledge resources in courses they teach
-    policy action(:update) do
-      description "Teachers can update their own knowledge resources in courses they teach"
-      authorize_if actor_attribute_equals(:role, :teacher)
-      authorize_if expr(created_by_id == ^actor(:id))
-      # TODO: Add course enrollment check when context references are resolved
-      authorize_if always()
-    end
+    # # Teacher can update their own knowledge resources in courses they teach
+    # policy action(:update) do
+    #   description "Teachers can update their own knowledge resources in courses they teach"
+    #   authorize_if actor_attribute_equals(:role, :teacher)
+    #   authorize_if expr(created_by_id == ^actor(:id))
+    #   # TODO: Add course enrollment check when context references are resolved
+    #   authorize_if always()
+    # end
 
-    # Teacher can delete their own knowledge resources in courses they teach
-    policy action(:destroy) do
-      description "Teachers can delete their own knowledge resources in courses they teach"
-      authorize_if actor_attribute_equals(:role, :teacher)
-      authorize_if expr(created_by_id == ^actor(:id))
-      # TODO: Add course enrollment check when context references are resolved
-      authorize_if always()
-    end
+    # # Teacher can delete their own knowledge resources in courses they teach
+    # policy action(:destroy) do
+    #   description "Teachers can delete their own knowledge resources in courses they teach"
+    #   authorize_if actor_attribute_equals(:role, :teacher)
+    #   authorize_if expr(created_by_id == ^actor(:id))
+    #   # TODO: Add course enrollment check when context references are resolved
+    #   authorize_if always()
+    # end
   end
 
   attributes do
