@@ -1,5 +1,6 @@
 defmodule KgEduWeb.UserLive.Index do
   use KgEduWeb, :live_view
+  on_mount {KgEduWeb.LiveUserAuth, :live_user_required}
 
   @impl true
   def render(assigns) do
@@ -14,36 +15,30 @@ defmodule KgEduWeb.UserLive.Index do
         </:actions>
       </.header>
 
-      <.table
-        id="users"
-        rows={@streams.users}
-        row_click={fn {_id, user} -> JS.navigate(~p"/users/#{user}") end}
-      >
-        <:col :let={{_id, user}} label="Id">{user.id}</:col>
-
-        <:col :let={{_id, user}} label="Student">{user.member_id}</:col>
-
-        <:col :let={{_id, user}} label="Email">{user.email}</:col>
-
-        <:col :let={{_id, user}} label="Role">{user.role}</:col>
-
-        <:action :let={{_id, user}}>
-          <div class="sr-only">
-            <.link navigate={~p"/users/#{user}"}>Show</.link>
+      <Cinder.Table.table resource={KgEdu.Accounts.User} actor={@current_user}>
+        <:col :let={user} field="member_id" filter sort>{user.member_id}</:col>
+        <:col :let={user} field="name" filter sort>{user.name}</:col>
+        <:col :let={user} field="email" filter>{user.email}</:col>
+        <:col :let={user} field="role" filter={:select} sort>{user.role}</:col>
+        <:col :let={user} label="Actions">
+          <div class="flex gap-1">
+            <.link navigate={~p"/users/#{user}"} class="btn btn-sm btn-ghost" title="View">
+              <.icon name="hero-eye" />
+            </.link>
+            <.link navigate={~p"/users/#{user}/edit"} class="btn btn-sm btn-ghost" title="Edit">
+              <.icon name="hero-pencil" />
+            </.link>
+            <.link
+              phx-click={JS.push("delete", value: %{id: user.id})}
+              data-confirm="Are you sure?"
+              class="btn btn-sm btn-ghost text-error"
+              title="Delete"
+            >
+              <.icon name="hero-trash" />
+            </.link>
           </div>
-
-          <.link navigate={~p"/users/#{user}/edit"}>Edit</.link>
-        </:action>
-
-        <:action :let={{id, user}}>
-          <.link
-            phx-click={JS.push("delete", value: %{id: user.id}) |> hide("##{id}")}
-            data-confirm="Are you sure?"
-          >
-            Delete
-          </.link>
-        </:action>
-      </.table>
+        </:col>
+      </Cinder.Table.table>
     </Layouts.app>
     """
   end

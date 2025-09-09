@@ -1,5 +1,6 @@
 [
   import_deps: [
+    :cinder,
     :ash_oban,
     :oban,
     :ash_ai,
