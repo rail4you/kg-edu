@@ -85,5 +85,6 @@ defmodule KgEdu.Courses do
   resources do
     resource KgEdu.Courses.Course
     resource KgEdu.Courses.CourseEnrollment
+    resource KgEdu.Courses.File
   end
 end

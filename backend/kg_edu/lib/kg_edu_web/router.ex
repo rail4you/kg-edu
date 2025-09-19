@@ -63,6 +63,23 @@ defmodule KgEduWeb.Router do
 
       live "/resources/:id", ResourceLive.Show, :show
       live "/resources/:id/show/edit", ResourceLive.Show, :edit
+
+      # Exercise CRUD
+      live "/exercises", ExerciseLive.Index, :index
+      live "/exercises/new", ExerciseLive.Form, :new
+      live "/exercises/:id/edit", ExerciseLive.Form, :edit
+
+      live "/exercises/:id", ExerciseLive.Show, :show
+      live "/exercises/:id/show/edit", ExerciseLive.Show, :edit
+
+      # File
+      live "/files", FileLive.Index, :index
+      live "/files/new", FileLive.Form, :new
+      live "/files/:id/edit", FileLive.Form, :edit
+
+      live "/files/:id", FileLive.Show, :show
+      live "/files/:id/show/edit", FileLive.Show, :edit
+
     end
   end
 

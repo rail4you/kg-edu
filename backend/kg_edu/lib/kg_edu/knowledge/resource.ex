@@ -61,9 +61,9 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   policies do
-    # policy always() do
-    #   authorize_if always()
-    # end
+    policy always() do
+      authorize_if always()
+    end
     # bypass AshAuthentication.Checks.AshAuthenticationInteraction do
     #   authorize_if always()
     # end
@@ -71,10 +71,10 @@ defmodule KgEdu.Knowledge.Resource do
 
 
     # All authenticated users can read knowledge resources
-    policy action_type([:read, :create, :update]) do
-      description "All authenticated users can read knowledge resources"
-      authorize_if actor_present()
-    end
+    # policy action_type([:read, :create, :update]) do
+    #   description "All authenticated users can read knowledge resources"
+    #   authorize_if actor_present()
+    # end
 
     # # Admin can create, update, and delete any knowledge resource
     # policy [action(:create), action(:update), action(:destroy)] do

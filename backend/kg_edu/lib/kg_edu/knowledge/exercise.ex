@@ -50,19 +50,24 @@ defmodule KgEdu.Knowledge.Exercise do
     create :create do
       description "Create a new exercise"
       accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :course_id]
+      change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
     update :update_exercise do
       description "Update an exercise"
       accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id]
+      change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
   end
 
   policies do
-    policy action_type([:read, :create, :update]) do
-      description "All authenticated users can read exercises"
-      authorize_if actor_present()
+    policy always() do
+      authorize_if always()
     end
+    # policy action_type([:read, :create, :update]) do
+    #   description "All authenticated users can read exercises"
+    #   authorize_if actor_present()
+    # end
   end
 
   attributes do
@@ -94,7 +99,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
     attribute :options, :map do
       allow_nil? true
-      description "Options for multiple choice questions. Example: %{\"A\" => \"Option 1\", \"B\" => \"Option 2\", \"C\" => \"Option 3\", \"D\" => \"Option 4\"}"
+      description "Options for multiple choice questions. Stored as map with A, B, C, D keys and selected values."
       public? true
     end
 

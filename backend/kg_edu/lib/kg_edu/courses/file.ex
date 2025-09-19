@@ -1,6 +1,7 @@
 defmodule KgEdu.Courses.File do
   use Ash.Resource,
     otp_app: :kg_edu,
+    domain: KgEdu.Courses,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
@@ -48,30 +49,24 @@ defmodule KgEdu.Courses.File do
             Ash.Changeset.add_error(changeset, "File is required")
 
           file_upload ->
+            dbg(file_upload)
             # Generate file metadata
             filename = file_upload.filename
-            file_size = file_upload |> File.stat!() |> Map.get(:size)
+            file_size = File.stat!(file_upload.path) |> Map.get(:size)
             file_type = MIME.from_path(filename)
 
-            # Store file using Waffle
-            case KgEdu.FileUpload.store_file({file_upload.path, changeset}) do
-              {:ok, stored_filename} ->
-                # Get the file path from Waffle
-                file_path = KgEdu.FileUpload.url({stored_filename, changeset}, :original)
+            changeset
+            |> Ash.Changeset.change_attribute(:filename, filename)
+            |> Ash.Changeset.change_attribute(:path, filename)
+            |> Ash.Changeset.change_attribute(:size, file_size)
+            |> Ash.Changeset.change_attribute(:file_type, file_type)
+            |> Ash.Changeset.change_attribute(
+              :purpose,
+              Ash.Changeset.get_argument(changeset, :purpose)
+            )
 
-                changeset
-                |> Ash.Changeset.change_attribute(:filename, filename)
-                |> Ash.Changeset.change_attribute(:path, file_path)
-                |> Ash.Changeset.change_attribute(:size, file_size)
-                |> Ash.Changeset.change_attribute(:file_type, file_type)
-                |> Ash.Changeset.change_attribute(
-                  :purpose,
-                  Ash.Changeset.get_argument(changeset, :purpose)
-                )
-
-              {:error, reason} ->
-                Ash.Changeset.add_error(changeset, "Failed to store file: #{inspect(reason)}")
-            end
+          {:error, reason} ->
+            Ash.Changeset.add_error(changeset, "Failed to store file: #{inspect(reason)}")
         end
       end
     end
@@ -99,26 +94,26 @@ defmodule KgEdu.Courses.File do
 
   policies do
     # Teachers can manage files for their courses
-    policy [action(:read), action(:create), action(:update), action(:destroy)] do
-      description "Teachers can manage files for their courses"
-      authorize_if expr(course.teacher_id == ^actor(:id) and actor.role == :teacher)
-    end
+    # policy [action(:read), action(:create), action(:update), action(:destroy)] do
+    #   description "Teachers can manage files for their courses"
+    #   authorize_if expr(course.teacher_id == ^actor(:id) and actor.role == :teacher)
+    # end
 
-    # Admin can manage all files
-    policy [action(:upload), action(:read), action(:create), action(:update), action(:destroy)] do
-      description "Admin can manage all files"
-      authorize_if expr(actor.role == :admin)
-    end
+    # # Admin can manage all files
+    # policy [action(:upload), action(:read), action(:create), action(:update), action(:destroy)] do
+    #   description "Admin can manage all files"
+    #   authorize_if expr(actor.role == :admin)
+    # end
 
-    # Students can read files for courses they're enrolled in
-    policy action(:read) do
-      description "Students can read files for enrolled courses"
+    # # Students can read files for courses they're enrolled in
+    # policy action(:read) do
+    #   description "Students can read files for enrolled courses"
 
-      authorize_if expr(
-                     actor.role == :user and
-                       exists(course.course_enrollments, member_id == ^actor(:id))
-                   )
-    end
+    #   authorize_if expr(
+    #                  actor.role == :user and
+    #                    exists(course.course_enrollments, member_id == ^actor(:id))
+    #                )
+    # end
 
     # Default policy - forbid everything else
     policy always() do

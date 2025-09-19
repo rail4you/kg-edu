@@ -5,7 +5,7 @@ defmodule KgEdu.FileUpload do
 
   # Whitelist file extensions:
   def validate({file, _}) do
-    ~w(.jpg .jpeg .gif .png .pdf .doc .docx .txt .zip .rar)
+    ~w(.jpg .jpeg .gif .png .pdf .doc .docx .txt .zip .rar .mp4 .mov .avi .mp3 .wav .webm .webp)
     |> Enum.member?(String.downcase(Path.extname(file.file_name)))
   end
 
@@ -23,10 +23,9 @@ defmodule KgEdu.FileUpload do
   # Store file using Waffle
   def store_file({path, scope}) do
     # Create a temporary Plug.Upload struct
-    upload = %Plug.Upload{
+    upload = %Waffle.File{
       path: path,
-      filename: Path.basename(path),
-      content_type: MIME.from_path(path)
+      file_name: Path.basename(path),
     }
 
     case store({upload, scope}) do

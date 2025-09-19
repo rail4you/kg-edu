@@ -86,7 +86,7 @@ defmodule KgEduWeb do
       import Phoenix.HTML
       # Core UI components
       use DaisyUIComponents, core_components: true
-      # import KgEduWeb.CoreComponents
+      alias KgEduWeb.CoreComponents
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
