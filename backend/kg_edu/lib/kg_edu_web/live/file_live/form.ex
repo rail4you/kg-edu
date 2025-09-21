@@ -62,6 +62,9 @@ defmodule KgEduWeb.FileLive.Form do
           </select>
         </div>
 
+          <.button phx-disable-with="Saving..." variant="primary">Save File</.button>
+        <.button navigate={return_path(@return_to, @file)}>Cancel</.button>
+
         <!-- Existing File Preview (for editing) -->
         <%= if @file && @file.path do %>
           <div class="mb-6">
@@ -93,8 +96,7 @@ defmodule KgEduWeb.FileLive.Form do
           </div>
         <% end %>
 
-        <.button phx-disable-with="Saving..." variant="primary">Save File</.button>
-        <.button navigate={return_path(@return_to, @file)}>Cancel</.button>
+
       </.form>
     </Layouts.app>
     """
@@ -137,6 +139,7 @@ defmodule KgEduWeb.FileLive.Form do
   end
 
   def handle_event("save", %{"file" => file_params}, socket) do
+    IO.puts("Uploaded file path:")
     uploaded_files =
       consume_uploaded_entries(socket, :file, fn %{path: path}, entry ->
         # Create Plug.Upload struct from the uploaded file
@@ -187,7 +190,7 @@ defmodule KgEduWeb.FileLive.Form do
 
             socket =
               socket
-              |> put_flash(:info, "File #{socket.assigns.form.source.type}d successfully")
+              |> put_flash(:info, "File #{socket.assigns.form.source.type} successfully")
               |> push_navigate(to: return_path(socket.assigns.return_to, file))
 
             {:noreply, socket}

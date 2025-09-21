@@ -35,6 +35,7 @@ defmodule KgEdu.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ash_typescript, "~> 0.3"},
       {:cinder, "~> 0.6"},
       {:mdex, "~> 0.7"},
       {:ash_oban, "~> 0.4"},
@@ -82,7 +83,8 @@ defmodule KgEdu.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:cors_plug, "~> 3.0"},
-      {:daisy_ui_components, "~> 0.9"}
+      {:daisy_ui_components, "~> 0.9"},
+      {:live_debugger, "~> 0.4.0", only: :dev}
     ]
   end
 

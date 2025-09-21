@@ -129,6 +129,16 @@ defmodule KgEdu.Courses.File do
       public? true
     end
 
+    attribute :asset_id, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :playback_id, :string do
+      allow_nil? true
+      public? true
+    end
+
     attribute :path, :string do
       allow_nil? false
       public? true

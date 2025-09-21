@@ -1,5 +1,6 @@
 [
   import_deps: [
+    :ash_typescript,
     :cinder,
     :ash_oban,
     :oban,
