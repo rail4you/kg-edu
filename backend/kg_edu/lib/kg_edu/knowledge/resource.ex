@@ -17,8 +17,9 @@ defmodule KgEdu.Knowledge.Resource do
 
   code_interface do
     define :get_knowledge_resource, action: :by_id
-    define :list_knowledge_resources, action: :read
+    define :list_knowledges, action: :read
     define :get_knowledge_resources_by_course, action: :by_course
+    define :get_subjects, action: :get_subjects
     define :search_knowledge_resources, action: :search
     define :create_knowledge_resource, action: :create
     define :update_knowledge_resource, action: :update_knowledge_resource
@@ -27,6 +28,11 @@ defmodule KgEdu.Knowledge.Resource do
 
   actions do
     defaults [:read, :update, :destroy]
+
+    read :get_subjects do
+
+      prepare build(select: [:subject], distinct: [:subject])
+    end
 
     read :by_id do
       description "Get a knowledge resource by ID"
@@ -109,8 +115,26 @@ defmodule KgEdu.Knowledge.Resource do
     # end
   end
 
+
   attributes do
     uuid_primary_key :id
+
+    attribute :subject, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :unit, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :knowlege_type, :atom do
+      allow_nil? false
+      constraints [one_of: [:hard, :important, :normal]]
+      default :normal
+      public? true
+    end
 
     attribute :name, :string do
       allow_nil? false
@@ -145,6 +169,11 @@ defmodule KgEdu.Knowledge.Resource do
     has_many :incoming_relations, KgEdu.Knowledge.Relation do
       public? true
       destination_attribute :target_knowledge_id
+    end
+
+    has_many :files, KgEdu.Courses.File do
+      public? true
+      destination_attribute :knowledge_resource_id
     end
   end
 

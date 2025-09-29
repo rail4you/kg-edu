@@ -36,7 +36,9 @@ defmodule KgEdu.Knowledge do
   end
 
   resources do
-    resource KgEdu.Knowledge.Resource
+    resource KgEdu.Knowledge.Resource do
+      define :get_subjects, action: :get_subjects
+    end
     resource KgEdu.Knowledge.Relation
     resource KgEdu.Knowledge.Exercise
   end

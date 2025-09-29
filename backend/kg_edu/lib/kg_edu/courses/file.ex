@@ -19,6 +19,7 @@ defmodule KgEdu.Courses.File do
     define :list_files, action: :read
     define :list_files_by_course, action: :by_course
     define :list_files_by_purpose, action: :by_purpose
+    define :list_files_by_knowledge_resource, action: :by_knowledge_resource
   end
 
   actions do
@@ -41,7 +42,12 @@ defmodule KgEdu.Courses.File do
         default "course_file"
       end
 
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? true
+      end
+
       change manage_relationship(:course_id, :course, type: :append_and_remove)
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
 
       change fn changeset, _context ->
         case Ash.Changeset.get_argument(changeset, :file) do
@@ -89,6 +95,16 @@ defmodule KgEdu.Courses.File do
       end
 
       filter expr(purpose == ^arg(:purpose))
+    end
+
+    read :by_knowledge_resource do
+      description "Get files for a specific knowledge resource"
+
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
     end
   end
 
@@ -167,6 +183,11 @@ defmodule KgEdu.Courses.File do
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
       allow_nil? false
+    end
+
+    belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
+      allow_nil? true
+      public? true
     end
   end
 end
