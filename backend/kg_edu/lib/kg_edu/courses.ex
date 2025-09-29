@@ -1,10 +1,18 @@
 defmodule KgEdu.Courses do
   use Ash.Domain,
     otp_app: :kg_edu,
-    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshAi, AshPhoenix]
+    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshAi, AshPhoenix, AshTypescript.Rpc]
 
   admin do
     show? true
+  end
+
+  typescript_rpc do
+    resource KgEdu.Courses.Course do
+      rpc_action :list_courses, :read
+      rpc_action :create_course, :create
+      rpc_action :get_course, :get
+    end
   end
 
   json_api do

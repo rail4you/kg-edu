@@ -4,7 +4,7 @@ defmodule KgEdu.Courses.Course do
     domain: KgEdu.Courses,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Rpc]
 
   postgres do
     table "courses"
@@ -14,6 +14,8 @@ defmodule KgEdu.Courses.Course do
   json_api do
     type "course"
   end
+
+
 
   code_interface do
     define :create_course, action: :create
@@ -27,6 +29,12 @@ defmodule KgEdu.Courses.Course do
 
   actions do
     defaults [:read, :destroy]
+
+
+    read :get do
+      description "Get a course by ID"
+      get? true
+    end
 
     create :create do
       accept [:title, :description, :teacher_id]
@@ -89,7 +97,9 @@ defmodule KgEdu.Courses.Course do
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key :id do
+      public? true
+    end
 
     attribute :title, :string do
       allow_nil? false
@@ -97,6 +107,11 @@ defmodule KgEdu.Courses.Course do
     end
 
     attribute :description, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :image_url, :string do
       allow_nil? true
       public? true
     end

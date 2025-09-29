@@ -81,9 +81,13 @@ defmodule KgEduWeb.Router do
       live "/files/:id/show/edit", FileLive.Show, :edit
     end
 
-    post "/rpc/run", AshTypescriptRpcController, :run
-    post "/rpc/validate", AshTypescriptRpcController, :validate
-    get "/ash-typescript", PageController, :index
+
+  end
+
+  scope "/rpc" do
+    pipe_through [:api]
+    post "/run", KgEduWeb.AshTypescriptRpcController, :run
+    post "/validate", KgEduWeb.AshTypescriptRpcController, :validate
   end
 
   scope "/api/json" do

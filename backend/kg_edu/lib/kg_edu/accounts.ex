@@ -1,9 +1,29 @@
 defmodule KgEdu.Accounts do
-  use Ash.Domain, otp_app: :kg_edu, extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix]
+  use Ash.Domain, otp_app: :kg_edu, extensions: [
+    AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix,
+  AshTypescript.Rpc]
 
   admin do
     show? true
   end
+
+  typescript_rpc do
+    resource KgEdu.Accounts.User do
+      rpc_action :sign_in, :sign_in_with_password
+      rpc_action :register, :register_with_password
+      rpc_action :reset_password, :reset_password_with_token
+      rpc_action :change_password, :change_password
+      rpc_action :get_current_user, :get_current_user
+      rpc_action :update_user, :update
+      rpc_action :delete_user, :destroy
+      rpc_action :get_user, :by_id
+      rpc_action :list_users, :get_users
+      rpc_action :sign_out, :sign_out
+    end
+  end
+
+
+
 
   json_api do
     routes do
