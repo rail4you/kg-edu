@@ -2,26 +2,16 @@
 
 This is a Phoenix application built with the Ash Framework for educational knowledge graph management.
 
-## Project Structure
+## Project Structure	
 
 - **Backend** (`backend/kg_edu/`) - Phoenix + Ash application
   - Ash Framework for domain modeling
   - Phoenix for web interface and APIs
   - PostgreSQL database
   - Authentication with AshAuthentication
-  - JSON:API endpoints with AshJsonApi
-
-- **Agent Service** (`agent/`) - AI Chat service
-  - Litestar web framework for REST API
-  - LangGraph for conversation flow management
-  - OpenAI API integration for AI responses
-  - Streaming chat support with Server-Sent Events
-  - Conversation history and user context management
-
-- **Frontend** (`frontend/kg-edu-ui/`) - Next.js application
+- **Frontend** (nextjs-ts) - Next.js application
   - React with TypeScript and Material-UI
   - Authentication integration with backend
-  - Real-time chat interface with streaming responses
 
 ## Development Setup
 
@@ -35,10 +25,13 @@ mix phx.server
 
 # Or start with IEx for interactive development
 iex -S mix phx.server
+
+cd nextjs-ts
+npm run dev
 ```
 
 Visit [localhost:4000](http://localhost:4000) to access the application.
-The agent service runs on [localhost:8000](http://localhost:8000).
+Nextjs app run localhost:8082
 
 ## Key Development Commands
 
@@ -81,7 +74,6 @@ This project includes comprehensive usage rules in the `.rules` file (`backend/k
 - **AshPostgres** - PostgreSQL data layer
 - **AshAuthentication** - User authentication
 - **AshPhoenix** - Phoenix integration
-- **AshJsonApi** - JSON:API endpoints
 - **Igniter** - Code generation and project patching
 - **Elixir/OTP** - Core language and platform patterns
 
@@ -144,48 +136,3 @@ For detailed information about any package used in this project, consult the `.r
 5. **Review** - Ensure compliance with Ash and Elixir best practices
 
 The `.rules` file is your primary reference for understanding how to work effectively with this Ash-based application.
-
-## Agent Service API
-
-The agent service provides AI chat functionality with the following endpoints:
-
-### Endpoints
-- `POST /chat` - Send chat message (supports streaming)
-- `GET /conversations/{conversation_id}` - Get conversation history
-- `GET /health` - Health check
-
-### Request Format (POST /chat)
-```json
-{
-  "message": "Hello, how are you?",
-  "user_id": "user123",
-  "conversation_id": "optional-conversation-id"
-}
-```
-
-### Response Format
-```json
-{
-  "message": "AI response",
-  "conversation_id": "conversation-id",
-  "timestamp": "2024-01-01T00:00:00Z",
-  "status": "success"
-}
-```
-
-### Streaming Support
-The agent supports streaming responses via Server-Sent Events (SSE). Set the `Accept` header to `text/event-stream` to enable streaming.
-
-## Chat Integration
-
-### Frontend Integration
-- User authentication tokens are passed to the agent service
-- The chat interface maintains conversation history
-- Real-time streaming provides immediate feedback
-- Material-UI components ensure consistent UI design
-
-### Authentication Flow
-1. User authenticates with Phoenix backend
-2. Frontend receives JWT token
-3. Token is used to identify user in agent service
-4. Chat requests include user ID for context management
