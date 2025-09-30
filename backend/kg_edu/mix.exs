@@ -37,7 +37,7 @@ defmodule KgEdu.MixProject do
     [
       {:ash_typescript, "~> 0.3"},
       {:cinder, "~> 0.6"},
-      {:mdex, "~> 0.7"},
+      # {:mdex, "~> 0.7"},
       {:ash_oban, "~> 0.4"},
       {:ash_ai, "~> 0.2"},
       {:usage_rules, "~> 0.1", only: [:dev]},

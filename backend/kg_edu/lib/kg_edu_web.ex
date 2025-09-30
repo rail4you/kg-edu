@@ -39,7 +39,7 @@ defmodule KgEduWeb do
   def controller do
     quote do
       use Phoenix.Controller, formats: [:html, :json]
-
+      
       use Gettext, backend: KgEduWeb.Gettext
 
       import Plug.Conn

@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: kg-edu-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kg_edu_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/kg_edu/priv/repo/seeds.exs:/docker-entrypoint-initdb.d/seeds.exs
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kg-edu-network
+
+  # Elixir Backend
+  backend:
+    build:
+      context: ./backend/kg_edu
+      dockerfile: Dockerfile
+    container_name: kg-edu-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@db:5432/kg_edu_dev
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - TOKEN_SIGNING_SECRET=${TOKEN_SIGNING_SECRET}
+      - PHX_HOST=localhost
+      - PORT=4000
+      - PHX_SERVER=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/kg_edu/priv/uploads:/app/priv/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - kg-edu-network
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./nextjs-ts
+      dockerfile: Dockerfile
+    container_name: kg-edu-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - kg-edu-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: kg-edu-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - kg-edu-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  kg-edu-network:
+    driver: bridge
