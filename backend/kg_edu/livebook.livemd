@@ -1,0 +1,64 @@
+# kg_edu
+
+## Section
+
+```elixir
+course_id ="62e390af-491b-4fe9-9a4e-35eeae2194b8"
+      KgEdu.Knowledge.Resource.create_knowledge_resource(%{
+        name: "Mathematics",
+        description: "Core mathematics concepts and skills",
+        subject: "Mathematics",
+        knowledge_type: :subject,
+        course_id: course_id,
+        importance_level: :important
+      })
+
+```
+
+```elixir
+KgEdu.KnowledgeExample.setup_example_data()
+```
+
+```elixir
+KgEdu.KnowledgeExample.list_all_subjects()
+KgEdu.KnowledgeExample.get_subject_hierarchy("32fb5606-9b10-4bd8-9d2f-2f503ba72467")
+```
+
+```elixir
+KgEdu.KnowledgeExample.list_full_course_hierarchy()
+```
+
+```elixir
+ReqLLM.put_key(:openai_api_key, "sk-3e910c05b96a49f9aa0ea064bef50ceb")
+ReqLLM.generate_text!("openai:gpt-4", "Hello")
+```
+
+```elixir
+model = "openai:gpt-4"
+schema = [
+  name: [type: :string, required: true],
+  age: [type: :pos_integer, required: true]
+]
+{:ok, response} = ReqLLM.generate_object(model, "Generate a person", schema)
+object = ReqLLM.Response.object(response)
+```
+
+```elixir
+alias ReqLLM.Message.ContentPart
+message = %ReqLLM.Message{
+  role: :user,
+  content: [
+    ContentPart.text("Analyze this image"),
+    ContentPart.image_url("https://www.gravatar.com/avatar/00000000000000000000000000000000?s=80&d=mp"),
+    # ContentPart.file(pdf_data, "report.pdf", "application/pdf"),
+    ContentPart.text("What insights do you see?")
+  ]
+ 
+}
+ ReqLLM.generate_text!(model, message)
+
+```
+
+```elixir
+
+```

@@ -31,6 +31,64 @@ export type KgEduCoursesCourseResourceSchema = {
 
 
 
+// KgEduKnowledgeResource Schema
+export type KgEduKnowledgeResourceResourceSchema = {
+  __type: "Resource";
+  __primitiveFields: "id" | "knowledgeType" | "subject" | "unit" | "importanceLevel" | "name" | "description" | "courseId" | "createdById" | "parentSubjectId" | "parentUnitId";
+  id: UUID;
+  knowledgeType: "subject" | "knowledge_unit" | "knowledge_cell";
+  subject: string | null;
+  unit: string | null;
+  importanceLevel: "hard" | "important" | "normal";
+  name: string;
+  description: string | null;
+  courseId: UUID;
+  createdById: UUID | null;
+  parentSubjectId: UUID | null;
+  parentUnitId: UUID | null;
+  course: { __type: "Relationship"; __resource: KgEduCoursesCourseResourceSchema; };
+  createdBy: { __type: "Relationship"; __resource: KgEduAccountsUserResourceSchema | null; };
+  parentSubject: { __type: "Relationship"; __resource: KgEduKnowledgeResourceResourceSchema | null; };
+  parentUnit: { __type: "Relationship"; __resource: KgEduKnowledgeResourceResourceSchema | null; };
+  childUnits: { __type: "Relationship"; __array: true; __resource: KgEduKnowledgeResourceResourceSchema; };
+  childCells: { __type: "Relationship"; __array: true; __resource: KgEduKnowledgeResourceResourceSchema; };
+  directCells: { __type: "Relationship"; __array: true; __resource: KgEduKnowledgeResourceResourceSchema; };
+  outgoingRelations: { __type: "Relationship"; __array: true; __resource: KgEduKnowledgeRelationResourceSchema; };
+  incomingRelations: { __type: "Relationship"; __array: true; __resource: KgEduKnowledgeRelationResourceSchema; };
+};
+
+
+
+// KgEduKnowledgeRelation Schema
+export type KgEduKnowledgeRelationResourceSchema = {
+  __type: "Resource";
+  __primitiveFields: "id" | "relationTypeId" | "sourceKnowledgeId" | "targetKnowledgeId" | "createdById";
+  id: UUID;
+  relationTypeId: UUID;
+  sourceKnowledgeId: UUID;
+  targetKnowledgeId: UUID;
+  createdById: UUID | null;
+  relationType: { __type: "Relationship"; __resource: KgEduKnowledgeRelationTypeResourceSchema; };
+  sourceKnowledge: { __type: "Relationship"; __resource: KgEduKnowledgeResourceResourceSchema; };
+  targetKnowledge: { __type: "Relationship"; __resource: KgEduKnowledgeResourceResourceSchema; };
+  createdBy: { __type: "Relationship"; __resource: KgEduAccountsUserResourceSchema | null; };
+};
+
+
+
+// KgEduKnowledgeRelationType Schema
+export type KgEduKnowledgeRelationTypeResourceSchema = {
+  __type: "Resource";
+  __primitiveFields: "id" | "name" | "displayName" | "description";
+  id: UUID;
+  name: string;
+  displayName: string;
+  description: string | null;
+  relations: { __type: "Relationship"; __array: true; __resource: KgEduKnowledgeRelationResourceSchema; };
+};
+
+
+
 
 
 
@@ -111,6 +169,175 @@ export type KgEduCoursesCourseFilterInput = {
   };
 
 
+
+};
+export type KgEduKnowledgeResourceFilterInput = {
+  and?: Array<KgEduKnowledgeResourceFilterInput>;
+  or?: Array<KgEduKnowledgeResourceFilterInput>;
+  not?: Array<KgEduKnowledgeResourceFilterInput>;
+
+  id?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  knowledgeType?: {
+    eq?: "subject" | "knowledge_unit" | "knowledge_cell";
+    notEq?: "subject" | "knowledge_unit" | "knowledge_cell";
+    in?: Array<"subject" | "knowledge_unit" | "knowledge_cell">;
+  };
+
+  subject?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  unit?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  importanceLevel?: {
+    eq?: "hard" | "important" | "normal";
+    notEq?: "hard" | "important" | "normal";
+    in?: Array<"hard" | "important" | "normal">;
+  };
+
+  name?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  description?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  courseId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  createdById?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  parentSubjectId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  parentUnitId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+
+  course?: KgEduCoursesCourseFilterInput;
+
+  createdBy?: KgEduAccountsUserFilterInput;
+
+  parentSubject?: KgEduKnowledgeResourceFilterInput;
+
+  parentUnit?: KgEduKnowledgeResourceFilterInput;
+
+  childUnits?: KgEduKnowledgeResourceFilterInput;
+
+  childCells?: KgEduKnowledgeResourceFilterInput;
+
+  directCells?: KgEduKnowledgeResourceFilterInput;
+
+  outgoingRelations?: KgEduKnowledgeRelationFilterInput;
+
+  incomingRelations?: KgEduKnowledgeRelationFilterInput;
+
+};
+export type KgEduKnowledgeRelationFilterInput = {
+  and?: Array<KgEduKnowledgeRelationFilterInput>;
+  or?: Array<KgEduKnowledgeRelationFilterInput>;
+  not?: Array<KgEduKnowledgeRelationFilterInput>;
+
+  id?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  relationTypeId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  sourceKnowledgeId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  targetKnowledgeId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  createdById?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+
+  relationType?: KgEduKnowledgeRelationTypeFilterInput;
+
+  sourceKnowledge?: KgEduKnowledgeResourceFilterInput;
+
+  targetKnowledge?: KgEduKnowledgeResourceFilterInput;
+
+  createdBy?: KgEduAccountsUserFilterInput;
+
+};
+export type KgEduKnowledgeRelationTypeFilterInput = {
+  and?: Array<KgEduKnowledgeRelationTypeFilterInput>;
+  or?: Array<KgEduKnowledgeRelationTypeFilterInput>;
+  not?: Array<KgEduKnowledgeRelationTypeFilterInput>;
+
+  id?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  name?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  displayName?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  description?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+
+  relations?: KgEduKnowledgeRelationFilterInput;
 
 };
 
@@ -408,6 +635,7 @@ export async function validateSignIn(
 
 export type RegisterInput = {
   memberId: string;
+  name?: string;
   password: string;
   passwordConfirmation: string;
   role?: "admin" | "user" | "teacher";
@@ -415,6 +643,7 @@ export type RegisterInput = {
 
 export type RegisterValidationErrors = {
   memberId?: string[];
+  name?: string[];
   password?: string[];
   passwordConfirmation?: string[];
   role?: string[];
@@ -1625,12 +1854,14 @@ export async function validateListCourses(
 export type CreateCourseInput = {
   title: string;
   description?: string | null;
+  imageUrl?: string | null;
   teacherId: UUID;
 };
 
 export type CreateCourseValidationErrors = {
   title?: string[];
   description?: string[];
+  imageUrl?: string[];
   teacherId?: string[];
 };
 
@@ -1748,6 +1979,113 @@ export async function validateCreateCourse(
 }
 
 
+
+export type DestroyCourseResult = | { success: true; data: {} }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function destroyCourse(
+  config: {
+  primaryKey: UUID;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<DestroyCourseResult> {
+  const payload = {
+    action: "destroy_course",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as DestroyCourseResult;
+}
+
+
+export type ValidateDestroyCourseResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateDestroyCourse(
+  config: {
+  primaryKey: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateDestroyCourseResult> {
+  const payload = {
+    action: "destroy_course",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateDestroyCourseResult;
+}
+
+
 export type GetCourseFields = UnifiedFieldSelection<KgEduCoursesCourseResourceSchema>[];
 
 type InferGetCourseResult<
@@ -1855,6 +2193,1703 @@ export async function validateGetCourse(
 
   const result = await response.json();
   return result as ValidateGetCourseResult;
+}
+
+
+export type ListSubjectsInput = {
+  courseId?: UUID;
+};
+
+export type ListSubjectsValidationErrors = {
+  courseId?: string[];
+};
+
+export type ListSubjectsFields = UnifiedFieldSelection<KgEduKnowledgeResourceResourceSchema>[];
+
+type InferListSubjectsResult<
+  Fields extends ListSubjectsFields,
+> = Array<InferResult<KgEduKnowledgeResourceResourceSchema, Fields>>;
+
+export type ListSubjectsResult<Fields extends ListSubjectsFields> = | { success: true; data: InferListSubjectsResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listSubjects<Fields extends ListSubjectsFields>(
+  config: {
+  input: ListSubjectsInput;
+  fields: Fields;
+  filter?: KgEduKnowledgeResourceFilterInput;
+  sort?: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ListSubjectsResult<Fields>> {
+  const payload = {
+    action: "list_subjects",
+    input: config.input,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ListSubjectsResult<Fields>;
+}
+
+
+export type ValidateListSubjectsResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListSubjects(
+  config: {
+  input: ListSubjectsInput;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListSubjectsResult> {
+  const payload = {
+    action: "list_subjects",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateListSubjectsResult;
+}
+
+
+export type CreateResourceInput = {
+  name: string;
+  description?: string | null;
+  courseId: UUID;
+  subject?: string | null;
+  unit?: string | null;
+  parentSubjectId?: UUID | null;
+  parentUnitId?: UUID | null;
+  importanceLevel?: "hard" | "important" | "normal";
+  knowledgeType?: "subject" | "knowledge_unit" | "knowledge_cell";
+};
+
+export type CreateResourceValidationErrors = {
+  name?: string[];
+  description?: string[];
+  courseId?: string[];
+  subject?: string[];
+  unit?: string[];
+  parentSubjectId?: string[];
+  parentUnitId?: string[];
+  importanceLevel?: string[];
+  knowledgeType?: string[];
+};
+
+export type CreateResourceFields = UnifiedFieldSelection<KgEduKnowledgeResourceResourceSchema>[];
+
+type InferCreateResourceResult<
+  Fields extends CreateResourceFields,
+> = InferResult<KgEduKnowledgeResourceResourceSchema, Fields>;
+
+export type CreateResourceResult<Fields extends CreateResourceFields> = | { success: true; data: InferCreateResourceResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function createResource<Fields extends CreateResourceFields>(
+  config: {
+  input: CreateResourceInput;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<CreateResourceResult<Fields>> {
+  const payload = {
+    action: "create_resource",
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as CreateResourceResult<Fields>;
+}
+
+
+export type ValidateCreateResourceResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateCreateResource(
+  config: {
+  input: CreateResourceInput;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateCreateResourceResult> {
+  const payload = {
+    action: "create_resource",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateCreateResourceResult;
+}
+
+
+export type GetSubjectWithUnitsInput = {
+  subjectId: UUID;
+};
+
+export type GetSubjectWithUnitsValidationErrors = {
+  subjectId?: string[];
+};
+
+export type GetSubjectWithUnitsFields = UnifiedFieldSelection<KgEduKnowledgeResourceResourceSchema>[];
+
+type InferGetSubjectWithUnitsResult<
+  Fields extends GetSubjectWithUnitsFields,
+> = InferResult<KgEduKnowledgeResourceResourceSchema, Fields> | null;
+
+export type GetSubjectWithUnitsResult<Fields extends GetSubjectWithUnitsFields> = | { success: true; data: InferGetSubjectWithUnitsResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getSubjectWithUnits<Fields extends GetSubjectWithUnitsFields>(
+  config: {
+  input: GetSubjectWithUnitsInput;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<GetSubjectWithUnitsResult<Fields>> {
+  const payload = {
+    action: "get_subject_with_units",
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as GetSubjectWithUnitsResult<Fields>;
+}
+
+
+export type ValidateGetSubjectWithUnitsResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetSubjectWithUnits(
+  config: {
+  input: GetSubjectWithUnitsInput;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetSubjectWithUnitsResult> {
+  const payload = {
+    action: "get_subject_with_units",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateGetSubjectWithUnitsResult;
+}
+
+
+export type GetFullHierarchyInput = {
+  courseId: UUID;
+};
+
+export type GetFullHierarchyValidationErrors = {
+  courseId?: string[];
+};
+
+export type GetFullHierarchyFields = UnifiedFieldSelection<KgEduKnowledgeResourceResourceSchema>[];
+
+type InferGetFullHierarchyResult<
+  Fields extends GetFullHierarchyFields,
+> = Array<InferResult<KgEduKnowledgeResourceResourceSchema, Fields>>;
+
+export type GetFullHierarchyResult<Fields extends GetFullHierarchyFields> = | { success: true; data: InferGetFullHierarchyResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getFullHierarchy<Fields extends GetFullHierarchyFields>(
+  config: {
+  input: GetFullHierarchyInput;
+  fields: Fields;
+  filter?: KgEduKnowledgeResourceFilterInput;
+  sort?: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<GetFullHierarchyResult<Fields>> {
+  const payload = {
+    action: "get_full_hierarchy",
+    input: config.input,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as GetFullHierarchyResult<Fields>;
+}
+
+
+export type ValidateGetFullHierarchyResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetFullHierarchy(
+  config: {
+  input: GetFullHierarchyInput;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetFullHierarchyResult> {
+  const payload = {
+    action: "get_full_hierarchy",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateGetFullHierarchyResult;
+}
+
+
+export type UpdateResourceFields = UnifiedFieldSelection<KgEduKnowledgeResourceResourceSchema>[];
+
+type InferUpdateResourceResult<
+  Fields extends UpdateResourceFields,
+> = InferResult<KgEduKnowledgeResourceResourceSchema, Fields>;
+
+export type UpdateResourceResult<Fields extends UpdateResourceFields> = | { success: true; data: InferUpdateResourceResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function updateResource<Fields extends UpdateResourceFields>(
+  config: {
+  primaryKey: UUID;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<UpdateResourceResult<Fields>> {
+  const payload = {
+    action: "update_resource",
+    primaryKey: config.primaryKey,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as UpdateResourceResult<Fields>;
+}
+
+
+export type ValidateUpdateResourceResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateUpdateResource(
+  config: {
+  primaryKey: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateUpdateResourceResult> {
+  const payload = {
+    action: "update_resource",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateUpdateResourceResult;
+}
+
+
+
+export type DestroyResourceResult = | { success: true; data: {} }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function destroyResource(
+  config: {
+  primaryKey: UUID;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<DestroyResourceResult> {
+  const payload = {
+    action: "destroy_resource",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as DestroyResourceResult;
+}
+
+
+export type ValidateDestroyResourceResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateDestroyResource(
+  config: {
+  primaryKey: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateDestroyResourceResult> {
+  const payload = {
+    action: "destroy_resource",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateDestroyResourceResult;
+}
+
+
+export type ListRelationsFields = UnifiedFieldSelection<KgEduKnowledgeRelationResourceSchema>[];
+
+type InferListRelationsResult<
+  Fields extends ListRelationsFields,
+> = {
+  results: Array<InferResult<KgEduKnowledgeRelationResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  count?: number | null;
+  type: "offset";
+} | {
+  results: Array<InferResult<KgEduKnowledgeRelationResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  after: string | null;
+  before: string | null;
+  previousPage: string;
+  nextPage: string;
+  count?: number | null;
+  type: "keyset";
+};
+
+export type ListRelationsResult<Fields extends ListRelationsFields> = | { success: true; data: InferListRelationsResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listRelations<Fields extends ListRelationsFields>(
+  config: {
+  fields: Fields;
+  filter?: KgEduKnowledgeRelationFilterInput;
+  sort?: string;
+  page?: (
+    {
+      limit?: number;
+      offset?: number;
+      count?: boolean;
+    } | {
+      limit?: number;
+      after?: string;
+      before?: string;
+    }
+  );
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ListRelationsResult<Fields>> {
+  const payload = {
+    action: "list_relations",
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort }),
+    ...(config.page && { page: config.page })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ListRelationsResult<Fields>;
+}
+
+
+export type ValidateListRelationsResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListRelations(
+  config: {
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListRelationsResult> {
+  const payload = {
+    action: "list_relations"
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateListRelationsResult;
+}
+
+
+export type CreateRelationFields = UnifiedFieldSelection<KgEduKnowledgeRelationResourceSchema>[];
+
+type InferCreateRelationResult<
+  Fields extends CreateRelationFields,
+> = InferResult<KgEduKnowledgeRelationResourceSchema, Fields>;
+
+export type CreateRelationResult<Fields extends CreateRelationFields> = | { success: true; data: InferCreateRelationResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function createRelation<Fields extends CreateRelationFields>(
+  config: {
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<CreateRelationResult<Fields>> {
+  const payload = {
+    action: "create_relation",
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as CreateRelationResult<Fields>;
+}
+
+
+export type ValidateCreateRelationResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateCreateRelation(
+  config: {
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateCreateRelationResult> {
+  const payload = {
+    action: "create_relation"
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateCreateRelationResult;
+}
+
+
+
+export type DestroyRelationResult = | { success: true; data: {} }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function destroyRelation(
+  config: {
+  primaryKey: UUID;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<DestroyRelationResult> {
+  const payload = {
+    action: "destroy_relation",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as DestroyRelationResult;
+}
+
+
+export type ValidateDestroyRelationResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateDestroyRelation(
+  config: {
+  primaryKey: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateDestroyRelationResult> {
+  const payload = {
+    action: "destroy_relation",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateDestroyRelationResult;
+}
+
+
+export type GetKnowledgeRelationInput = {
+  id: UUID;
+};
+
+export type GetKnowledgeRelationValidationErrors = {
+  id?: string[];
+};
+
+export type GetKnowledgeRelationFields = UnifiedFieldSelection<KgEduKnowledgeRelationResourceSchema>[];
+
+type InferGetKnowledgeRelationResult<
+  Fields extends GetKnowledgeRelationFields,
+> = InferResult<KgEduKnowledgeRelationResourceSchema, Fields> | null;
+
+export type GetKnowledgeRelationResult<Fields extends GetKnowledgeRelationFields> = | { success: true; data: InferGetKnowledgeRelationResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getKnowledgeRelation<Fields extends GetKnowledgeRelationFields>(
+  config: {
+  input: GetKnowledgeRelationInput;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<GetKnowledgeRelationResult<Fields>> {
+  const payload = {
+    action: "get_knowledge_relation",
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as GetKnowledgeRelationResult<Fields>;
+}
+
+
+export type ValidateGetKnowledgeRelationResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetKnowledgeRelation(
+  config: {
+  input: GetKnowledgeRelationInput;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetKnowledgeRelationResult> {
+  const payload = {
+    action: "get_knowledge_relation",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateGetKnowledgeRelationResult;
+}
+
+
+export type ListRelationTypesFields = UnifiedFieldSelection<KgEduKnowledgeRelationTypeResourceSchema>[];
+
+type InferListRelationTypesResult<
+  Fields extends ListRelationTypesFields,
+> = {
+  results: Array<InferResult<KgEduKnowledgeRelationTypeResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  count?: number | null;
+  type: "offset";
+} | {
+  results: Array<InferResult<KgEduKnowledgeRelationTypeResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  after: string | null;
+  before: string | null;
+  previousPage: string;
+  nextPage: string;
+  count?: number | null;
+  type: "keyset";
+};
+
+export type ListRelationTypesResult<Fields extends ListRelationTypesFields> = | { success: true; data: InferListRelationTypesResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listRelationTypes<Fields extends ListRelationTypesFields>(
+  config: {
+  fields: Fields;
+  filter?: KgEduKnowledgeRelationTypeFilterInput;
+  sort?: string;
+  page?: (
+    {
+      limit?: number;
+      offset?: number;
+      count?: boolean;
+    } | {
+      limit?: number;
+      after?: string;
+      before?: string;
+    }
+  );
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ListRelationTypesResult<Fields>> {
+  const payload = {
+    action: "list_relation_types",
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort }),
+    ...(config.page && { page: config.page })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ListRelationTypesResult<Fields>;
+}
+
+
+export type ValidateListRelationTypesResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListRelationTypes(
+  config: {
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListRelationTypesResult> {
+  const payload = {
+    action: "list_relation_types"
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateListRelationTypesResult;
+}
+
+
+export type CreateRelationTypeFields = UnifiedFieldSelection<KgEduKnowledgeRelationTypeResourceSchema>[];
+
+type InferCreateRelationTypeResult<
+  Fields extends CreateRelationTypeFields,
+> = InferResult<KgEduKnowledgeRelationTypeResourceSchema, Fields>;
+
+export type CreateRelationTypeResult<Fields extends CreateRelationTypeFields> = | { success: true; data: InferCreateRelationTypeResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function createRelationType<Fields extends CreateRelationTypeFields>(
+  config: {
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<CreateRelationTypeResult<Fields>> {
+  const payload = {
+    action: "create_relation_type",
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as CreateRelationTypeResult<Fields>;
+}
+
+
+export type ValidateCreateRelationTypeResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateCreateRelationType(
+  config: {
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateCreateRelationTypeResult> {
+  const payload = {
+    action: "create_relation_type"
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateCreateRelationTypeResult;
+}
+
+
+
+export type DestroyRelationTypeResult = | { success: true; data: {} }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function destroyRelationType(
+  config: {
+  primaryKey: UUID;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<DestroyRelationTypeResult> {
+  const payload = {
+    action: "destroy_relation_type",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as DestroyRelationTypeResult;
+}
+
+
+export type ValidateDestroyRelationTypeResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateDestroyRelationType(
+  config: {
+  primaryKey: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateDestroyRelationTypeResult> {
+  const payload = {
+    action: "destroy_relation_type",
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateDestroyRelationTypeResult;
+}
+
+
+export type GetRelationTypeInput = {
+  id: UUID;
+};
+
+export type GetRelationTypeValidationErrors = {
+  id?: string[];
+};
+
+export type GetRelationTypeFields = UnifiedFieldSelection<KgEduKnowledgeRelationTypeResourceSchema>[];
+
+type InferGetRelationTypeResult<
+  Fields extends GetRelationTypeFields,
+> = InferResult<KgEduKnowledgeRelationTypeResourceSchema, Fields> | null;
+
+export type GetRelationTypeResult<Fields extends GetRelationTypeFields> = | { success: true; data: InferGetRelationTypeResult<Fields> }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getRelationType<Fields extends GetRelationTypeFields>(
+  config: {
+  input: GetRelationTypeInput;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<GetRelationTypeResult<Fields>> {
+  const payload = {
+    action: "get_relation_type",
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  const result = await response.json();
+  return result as GetRelationTypeResult<Fields>;
+}
+
+
+export type ValidateGetRelationTypeResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetRelationType(
+  config: {
+  input: GetRelationTypeInput;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetRelationTypeResult> {
+  const payload = {
+    action: "get_relation_type",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText }],
+    };
+  }
+
+  const result = await response.json();
+  return result as ValidateGetRelationTypeResult;
 }
 
 

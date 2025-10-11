@@ -4,7 +4,7 @@ defmodule KgEdu.Accounts.User do
     domain: KgEdu.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAuthentication, AshJsonApi.Resource]
+    extensions: [AshAuthentication, AshJsonApi.Resource, AshTypescript.Resource]
 
   require Logger
 
@@ -175,6 +175,10 @@ defmodule KgEdu.Accounts.User do
         allow_nil? false
       end
 
+      argument :name, :string do
+        allow_nil? true
+      end
+
       argument :password, :string do
         description "The proposed password for the user, in plain text."
         allow_nil? false
@@ -188,6 +192,7 @@ defmodule KgEdu.Accounts.User do
         sensitive? true
       end
 
+
       argument :role, :atom do
         description "The role of the user (admin, user, teacher). Defaults to :user."
         allow_nil? true
@@ -197,6 +202,7 @@ defmodule KgEdu.Accounts.User do
 
       # Sets the student_id from the argument
       change set_attribute(:member_id, arg(:member_id))
+      change set_attribute(:name, arg(:name))
 
       # Sets the role from the argument
       change set_attribute(:role, arg(:role))
@@ -292,63 +298,67 @@ defmodule KgEdu.Accounts.User do
   end
 
   policies do
-    bypass AshAuthentication.Checks.AshAuthenticationInteraction do
+     policy always() do
       authorize_if always()
     end
 
-    # Allow public access to authentication actions
-    policy action(:register_with_password) do
-      authorize_if always()
-    end
-
-    policy action(:sign_in_with_password) do
-      authorize_if always()
-    end
-
-    policy action(:request_password_reset_token) do
-      authorize_if always()
-    end
-
-    policy action(:reset_password_with_token) do
-      authorize_if always()
-    end
-
-    # Require authentication for user-specific actions
-    policy action(:get_current_user) do
-      authorize_if actor_present()
-    end
-
-    policy action(:change_password) do
-      authorize_if actor_present()
-    end
-
-    policy action(:sign_out) do
-      authorize_if actor_present()
-    end
-
-    # Admin can manage all users and roles
-    policy [action(:read), action(:create), action(:update), action(:destroy)] do
-      description "Admin can manage all users"
-      authorize_if actor_attribute_equals(:role, "admin")
-    end
-
-    # Users can only read their own profile
-    # policy [action(:read)] do
-    #   description "Users can read their own profile"
-    #   authorize_if expr(id == ^actor(:id))
+    # bypass AshAuthentication.Checks.AshAuthenticationInteraction do
+    #   authorize_if always()
     # end
 
-    # Users can update their own profile (but not role)
-    policy [action(:update)] do
-      description "Users can update their own profile (except role)"
-      authorize_if expr(id == ^actor(:id))
-      forbid_if changing_attributes(:role)
-    end
+    # # Allow public access to authentication actions
+    # policy action(:register_with_password) do
+    #   authorize_if always()
+    # end
 
-    # Default policy - forbid everything else
-    policy always() do
-      authorize_if always()
-    end
+    # policy action(:sign_in_with_password) do
+    #   authorize_if always()
+    # end
+
+    # policy action(:request_password_reset_token) do
+    #   authorize_if always()
+    # end
+
+    # policy action(:reset_password_with_token) do
+    #   authorize_if always()
+    # end
+
+    # # Require authentication for user-specific actions
+    # policy action(:get_current_user) do
+    #   authorize_if actor_present()
+    # end
+
+    # policy action(:change_password) do
+    #   authorize_if actor_present()
+    # end
+
+    # policy action(:sign_out) do
+    #   authorize_if actor_present()
+    # end
+
+    # # Admin can manage all users and roles
+    # policy [action(:read), action(:create), action(:update), action(:destroy)] do
+    #   description "Admin can manage all users"
+    #   authorize_if actor_attribute_equals(:role, "admin")
+    # end
+
+    # # Users can only read their own profile
+    # # policy [action(:read)] do
+    # #   description "Users can read their own profile"
+    # #   authorize_if expr(id == ^actor(:id))
+    # # end
+
+    # # Users can update their own profile (but not role)
+    # policy [action(:update)] do
+    #   description "Users can update their own profile (except role)"
+    #   authorize_if expr(id == ^actor(:id))
+    #   forbid_if changing_attributes(:role)
+    # end
+
+    # # Default policy - forbid everything else
+    # policy always() do
+    #   authorize_if always()
+    # end
   end
 
   attributes do

@@ -4,7 +4,7 @@ defmodule KgEdu.Knowledge.Relation do
     domain: KgEdu.Knowledge,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
   postgres do
     table "knowledge_relations"
@@ -60,7 +60,7 @@ defmodule KgEdu.Knowledge.Relation do
 
     create :create_knowledge_relation do
       description "Create a new knowledge relation"
-      accept [:relation_type, :source_knowledge_id, :target_knowledge_id]
+      accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
 
       change relate_actor(:created_by)
 
@@ -79,56 +79,12 @@ defmodule KgEdu.Knowledge.Relation do
 
     update :update_knowledge_relation do
       description "Update a knowledge relation"
-      accept [:relation_type]
+      accept [:relation_type_id]
     end
   end
 
   policies do
-    bypass AshAuthentication.Checks.AshAuthenticationInteraction do
-      authorize_if always()
-    end
-
-    # All authenticated users can read knowledge relations
-    policy [
-      action(:read),
-      action(:by_id),
-      action(:by_knowledge),
-      action(:outgoing_relations),
-      action(:incoming_relations)
-    ] do
-      description "All authenticated users can read knowledge relations"
-      authorize_if actor_present()
-    end
-
-    # Admin can create, update, and delete any knowledge relation
-    policy [action(:create), action(:update), action(:destroy)] do
-      description "Admin can manage all knowledge relations"
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
-
-    # Teacher can create knowledge relations in courses they teach
-    policy action(:create) do
-      description "Teachers can create knowledge relations in courses they teach"
-      authorize_if actor_attribute_equals(:role, :teacher)
-      # TODO: Add course enrollment check when source/target references are resolved
-      authorize_if always()
-    end
-
-    # Teacher can update their own knowledge relations in courses they teach
-    policy action(:update) do
-      description "Teachers can update their own knowledge relations in courses they teach"
-      authorize_if actor_attribute_equals(:role, :teacher)
-      authorize_if expr(created_by_id == ^actor(:id))
-      # TODO: Add course enrollment check when source/target references are resolved
-      authorize_if always()
-    end
-
-    # Teacher can delete their own knowledge relations in courses they teach
-    policy action(:destroy) do
-      description "Teachers can delete their own knowledge relations in courses they teach"
-      authorize_if actor_attribute_equals(:role, :teacher)
-      authorize_if expr(created_by_id == ^actor(:id))
-      # TODO: Add course enrollment check when source/target references are resolved
+    policy always() do
       authorize_if always()
     end
   end
@@ -136,16 +92,15 @@ defmodule KgEdu.Knowledge.Relation do
   attributes do
     uuid_primary_key :id
 
-    attribute :relation_type, :atom do
-      allow_nil? false
-      constraints one_of: [:pre, :post, :related, :extends, :depends_on]
-      public? true
-    end
-
     timestamps()
   end
 
   relationships do
+    belongs_to :relation_type, KgEdu.Knowledge.RelationType do
+      public? true
+      allow_nil? false
+    end
+
     belongs_to :source_knowledge, KgEdu.Knowledge.Resource do
       public? true
       allow_nil? false
@@ -162,6 +117,6 @@ defmodule KgEdu.Knowledge.Relation do
   end
 
   identities do
-    identity :unique_relation, [:source_knowledge_id, :target_knowledge_id, :relation_type]
+    identity :unique_relation, [:source_knowledge_id, :target_knowledge_id, :relation_type_id]
   end
 end

@@ -37,11 +37,11 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :teacher_id]
+      accept [:title, :description, :image_url, :teacher_id]
     end
 
     update :update do
-      accept [:title, :description, :teacher_id]
+      accept [:title, :description, :image_url, :teacher_id]
     end
 
     read :by_teacher do
@@ -136,6 +136,10 @@ defmodule KgEdu.Courses.Course do
     end
 
     has_many :knowledge_resources, KgEdu.Knowledge.Resource do
+      destination_attribute :course_id
+    end
+
+    has_many :chapters, KgEdu.Courses.Chapter do
       destination_attribute :course_id
     end
   end

@@ -21,7 +21,12 @@ defmodule KgEduWeb.Router do
     plug :set_actor, :user
   end
 
-  scope "/", KgEduWeb do
+  scope "/api", KgEduWeb do
+    pipe_through :api
+    post "/chat/stream", ChatController, :stream_message
+  end
+
+  scope "/live", KgEduWeb do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes do
@@ -80,8 +85,6 @@ defmodule KgEduWeb.Router do
       live "/files/:id", FileLive.Show, :show
       live "/files/:id/show/edit", FileLive.Show, :edit
     end
-
-
   end
 
   scope "/rpc" do
@@ -102,32 +105,33 @@ defmodule KgEduWeb.Router do
 
   scope "/", KgEduWeb do
     pipe_through :browser
+    get "/*path", PageController, :index
 
-    get "/", PageController, :home
-    auth_routes AuthController, KgEdu.Accounts.User, path: "/auth"
-    sign_out_route AuthController
+    # get "/", PageController, :home
+    # auth_routes AuthController, KgEdu.Accounts.User, path: "/auth"
+    # sign_out_route AuthController
 
-    # Remove these if you'd like to use your own authentication views
-    sign_in_route register_path: "/register",
-                  reset_path: "/reset",
-                  auth_routes_prefix: "/auth",
-                  on_mount: [{KgEduWeb.LiveUserAuth, :live_no_user}],
-                  overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
+    # # Remove these if you'd like to use your own authentication views
+    # sign_in_route register_path: "/register",
+    #               reset_path: "/reset",
+    #               auth_routes_prefix: "/auth",
+    #               on_mount: [{KgEduWeb.LiveUserAuth, :live_no_user}],
+    #               overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
-    # Remove this if you do not want to use the reset password feature
-    reset_route auth_routes_prefix: "/auth",
-                overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
+    # # Remove this if you do not want to use the reset password feature
+    # reset_route auth_routes_prefix: "/auth",
+    #             overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
-    # Remove this if you do not use the confirmation strategy
-    confirm_route KgEdu.Accounts.User, :confirm_new_user,
-      auth_routes_prefix: "/auth",
-      overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
+    # # Remove this if you do not use the confirmation strategy
+    # confirm_route KgEdu.Accounts.User, :confirm_new_user,
+    #   auth_routes_prefix: "/auth",
+    #   overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
-    # Remove this if you do not use the magic link strategy.
-    magic_sign_in_route(KgEdu.Accounts.User, :magic_link,
-      auth_routes_prefix: "/auth",
-      overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
-    )
+    # # Remove this if you do not use the magic link strategy.
+    # magic_sign_in_route(KgEdu.Accounts.User, :magic_link,
+    #   auth_routes_prefix: "/auth",
+    #   overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
+    # )
   end
 
   # Other scopes may use custom stacks.

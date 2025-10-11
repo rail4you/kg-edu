@@ -11,7 +11,23 @@ defmodule KgEdu.Courses do
     resource KgEdu.Courses.Course do
       rpc_action :list_courses, :read
       rpc_action :create_course, :create
+      rpc_action :destroy_course, :destroy
       rpc_action :get_course, :get
+    end
+
+    resource KgEdu.Courses.Chapter do
+      rpc_action :list_chapters, :read
+      rpc_action :create_chapter, :create
+      rpc_action :get_chapter, :read
+      rpc_action :update_chapter, :update
+      rpc_action :delete_chapter, :destroy
+    end
+
+    resource KgEdu.Courses.File do
+      rpc_action :list_files, :read
+      rpc_action :upload_file, :upload
+      rpc_action :delete_file, :destroy
+      # rpc_action :get_file, :get
     end
   end
 
@@ -22,6 +38,17 @@ defmodule KgEdu.Courses do
         get :read, route: "/"
         index :by_teacher, route: "/teacher/:teacher_id"
         index :by_student, route: "/student/:student_id"
+        post :create, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
+
+      # Chapter endpoints
+      base_route "/chapters", KgEdu.Courses.Chapter do
+        get :read, route: "/"
+        index :by_course, route: "/course/:course_id"
+        index :root_chapters, route: "/course/:course_id/root"
+        index :subchapters, route: "/parent/:parent_chapter_id"
         post :create, route: "/"
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
@@ -88,11 +115,45 @@ defmodule KgEdu.Courses do
     tool :list_enrollments_by_student, KgEdu.Courses.CourseEnrollment, :by_student do
       description "Get enrollments for a specific student"
     end
+
+    # Chapter tools
+    tool :list_chapters, KgEdu.Courses.Chapter, :read do
+      description "List all chapters"
+    end
+
+    tool :get_chapter, KgEdu.Courses.Chapter, :read do
+      description "Get a specific chapter by ID"
+    end
+
+    tool :create_chapter, KgEdu.Courses.Chapter, :create do
+      description "Create a new chapter"
+    end
+
+    tool :update_chapter, KgEdu.Courses.Chapter, :update do
+      description "Update an existing chapter"
+    end
+
+    tool :delete_chapter, KgEdu.Courses.Chapter, :destroy do
+      description "Delete a chapter"
+    end
+
+    tool :list_chapters_by_course, KgEdu.Courses.Chapter, :by_course do
+      description "Get chapters for a specific course"
+    end
+
+    tool :list_root_chapters, KgEdu.Courses.Chapter, :root_chapters do
+      description "Get root chapters (without parent) for a specific course"
+    end
+
+    tool :list_subchapters, KgEdu.Courses.Chapter, :subchapters do
+      description "Get subchapters for a specific chapter"
+    end
   end
 
   resources do
     resource KgEdu.Courses.Course
     resource KgEdu.Courses.CourseEnrollment
+    resource KgEdu.Courses.Chapter
     resource KgEdu.Courses.File
   end
 end

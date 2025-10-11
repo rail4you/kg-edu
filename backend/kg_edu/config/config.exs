@@ -8,13 +8,13 @@
 import Config
 
 config :ash_typescript,
-  output_file: "assets/js/ash_rpc.ts",
+  output_file: "../../minimal-vite-ts/src/lib/ash_rpc.ts",
   run_endpoint: "/rpc/run",
   validate_endpoint: "/rpc/validate",
   input_field_formatter: :camel_case,
   output_field_formatter: :camel_case,
   require_tenant_parameters: false,
-  generate_zod_schemas: false,
+  generate_zod_schemas: true,
   generate_phx_channel_rpc_actions: false,
   generate_validation_functions: true,
   zod_import_path: "zod",
