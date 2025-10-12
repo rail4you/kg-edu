@@ -4,7 +4,13 @@ defmodule KgEdu.Knowledge.Exercise do
     domain: KgEdu.Knowledge,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Resource]
+
+
+  typescript do
+    type_name "Exercise"
+  end
+
 
   postgres do
     table "exercises"
@@ -50,13 +56,13 @@ defmodule KgEdu.Knowledge.Exercise do
     create :create do
       description "Create a new exercise"
       accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :course_id]
-      change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
+      # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
     update :update_exercise do
       description "Update an exercise"
       accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id]
-      change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
+      # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
   end
 
@@ -81,7 +87,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
     attribute :question_content, :string do
       allow_nil? false
-      constraints min_length: 10, max_length: 2000
+      # constraints min_length: 10, max_length: 2000
       public? true
     end
 

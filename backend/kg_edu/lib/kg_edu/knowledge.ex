@@ -30,12 +30,12 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_relation_type, :by_id
     end
 
-    # resource KgEdu.Knowledge.Exercise do
-    #   rpc_action :list_exercises, :read
-    #   rpc_action :create_exercise, :create
-    #   rpc_action :destroy_exercise, :destroy
-    #   rpc_action :get_exercise, :get
-    # end
+    resource KgEdu.Knowledge.Exercise do
+      rpc_action :list_exercises, :read
+      rpc_action :create_exercise, :create
+      rpc_action :destroy_exercise, :destroy
+      rpc_action :get_exercise, :by_id
+    end
   end
 
   json_api do
