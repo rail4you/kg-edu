@@ -134,11 +134,17 @@ defmodule KgEduWeb.Router do
     # )
   end
 
+  scope "/webhooks", KgEduWeb do
+    pipe_through :api
+    post "/mux", UploadVideoController, :webhook
+  end
+
   # Other scopes may use custom stacks.
   scope "/api", KgEduWeb do
     pipe_through :api
 
     post "/files/upload", FileUploadController, :upload
+    post "/videos/upload", UploadVideoController, :direct_upload
   end
 
   scope "/mcp" do

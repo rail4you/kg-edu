@@ -4,7 +4,7 @@ defmodule KgEdu.Courses.Course do
     domain: KgEdu.Courses,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshTypescript.Rpc]
+    extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource]
 
   postgres do
     table "courses"
@@ -15,7 +15,10 @@ defmodule KgEdu.Courses.Course do
     type "course"
   end
 
-
+  typescript do
+    # Choose appropriate name
+    type_name "Course"
+  end
 
   code_interface do
     define :create_course, action: :create

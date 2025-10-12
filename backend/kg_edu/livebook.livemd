@@ -60,5 +60,6 @@ message = %ReqLLM.Message{
 ```
 
 ```elixir
-
+data = KgEdu.VideoUploader.create_video_asset()
+data
 ```

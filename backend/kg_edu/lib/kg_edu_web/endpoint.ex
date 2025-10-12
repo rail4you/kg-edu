@@ -26,6 +26,7 @@ defmodule KgEduWeb.Endpoint do
     gzip: not code_reloading?,
     only: KgEduWeb.static_paths()
 
+
   if Code.ensure_loaded?(Tidewave) do
     plug Tidewave
   end
@@ -58,6 +59,7 @@ defmodule KgEduWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json, AshJsonApi.Plug.Parser],
     pass: ["*/*"],
+    body_reader: {KgEduWeb.BodyReader, :read_body, []},
     json_decoder: Jason
 
   plug Plug.MethodOverride

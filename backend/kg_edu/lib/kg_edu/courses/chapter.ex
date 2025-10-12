@@ -4,11 +4,16 @@ defmodule KgEdu.Courses.Chapter do
     domain: KgEdu.Courses,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshTypescript.Rpc]
+    extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource]
 
   postgres do
     table "chapters"
     repo KgEdu.Repo
+  end
+
+  typescript do
+    # Choose appropriate name
+    type_name "Chapter"
   end
 
   json_api do

@@ -35,6 +35,7 @@ defmodule KgEdu.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mux, "~> 3.2"},
       {:req_llm, "~> 1.0.0-rc.5"},
       {:ash_typescript, "~> 0.3"},
       {:cinder, "~> 0.6"},

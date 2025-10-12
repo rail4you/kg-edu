@@ -31,7 +31,9 @@ if config_env() == :prod do
       """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
-
+  config :mux,
+  access_token_id: System.get_env("MUX_TOKEN_ID"),
+  access_token_secret: System.get_env("MUX_TOKEN_SECRET")
   config :kg_edu, KgEdu.Repo,
     # ssl: true,
     url: database_url,
