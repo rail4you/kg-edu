@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
 
 # Set build ENV
 ENV MIX_ENV=prod
+ENV ERL_AFLAGS="+JMsingle true"
 
 # Create app directory
 WORKDIR /app
@@ -27,7 +28,7 @@ RUN mix deps.get --only prod && \
 # Copy config files (changes less frequently than app code)
 COPY config config
 
-# Copy priv directory (often contains migrations)
+# Copy priv directory (includes migrations and static files)
 COPY priv priv
 
 # Copy assets (if using Phoenix, changes less than lib code)
@@ -73,8 +74,11 @@ RUN groupadd -g 1000 app && \
 
 WORKDIR /app
 
-# Copy release from builder
+# Copy release from builder (includes priv directory with static files)
 COPY --from=builder --chown=app:app /app/_build/prod/rel/kg_edu ./
+COPY --from=builder /app/priv/static ./priv/static
+# Ensure uploads directory exists with correct permissions
+# RUN mkdir -p priv/uploads && chown -R app:app priv
 
 USER app
 

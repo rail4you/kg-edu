@@ -1,0 +1,110 @@
+# Name of your application. Used to uniquely configure containers.
+service: kg_edu_backend
+
+# Name of the container image.
+image: myelixir/kg_edu_backend
+
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - 123.57.141.233
+    options:
+      network: "kg-edu-network"
+
+# Credentials for your image host.
+registry:
+  # Specify the registry server, if you're not using Docker Hub
+  # server: registry.digitalocean.com / ghcr.io / ...
+  server: registry.cn-zhangjiakou.aliyuncs.com
+  username: rail4you@gmail.com
+
+  # Always use an access token rather than real password when possible.
+  password: bcs19800403
+
+# Inject ENV variables into containers (secrets come from .env).
+# Remember to run `kamal env push` after making changes!
+
+proxy:
+  app_port: 4000
+env:
+  clear:
+    PORT: 4000
+    POOL_SIZE: 100
+    PHX_SERVER: true
+    MIX_ENV: prod
+    DATABASE_URL: "ecto://postgres:postgres@db:5432/kg_edu_dev"
+    SECRET_KEY_BASE: "eHc5Cqbdzmx7CKkm5t/0BUu5i1k8Uouqcx6xvC6MAjnVUNQcdVavbWWNQR5A2Y2q"
+  secret:
+    - SECRET_KEY_BASE
+builder:
+  arch: amd64
+
+
+    # host: /var/run/docker.sock
+# Use a different ssh user than root
+# ssh:
+#   user: app
+
+# Configure builder setup.
+
+# Use accessory services (secrets come from .env).
+# accessories:
+#   postgres:
+#     image: postgres:15
+#     host: 123.57.141.233
+#     port: 5432
+#     env:
+#       clear:
+#         POSTGRES_USER: "postgres"
+#         POSTGRES_PASSWORD: "postgres"
+#         POSTGRES_DB: "kg_course_dev"
+#     files:
+#       - config/init.sql:/docker-entrypoint-initdb.d/setup.sql
+#     directories:
+#       - data:/var/lib/mysql
+# #   redis:
+# #     image: redis:7.0
+# #     host: 192.168.0.2
+# #     port: 6379
+# #     directories:
+# #       - data:/data
+
+# Configure custom arguments for Traefik. Be sure to reboot traefik when you modify it.
+#     accesslog: true
+#     accesslog.format: json
+
+# Configure a custom healthcheck (default is /up on port 3000)
+# healthcheck:
+#   cmd: ''
+#   path: /
+#   port: 80
+#   cord: false
+#   max_attempts: 3
+
+
+# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
+# hitting 404 on in-flight requests. Combines all files from new and old
+# version inside the asset_path.
+#
+# If your app is using the Sprockets gem, ensure it sets `config.assets.manifest`.
+# See https://github.com/basecamp/kamal/issues/626 for details
+#
+# asset_path: /rails/public/assets
+
+# Configure rolling deploys by setting a wait time between batches of restarts.
+# boot:
+#   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
+#   wait: 2
+
+# Configure the role used to determine the primary_host. This host takes
+# deploy locks, runs health checks during the deploy, and follow logs, etc.
+#
+# Caution: there's no support for role renaming yet, so be careful to cleanup
+#          the previous role on the deployed hosts.
+# primary_role: web
+
+# Controls if we abort when see a role with no hosts. Disabling this may be
+# useful for more complex deploy configurations.
+#
+# allow_empty_roles: false

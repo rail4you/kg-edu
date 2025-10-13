@@ -22,7 +22,7 @@ config :ash_typescript,
   phoenix_import_path: "phoenix"
 
 config :cinder, default_theme: "modern"
-config :ash_oban, pro?: false
+# config :ash_oban, pro?: false
 
 config :kg_edu, Oban,
   engine: Oban.Engines.Basic,
@@ -92,11 +92,19 @@ config :spark,
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Chat, KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge]
+  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,
+  secret_key_base: "kjoy3o1zeidquwy1398juxzldjlksahdk3",
   url: [host: "localhost"],
+   static_url: [path: "/"],
+  static: [
+    at: "/",
+    from: :my_app,
+    gzip: false,
+    only: ~w(js css images fonts favicon.ico robots.txt index.html)
+  ],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: KgEduWeb.ErrorHTML, json: KgEduWeb.ErrorJSON],

@@ -29,7 +29,7 @@ config :kg_edu, KgEduWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "hBWNNn+FepxoKqEYgdHZhtFJyXUVdUjXfEBrz2LjU+7iUXmxRJ5GtXLS61KwPKYj",
+  secret_key_base: "b9DjqcxcEmyvs0IowPGK9w75+Z+77XzwAy15W4+I2a8fZ+W+SAdOyHcyxQrs7MZt",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:kg_edu, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:kg_edu, ~w(--watch)]}

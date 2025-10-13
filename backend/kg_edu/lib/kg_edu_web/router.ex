@@ -147,19 +147,6 @@ defmodule KgEduWeb.Router do
     post "/videos/upload", UploadVideoController, :direct_upload
   end
 
-  scope "/mcp" do
-    # pipe_through :mcp
-
-    forward "/", AshAi.Mcp.Router,
-      tools: [
-        :list_courses,
-        :create_course
-      ],
-      # For many tools, you will need to set the `protocol_version_statement` to the older version.
-      protocol_version_statement: "2024-11-05",
-      otp_app: :kg_edu
-  end
-
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:kg_edu, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
