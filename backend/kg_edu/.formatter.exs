@@ -2,9 +2,6 @@
   import_deps: [
     :ash_typescript,
     :cinder,
-    :ash_oban,
-    :oban,
-    :ash_ai,
     :ash_admin,
     :ash_authentication_phoenix,
     :ash_authentication,

@@ -13,6 +13,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_full_hierarchy, :get_full_hierarchy
       rpc_action :update_resource, :update
       rpc_action :destroy_resource, :destroy
+      rpc_action :import_knowledge_from_excel, :import_from_excel
       # rpc_action :get_resource, :get_resource
     end
 
@@ -21,6 +22,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :create_relation, :create
       rpc_action :destroy_relation, :destroy
       rpc_action :get_knowledge_relation, :by_id
+      rpc_action :import_relations_from_excel, :import_relations_from_excel
     end
 
     resource KgEdu.Knowledge.RelationType do
