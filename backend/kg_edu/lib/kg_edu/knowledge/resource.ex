@@ -408,7 +408,7 @@ defmodule KgEdu.Knowledge.Resource do
       run fn input, _context ->
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data) do
           {:ok, %{sheet1: knowledge_data}} ->
-            {:ok, process_knowledge_import(knowledge_data, input.arguments.course_id, nil)}
+            process_knowledge_import(knowledge_data, input.arguments.course_id, nil)
 
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
@@ -551,20 +551,20 @@ defmodule KgEdu.Knowledge.Resource do
   # ============ Import Implementation ============
 
   def import_from_excel(input, context) do
-    import_from_excel(input.excel_base64, input.course_id, context)
+    import_kg_from_excel(input.excel_base64, input.course_id, context)
   end
 
-  def import_from_excel(excel_base64, course_id, context) do
+  def import_kg_from_excel(excel_base64, course_id, context) do
     case KgEdu.ExcelParser.parse_from_base64(excel_base64) do
       {:ok, %{sheet1: knowledge_data}} ->
-        {:ok, process_knowledge_import(knowledge_data, course_id, context)}
+        process_knowledge_import(knowledge_data, course_id, context)
 
       {:error, reason} ->
         {:error, "Failed to parse Excel file: #{reason}"}
     end
   end
 
-  defp process_knowledge_import(knowledge_data, course_id, _context) do
+  def process_knowledge_import(knowledge_data, course_id, _context) do
     # Track created subjects and units for parent relationships
     subjects = %{}
     units = %{}
@@ -582,6 +582,8 @@ defmodule KgEdu.Knowledge.Resource do
     case result do
       {:ok, _} ->
         {:ok, "Successfully imported #{length(knowledge_data)} knowledge resources"}
+        # IO.inspect("Successfully imported #{length(knowledge_data)} knowledge resources")
+        # {:ok, :ok}
 
       {:error, reason} ->
         {:error, reason}
@@ -625,12 +627,28 @@ defmodule KgEdu.Knowledge.Resource do
           parent_unit_id: unit_id
         }
 
-        case create_resource_record(knowledge_attrs) do
-          {:ok, _knowledge} ->
+        # Check if knowledge resource already exists
+        case get_by_name_and_course(%{
+               name: knowledge_name,
+               knowledge_type: :knowledge_cell,
+               course_id: course_id
+             }) do
+          {:ok, _existing} ->
+            # Resource already exists, skip it
             {:ok, acc}
 
+          {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+            # Resource doesn't exist, create it
+            case create_resource_record(knowledge_attrs) do
+              {:ok, _knowledge} ->
+                {:ok, acc}
+
+              {:error, reason} ->
+                {:error, "Failed to create knowledge resource '#{knowledge_name}': #{reason}"}
+            end
+
           {:error, reason} ->
-            {:error, "Failed to create knowledge resource '#{knowledge_name}': #{reason}"}
+            {:error, "Failed to check existing knowledge resource '#{knowledge_name}': #{reason}"}
         end
       end
     end

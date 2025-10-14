@@ -5,7 +5,7 @@ defmodule KgEdu.Knowledge.Relation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
-
+  import Logger, only: [info: 1, error: 1]
   postgres do
     table "knowledge_relations"
     repo KgEdu.Repo
@@ -119,13 +119,8 @@ defmodule KgEdu.Knowledge.Relation do
               nil -> {:ok, "No knowledge data to import"}
               _knowledge_data ->
                 # Re-use the same excel data but import only knowledge resources
-                case KgEdu.Knowledge.Resource.import_knowledge_from_excel(%{
-                  excel_data: input.arguments.excel_data,
-                  course_id: input.arguments.course_id
-                }) do
-                  {:ok, _} -> {:ok, "Knowledge resources imported successfully"}
-                  {:error, reason} -> {:error, "Failed to import knowledge resources: #{reason}"}
-                end
+                IO.inspect("import knowledge first")
+                KgEdu.Knowledge.Resource.import_kg_from_excel(input.arguments.excel_data,input.arguments.course_id, nil)
             end
 
             # Process relations from sheet2 if available
@@ -138,7 +133,8 @@ defmodule KgEdu.Knowledge.Relation do
             # Return combined result
             case {knowledge_result, relation_result} do
               {{:ok, knowledge_msg}, {:ok, relation_msg}} ->
-                {:ok, "#{knowledge_msg}. #{relation_msg}"}
+                :ok
+                # {:ok, "#{knowledge_msg}. #{relation_msg}"}
               {{:error, reason}, _} ->
                 {:error, reason}
               {_, {:error, reason}} ->
@@ -239,6 +235,7 @@ defmodule KgEdu.Knowledge.Relation do
           target_knowledge_id: target_knowledge.id,
           relation_type_id: relation_type.id
         }
+        Logger.info("Creating relation: #{inspect(relation_attrs)}")
 
         case create_relation(relation_attrs) do
           {:ok, _relation} ->
@@ -269,7 +266,7 @@ defmodule KgEdu.Knowledge.Relation do
 
   defp find_knowledge_by_name_and_course(name, course_id) do
     # Try exact name match first
-    case KgEdu.Knowledge.Resource.get_by_name_and_course(%{name: name, course_id: course_id}) do
+    case KgEdu.Knowledge.Resource.get_by_name_and_course(%{name: name, knowledge_type: :knowledge_cell, course_id: course_id}) do
       {:ok, knowledge} -> {:ok, knowledge}
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
         # Try searching by subject
@@ -355,12 +352,12 @@ defmodule KgEdu.Knowledge.Relation do
   defp create_relation(attrs) do
     # Check if relation already exists
     case find_existing_relation(attrs) do
+      {:ok, []} ->
+        # Relation doesn't exist, create it
+        create_relation_import(attrs, authorize?: false)
       {:ok, _existing_relation} ->
         # Relation already exists, skip creation
         {:ok, nil}
-      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
-        # Relation doesn't exist, create it
-        create_relation_import(attrs, authorize?: false)
       {:error, reason} ->
         {:error, reason}
     end
@@ -380,7 +377,7 @@ defmodule KgEdu.Knowledge.Relation do
       ]
     ) do
       {:ok, [relation]} -> {:ok, relation}
-      {:ok, []} -> {:error, Ash.Error.Query.NotFound.exception([])}
+      {:ok, []} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
   end
