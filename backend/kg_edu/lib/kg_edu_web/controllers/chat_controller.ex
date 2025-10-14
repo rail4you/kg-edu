@@ -18,8 +18,8 @@ defmodule KgEduWeb.ChatController do
     # Build messages with context
     messages =
       case context do
-        nil -> [%ReqLLM.Message{role: :user, content: [ReqLLM.ContentPart.text(message)]}]
-        _ -> context.messages ++ [%ReqLLM.Message{role: :user, content: [ReqLLM.ContentPart.text(message)]}]
+        nil -> [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
+        _ -> context.messages ++ [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
       end
 
     llm_context = ReqLLM.Context.new(messages)
@@ -56,7 +56,7 @@ defmodule KgEduWeb.ChatController do
       # Add system message if present
       messages =
         if command.system do
-          messages ++ [%ReqLLM.Message{role: :system, content: [ReqLLM.ContentPart.text(command.system)]}]
+          messages ++ [%ReqLLM.Message{role: :system, content: [ReqLLM.Message.ContentPart.text(command.system)]}]
         else
           messages
         end
@@ -64,7 +64,7 @@ defmodule KgEduWeb.ChatController do
       # Add user message if present
       messages =
         if command.user do
-          messages ++ [%ReqLLM.Message{role: :user, content: [ReqLLM.ContentPart.text(command.user)]}]
+          messages ++ [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(command.user)]}]
         else
           messages
         end
@@ -72,7 +72,7 @@ defmodule KgEduWeb.ChatController do
       # Add assistant message if present
       messages =
         if command.assistant do
-          messages ++ [%ReqLLM.Message{role: :assistant, content: [ReqLLM.ContentPart.text(command.assistant)]}]
+          messages ++ [%ReqLLM.Message{role: :assistant, content: [ReqLLM.Message.ContentPart.text(command.assistant)]}]
         else
           messages
         end
@@ -84,8 +84,8 @@ defmodule KgEduWeb.ChatController do
           context_message = %ReqLLM.Message{
             role: :user,
             content: [
-              ReqLLM.ContentPart.text("Context: #{command.title}"),
-              ReqLLM.ContentPart.text("Using this context, please respond to my message.")
+              ReqLLM.Message.ContentPart.text("Context: #{command.title}"),
+              ReqLLM.Message.ContentPart.text("Using this context, please respond to my message.")
             ]
           }
           messages ++ [context_message]

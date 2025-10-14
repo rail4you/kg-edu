@@ -9,7 +9,7 @@ defmodule KgEdu.Repo.Migrations.ImageUrl do
 
   def up do
     alter table(:files) do
-      add :knowledge_resource_id,
+      add_if_not_exists :knowledge_resource_id,
           references(:knowledge_resources,
             column: :id,
             name: "files_knowledge_resource_id_fkey",
