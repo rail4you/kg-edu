@@ -35,6 +35,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :create_exercise, :create
       rpc_action :destroy_exercise, :destroy
       rpc_action :get_exercise, :by_id
+      rpc_action :generate_ai_exercise, :generate_ai_exercise
+      rpc_action :get_recent_ai_exercises, :recent_ai_exercises
     end
   end
 
@@ -61,7 +63,9 @@ defmodule KgEdu.Knowledge do
         get :read, route: "/"
         index :by_knowledge, route: "/knowledge/:knowledge_resource_id"
         index :by_course, route: "/course/:course_id"
+        index :recent_ai_exercises, route: "/ai/recent"
         post :create, route: "/"
+        post :generate_ai_exercise, route: "/ai/generate"
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
       end
