@@ -11,8 +11,8 @@ defmodule KgEduWeb.ChatController do
   end
 
   defp stream_claude_response(conn, message, ai_command_id \\ nil) do
-    # ReqLLM.put_key(:openai_api_key, "sk-3e910c05b96a49f9aa0ea064bef50ceb")
-    ReqLLM.put_key(:openrouter_api_key, "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")
+    ReqLLM.put_key(:openai_api_key, "sk-3e910c05b96a49f9aa0ea064bef50ceb")
+    # ReqLLM.put_key(:openrouter_api_key, "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")
     context = build_context_from_ai_command(ai_command_id)
 
     # Build messages with context
@@ -24,7 +24,8 @@ defmodule KgEduWeb.ChatController do
 
     llm_context = ReqLLM.Context.new(messages)
 
-    {:ok, stream_response} = ReqLLM.stream_text("openrouter:z-ai/glm-4.5", llm_context)
+    # {:ok, stream_response} = ReqLLM.stream_text("openrouter:z-ai/glm-4.5", llm_context)
+    {:ok, stream_response} = ReqLLM.stream_text("openai:gpt-4", llm_context)
     result =
       stream_response
       |> ReqLLM.StreamResponse.tokens()
