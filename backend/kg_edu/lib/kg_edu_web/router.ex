@@ -144,6 +144,7 @@ defmodule KgEduWeb.Router do
     pipe_through :api
 
     post "/files/upload", FileUploadController, :upload
+    get "/files/template", FileUploadController, :download_template
     post "/videos/upload", UploadVideoController, :direct_upload
   end
 

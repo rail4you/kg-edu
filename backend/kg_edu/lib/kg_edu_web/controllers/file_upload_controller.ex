@@ -47,4 +47,24 @@ defmodule KgEduWeb.FileUploadController do
       errors: ["File and course_id are required"]
     })
   end
+
+  def download_template(conn, _params) do
+    template_path = Path.join(:code.priv_dir(:kg_edu), "uploads/template.xlsx")
+    
+    case Elixir.File.exists?(template_path) do
+      true ->
+        conn
+        |> put_resp_content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        |> put_resp_header("content-disposition", "attachment; filename=\"template.xlsx\"")
+        |> send_file(200, template_path)
+        
+      false ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          errors: ["Template file not found"]
+        })
+    end
+  end
 end
