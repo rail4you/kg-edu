@@ -75,7 +75,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     For multiple choice questions, also include these fields:
     {
       "option_a": "Text for option A",
-      "option_b": "Text for option B", 
+      "option_b": "Text for option B",
       "option_c": "Text for option C",
       "option_d": "Text for option D"
     }
@@ -85,14 +85,15 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   end
 
   defp generate_exercise_content(prompt, exercise_type) do
-    # Configure ReqLLM with API key
-    ReqLLM.put_key(:openai_api_key, "sk-3e910c05b96a49f9aa0ea064bef50ceb")
-
+    # Get ReqLLM configuration
+    config = Application.get_env(:kg_edu, :reqllm)
+    model = config[:model] || "openrouter:z-ai/glm-4.5"
+    
     # Define schema for structured output
     schema = build_exercise_schema(exercise_type)
-    
+
     # Generate structured object
-    case ReqLLM.generate_object("openai:gpt-4", prompt, schema) do
+    case ReqLLM.generate_object(model, prompt, schema) do
       {:ok, response} ->
         object = ReqLLM.Response.object(response)
         case parse_structured_exercise(object, exercise_type) do
@@ -162,7 +163,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
           C: Map.get(object, "option_c", ""),
           D: Map.get(object, "option_d", "")
         }
-        
+
         # Only return options if all are non-empty
         if Enum.all?(options, fn {_key, value} -> value != "" end) do
           options

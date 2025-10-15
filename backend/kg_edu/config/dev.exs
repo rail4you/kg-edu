@@ -92,3 +92,8 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Development ReqLLM configuration with fallback
+config :kg_edu, :reqllm,
+  api_key: System.get_env("OPENROUTER_API_KEY") || "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",
+  model: "openrouter:z-ai/glm-4.5"

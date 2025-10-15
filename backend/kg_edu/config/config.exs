@@ -151,6 +151,11 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# ReqLLM configuration for AI exercise generation
+config :kg_edu, :reqllm,
+  api_key: System.get_env("OPENROUTER_API_KEY") || "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",
+  model: "openrouter:z-ai/glm-4.5"
+
 # Waffle configuration for file uploads
 config :waffle,
   storage: Waffle.Storage.Local,
