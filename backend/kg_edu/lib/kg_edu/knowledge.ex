@@ -40,6 +40,27 @@ defmodule KgEdu.Knowledge do
       rpc_action :generate_ai_exercise, :generate_ai_exercise
       rpc_action :get_recent_ai_exercises, :recent_ai_exercises
     end
+
+    resource KgEdu.Knowledge.Question do
+      rpc_action :list_questions, :read
+      rpc_action :create_question, :create
+      rpc_action :destroy_question, :destroy
+      rpc_action :get_question, :by_id
+      rpc_action :list_global_questions, :list_global_questions
+      rpc_action :list_concept_questions, :list_concept_questions
+      rpc_action :list_method_questions, :list_method_questions
+      rpc_action :get_question_flow, :get_question_flow
+    end
+
+    resource KgEdu.Knowledge.QuestionConnection do
+      rpc_action :list_connections, :read
+      rpc_action :create_connection, :create_connection
+      rpc_action :destroy_connection, :destroy
+      rpc_action :get_connection, :by_id
+      rpc_action :get_connections_by_source, :by_source
+      rpc_action :get_connections_by_target, :by_target
+      rpc_action :get_course_connections, :by_course
+    end
   end
 
   json_api do
@@ -71,6 +92,29 @@ defmodule KgEdu.Knowledge do
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
       end
+
+      # Question endpoints
+      base_route "/questions", KgEdu.Knowledge.Question do
+        get :read, route: "/"
+        index :list_global_questions, route: "/global"
+        index :list_concept_questions, route: "/concept"
+        index :list_method_questions, route: "/method"
+        index :get_question_flow, route: "/flow/:course_id"
+        post :create, route: "/"
+        patch :update_question, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
+
+      # Question connection endpoints
+      base_route "/question-connections", KgEdu.Knowledge.QuestionConnection do
+        get :read, route: "/"
+        index :by_source, route: "/source/:source_question_id"
+        index :by_target, route: "/target/:target_question_id"
+        index :by_course, route: "/course/:course_id"
+        post :create_connection, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
     end
   end
 
@@ -79,5 +123,7 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.Relation
     resource KgEdu.Knowledge.RelationType
     resource KgEdu.Knowledge.Exercise
+    resource KgEdu.Knowledge.Question
+    resource KgEdu.Knowledge.QuestionConnection
   end
 end
