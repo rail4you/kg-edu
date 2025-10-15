@@ -35,7 +35,7 @@ COPY priv priv
 COPY assets assets
 
 # Compile assets (cached unless assets change)
-RUN mix assets.deploy || true
+# RUN mix assets.deploy || true
 
 # Copy application code LAST (changes most frequently)
 COPY lib lib
