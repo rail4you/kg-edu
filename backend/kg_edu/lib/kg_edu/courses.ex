@@ -27,6 +27,8 @@ defmodule KgEdu.Courses do
       rpc_action :list_files, :read
       rpc_action :upload_file, :upload
       rpc_action :delete_file, :destroy
+      rpc_action :link_file_to_knowledge, :link_file_to_knowledge
+      rpc_action :unlink_file_from_knowledge, :unlink_file_from_knowledge
       # rpc_action :get_file, :get
     end
 
@@ -38,6 +40,8 @@ defmodule KgEdu.Courses do
       rpc_action :delete_video, :destroy
       rpc_action :get_videos_by_chapter, :by_chapter
       rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
+      rpc_action :link_video_to_knowledge, :link_video_to_knowledge
+      rpc_action :unlink_video_from_knowledge, :unlink_video_from_knowledge
     end
   end
 

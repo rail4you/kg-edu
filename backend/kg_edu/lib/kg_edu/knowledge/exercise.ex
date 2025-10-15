@@ -31,6 +31,8 @@ defmodule KgEdu.Knowledge.Exercise do
     define :delete_exercise, action: :destroy
     define :generate_ai_exercise, action: :generate_ai_exercise
     define :get_recent_ai_exercises, action: :recent_ai_exercises
+    define :link_exercise_to_knowledge, action: :link_exercise_to_knowledge
+    define :unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge
   end
 
   actions do
@@ -61,7 +63,7 @@ defmodule KgEdu.Knowledge.Exercise do
       argument :limit, :integer, allow_nil?: true, default: 10
 
       filter expr(ai_type == :ai_generated)
-      
+
       prepare fn query, _context ->
         query
         |> Ash.Query.sort(inserted_at: :desc)
@@ -79,6 +81,25 @@ defmodule KgEdu.Knowledge.Exercise do
       description "Update an exercise"
       accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :ai_type]
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
+    end
+
+    update :link_exercise_to_knowledge do
+      description "Link an exercise to a knowledge resource"
+      require_atomic? false
+
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+        description "The knowledge resource ID to link to"
+      end
+
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+    end
+
+    update :unlink_exercise_from_knowledge do
+      description "Unlink an exercise from its knowledge resource"
+      require_atomic? false
+
+      change set_attribute(:knowledge_resource_id, nil)
     end
 
     create :generate_ai_exercise do
@@ -112,19 +133,8 @@ defmodule KgEdu.Knowledge.Exercise do
 
       accept [:course_id]
       
-      argument :course_id, :uuid do
-        allow_nil? false
-        description "Course ID to associate the exercise with"
-      end
-
-      # Temporarily make knowledge_resource_id not required for debugging
-      # argument :knowledge_resource_id, :uuid do
-      #   allow_nil? true
-      #   description "Knowledge resource ID to associate the exercise with"
-      # end
-      
       change set_attribute(:ai_type, :ai_generated)
-      
+
       change {KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise, []}
     end
   end

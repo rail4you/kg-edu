@@ -29,6 +29,8 @@ defmodule KgEdu.Knowledge.Homework do
     define :list_homeworks_by_chapter, action: :by_chapter
     define :list_homeworks_by_knowledge_resource, action: :by_knowledge_resource
     define :list_homeworks_by_creator, action: :by_creator
+    define :link_homework_to_knowledge, action: :link_homework_to_knowledge
+    define :unlink_homework_from_knowledge, action: :unlink_homework_from_knowledge
   end
 
   actions do
@@ -191,6 +193,25 @@ defmodule KgEdu.Knowledge.Homework do
           :ok
         end
       end
+    end
+
+    update :link_homework_to_knowledge do
+      description "Link a homework to a knowledge resource"
+      require_atomic? false
+      
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+        description "The knowledge resource ID to link to"
+      end
+
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+    end
+
+    update :unlink_homework_from_knowledge do
+      description "Unlink a homework from its knowledge resource"
+      require_atomic? false
+      
+      change set_attribute(:knowledge_resource_id, nil)
     end
   end
 

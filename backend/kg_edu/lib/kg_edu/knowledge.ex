@@ -39,6 +39,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_exercise, :by_id
       rpc_action :generate_ai_exercise, :generate_ai_exercise
       rpc_action :get_recent_ai_exercises, :recent_ai_exercises
+      rpc_action :link_exercise_to_knowledge, :link_exercise_to_knowledge
+      rpc_action :unlink_exercise_from_knowledge, :unlink_exercise_from_knowledge
     end
 
     resource KgEdu.Knowledge.Question do
@@ -71,6 +73,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_homeworks_by_chapter, :by_chapter
       rpc_action :list_homeworks_by_knowledge_resource, :by_knowledge_resource
       rpc_action :list_homeworks_by_creator, :by_creator
+      rpc_action :link_homework_to_knowledge, :link_homework_to_knowledge
+      rpc_action :unlink_homework_from_knowledge, :unlink_homework_from_knowledge
     end
   end
 

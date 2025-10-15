@@ -69,6 +69,8 @@ defmodule KgEdu.Courses.File do
     define :list_files_by_knowledge_resource, action: :by_knowledge_resource
     define :generate_example_files, action: :generate_examples
     define :download_file, action: :download_file
+    define :link_file_to_knowledge, action: :link_file_to_knowledge
+    define :unlink_file_from_knowledge, action: :unlink_file_from_knowledge
   end
 
   actions do
@@ -236,6 +238,25 @@ defmodule KgEdu.Courses.File do
             )
         end
       end
+    end
+
+    update :link_file_to_knowledge do
+      description "Link a file to a knowledge resource"
+      require_atomic? false
+      
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+        description "The knowledge resource ID to link to"
+      end
+
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+    end
+
+    update :unlink_file_from_knowledge do
+      description "Unlink a file from its knowledge resource"
+      require_atomic? false
+      
+      change set_attribute(:knowledge_resource_id, nil)
     end
   end
 

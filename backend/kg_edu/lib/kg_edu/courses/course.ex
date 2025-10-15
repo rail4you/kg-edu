@@ -28,6 +28,7 @@ defmodule KgEdu.Courses.Course do
     define :list_courses, action: :read
     define :list_courses_by_teacher, action: :by_teacher
     define :list_courses_by_student, action: :by_student
+    define :get_course_by_title, action: :by_title
   end
 
   actions do
@@ -65,6 +66,13 @@ defmodule KgEdu.Courses.Course do
       end
 
       filter expr(course_enrollments.member_id == ^arg(:member_id))
+    end
+
+    read :by_title do
+      description "Get a course by title"
+      get? true
+      argument :title, :string, allow_nil?: false
+      filter expr(title == ^arg(:title))
     end
   end
 
