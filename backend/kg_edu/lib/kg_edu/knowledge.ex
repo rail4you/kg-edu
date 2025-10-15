@@ -61,6 +61,17 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_connections_by_target, :by_target
       rpc_action :get_course_connections, :by_course
     end
+
+    resource KgEdu.Knowledge.Homework do
+      rpc_action :list_homeworks, :read
+      rpc_action :create_homework, :create
+      rpc_action :destroy_homework, :destroy
+      rpc_action :get_homework, :by_id
+      rpc_action :list_homeworks_by_course, :by_course
+      rpc_action :list_homeworks_by_chapter, :by_chapter
+      rpc_action :list_homeworks_by_knowledge_resource, :by_knowledge_resource
+      rpc_action :list_homeworks_by_creator, :by_creator
+    end
   end
 
   json_api do
@@ -115,6 +126,18 @@ defmodule KgEdu.Knowledge do
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
       end
+
+      # Homework endpoints
+      base_route "/homeworks", KgEdu.Knowledge.Homework do
+        get :read, route: "/"
+        index :by_course, route: "/course/:course_id"
+        index :by_chapter, route: "/chapter/:chapter_id"
+        index :by_knowledge_resource, route: "/knowledge/:knowledge_resource_id"
+        index :by_creator, route: "/creator/:created_by_id"
+        post :create, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
     end
   end
 
@@ -125,5 +148,6 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.Exercise
     resource KgEdu.Knowledge.Question
     resource KgEdu.Knowledge.QuestionConnection
+    resource KgEdu.Knowledge.Homework
   end
 end

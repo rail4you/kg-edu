@@ -145,5 +145,10 @@ defmodule KgEdu.Courses.Course do
     has_many :chapters, KgEdu.Courses.Chapter do
       destination_attribute :course_id
     end
+
+    has_many :homeworks, KgEdu.Knowledge.Homework do
+      destination_attribute :course_id
+      description "Homeworks for this course"
+    end
   end
 end

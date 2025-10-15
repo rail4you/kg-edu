@@ -542,6 +542,18 @@ defmodule KgEdu.Knowledge.Resource do
       public? true
       destination_attribute :knowledge_resource_id
     end
+
+    has_many :videos, KgEdu.Courses.Video do
+      public? true
+      destination_attribute :knowledge_resource_id
+      description "Videos associated with this knowledge resource"
+    end
+
+    has_many :homeworks, KgEdu.Knowledge.Homework do
+      public? true
+      destination_attribute :knowledge_resource_id
+      description "Homeworks related to this knowledge resource"
+    end
   end
 
   # identities do

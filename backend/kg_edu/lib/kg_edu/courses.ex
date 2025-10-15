@@ -29,6 +29,16 @@ defmodule KgEdu.Courses do
       rpc_action :delete_file, :destroy
       # rpc_action :get_file, :get
     end
+
+    resource KgEdu.Courses.Video do
+      rpc_action :list_videos, :read
+      rpc_action :create_video, :create
+      rpc_action :get_video, :read
+      rpc_action :update_video, :update
+      rpc_action :delete_video, :destroy
+      rpc_action :get_videos_by_chapter, :by_chapter
+      rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
+    end
   end
 
   json_api do
@@ -70,5 +80,6 @@ defmodule KgEdu.Courses do
     resource KgEdu.Courses.CourseEnrollment
     resource KgEdu.Courses.Chapter
     resource KgEdu.Courses.File
+    resource KgEdu.Courses.Video
   end
 end

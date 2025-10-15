@@ -3,6 +3,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   Generate AI exercises using ReqLLM based on course, knowledge, chapter, and exercise type.
   """
   use Ash.Resource.Change
+  require Logger
 
   def change(changeset, _opts, _context) do
     course_name = Ash.Changeset.get_argument(changeset, :course_name)
@@ -88,14 +89,15 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     # Get ReqLLM configuration
     config = Application.get_env(:kg_edu, :reqllm)
     model = config[:model] || "openrouter:z-ai/glm-4.5"
-    
+
     # Define schema for structured output
     schema = build_exercise_schema(exercise_type)
-
+    Logger.info("Using schema: #{inspect(schema)}, prompt: #{prompt}")
     # Generate structured object
     case ReqLLM.generate_object(model, prompt, schema) do
       {:ok, response} ->
         object = ReqLLM.Response.object(response)
+        Logger.info("Generated exercise object: #{inspect(object)}")
         case parse_structured_exercise(object, exercise_type) do
           {:ok, exercise_data} -> {:ok, exercise_data}
           {:error, reason} -> {:error, reason}

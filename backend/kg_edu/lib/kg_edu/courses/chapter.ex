@@ -181,6 +181,18 @@ defmodule KgEdu.Courses.Chapter do
       destination_attribute :chapter_id
       description "Knowledge resources associated with this chapter"
     end
+
+    has_many :videos, KgEdu.Courses.Video do
+      public? true
+      destination_attribute :chapter_id
+      description "Videos associated with this chapter"
+    end
+
+    has_many :homeworks, KgEdu.Knowledge.Homework do
+      public? true
+      destination_attribute :chapter_id
+      description "Homeworks associated with this chapter"
+    end
   end
 
   identities do
