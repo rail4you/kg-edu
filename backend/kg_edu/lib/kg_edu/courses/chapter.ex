@@ -40,6 +40,7 @@ defmodule KgEdu.Courses.Chapter do
     define :list_root_chapters, action: :root_chapters
     define :list_subchapters, action: :subchapters
     define :get_chapter_with_subchapters, action: :get_with_subchapters
+    define :get_course_full_hierarchy, action: :course_full_hierarchy
   end
 
   actions do
@@ -91,6 +92,20 @@ defmodule KgEdu.Courses.Chapter do
       filter expr(id == ^arg(:id))
       prepare fn query, _context ->
         Ash.Query.load(query, subchapters: [:subchapters])
+      end
+    end
+
+    read :course_full_hierarchy do
+      description "Get the nested full hierarchy of chapters for a course (include chapters and subchapters)"
+      argument :course_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(course_id == ^arg(:course_id) and is_nil(parent_chapter_id))
+      prepare fn query, _context ->
+        query
+        |> Ash.Query.sort(sort_order: :asc, title: :asc)
+        |> Ash.Query.load(subchapters: [:subchapters])
       end
     end
 

@@ -16,11 +16,10 @@ defmodule KgEduWeb.UploadVideoController do
   def webhook(conn, _params) do
     signature_header = List.first(get_req_header(conn, "mux-signature"))
     raw_body = List.first(conn.assigns.raw_body)
-    secret = Application.get_env(:kg_edu, :mux_webhook_secret) || "tk5udqsqdm21t5b2deeu0vhdqjrtin57"
+    secret = Application.get_env(:kg_edu, :mux_webhook_secret) || "ug0nf315hnvhcdn0krhjhv6drarvk4mk"
 
     case Mux.Webhooks.verify_header(raw_body, signature_header, secret) do
       :ok ->
-        body = Plug.Conn.get_req_header(conn, "content-type")
         {:ok, data} = Jason.decode(raw_body)
 
         handle_webhook_event(data)
@@ -39,34 +38,66 @@ defmodule KgEduWeb.UploadVideoController do
     upload_id = data["upload_id"]
     asset_id = data["asset_id"]
 
-    # case Videos.get_by_upload_id(upload_id) do
-    #   video ->
-    #     Videos.update_video(video, %{asset_id: asset_id})
+    # Try to find existing video by upload_id
+    case Ash.get(KgEdu.Courses.Video, upload_id, filter: [upload_id: upload_id]) do
+      {:ok, video} ->
+        # Update existing video with asset_id
+        case Ash.update(video, :update_video, %{asset_id: asset_id}) do
+          {:ok, updated_video} ->
+            Logger.info("Updated video #{updated_video.id} with asset_id: #{asset_id}")
 
-    #   nil ->
-    #     Logger.warn("Video record not found for upload: #{upload_id}")
-    # end
+          {:error, error} ->
+            Logger.error("Failed to update video #{video.id}: #{inspect(error)}")
+        end
+
+      {:error, :not_found} ->
+        # Create a new video record with upload_id and asset_id
+        # We'll update other fields when the video is ready
+        video_attrs = %{
+          upload_id: upload_id,
+          asset_id: asset_id,
+          title: "Video #{upload_id}"
+        }
+
+        case Ash.create(KgEdu.Courses.Video, :create, video_attrs) do
+          {:ok, video} ->
+            Logger.info("Created new video #{video.id} for upload: #{upload_id}")
+
+          {:error, error} ->
+            Logger.error("Failed to create video for upload #{upload_id}: #{inspect(error)}")
+        end
+
+      {:error, error} ->
+        Logger.error("Error finding video by upload_id #{upload_id}: #{inspect(error)}")
+    end
   end
 
   defp handle_webhook_event(%{"type" => "video.asset.ready", "data" => data}) do
     Logger.info("Video ready for playback: #{data["asset_id"]}")
+    Logger.info("Complete data: #{inspect(data)}")
 
-    asset_id = data["asset_id"]
-    playback_id = get_playback_id(asset_id)
+    asset_id = data["id"]
+    playback_id = data["playback_ids"] |> List.first() |> Map.get("id")
+    duration = data["tracks"] |> Enum.find(fn track -> track["type"] == "video" end) |> Map.get("duration")
+    thumbnail = "https://image.mux.com/#{playback_id}/thumbnail.webp"
+
+    Logger.info("Duration: #{duration}")
     Logger.info("Playback ID: #{playback_id}")
+    Logger.info("Thumbnail: #{thumbnail}")
 
-    # case Videos.get_by_asset_id(asset_id) do
-    #   video ->
-    #     playback_id = get_playback_id(asset_id)
+    # create video use asset_id, playback_id, duration, thumbnail
+    case Ash.Changeset.for_create(KgEdu.Courses.Video, :create, %{
+      asset_id: asset_id,
+      playback_id: playback_id,
+      duration: duration,
+      thumbnail: thumbnail
+    }) |> Ash.create do
+      {:ok, video} ->
+        Logger.info("Created new video #{video.id} with playback details")
+      {:error, error} ->
+        Logger.error("Failed to create video with playback details: #{inspect(error)}")
+    end
 
-    #     Videos.update_video(video, %{
-    #       playback_id: playback_id,
-    #       status: "ready"
-    #     })
-
-    #   nil ->
-    #     Logger.warn("Video record not found for asset: #{asset_id}")
-    # end
   end
 
   defp handle_webhook_event(%{"type" => _type, "data" => _data}) do
@@ -74,20 +105,93 @@ defmodule KgEduWeb.UploadVideoController do
     :ok
   end
 
-  defp get_playback_id(asset_id) do
-    client = Mux.client()
+  def link_to_chapter(conn, %{"video_id" => video_id, "chapter_id" => chapter_id}) do
+    case Ash.get(KgEdu.Courses.Video, video_id) do
+      {:ok, video} ->
+        case Ash.update(video, :link_video_to_chapter, %{chapter_id: chapter_id}) do
+          {:ok, updated_video} ->
+            json(conn, %{
+              success: true,
+              message: "Video successfully linked to chapter",
+              data: %{
+                video_id: updated_video.id,
+                chapter_id: updated_video.chapter_id,
+                title: updated_video.title
+              }
+            })
 
-    case Mux.Video.Assets.get(client, asset_id) do
-      {:ok, asset, _env} ->
-        case asset["playback_ids"] do
-          [%{"id" => id} | _] -> id
-          [%{id: id} | _] -> id
-          [] -> nil
+          {:error, error} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              error: "Failed to link video to chapter",
+              details: inspect(error)
+            })
         end
 
-      {:error, _err} ->
-        nil
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: "Video not found"
+        })
+
+      {:error, error} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{
+          success: false,
+          error: "Error finding video",
+          details: inspect(error)
+        })
     end
   end
+
+  def unlink_from_chapter(conn, %{"video_id" => video_id}) do
+    case Ash.get(KgEdu.Courses.Video, video_id) do
+      {:ok, video} ->
+        case Ash.update(video, :unlink_video_from_chapter, %{}) do
+          {:ok, updated_video} ->
+            json(conn, %{
+              success: true,
+              message: "Video successfully unlinked from chapter",
+              data: %{
+                video_id: updated_video.id,
+                chapter_id: updated_video.chapter_id,
+                title: updated_video.title
+              }
+            })
+
+          {:error, error} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              error: "Failed to unlink video from chapter",
+              details: inspect(error)
+            })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: "Video not found"
+        })
+
+      {:error, error} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{
+          success: false,
+          error: "Error finding video",
+          details: inspect(error)
+        })
+    end
+  end
+
 
 end

@@ -36,11 +36,14 @@ defmodule KgEdu.Courses.Video do
     define :update_video, action: :update
     define :delete_video, action: :destroy
     define :get_video, action: :read, get_by: [:id]
+    define :get_video_by_upload_id, action: :read, get_by: [:upload_id]
     define :list_videos, action: :read
     define :get_videos_by_chapter, action: :by_chapter
     define :get_videos_by_knowledge_resource, action: :by_knowledge_resource
     define :link_video_to_knowledge, action: :link_video_to_knowledge
     define :unlink_video_from_knowledge, action: :unlink_video_from_knowledge
+    define :link_video_to_chapter, action: :link_video_to_chapter
+    define :unlink_video_from_chapter, action: :unlink_video_from_chapter
   end
 
   actions do
@@ -72,33 +75,35 @@ defmodule KgEdu.Courses.Video do
 
     create :create do
       description "Create a new video"
-      accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :chapter_id, :knowledge_resource_id]
+      accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
 
-      validate fn changeset, _context ->
-        chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
-        knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
+      # validate fn changeset, _context ->
+      #   chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
+      #   knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
+      #   upload_id = Ash.Changeset.get_attribute(changeset, :upload_id)
 
-        # At least one of chapter_id or knowledge_resource_id must be provided
-        if is_nil(chapter_id) && is_nil(knowledge_resource_id) do
-          {:error, "Video must be associated with either a chapter or a knowledge resource"}
-        else
-          :ok
-        end
-      end
+      #   # At least one of chapter_id or knowledge_resource_id must be provided, or upload_id must be present
+      #   if is_nil(chapter_id) && is_nil(knowledge_resource_id) && is_nil(upload_id) do
+      #     {:error, "Video must be associated with either a chapter or a knowledge resource, or have an upload_id"}
+      #   else
+      #     :ok
+      #   end
+      # end
     end
 
     update :update_video do
       description "Update a video"
-      accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :chapter_id, :knowledge_resource_id]
+      accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
       require_atomic? false
 
       validate fn changeset, _context ->
         chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
         knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
+        upload_id = Ash.Changeset.get_attribute(changeset, :upload_id)
 
-        # At least one of chapter_id or knowledge_resource_id must be provided
-        if is_nil(chapter_id) && is_nil(knowledge_resource_id) do
-          {:error, "Video must be associated with either a chapter or a knowledge resource"}
+        # At least one of chapter_id or knowledge_resource_id must be provided, or upload_id must be present
+        if is_nil(chapter_id) && is_nil(knowledge_resource_id) && is_nil(upload_id) do
+          {:error, "Video must be associated with either a chapter or a knowledge resource, or have an upload_id"}
         else
           :ok
         end
@@ -108,7 +113,7 @@ defmodule KgEdu.Courses.Video do
     update :link_video_to_knowledge do
       description "Link a video to a knowledge resource"
       require_atomic? false
-      
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
         description "The knowledge resource ID to link to"
@@ -120,8 +125,27 @@ defmodule KgEdu.Courses.Video do
     update :unlink_video_from_knowledge do
       description "Unlink a video from its knowledge resource"
       require_atomic? false
-      
+
       change set_attribute(:knowledge_resource_id, nil)
+    end
+
+    update :link_video_to_chapter do
+      description "Link a video to a chapter"
+      require_atomic? false
+
+      argument :chapter_id, :uuid do
+        allow_nil? false
+        description "The chapter ID to link to"
+      end
+
+      change set_attribute(:chapter_id, arg(:chapter_id))
+    end
+
+    update :unlink_video_from_chapter do
+      description "Unlink a video from its chapter"
+      require_atomic? false
+
+      change set_attribute(:chapter_id, nil)
     end
   end
 
@@ -137,27 +161,34 @@ defmodule KgEdu.Courses.Video do
     end
 
     attribute :title, :string do
-      allow_nil? false
-      constraints min_length: 1, max_length: 200
+      allow_nil? true
+      # constraints min_length: 1, max_length: 200
       public? true
       description "Video title"
     end
 
+    attribute :upload_id, :string do
+      allow_nil? true
+      constraints max_length: 200
+      public? true
+      description "Upload ID from video hosting service"
+    end
+
     attribute :asset_id, :string do
-      allow_nil? false
-      constraints min_length: 1, max_length: 200
+      allow_nil? true
+      # constraints min_length: 1, max_length: 200
       public? true
       description "Video asset ID (from video hosting service)"
     end
 
     attribute :playback_id, :string do
-      allow_nil? false
-      constraints min_length: 1, max_length: 200
+      allow_nil? true
+      # constraints min_length: 1, max_length: 200
       public? true
       description "Video playback ID (from video hosting service)"
     end
 
-    attribute :duration, :integer do
+    attribute :duration, :float do
       allow_nil? true
       public? true
       description "Video duration in seconds"
@@ -165,7 +196,7 @@ defmodule KgEdu.Courses.Video do
 
     attribute :thumbnail, :string do
       allow_nil? true
-      constraints max_length: 500
+      # constraints max_length: 500
       public? true
       description "Thumbnail URL for the video"
     end
@@ -189,6 +220,7 @@ defmodule KgEdu.Courses.Video do
   end
 
   identities do
+    identity :unique_upload_id, [:upload_id]
     identity :unique_asset_id, [:asset_id]
     identity :unique_playback_id, [:playback_id]
   end
