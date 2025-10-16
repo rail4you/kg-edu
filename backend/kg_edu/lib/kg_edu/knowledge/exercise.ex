@@ -33,6 +33,8 @@ defmodule KgEdu.Knowledge.Exercise do
     define :get_recent_ai_exercises, action: :recent_ai_exercises
     define :link_exercise_to_knowledge, action: :link_exercise_to_knowledge
     define :unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge
+    define :import_exercise_from_xlsx, action: :import_exercise_from_xlsx
+    define :export_exercise_template, action: :export_exercise_template
   end
 
   actions do
@@ -79,7 +81,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
     update :update_exercise do
       description "Update an exercise"
-      accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :ai_type]
+      accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :course_id,:ai_type]
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
@@ -132,10 +134,37 @@ defmodule KgEdu.Knowledge.Exercise do
       end
 
       accept [:course_id]
-      
+
       change set_attribute(:ai_type, :ai_generated)
 
       change {KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise, []}
+    end
+
+    create :import_exercise_from_xlsx do
+      description "Import exercise from XLSX file"
+
+      argument :xlsx_base64, :string do
+        allow_nil? false
+        description "Base64 encoded XLSX file content"
+      end
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID who is importing the exercise"
+      end
+
+      change {KgEdu.Knowledge.Changes.ImportExerciseFromXlsx, []}
+    end
+
+    action :export_exercise_template do
+      description "Generate exercise template XLSX as base64"
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID requesting the template"
+      end
+
+      run {KgEdu.Knowledge.Changes.ExportExerciseTemplate, []}
     end
   end
 
@@ -200,7 +229,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
     belongs_to :course, KgEdu.Courses.Course do
       public? true
-      allow_nil? false
+      allow_nil? true
     end
 
     belongs_to :created_by, KgEdu.Accounts.User do

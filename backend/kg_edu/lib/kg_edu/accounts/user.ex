@@ -63,7 +63,13 @@ defmodule KgEdu.Accounts.User do
   end
 
   actions do
-    defaults [:read, :create, :update, :destroy]
+    defaults [:read, :create, :destroy]
+
+    update :update do
+      description "Update user name and role"
+      accept [:name, :role]
+      require_atomic? false
+    end
 
     read :get_users do
       description "Get all users"

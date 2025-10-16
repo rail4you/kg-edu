@@ -31,6 +31,8 @@ defmodule KgEdu.Knowledge.Homework do
     define :list_homeworks_by_creator, action: :by_creator
     define :link_homework_to_knowledge, action: :link_homework_to_knowledge
     define :unlink_homework_from_knowledge, action: :unlink_homework_from_knowledge
+    define :import_homework_from_xlsx, action: :import_homework_from_xlsx
+    define :export_homework_template, action: :export_homework_template
   end
 
   actions do
@@ -212,6 +214,33 @@ defmodule KgEdu.Knowledge.Homework do
       require_atomic? false
       
       change set_attribute(:knowledge_resource_id, nil)
+    end
+
+    create :import_homework_from_xlsx do
+      description "Import homework from XLSX file"
+      
+      argument :xlsx_base64, :string do
+        allow_nil? false
+        description "Base64 encoded XLSX file content"
+      end
+      
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID who is importing the homework"
+      end
+
+      change {KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx, []}
+    end
+
+    action :export_homework_template do
+      description "Generate homework template XLSX as base64"
+      
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID requesting the template"
+      end
+
+      run {KgEdu.Knowledge.Changes.ExportHomeworkTemplate, []}
     end
   end
 

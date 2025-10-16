@@ -38,7 +38,7 @@ defmodule KgEdu.Knowledge.Question do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
 
     # ============ Basic Queries ============
     read :by_id do
@@ -52,12 +52,12 @@ defmodule KgEdu.Knowledge.Question do
     read :list_global_questions do
       description "List all global level questions"
       argument :course_id, :uuid, allow_nil?: true
-      
+
       filter expr(
-        question_level == :global and 
+        question_level == :global and
         (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
       )
-      
+
       prepare fn query, _context ->
         Ash.Query.sort(query, position: :asc, title: :asc)
       end
@@ -66,12 +66,12 @@ defmodule KgEdu.Knowledge.Question do
     read :list_concept_questions do
       description "List all concept level questions"
       argument :course_id, :uuid, allow_nil?: true
-      
+
       filter expr(
-        question_level == :concept and 
+        question_level == :concept and
         (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
       )
-      
+
       prepare fn query, _context ->
         Ash.Query.sort(query, position: :asc, title: :asc)
       end
@@ -80,12 +80,12 @@ defmodule KgEdu.Knowledge.Question do
     read :list_method_questions do
       description "List all method level questions"
       argument :course_id, :uuid, allow_nil?: true
-      
+
       filter expr(
-        question_level == :method and 
+        question_level == :method and
         (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
       )
-      
+
       prepare fn query, _context ->
         Ash.Query.sort(query, position: :asc, title: :asc)
       end
@@ -95,9 +95,9 @@ defmodule KgEdu.Knowledge.Question do
     read :get_question_flow do
       description "Get the complete question flow for a course"
       argument :course_id, :uuid, allow_nil?: false
-      
+
       filter expr(course_id == ^arg(:course_id))
-      
+
       prepare fn query, _context ->
         query
         |> Ash.Query.sort(question_level: :asc, position: :asc)
@@ -108,7 +108,7 @@ defmodule KgEdu.Knowledge.Question do
     read :get_question_connections do
       description "Get connections for a specific question"
       argument :question_id, :uuid, allow_nil?: false
-      
+
       prepare fn query, _context ->
         query
         |> Ash.Query.filter(expr(id == ^arg(:question_id)))
@@ -119,7 +119,7 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Create Actions ============
     create :create do
       description "Create a new question"
-      
+
       accept [
         :title,
         :description,
@@ -128,26 +128,26 @@ defmodule KgEdu.Knowledge.Question do
         :position,
         :tags
       ]
-      
+
       validate fn changeset, _context ->
         title = Ash.Changeset.get_attribute(changeset, :title)
         question_level = Ash.Changeset.get_attribute(changeset, :question_level)
         position = Ash.Changeset.get_attribute(changeset, :position)
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
-        
+
         cond do
           is_nil(title) or title == "" ->
             {:error, "Title is required"}
-          
+
           is_nil(question_level) ->
             {:error, "Question level is required"}
-          
+
           is_nil(position) ->
             {:error, "Position is required"}
-          
+
           is_nil(course_id) ->
             {:error, "Course ID is required"}
-          
+
           true ->
             :ok
         end
@@ -163,17 +163,17 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Batch Actions ============
     action :create_from_flow do
       description "Create questions from flow data"
-      
+
       argument :flow_data, :map, allow_nil?: false
       argument :course_id, :uuid, allow_nil?: false
-      
+
       run fn input, _context ->
         flow_data = input.arguments.flow_data
         course_id = input.arguments.course_id
-        
+
         try do
           # Create questions from the flow data
-          results = 
+          results =
             flow_data
             |> Enum.map(fn {level, questions} ->
               Enum.map(questions, fn question_data ->
@@ -181,10 +181,10 @@ defmodule KgEdu.Knowledge.Question do
               end)
             end)
             |> List.flatten()
-          
+
           successful = Enum.count(results, fn {status, _} -> status == :ok end)
           failed = Enum.count(results, fn {status, _} -> status == :error end)
-          
+
           if failed > 0 do
             {:error, "Created #{successful} questions, #{failed} failed"}
           else
@@ -240,7 +240,7 @@ defmodule KgEdu.Knowledge.Question do
       description "Tags associated with the question"
     end
 
-    
+
     timestamps()
   end
 

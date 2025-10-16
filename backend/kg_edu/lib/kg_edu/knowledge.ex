@@ -37,16 +37,20 @@ defmodule KgEdu.Knowledge do
       rpc_action :create_exercise, :create
       rpc_action :destroy_exercise, :destroy
       rpc_action :get_exercise, :by_id
+      rpc_action :update_exercise, :update_exercise
       rpc_action :generate_ai_exercise, :generate_ai_exercise
       rpc_action :get_recent_ai_exercises, :recent_ai_exercises
       rpc_action :link_exercise_to_knowledge, :link_exercise_to_knowledge
       rpc_action :unlink_exercise_from_knowledge, :unlink_exercise_from_knowledge
+      rpc_action :import_exercise_from_xlsx, :import_exercise_from_xlsx
+      rpc_action :export_exercise_template, :export_exercise_template
     end
 
     resource KgEdu.Knowledge.Question do
       rpc_action :list_questions, :read
       rpc_action :create_question, :create
       rpc_action :destroy_question, :destroy
+      rpc_action :update_question, :update_question
       rpc_action :get_question, :by_id
       rpc_action :list_global_questions, :list_global_questions
       rpc_action :list_concept_questions, :list_concept_questions
@@ -75,6 +79,8 @@ defmodule KgEdu.Knowledge do
       # rpc_action :list_homeworks_by_creator, :by_creator
       rpc_action :link_homework_to_knowledge, :link_homework_to_knowledge
       rpc_action :unlink_homework_from_knowledge, :unlink_homework_from_knowledge
+      rpc_action :import_homework_from_xlsx, :import_homework_from_xlsx
+      rpc_action :export_homework_template, :export_homework_template
     end
   end
 

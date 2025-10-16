@@ -103,6 +103,23 @@ defmodule KgEduWeb.Router do
     forward "/", KgEduWeb.AshJsonApiRouter
   end
 
+
+  scope "/webhooks", KgEduWeb do
+    pipe_through :api
+    post "/mux", UploadVideoController, :webhook
+  end
+
+  # Other scopes may use custom stacks.
+  scope "/api", KgEduWeb do
+    pipe_through :api
+    get "/download/template", DownloadController, :template
+    post "/files/upload", FileUploadController, :upload
+    get "/files/template", FileUploadController, :download_template
+    post "/videos/upload", UploadVideoController, :direct_upload
+    post "/videos/:video_id/link-chapter", UploadVideoController, :link_to_chapter
+    post "/videos/:video_id/unlink-chapter", UploadVideoController, :unlink_from_chapter
+  end
+
   scope "/", KgEduWeb do
     pipe_through :browser
     get "/*path", PageController, :index
@@ -134,21 +151,6 @@ defmodule KgEduWeb.Router do
     # )
   end
 
-  scope "/webhooks", KgEduWeb do
-    pipe_through :api
-    post "/mux", UploadVideoController, :webhook
-  end
-
-  # Other scopes may use custom stacks.
-  scope "/api", KgEduWeb do
-    pipe_through :api
-
-    post "/files/upload", FileUploadController, :upload
-    get "/files/template", FileUploadController, :download_template
-    post "/videos/upload", UploadVideoController, :direct_upload
-    post "/videos/:video_id/link-chapter", UploadVideoController, :link_to_chapter
-    post "/videos/:video_id/unlink-chapter", UploadVideoController, :unlink_from_chapter
-  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:kg_edu, :dev_routes) do
