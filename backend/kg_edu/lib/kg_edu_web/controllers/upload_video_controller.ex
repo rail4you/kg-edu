@@ -16,7 +16,7 @@ defmodule KgEduWeb.UploadVideoController do
   def webhook(conn, _params) do
     signature_header = List.first(get_req_header(conn, "mux-signature"))
     raw_body = List.first(conn.assigns.raw_body)
-    secret = Application.get_env(:kg_edu, :mux_webhook_secret) || "ug0nf315hnvhcdn0krhjhv6drarvk4mk"
+    secret = Application.get_env(:kg_edu, :mux_webhook_secret) || "86h1a5uueieeqm0tot4ptrdd9pg6s5d4"
 
     case Mux.Webhooks.verify_header(raw_body, signature_header, secret) do
       :ok ->

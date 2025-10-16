@@ -24,7 +24,7 @@ defmodule KgEdu.Courses.Video do
       rpc_action :list_videos, :read
       rpc_action :create_video, :create
       rpc_action :get_video, :read
-      rpc_action :update_video, :update
+      rpc_action :update_video, :update_video
       rpc_action :delete_video, :destroy
       rpc_action :get_videos_by_chapter, :by_chapter
       rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
@@ -94,25 +94,25 @@ defmodule KgEdu.Courses.Video do
     update :update_video do
       description "Update a video"
       accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
-      require_atomic? false
+      # require_atomic? false
 
-      validate fn changeset, _context ->
-        chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
-        knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
-        upload_id = Ash.Changeset.get_attribute(changeset, :upload_id)
+      # validate fn changeset, _context ->
+      #   chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
+      #   knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
+      #   upload_id = Ash.Changeset.get_attribute(changeset, :upload_id)
 
-        # At least one of chapter_id or knowledge_resource_id must be provided, or upload_id must be present
-        if is_nil(chapter_id) && is_nil(knowledge_resource_id) && is_nil(upload_id) do
-          {:error, "Video must be associated with either a chapter or a knowledge resource, or have an upload_id"}
-        else
-          :ok
-        end
-      end
+      #   # At least one of chapter_id or knowledge_resource_id must be provided, or upload_id must be present
+      #   if is_nil(chapter_id) && is_nil(knowledge_resource_id) && is_nil(upload_id) do
+      #     {:error, "Video must be associated with either a chapter or a knowledge resource, or have an upload_id"}
+      #   else
+      #     :ok
+      #   end
+      # end
     end
 
     update :link_video_to_knowledge do
       description "Link a video to a knowledge resource"
-      require_atomic? false
+      # require_atomic? false
 
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
