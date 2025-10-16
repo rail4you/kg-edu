@@ -39,14 +39,14 @@ defmodule KgEdu.Courses.File do
   defp read_file(relative_path) do
     # Convert relative path to absolute path
     absolute_path = Path.join([File.cwd!(), "priv", "static", relative_path])
-    
+
     case File.read(absolute_path) do
       {:ok, binary_data} ->
         {:ok, binary_data}
-      
+
       {:error, :enoent} ->
         {:error, "File not found"}
-      
+
       {:error, reason} ->
         {:error, "Failed to read file: #{inspect(reason)}"}
     end
@@ -85,11 +85,11 @@ defmodule KgEdu.Courses.File do
 
       run fn args, _context ->
         file_id = args.id
-        
+
         case Ash.get(KgEdu.Courses.File, file_id, actor: nil, authorize?: false) do
           {:ok, nil} ->
             {:error, "File not found"}
-          
+
           {:ok, file} ->
             case read_file(file.path) do
               {:ok, binary_data} ->
@@ -102,11 +102,11 @@ defmodule KgEdu.Courses.File do
                   binary_data: binary_data
                 }
                 {:ok, file_result}
-              
+
               {:error, reason} ->
                 {:error, reason}
             end
-          
+
           {:error, reason} ->
             {:error, "Failed to find file: #{inspect(reason)}"}
         end
@@ -243,7 +243,7 @@ defmodule KgEdu.Courses.File do
     update :link_file_to_knowledge do
       description "Link a file to a knowledge resource"
       require_atomic? false
-      
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
         description "The knowledge resource ID to link to"
@@ -255,7 +255,7 @@ defmodule KgEdu.Courses.File do
     update :unlink_file_from_knowledge do
       description "Unlink a file from its knowledge resource"
       require_atomic? false
-      
+
       change set_attribute(:knowledge_resource_id, nil)
     end
   end

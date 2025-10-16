@@ -94,7 +94,7 @@ defmodule KgEdu.Courses.Video do
     update :update_video do
       description "Update a video"
       accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
-      # require_atomic? false
+      require_atomic? false
 
       # validate fn changeset, _context ->
       #   chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
@@ -112,7 +112,7 @@ defmodule KgEdu.Courses.Video do
 
     update :link_video_to_knowledge do
       description "Link a video to a knowledge resource"
-      # require_atomic? false
+      require_atomic? false
 
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
