@@ -13,7 +13,7 @@ defmodule KgEduWeb.UploadVideoController do
       title: title
     }
 
-    case Video.upload_video(upload_params, actor: conn.assigns.current_user) do
+    case Video.upload_video(upload_params) do
       {:ok, video} ->
         json(conn, %{
           success: true,
