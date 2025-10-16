@@ -154,53 +154,53 @@ defmodule KgEdu.Knowledge.Homework do
       accept [:title, :content, :score, :chapter_id, :knowledge_resource_id]
       require_atomic? false
 
-      validate fn changeset, _context ->
-        # If chapter_id is being updated, validate it belongs to the same course
-        course_id = Ash.Changeset.get_attribute(changeset, :course_id)
-        chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
+      # validate fn changeset, _context ->
+      #   # If chapter_id is being updated, validate it belongs to the same course
+      #   course_id = Ash.Changeset.get_attribute(changeset, :course_id)
+      #   chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
 
-        if course_id && chapter_id do
-          case KgEdu.Courses.Chapter.get_chapter(chapter_id) do
-            {:ok, chapter} ->
-              if chapter.course_id == course_id do
-                :ok
-              else
-                {:error, "Chapter must belong to the same course"}
-              end
-            {:error, _} ->
-              {:error, "Chapter not found"}
-          end
-        else
-          :ok
-        end
-      end
+      #   if course_id && chapter_id do
+      #     case KgEdu.Courses.Chapter.get_chapter(chapter_id) do
+      #       {:ok, chapter} ->
+      #         if chapter.course_id == course_id do
+      #           :ok
+      #         else
+      #           {:error, "Chapter must belong to the same course"}
+      #         end
+      #       {:error, _} ->
+      #         {:error, "Chapter not found"}
+      #     end
+      #   else
+      #     :ok
+      #   end
+      # end
 
-      validate fn changeset, _context ->
-        # If knowledge_resource_id is being updated, validate it belongs to the same course
-        course_id = Ash.Changeset.get_attribute(changeset, :course_id)
-        knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
+      # validate fn changeset, _context ->
+      #   # If knowledge_resource_id is being updated, validate it belongs to the same course
+      #   course_id = Ash.Changeset.get_attribute(changeset, :course_id)
+      #   knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
 
-        if course_id && knowledge_resource_id do
-          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id) do
-            {:ok, resource} ->
-              if resource.course_id == course_id do
-                :ok
-              else
-                {:error, "Knowledge resource must belong to the same course"}
-              end
-            {:error, _} ->
-              {:error, "Knowledge resource not found"}
-          end
-        else
-          :ok
-        end
-      end
+      #   if course_id && knowledge_resource_id do
+      #     case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id) do
+      #       {:ok, resource} ->
+      #         if resource.course_id == course_id do
+      #           :ok
+      #         else
+      #           {:error, "Knowledge resource must belong to the same course"}
+      #         end
+      #       {:error, _} ->
+      #         {:error, "Knowledge resource not found"}
+      #     end
+      #   else
+      #     :ok
+      #   end
+      # end
     end
 
     update :link_homework_to_knowledge do
       description "Link a homework to a knowledge resource"
       require_atomic? false
-      
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
         description "The knowledge resource ID to link to"
@@ -212,18 +212,18 @@ defmodule KgEdu.Knowledge.Homework do
     update :unlink_homework_from_knowledge do
       description "Unlink a homework from its knowledge resource"
       require_atomic? false
-      
+
       change set_attribute(:knowledge_resource_id, nil)
     end
 
     create :import_homework_from_xlsx do
       description "Import homework from XLSX file"
-      
+
       argument :xlsx_base64, :string do
         allow_nil? false
         description "Base64 encoded XLSX file content"
       end
-      
+
       argument :created_by_id, :uuid do
         allow_nil? false
         description "User ID who is importing the homework"
@@ -234,7 +234,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     action :export_homework_template do
       description "Generate homework template XLSX as base64"
-      
+
       argument :created_by_id, :uuid do
         allow_nil? false
         description "User ID requesting the template"
