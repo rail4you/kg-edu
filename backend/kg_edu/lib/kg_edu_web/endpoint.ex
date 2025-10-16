@@ -54,7 +54,8 @@ defmodule KgEduWeb.Endpoint do
     parsers: [:urlencoded, :multipart, :json, AshJsonApi.Plug.Parser],
     pass: ["*/*"],
     body_reader: {KgEduWeb.BodyReader, :read_body, []},
-    json_decoder: Jason
+    json_decoder: Jason,
+    length: 1_000_000_000
 
   plug Plug.MethodOverride
   plug Plug.Head

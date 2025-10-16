@@ -143,6 +143,7 @@ defmodule KgEdu.Courses.Video do
                         changeset
                         |> Ash.Changeset.change_attribute(:title, title)
                         |> Ash.Changeset.change_attribute(:playback_id, playback_url)
+                        |> Ash.Changeset.change_attribute(:asset_id, playback_url)
                         |> Ash.Changeset.change_attribute(:thumbnail, thumbnail_url)
                         |> Ash.Changeset.change_attribute(:duration, 10.00) # Will be updated later if needed
 
