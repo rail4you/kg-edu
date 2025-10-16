@@ -1,6 +1,68 @@
 {
   "models": [
     {
+      "attachment": false,
+      "cost": {
+        "input": 0.5,
+        "output": 2
+      },
+      "id": "an-g8x",
+      "knowledge": "2025-01",
+      "last_updated": "2025-01-01",
+      "limit": {
+        "context": 200000,
+        "output": 128000
+      },
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Code G8X (alpha)",
+      "open_weights": true,
+      "provider": "opencode",
+      "provider_model_id": "an-g8x",
+      "reasoning": true,
+      "release_date": "2025-01-01",
+      "status": "alpha",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": false,
+      "cost": {
+        "input": 1,
+        "output": 3
+      },
+      "id": "an-gbt",
+      "knowledge": "2025-01",
+      "last_updated": "2025-01-01",
+      "limit": {
+        "context": 200000,
+        "output": 128000
+      },
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Code GBT (beta)",
+      "open_weights": true,
+      "provider": "opencode",
+      "provider_model_id": "an-gbt",
+      "reasoning": true,
+      "release_date": "2025-01-01",
+      "status": "alpha",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
       "attachment": true,
       "cost": {
         "cache_read": 0.08,
@@ -30,6 +92,39 @@
       "provider_model_id": "claude-3-5-haiku",
       "reasoning": false,
       "release_date": "2024-10-22",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": true,
+      "cost": {
+        "cache_read": 0.1,
+        "cache_write": 1.25,
+        "input": 1,
+        "output": 1.25
+      },
+      "id": "claude-haiku-4-5",
+      "knowledge": "2025-02-31",
+      "last_updated": "2025-10-15",
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Claude Haiku 4.5",
+      "open_weights": false,
+      "provider": "opencode",
+      "provider_model_id": "claude-haiku-4-5",
+      "reasoning": true,
+      "release_date": "2025-10-15",
       "temperature": true,
       "tool_call": true
     },
@@ -167,7 +262,6 @@
     },
     {
       "attachment": false,
-      "beta": true,
       "cost": {
         "input": 0.6,
         "output": 1.9
@@ -193,6 +287,7 @@
       "provider_model_id": "glm-4.6",
       "reasoning": true,
       "release_date": "2025-09-30",
+      "status": "beta",
       "temperature": true,
       "tool_call": true
     },

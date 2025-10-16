@@ -6,6 +6,15 @@
 
 # General application configuration
 import Config
+config :waffle,
+  storage: Waffle.Storage.AliyunOss,
+  bucket: "kg-edu",
+  region: "cn-beijing",
+  endpoint: "oss-cn-beijing.aliyuncs.com",
+  access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+  access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
+
+
 
 config :ash_typescript,
   output_file: "../../minimal-vite-ts/src/lib/ash_rpc.ts",
@@ -157,10 +166,10 @@ config :kg_edu, :reqllm,
   model: "openrouter:z-ai/glm-4.5"
 
 # Waffle configuration for file uploads
-config :waffle,
-  storage: Waffle.Storage.Local,
-  asset_host: "http://localhost:4000",
-  uploads_dir: "priv/uploads"
+# config :waffle,
+#   storage: Waffle.Storage.Local,
+#   asset_host: "http://localhost:4000",
+#   uploads_dir: "priv/uploads"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

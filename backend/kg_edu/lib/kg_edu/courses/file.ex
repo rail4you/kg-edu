@@ -5,7 +5,7 @@ defmodule KgEdu.Courses.File do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshTypescript.Resource]
-
+  import Logger
   # File storage helper function
   defp store_file(base64_string) do
     # Decode base64 string to binary data
@@ -60,6 +60,7 @@ defmodule KgEdu.Courses.File do
   code_interface do
     define :create_file, action: :create
     define :upload_file, action: :upload
+    define :upload_phoenix_file, action: :upload_phoenix
     define :update_file, action: :update
     define :delete_file, action: :destroy
     define :get_file, action: :read, get_by: [:id]
@@ -109,6 +110,67 @@ defmodule KgEdu.Courses.File do
 
           {:error, reason} ->
             {:error, "Failed to find file: #{inspect(reason)}"}
+        end
+      end
+    end
+
+    create :upload_phoenix do
+      description "Upload a file using Phoenix upload plug and create file record"
+
+      argument :upload, :map do
+        allow_nil? false
+        description "Phoenix upload plug data"
+      end
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "Course ID to associate the file with"
+      end
+
+      argument :purpose, :string do
+        allow_nil? true
+        default "course_file"
+      end
+
+      change manage_relationship(:course_id, :course, type: :append_and_remove)
+
+      change fn changeset, _context ->
+        upload = Ash.Changeset.get_argument(changeset, :upload)
+        course_id = Ash.Changeset.get_argument(changeset, :course_id)
+
+        case upload do
+          nil ->
+            Ash.Changeset.add_error(changeset, "File upload is required")
+
+          %Plug.Upload{path: temp_path, filename: original_filename, content_type: content_type} ->
+            # Store file using Waffle
+            case KgEduWeb.CourseFileUploader.store({upload, course_id}) do
+              {:ok, file_url} ->
+                # Get file size
+                case File.stat(temp_path) do
+                  {:ok, stat} ->
+                    Logger.info("Stored file at #{file_url} with size #{stat.size}")
+                    file_url = KgEduWeb.CourseFileUploader.url({file_url, course_id})
+                    changeset
+                    |> Ash.Changeset.change_attribute(:filename, original_filename)
+                    |> Ash.Changeset.change_attribute(:path, file_url)
+                    |> Ash.Changeset.change_attribute(:size, stat.size)
+                    |> Ash.Changeset.change_attribute(:file_type, content_type)
+                    |> Ash.Changeset.change_attribute(
+                      :purpose,
+                      Ash.Changeset.get_argument(changeset, :purpose)
+                    )
+
+                  {:error, _reason} ->
+                    Ash.Changeset.add_error(changeset, "Failed to get file size")
+                end
+
+              {:error, reason} ->
+                Ash.Changeset.add_error(changeset, "Failed to store file: #{inspect(reason)}")
+            end
+
+          _ ->
+            Ash.Changeset.add_error(changeset, "Invalid upload format")
         end
       end
     end

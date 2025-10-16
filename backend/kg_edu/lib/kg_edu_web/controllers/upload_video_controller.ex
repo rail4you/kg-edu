@@ -2,6 +2,51 @@ defmodule KgEduWeb.UploadVideoController do
   use KgEduWeb, :controller
   require Logger
 
+  alias KgEdu.Courses.Video
+
+  def upload(conn, %{"video" => video_upload, "chapter_id" => chapter_id} = params) do
+    title = Map.get(params, "title")
+
+    upload_params = %{
+      upload: video_upload,
+      chapter_id: chapter_id,
+      title: title
+    }
+
+    case Video.upload_video(upload_params, actor: conn.assigns.current_user) do
+      {:ok, video} ->
+        json(conn, %{
+          success: true,
+          data: %{
+            id: video.id,
+            title: video.title,
+            playback_id: video.playback_id,
+            thumbnail: video.thumbnail,
+            duration: video.duration,
+            chapter_id: video.chapter_id,
+            inserted_at: video.inserted_at
+          }
+        })
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          errors: Ash.Error.to_ash_error(changeset)
+        })
+    end
+  end
+
+  def upload(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{
+      success: false,
+      errors: ["Video and chapter_id are required"]
+    })
+  end
+
   def direct_upload(conn, _params) do
     asset = KgEdu.VideoUploader.create_video_asset()
 

@@ -116,6 +116,7 @@ defmodule KgEduWeb.Router do
     post "/files/upload", FileUploadController, :upload
     get "/files/template", FileUploadController, :download_template
     post "/videos/upload", UploadVideoController, :direct_upload
+    post "/videos/upload-waffle", UploadVideoController, :upload
     post "/videos/:video_id/link-chapter", UploadVideoController, :link_to_chapter
     post "/videos/:video_id/unlink-chapter", UploadVideoController, :unlink_from_chapter
   end

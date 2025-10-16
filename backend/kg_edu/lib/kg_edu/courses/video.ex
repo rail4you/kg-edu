@@ -6,6 +6,25 @@ defmodule KgEdu.Courses.Video do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource]
 
+  # Helper function to get course_id from chapter
+  defp get_course_id_from_chapter(nil), do: {:error, "Chapter ID is required to determine course"}
+  
+  defp get_course_id_from_chapter(chapter_id) do
+    case Ash.get(KgEdu.Courses.Chapter, chapter_id, load: [:course]) do
+      {:ok, chapter} when not is_nil(chapter.course) ->
+        {:ok, chapter.course.id}
+      
+      {:ok, nil} ->
+        {:error, "Chapter not found"}
+      
+      {:ok, chapter} when is_nil(chapter.course) ->
+        {:error, "Chapter is not associated with a course"}
+      
+      {:error, _reason} ->
+        {:error, "Failed to get chapter"}
+    end
+  end
+
   postgres do
     table "videos"
     repo KgEdu.Repo
@@ -33,6 +52,7 @@ defmodule KgEdu.Courses.Video do
 
   code_interface do
     define :create_video, action: :create
+    define :upload_video, action: :upload_phoenix
     define :update_video, action: :update
     define :delete_video, action: :destroy
     define :get_video, action: :read, get_by: [:id]
@@ -70,6 +90,76 @@ defmodule KgEdu.Courses.Video do
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
       prepare fn query, _context ->
         Ash.Query.sort(query, title: :asc)
+      end
+    end
+
+    create :upload_phoenix do
+      description "Upload a video using Phoenix upload plug and create video record"
+
+      argument :upload, :map do
+        allow_nil? false
+        description "Phoenix upload plug data"
+      end
+
+      argument :chapter_id, :uuid do
+        allow_nil? true
+        description "Chapter ID to associate the video with (optional)"
+      end
+
+      argument :title, :string do
+        allow_nil? true
+        description "Video title"
+      end
+
+      change manage_relationship(:chapter_id, :chapter, type: :append_and_remove)
+
+      change fn changeset, _context ->
+        upload = Ash.Changeset.get_argument(changeset, :upload)
+        chapter_id = Ash.Changeset.get_argument(changeset, :chapter_id)
+        
+        case upload do
+          nil ->
+            Ash.Changeset.add_error(changeset, "Video upload is required")
+          
+          %Plug.Upload{path: temp_path, filename: original_filename, content_type: content_type} ->
+            # Get course_id from chapter if provided, otherwise use default
+            case get_course_id_from_chapter(chapter_id) do
+              {:ok, course_id} ->
+                # Store video using Waffle
+                case KgEduWeb.CourseVideoUploader.store({upload, course_id}) do
+                  {:ok, file_url} ->
+                    # Get video file size
+                    case File.stat(temp_path) do
+                      {:ok, stat} ->
+                        # Generate thumbnail URL using OSS image processing
+                        thumbnail_url = "#{file_url}?x-oss-process=video/snapshot,t_7000,f_jpg,w_800,h_600,m_fast"
+                        
+                        # Get the full URL for playback_id
+                        playback_url = KgEduWeb.CourseVideoUploader.url({file_url, course_id})
+                        
+                        title = Ash.Changeset.get_argument(changeset, :title) || Path.basename(original_filename, Path.extname(original_filename))
+                        
+                        changeset
+                        |> Ash.Changeset.change_attribute(:title, title)
+                        |> Ash.Changeset.change_attribute(:playback_id, playback_url)
+                        |> Ash.Changeset.change_attribute(:thumbnail, thumbnail_url)
+                        |> Ash.Changeset.change_attribute(:duration, 0.0) # Will be updated later if needed
+                      
+                      {:error, _reason} ->
+                        Ash.Changeset.add_error(changeset, "Failed to get video file size")
+                    end
+                  
+                  {:error, reason} ->
+                    Ash.Changeset.add_error(changeset, "Failed to store video: #{inspect(reason)}")
+                end
+              
+              {:error, reason} ->
+                Ash.Changeset.add_error(changeset, reason)
+            end
+          
+          _ ->
+            Ash.Changeset.add_error(changeset, "Invalid upload format")
+        end
       end
     end
 

@@ -6,9 +6,9 @@ defmodule KgEduWeb.FileUploadController do
   def upload(conn, %{"file" => file_upload, "course_id" => course_id} = params) do
     purpose = Map.get(params, "purpose", "course_file")
 
-    case File.upload_file(
+    case File.upload_phoenix_file(
            %{
-             file: file_upload,
+             upload: file_upload,
              course_id: course_id,
              purpose: purpose
            },
