@@ -17,9 +17,6 @@ defmodule JsonCleanerAdvanced do
   end
 end
 
-def hello do
-  "hello"
-end
 
 defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   @moduledoc """
