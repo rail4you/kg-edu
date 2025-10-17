@@ -70,9 +70,12 @@ if config_env() == :prod do
   config :kg_edu, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :waffle,
-    storage: Waffle.Storage.Local,
-    asset_host: "http://localhost:4000",
-    uploads_dir: "priv/uploads"
+    storage: Waffle.Storage.AliyunOss,
+    bucket: "kg-edu",
+    region: "cn-beijing",
+    endpoint: "oss-cn-beijing.aliyuncs.com",
+    access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+    access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
 
   config :kg_edu, KgEduWeb.Endpoint,
     url: [host: host, port: 4000, scheme: "http"],

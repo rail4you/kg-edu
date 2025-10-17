@@ -19,6 +19,7 @@ config :logger, level: :info
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
 config :waffle,
+  version_timeout: 120_000,
   storage: Waffle.Storage.AliyunOss,
   bucket: "kg-edu",
   region: "cn-beijing",
