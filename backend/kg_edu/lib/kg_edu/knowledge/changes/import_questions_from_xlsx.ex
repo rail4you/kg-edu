@@ -1,6 +1,6 @@
-defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
+defmodule KgEdu.Knowledge.Changes.ImportQuestionsFromXlsx do
   @moduledoc """
-  Change module for importing homework from XLSX files.
+  Change module for importing questions from XLSX files.
   """
   use Ash.Resource.Change
 
@@ -8,38 +8,24 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
     xlsx_base64 = Ash.Changeset.get_argument(changeset, :xlsx_base64)
     created_by_id = Ash.Changeset.get_argument(changeset, :created_by_id)
 
-    # Validate required arguments
-    cond do
-      is_nil(xlsx_base64) ->
-        Ash.Changeset.add_error(changeset, "XLSX file content is required")
-      
-      xlsx_base64 == "" ->
-        Ash.Changeset.add_error(changeset, "XLSX file content cannot be empty")
-      
-      is_nil(created_by_id) ->
-        Ash.Changeset.add_error(changeset, "User ID is required")
-      
-      true ->
-        case decode_and_parse_xlsx(xlsx_base64) do
-          {:ok, homeworks_data} ->
-            case create_homeworks(homeworks_data, created_by_id) do
-              {:ok, homeworks} ->
-                Ash.Changeset.after_action(changeset, fn _resource, _record ->
-                  {:ok, %{imported_homeworks: homeworks, count: length(homeworks)}}
-                end)
-              {:error, error} ->
-                Ash.Changeset.add_error(changeset, error)
-            end
+    case decode_and_parse_xlsx(xlsx_base64) do
+      {:ok, questions_data} ->
+        case create_questions(questions_data, created_by_id) do
+          {:ok, questions} ->
+            Ash.Changeset.after_action(changeset, fn _resource, _record ->
+              {:ok, %{imported_questions: questions, count: length(questions)}}
+            end)
           {:error, error} ->
             Ash.Changeset.add_error(changeset, error)
         end
+      {:error, error} ->
+        Ash.Changeset.add_error(changeset, error)
     end
   end
 
   defp decode_and_parse_xlsx(xlsx_base64) do
     case Base.decode64(xlsx_base64) do
       {:ok, binary} ->
-        # Save binary to temp file and parse with Xlsxir
         case parse_xlsx_from_binary(binary) do
           {:ok, data} -> {:ok, data}
           {:error, error} -> {:error, error}
@@ -50,21 +36,20 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
   end
 
   defp parse_xlsx_from_binary(binary) do
-    temp_file = System.tmp_dir!() |> Path.join("temp_homework_#{:erlang.system_time()}.xlsx")
+    temp_file = System.tmp_dir!() |> Path.join("temp_questions_#{:erlang.system_time()}.xlsx")
     
     try do
       File.write!(temp_file, binary)
       
       case Xlsxir.multi_extract(temp_file, 0) do
         {:ok, rows} when is_list(rows) and length(rows) > 1 ->
-          # Get header row and convert to map format
           [headers | data_rows] = rows
-          homework_data = 
+          questions_data = 
             data_rows
-            |> Enum.map(&row_to_homework_map(&1, headers))
+            |> Enum.map(&row_to_question_map(&1, headers))
             |> Enum.filter(&(&1 != nil))
           
-          {:ok, homework_data}
+          {:ok, questions_data}
         {:ok, [_single_header]} ->
           {:error, "No data rows found in XLSX file"}
         {:ok, []} ->
@@ -77,7 +62,7 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
     end
   end
 
-  defp row_to_homework_map(row, headers) do
+  defp row_to_question_map(row, headers) do
     # Create mapping from headers to column indices
     header_mapping = headers
       |> Enum.with_index()
@@ -106,13 +91,15 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
     end
 
     # Extract values using flexible column mapping
-    title = get_value.("标题").("") || get_value.("title").("") || get_value.(0).("") || ""
-    content = get_value.("内容").("") || get_value.("content").("") || get_value.(1).("") || ""
-    score = get_value.("分数").(nil) || get_value.("score").(nil) || get_value.(2).(nil)
-    course_name = get_value.("课程名称").(nil) || get_value.("course").(nil) || get_value.(3).(nil)
+    title = get_value.("标题") || get_value.("title") || get_value.(0) || ""
+    description = get_value.("描述") || get_value.("description") || get_value.(1)
+    question_level = get_value.("级别") || get_value.("level") || get_value.(2)
+    position = get_value.("位置") || get_value.("position") || get_value.(3)
+    tags = get_value.("标签") || get_value.("tags") || get_value.(4)
+    course_name = get_value.("课程名称") || get_value.("course") || get_value.(5)
 
     # Validate required fields
-    if title == "" or content == "" or course_name == nil do
+    if title == "" or course_name == nil do
       nil # Skip invalid rows
     else
       # Look up course by name
@@ -123,35 +110,50 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
       else
         %{
           title: to_string(title),
-          content: to_string(content),
-          score: parse_score(score),
+          description: if(description != nil, do: to_string(description), else: nil),
+          question_level: parse_question_level(question_level),
+          position: parse_position(position),
+          tags: parse_tags(tags),
           course_id: course_id
         }
       end
     end
   end
 
-  defp parse_score(nil), do: nil
-  defp parse_score(score) when is_binary(score) do
-    case Decimal.parse(score) do
-      {decimal, ""} -> decimal
-      _ -> nil
+  defp parse_question_level(nil), do: :global
+  defp parse_question_level(level_str) when is_binary(level_str) do
+    case String.downcase(String.trim(level_str)) do
+      "global" -> :global
+      "概念" -> :concept
+      "concept" -> :concept
+      "方法" -> :method
+      "method" -> :method
+      _ -> :global
+    end
+  end
+  defp parse_question_level(_), do: :global
+
+  defp parse_position(nil), do: 0
+  defp parse_position(pos) when is_binary(pos) do
+    case Integer.parse(pos) do
+      {int, ""} -> int
+      _ -> 0
     end
   rescue
-    _ -> nil
+    _ -> 0
   end
-  defp parse_score(score) when is_number(score), do: Decimal.from_float(score / 1)
-  defp parse_score(%Decimal{} = decimal), do: decimal
-  defp parse_score(_), do: nil
+  defp parse_position(pos) when is_number(pos), do: trunc(pos)
+  defp parse_position(_), do: 0
 
-  defp parse_uuid(nil), do: nil
-  defp parse_uuid(uuid_str) when is_binary(uuid_str) do
-    case Ecto.UUID.cast(uuid_str) do
-      {:ok, uuid} -> uuid
-      :error -> nil
-    end
+  defp parse_tags(nil), do: []
+  defp parse_tags(tags_str) when is_binary(tags_str) do
+    tags_str
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.filter(&(&1 != ""))
   end
-  defp parse_uuid(_), do: nil
+  defp parse_tags(tags) when is_list(tags), do: tags
+  defp parse_tags(_), do: []
 
   defp find_course_id_by_name(course_name) do
     case KgEdu.Courses.Course.get_course_by_title(course_name) do
@@ -162,19 +164,17 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
     _ -> nil
   end
 
-  defp create_homeworks(homeworks_data, created_by_id) do
-    # Use Ash's bulk create functionality
-    homeworks_with_creator = 
-      Enum.map(homeworks_data, fn data ->
+  defp create_questions(questions_data, created_by_id) do
+    questions_with_creator = 
+      Enum.map(questions_data, fn data ->
         Map.put(data, :created_by_id, created_by_id)
       end)
 
-    # Create each homework individually for better error handling
     results = 
-      Enum.reduce_while(homeworks_with_creator, [], fn homework_data, acc ->
-        case KgEdu.Knowledge.Homework.create_homework(homework_data, []) do
-          {:ok, homework} ->
-            {:cont, [homework | acc]}
+      Enum.reduce_while(questions_with_creator, [], fn question_data, acc ->
+        case KgEdu.Knowledge.Question.create_question(question_data, []) do
+          {:ok, question} ->
+            {:cont, [question | acc]}
           {:error, error} ->
             {:halt, {:error, error}}
         end
@@ -182,7 +182,7 @@ defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
 
     case results do
       {:error, error} -> {:error, error}
-      homeworks -> {:ok, Enum.reverse(homeworks)}
+      questions -> {:ok, Enum.reverse(questions)}
     end
   end
 end

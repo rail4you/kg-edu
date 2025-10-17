@@ -87,6 +87,7 @@ defmodule KgEdu.MixProject do
       {:bandit, "~> 1.5"},
       {:cors_plug, "~> 3.0"},
       {:xlsxir, "~> 1.6"},
+      {:elixlsx, "~> 0.6"},
       {:daisy_ui_components, "~> 0.9"},
       {:live_debugger, "~> 0.4.0", only: :dev}
     ]

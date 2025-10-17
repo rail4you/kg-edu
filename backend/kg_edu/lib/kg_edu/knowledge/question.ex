@@ -35,6 +35,10 @@ defmodule KgEdu.Knowledge.Question do
     # Flow queries
     define :get_question_flow, action: :get_question_flow
     define :get_question_connections, action: :get_question_connections
+
+    # Import/Export
+    define :import_questions_from_xlsx, action: :import_questions_from_xlsx
+    define :export_question_template, action: :export_question_template
   end
 
   actions do
@@ -158,6 +162,34 @@ defmodule KgEdu.Knowledge.Question do
     update :update_question do
       description "Update a question"
       accept [:title, :description, :position, :tags]
+    end
+
+    # ============ Import/Export Actions ============
+    create :import_questions_from_xlsx do
+      description "Import questions from XLSX file"
+
+      argument :xlsx_base64, :string do
+        allow_nil? false
+        description "Base64 encoded XLSX file content"
+      end
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID who is importing the questions"
+      end
+
+      change {KgEdu.Knowledge.Changes.ImportQuestionsFromXlsx, []}
+    end
+
+    action :export_question_template do
+      description "Generate question template XLSX as base64"
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID requesting the template"
+      end
+
+      run {KgEdu.Knowledge.Changes.ExportQuestionTemplate, []}
     end
 
     # ============ Batch Actions ============
