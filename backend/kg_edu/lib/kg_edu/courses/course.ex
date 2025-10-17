@@ -34,7 +34,6 @@ defmodule KgEdu.Courses.Course do
   actions do
     defaults [:read, :destroy]
 
-
     read :get do
       description "Get a course by ID"
       get? true
@@ -143,18 +142,22 @@ defmodule KgEdu.Courses.Course do
     end
 
     has_many :course_enrollments, KgEdu.Courses.CourseEnrollment do
+      public? true
       destination_attribute :course_id
     end
 
     has_many :knowledge_resources, KgEdu.Knowledge.Resource do
+      public? true
       destination_attribute :course_id
     end
 
     has_many :chapters, KgEdu.Courses.Chapter do
+      public? true
       destination_attribute :course_id
     end
 
     has_many :homeworks, KgEdu.Knowledge.Homework do
+      public? true
       destination_attribute :course_id
       description "Homeworks for this course"
     end

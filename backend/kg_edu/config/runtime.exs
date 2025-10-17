@@ -31,9 +31,11 @@ if config_env() == :prod do
       """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+
   config :mux,
-  access_token_id: System.get_env("MUX_TOKEN_ID"),
-  access_token_secret: System.get_env("MUX_TOKEN_SECRET")
+    access_token_id: System.get_env("MUX_TOKEN_ID"),
+    access_token_secret: System.get_env("MUX_TOKEN_SECRET")
+
   config :kg_edu, KgEdu.Repo,
     # ssl: true,
     url: database_url,
@@ -58,6 +60,14 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :kg_edu, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+
+  config :waffle,
+    storage: Waffle.Storage.AliyunOss,
+    bucket: "kg-edu",
+    region: "cn-beijing",
+    endpoint: "oss-cn-beijing.aliyuncs.com",
+    access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+    access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
 
   config :kg_edu, KgEduWeb.Endpoint,
     url: [host: host, port: 4000, scheme: "http"],

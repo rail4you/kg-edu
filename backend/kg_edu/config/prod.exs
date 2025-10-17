@@ -18,6 +18,15 @@ config :logger, level: :info
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+config :waffle,
+  storage: Waffle.Storage.AliyunOss,
+  bucket: "kg-edu",
+  region: "cn-beijing",
+  endpoint: "oss-cn-beijing.aliyuncs.com",
+  access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+  access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
+
+
 config :kg_edu, KgEduWeb.Endpoint,
   url: [host: "localhost", port: 4000],
   static_url: [path: "/"],
