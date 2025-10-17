@@ -267,14 +267,14 @@ defmodule KgEdu.Courses.Video do
     end
 
     attribute :asset_id, :string do
-      allow_nil? true
+      allow_nil? false
       # constraints min_length: 1, max_length: 200
       public? true
       description "Video asset ID (from video hosting service)"
     end
 
     attribute :playback_id, :string do
-      allow_nil? true
+      allow_nil? false
       # constraints min_length: 1, max_length: 200
       public? true
       description "Video playback ID (from video hosting service)"

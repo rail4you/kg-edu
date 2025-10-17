@@ -5,16 +5,16 @@ defmodule KgEduWeb.CourseFileUploader do
   @versions [:original]
   @acl :public_read
   # Validate file extensions - allow common file types
-  def validate({file, _}) do
-    file_extension = file.file_name |> Path.extname() |> String.downcase()
+  # def validate({file, _}) do
+  #   file_extension = file.file_name |> Path.extname() |> String.downcase()
 
-    allowed_extensions = ~w(.jpg .jpeg .png .gif .pdf .doc .docx .txt .mp4 .mp3 .zip .rar)
+  #   allowed_extensions = ~w(.jpg .jpeg .png .gif .pdf .doc .docx .txt .mp4 .mp3 .zip .rar)
 
-    case Enum.member?(allowed_extensions, file_extension) do
-      true -> :ok
-      false -> {:error, "invalid file type"}
-    end
-  end
+  #   case Enum.member?(allowed_extensions, file_extension) do
+  #     true -> :ok
+  #     false -> {:error, "invalid file type"}
+  #   end
+  # end
 
   # Define filename with course_id prefix
   def filename(version, {file, course_id}) do

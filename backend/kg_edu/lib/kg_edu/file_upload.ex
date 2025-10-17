@@ -4,10 +4,10 @@ defmodule KgEdu.FileUpload do
   @versions [:original]
 
   # Whitelist file extensions:
-  def validate({file, _}) do
-    ~w(.jpg .jpeg .gif .png .pdf .doc .docx .txt .zip .rar .mp4 .mov .avi .mp3 .wav .webm .webp)
-    |> Enum.member?(String.downcase(Path.extname(file.file_name)))
-  end
+  # def validate({file, _}) do
+  #   ~w(.jpg .jpeg .gif .png .pdf .doc .docx .txt .zip .rar .mp4 .mov .avi .mp3 .wav .webm .webp)
+  #   |> Enum.member?(String.downcase(Path.extname(file.file_name)))
+  # end
 
   # Override the persisted filenames:
   def filename(version, {file, _scope}) do
