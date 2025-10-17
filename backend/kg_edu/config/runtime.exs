@@ -23,6 +23,14 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  config :waffle,
+    storage: Waffle.Storage.AliyunOss,
+    bucket: "kg-edu",
+    region: "cn-beijing",
+    endpoint: "oss-cn-beijing.aliyuncs.com",
+    access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+    access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
