@@ -51,7 +51,44 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      description "Destroy a knowledge resource and its dependent relations"
+      
+      # Manually delete related records first
+      change fn changeset, _context ->
+        resource_id = Ash.Changeset.get_attribute(changeset, :id)
+        
+        # Delete incoming relations
+        KgEdu.Knowledge.Relation.list_knowledge_relations(
+          authorize?: false,
+          query: [filter: [target_knowledge_id: resource_id]]
+        )
+        |> case do
+          {:ok, relations} ->
+            Enum.each(relations, fn relation ->
+              KgEdu.Knowledge.Relation.delete_knowledge_relation(relation, authorize?: false)
+            end)
+          {:error, _} -> :ok
+        end
+        
+        # Delete outgoing relations  
+        KgEdu.Knowledge.Relation.list_knowledge_relations(
+          authorize?: false,
+          query: [filter: [source_knowledge_id: resource_id]]
+        )
+        |> case do
+          {:ok, relations} ->
+            Enum.each(relations, fn relation ->
+              KgEdu.Knowledge.Relation.delete_knowledge_relation(relation, authorize?: false)
+            end)
+          {:error, _} -> :ok
+        end
+        
+        changeset
+      end
+    end
 
     # ============ Basic Queries ============
     read :by_id do
@@ -286,8 +323,7 @@ defmodule KgEdu.Knowledge.Resource do
 
     # ============ Update Actions ============
     update :update_knowledge_resource do
-      description "Update a knowledge resource"
-      accept [:name, :description, :unit]
+      accept [:name, :importance_level, :description]
     end
 
     # ============ Import Actions ============

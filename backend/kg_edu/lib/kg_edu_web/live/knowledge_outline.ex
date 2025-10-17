@@ -28,26 +28,38 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
               <span class="relation-badge"><%= item.relation_type %></span>
             <% end %>
           </:col>
-          <:col :let={item} label="Actions">
+          <:col :let={item} label="Knowledge Actions">
             <.button 
               phx-click="edit-knowledge" 
               phx-value-id={item.id}
-              variant="outline"
+              variant="secondary"
               size="sm"
             >
               Edit
             </.button>
+          </:col>
+          <:col :let={item} label="Relation Actions">
             <%= if item.level > 0 do %>
-              <.button 
-                phx-click="remove-relation" 
-                phx-value-source={item.parent_id}
-                phx-value-target={item.id}
-                variant="outline"
-                size="sm"
-                class="ml-2"
-              >
-                Remove Relation
-              </.button>
+              <div class="dropdown dropdown-left">
+                <label tabindex="0" class="btn btn-sm btn-secondary">
+                  Actions
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ml-1" viewBox="0 0 16 16">
+                    <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                  </svg>
+                </label>
+                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                  <li>
+                    <a phx-click="show-update-relation-modal" phx-value-source={item.parent_id} phx-value-target={item.id} phx-value-current-relation={item.relation_type}>
+                      Update Relation
+                    </a>
+                  </li>
+                  <li>
+                    <a phx-click="remove-relation" phx-value-source={item.parent_id} phx-value-target={item.id}>
+                      Remove Relation
+                    </a>
+                  </li>
+                </ul>
+              </div>
             <% end %>
           </:col>
         </.table>
@@ -96,6 +108,54 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
           </.form>
         </div>
       </div>
+
+      <!-- Update Relation Modal -->
+      <%= if @show_update_modal do %>
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="update-relation-modal">
+          <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <h3 class="text-lg font-semibold mb-4">Update Relation</h3>
+            
+            <.form for={@update_relation_form} id="modal-update-relation-form" phx-change="validate-update-relation" phx-submit="update-relation" phx-target={@myself}>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <.input 
+                  field={@update_relation_form[:source_knowledge_id]} 
+                  type="select" 
+                  label="Source Knowledge" 
+                  options={@knowledge_options} 
+                  required 
+                />
+                <.input 
+                  field={@update_relation_form[:target_knowledge_id]} 
+                  type="select" 
+                  label="Target Knowledge" 
+                  options={@knowledge_options} 
+                  required 
+                />
+                <.input 
+                  field={@update_relation_form[:relation_type_id]} 
+                  type="select" 
+                  label="Relation Type" 
+                  options={relation_type_id_options()} 
+                  required 
+                />
+              </div>
+              
+              <div class="flex justify-end space-x-2 mt-6">
+                <.button 
+                  type="button" 
+                  phx-click="hide-update-relation-modal" 
+                  variant="secondary"
+                >
+                  Cancel
+                </.button>
+                <.button type="submit" variant="primary">
+                  Update Relation
+                </.button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
@@ -111,8 +171,12 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
       |> assign(:current_user, assigns.current_user)
       |> assign(:knowledge_items, knowledge_items)
       |> assign(:knowledge_options, knowledge_options)
+      |> assign(:show_update_modal, false)
+      |> assign(:update_source_id, nil)
+      |> assign(:update_target_id, nil)
       |> assign_new_knowledge_form()
       |> assign_new_relation_form()
+      |> assign_update_relation_form()
 
     {:ok, socket}
   end
@@ -199,6 +263,72 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
 
       [] ->
         {:noreply, put_flash(socket, :error, "Relation not found")}
+    end
+  end
+
+  def handle_event("show-update-relation-modal", %{"source" => source_id, "target" => target_id}, socket) do
+    # Find the existing relation to get current values
+    case KgEdu.Knowledge.Relation.list_knowledge_relations(
+           actor: socket.assigns.current_user,
+           filter: [source_knowledge_id: source_id, target_knowledge_id: target_id]
+         ) do
+      [relation | _] ->
+        # Create form with the existing relation
+        form = AshPhoenix.Form.for_update(relation, :update_knowledge_relation,
+          as: "relation",
+          actor: socket.assigns.current_user
+        )
+        
+        socket =
+          socket
+          |> assign(:show_update_modal, true)
+          |> assign(:update_source_id, source_id)
+          |> assign(:update_target_id, target_id)
+          |> assign(:update_relation_form, to_form(form))
+        
+        {:noreply, socket}
+        
+      [] ->
+        {:noreply, put_flash(socket, :error, "Relation not found")}
+    end
+  end
+
+  def handle_event("hide-update-relation-modal", _, socket) do
+    socket =
+      socket
+      |> assign(:show_update_modal, false)
+      |> assign(:update_source_id, nil)
+      |> assign(:update_target_id, nil)
+      |> assign_update_relation_form()
+    
+    {:noreply, socket}
+  end
+
+  def handle_event("validate-update-relation", %{"relation" => params}, socket) do
+    form = AshPhoenix.Form.validate(socket.assigns.update_relation_form, params)
+    {:noreply, assign(socket, update_relation_form: form)}
+  end
+
+  def handle_event("update-relation", %{"relation" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.update_relation_form, params: params) do
+      {:ok, _relation} ->
+        knowledge_items = build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
+        knowledge_options = get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
+
+        socket =
+          socket
+          |> assign(:knowledge_items, knowledge_items)
+          |> assign(:knowledge_options, knowledge_options)
+          |> assign(:show_update_modal, false)
+          |> assign(:update_source_id, nil)
+          |> assign(:update_target_id, nil)
+          |> assign_update_relation_form()
+          |> put_flash(:info, "Relation updated successfully")
+
+        {:noreply, socket}
+
+      {:error, form} ->
+        {:noreply, assign(socket, update_relation_form: form)}
     end
   end
 
@@ -296,6 +426,12 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
     assign(socket, new_relation_form: to_form(form))
   end
 
+  defp assign_update_relation_form(socket) do
+    # Create a dummy form for the modal (will be replaced when modal is shown)
+    form = %AshPhoenix.Form{}
+    assign(socket, update_relation_form: to_form(form))
+  end
+
   defp relation_type_options do
     [
       {"Pre-requisite", :pre},
@@ -304,5 +440,16 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
       {"Extends", :extends},
       {"Depends On", :depends_on}
     ]
+  end
+
+  defp relation_type_id_options do
+    case KgEdu.Knowledge.RelationType.list_relation_types(actor: nil) do
+      {:ok, relation_types} ->
+        Enum.map(relation_types, fn type ->
+          {type.name, type.id}
+        end)
+      {:error, _} ->
+        []
+    end
   end
 end

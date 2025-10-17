@@ -8,9 +8,9 @@ defmodule KgEduWeb.CourseVideoUploader do
   # Validate file extensions - allow video file types
   def validate({file, _}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
-    
+
     allowed_extensions = ~w(.mp4 .avi .mov .wmv .flv .webm .mkv .m4v .3gp)
-    
+
     case Enum.member?(allowed_extensions, file_extension) do
       true -> :ok
       false -> {:error, "invalid video file type"}
@@ -33,7 +33,8 @@ defmodule KgEduWeb.CourseVideoUploader do
   end
 
   # Set file content type
-  def s3_object_headers(version, {file, course_id}) do
-    [content_type: MIME.from_path(file.file_name)]
+  def s3_object_headers(_version, {file, _post}) do
+    # I added the `timeout:` below
+    [content_type: MIME.from_path(file.file_name), timeout: 120_000]
   end
 end

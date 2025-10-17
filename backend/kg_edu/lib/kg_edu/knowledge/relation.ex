@@ -33,7 +33,11 @@ defmodule KgEdu.Knowledge.Relation do
   end
 
   actions do
-    defaults [:read, :create, :update, :destroy]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:source_knowledge_id, :target_knowledge_id, :relation_type_id]
+    end
 
     read :by_id do
       description "Get a knowledge relation by ID"
@@ -102,7 +106,7 @@ defmodule KgEdu.Knowledge.Relation do
 
     update :update_knowledge_relation do
       description "Update a knowledge relation"
-      accept [:relation_type_id]
+      accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
     end
 
     action :import_relations_from_excel do

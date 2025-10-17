@@ -32,7 +32,12 @@ defmodule KgEduWeb.CourseFileUploader do
   end
 
   # Set file content type
-  def s3_object_headers(version, {file, course_id}) do
-    [content_type: MIME.from_path(file.file_name)]
+  # def s3_object_headers(version, {file, course_id}) do
+  #   [content_type: MIME.from_path(file.file_name)]
+  # end
+
+  def s3_object_headers(_version, {file, _post}) do
+    # I added the `timeout:` below
+    [content_type: MIME.from_path(file.file_name), timeout: 120_000]
   end
 end
