@@ -396,6 +396,7 @@ defmodule KgEdu.Courses.File do
 
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
+      public? true
       allow_nil? true
     end
 
