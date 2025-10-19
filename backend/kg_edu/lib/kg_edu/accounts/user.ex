@@ -55,7 +55,7 @@ defmodule KgEdu.Accounts.User do
     define :change_password, action: :change_password
     define :request_password_reset, action: :request_password_reset_token
     define :reset_password, action: :reset_password_with_token
-    define :create_user, action: :create
+    define :create_user, action: :create_user
     define :update_user, action: :update
     define :delete_user, action: :destroy
     define :get_user, action: :read, get_by: [:id]
@@ -64,6 +64,48 @@ defmodule KgEdu.Accounts.User do
 
   actions do
     defaults [:read, :create, :destroy]
+
+    create :create_user do
+      description "Create a new user with specified parameters"
+
+      argument :member_id, :string do
+        description "The user's member ID"
+        allow_nil? false
+      end
+
+      argument :name, :string do
+        description "The user's name"
+        allow_nil? true
+      end
+
+      argument :email, :string do
+        description "The user's email"
+        allow_nil? true
+      end
+
+      argument :password, :string do
+        description "The user's password (will be hashed)"
+        allow_nil? false
+        constraints [min_length: 8]
+        sensitive? true
+      end
+
+      argument :role, :atom do
+        description "The user's role (admin, user, teacher)"
+        allow_nil? true
+        default :user
+        constraints one_of: [:admin, :user, :teacher]
+      end
+
+      # Use the CreateUser change to handle password hashing and data storage
+      change {__MODULE__.Changes.CreateUser, []}
+
+      # Validate unique member_id
+      change set_attribute(:member_id, arg(:member_id))
+      change set_attribute(:name, arg(:name))
+      change set_attribute(:email, arg(:email))
+      change set_attribute(:role, arg(:role))
+    end
 
     update :update do
       description "Update user name and role"

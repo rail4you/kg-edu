@@ -11,6 +11,7 @@ defmodule KgEdu.Accounts do
     resource KgEdu.Accounts.User do
       rpc_action :sign_in, :sign_in_with_password
       rpc_action :register, :register_with_password
+      rpc_action :create_user, :create_user
       rpc_action :reset_password, :reset_password_with_token
       rpc_action :change_password, :change_password
       rpc_action :get_current_user, :get_current_user
@@ -22,9 +23,6 @@ defmodule KgEdu.Accounts do
     end
   end
 
-
-
-
   json_api do
     routes do
       # User authentication endpoints
@@ -35,6 +33,10 @@ defmodule KgEdu.Accounts do
           metadata fn _subject, user, _request ->
             %{token: user.__metadata__.token}
           end
+        end
+
+        post :create_user do
+          route "/create"
         end
 
         post :sign_in_with_password do
@@ -58,6 +60,8 @@ defmodule KgEdu.Accounts do
 
   resources do
     resource KgEdu.Accounts.Token
-    resource KgEdu.Accounts.User
+    resource KgEdu.Accounts.User do
+      define :create_user , action: :create_user
+    end
   end
 end

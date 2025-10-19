@@ -75,7 +75,11 @@ defmodule KgEdu.Courses.File do
   end
 
   actions do
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read, :update, :destroy]
+    create :create do
+      description "Create a new file record"
+      accept [:filename, :path, :size, :file_type, :purpose, :course_id, :knowledge_resource_id]
+    end
 
     action :download_file do
       description "Download file content by file ID"

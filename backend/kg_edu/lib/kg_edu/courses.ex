@@ -26,7 +26,8 @@ defmodule KgEdu.Courses do
 
     resource KgEdu.Courses.File do
       rpc_action :list_files, :read
-      rpc_action :upload_file, :upload
+      # rpc_action :upload_file, :upload
+      rpc_action :create_file, :create
       rpc_action :delete_file, :destroy
       rpc_action :link_file_to_knowledge, :link_file_to_knowledge
       rpc_action :unlink_file_from_knowledge, :unlink_file_from_knowledge

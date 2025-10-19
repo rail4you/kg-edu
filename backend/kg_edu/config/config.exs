@@ -15,7 +15,23 @@ config :waffle,
   access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
   access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
 
+# config :waffle,
+#   storage: Waffle.Storage.S3,
+#   # or {:system, "AWS_S3_BUCKET"}
+#   bucket: "kg-edu",
+#   # or {:system, "ASSET_HOST"}
+#   asset_host: "http://static.example.com"
 
+# config :ex_aws,
+#   json_codec: Jason
+
+# config :ex_aws, :s3, %{
+#   access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+#   secret_access_key: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI",
+#   scheme: "https://",
+#   host: "s3.oss-cn-beijing.aliyuncs.com",
+#   region: "cn-beijing",
+# }
 
 config :ash_typescript,
   output_file: "../../minimal-vite-ts/src/lib/ash_rpc.ts",
@@ -108,7 +124,7 @@ config :kg_edu,
 config :kg_edu, KgEduWeb.Endpoint,
   secret_key_base: "kjoy3o1zeidquwy1398juxzldjlksahdk3",
   url: [host: "localhost"],
-   static_url: [path: "/"],
+  static_url: [path: "/"],
   static: [
     at: "/",
     from: :my_app,
@@ -163,7 +179,9 @@ config :phoenix, :json_library, Jason
 
 # ReqLLM configuration for AI exercise generation
 config :kg_edu, :reqllm,
-  api_key: System.get_env("OPENROUTER_API_KEY") || "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",
+  api_key:
+    System.get_env("OPENROUTER_API_KEY") ||
+      "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",
   model: "openrouter:z-ai/glm-4.5"
 
 # Waffle configuration for file uploads

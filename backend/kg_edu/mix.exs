@@ -36,6 +36,10 @@ defmodule KgEdu.MixProject do
   defp deps do
     [
       {:waffle_aliyun_oss, "~> 0.4.1"},
+          {:ex_aws, "~> 2.1.2"},
+    {:ex_aws_s3, "~> 2.0"},
+    {:hackney, "~> 1.9"},
+    {:sweet_xml, "~> 0.6"},
       {:mux, "~> 3.2"},
       {:req_llm, "~> 1.0.0-rc.5"},
       {:ash_typescript, "~> 0.3"},
