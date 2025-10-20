@@ -44,7 +44,11 @@ defmodule KgEdu.Courses.Chapter do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
+
+    update :update do
+      accept [:title, :description, :sort_order, :parent_chapter_id, :course_id]
+    end
 
     read :by_course do
       description "Get all chapters for a specific course"

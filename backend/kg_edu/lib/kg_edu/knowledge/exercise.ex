@@ -38,7 +38,8 @@ defmodule KgEdu.Knowledge.Exercise do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
+
 
     read :by_id do
       description "Get an exercise by ID"
