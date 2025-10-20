@@ -161,7 +161,7 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Update Actions ============
     update :update_question do
       description "Update a question"
-      accept [:title, :description, :position, :tags]
+      accept [:title, :description, :position, :tags, :question_level, :course_id]
     end
 
     # ============ Import/Export Actions ============
