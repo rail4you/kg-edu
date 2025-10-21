@@ -4,7 +4,7 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="knowledge-outline">
+    <div class="knowledge-outline" data-theme="green">
       <.header>
         Knowledge Outline
         <:subtitle>Create and organize knowledge resources with relationships</:subtitle>

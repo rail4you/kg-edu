@@ -6,6 +6,8 @@ defmodule KgEdu.Knowledge.Question do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
+  require Ash.Query
+
   postgres do
     table "knowledge_questions"
     repo KgEdu.Repo
@@ -25,7 +27,7 @@ defmodule KgEdu.Knowledge.Question do
     define :list_questions, action: :read
     define :create_question, action: :create
     define :update_question, action: :update_question
-    define :delete_question, action: :destroy
+    define :delstroy_question, action: :destroy
 
     # Question level queries
     define :list_global_questions, action: :list_global_questions
@@ -42,7 +44,7 @@ defmodule KgEdu.Knowledge.Question do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     # ============ Basic Queries ============
     read :by_id do
@@ -162,6 +164,27 @@ defmodule KgEdu.Knowledge.Question do
     update :update_question do
       description "Update a question"
       accept [:title, :description, :position, :tags, :question_level, :course_id]
+    end
+
+    # ============ Destroy Actions ============
+    destroy :destroy do
+      description "Delete a question and its connections"
+      accept []
+      
+      change fn changeset, _context ->
+        question_id = Ash.Changeset.get_attribute(changeset, :id)
+        
+        # Delete related connections first
+        KgEdu.Knowledge.QuestionConnection
+        |> Ash.Query.filter(source_question_id: question_id)
+        |> Ash.bulk_destroy!(:destroy, %{})
+        
+        KgEdu.Knowledge.QuestionConnection
+        |> Ash.Query.filter(target_question_id: question_id)
+        |> Ash.bulk_destroy!(:destroy, %{})
+        
+        changeset
+      end
     end
 
     # ============ Import/Export Actions ============

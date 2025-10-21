@@ -5,8 +5,9 @@ defmodule KgEduWeb.ResourceLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        Listing Resources
+      <div data-theme="green" class="rounded-lg p-4">
+        <.header>
+          Listing Resources
         <:actions>
           <.button variant="primary" navigate={~p"/resources/new"}>
             <.icon name="hero-plus" /> New Resource
@@ -46,6 +47,7 @@ defmodule KgEduWeb.ResourceLive.Index do
           </.link>
         </:action>
       </.table>
+      </div>
     </Layouts.app>
     """
   end

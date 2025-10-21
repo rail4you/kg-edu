@@ -5,21 +5,22 @@ defmodule KgEduWeb.ResourceLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        Resource {@resource.id}
-        <:subtitle>This is a resource record from your database.</:subtitle>
+      <div data-theme="green" class="rounded-lg p-4">
+        <.header>
+          Resource {@resource.id}
+          <:subtitle>This is a resource record from your database.</:subtitle>
 
-        <:actions>
-          <.button navigate={~p"/resources"}>
-            <.icon name="hero-arrow-left" />
-          </.button>
-          <.button variant="primary" navigate={~p"/resources/#{@resource}/edit?return_to=show"}>
-            <.icon name="hero-pencil-square" /> Edit Resource
-          </.button>
-        </:actions>
-      </.header>
+          <:actions>
+            <.button navigate={~p"/resources"}>
+              <.icon name="hero-arrow-left" />
+            </.button>
+            <.button variant="primary" navigate={~p"/resources/#{@resource}/edit?return_to=show"}>
+              <.icon name="hero-pencil-square" /> Edit Resource
+            </.button>
+          </:actions>
+        </.header>
 
-      <.list>
+        <.list>
         <:item title="Id">{@resource.id}</:item>
 
         <:item title="Name">{@resource.name}</:item>
@@ -30,6 +31,7 @@ defmodule KgEduWeb.ResourceLive.Show do
 
         <:item title="Created by">{@resource.created_by_id}</:item>
       </.list>
+      </div>
     </Layouts.app>
     """
   end

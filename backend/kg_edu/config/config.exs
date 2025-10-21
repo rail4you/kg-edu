@@ -118,7 +118,7 @@ config :spark,
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI]
+  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI, KgEdu.Utils]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,

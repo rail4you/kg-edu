@@ -33,7 +33,7 @@ defmodule KgEdu.Knowledge.Relation do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
       accept [:source_knowledge_id, :target_knowledge_id, :relation_type_id]
@@ -107,6 +107,15 @@ defmodule KgEdu.Knowledge.Relation do
     update :update_knowledge_relation do
       description "Update a knowledge relation"
       accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
+    end
+
+    # ============ Destroy Actions ============
+    destroy :destroy do
+      description "Delete a knowledge relation"
+      accept []
+      
+      # Relations can be deleted directly as they don't have dependent records
+      # that would prevent deletion
     end
 
     action :import_relations_from_excel do
