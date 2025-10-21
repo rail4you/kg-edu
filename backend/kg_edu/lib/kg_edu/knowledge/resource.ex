@@ -256,7 +256,8 @@ defmodule KgEdu.Knowledge.Resource do
           child_units: [
             :child_cells
           ],
-          direct_cells: []
+          direct_cells: [],
+          subject_cells: []
         )
         |> Ash.Query.sort(subject: :asc, name: :asc)
       end
@@ -560,6 +561,13 @@ defmodule KgEdu.Knowledge.Resource do
       destination_attribute :parent_subject_id
       filter expr(knowledge_type == :knowledge_cell and is_nil(parent_unit_id))
       description "Knowledge cells that belong directly to this subject (no unit)"
+    end
+
+    has_many :subject_cells, __MODULE__ do
+      public? true
+      destination_attribute :parent_subject_id
+      filter expr(knowledge_type == :knowledge_cell)
+      description "All knowledge cells that belong to this subject (regardless of unit)"
     end
 
     # ============ Other Relationships ============
