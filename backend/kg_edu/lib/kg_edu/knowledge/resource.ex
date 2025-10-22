@@ -461,12 +461,15 @@ defmodule KgEdu.Knowledge.Resource do
       argument :course_id, :uuid, allow_nil?: false
 
       run fn input, context ->
-        KgEdu.Knowledge.ImportFromLLM.import_from_text(
+        case KgEdu.Knowledge.ImportFromLLM.import_from_text(
           input.arguments.text,
           input.arguments.course_id,
           actor: context.actor,
           authorize?: context.authorize?
-        )
+        ) do
+          {:ok, result} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
       end
     end
   end
