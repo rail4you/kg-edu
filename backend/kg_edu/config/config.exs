@@ -114,7 +114,7 @@ config :spark,
       ]
     ]
   ]
-
+config :ash, :missed_notifications, :ignore
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],

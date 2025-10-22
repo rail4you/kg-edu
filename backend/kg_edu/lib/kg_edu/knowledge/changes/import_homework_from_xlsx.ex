@@ -1,188 +1,106 @@
-defmodule KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx do
+defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
   @moduledoc """
-  Change module for importing homework from XLSX files.
+  Change module for importing homeworks from Excel file.
+  Accepts Base64 encoded Excel file and imports homeworks with specified attributes.
+  Expected order: member_id, name, phone, email, password, role
   """
-  use Ash.Resource.Change
 
-  def change(changeset, _opts, _context) do
-    xlsx_base64 = Ash.Changeset.get_argument(changeset, :xlsx_base64)
-    created_by_id = Ash.Changeset.get_argument(changeset, :created_by_id)
+  require Logger
 
-    # Validate required arguments
-    cond do
-      is_nil(xlsx_base64) ->
-        Ash.Changeset.add_error(changeset, "XLSX file content is required")
-      
-      xlsx_base64 == "" ->
-        Ash.Changeset.add_error(changeset, "XLSX file content cannot be empty")
-      
-      is_nil(created_by_id) ->
-        Ash.Changeset.add_error(changeset, "User ID is required")
-      
-      true ->
-        case decode_and_parse_xlsx(xlsx_base64) do
-          {:ok, homeworks_data} ->
-            case create_homeworks(homeworks_data, created_by_id) do
-              {:ok, homeworks} ->
-                Ash.Changeset.after_action(changeset, fn _resource, _record ->
-                  {:ok, %{imported_homeworks: homeworks, count: length(homeworks)}}
-                end)
-              {:error, error} ->
-                Ash.Changeset.add_error(changeset, error)
-            end
-          {:error, error} ->
-            Ash.Changeset.add_error(changeset, error)
-        end
+  def parse_excel(excel_file, attributes, course_id) do
+    case import_homework_from_excel(excel_file, attributes, course_id) do
+      {:ok, homeworks} ->
+        {:ok, homeworks}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
-  defp decode_and_parse_xlsx(xlsx_base64) do
-    case Base.decode64(xlsx_base64) do
-      {:ok, binary} ->
-        # Save binary to temp file and parse with Xlsxir
-        case parse_xlsx_from_binary(binary) do
-          {:ok, data} -> {:ok, data}
-          {:error, error} -> {:error, error}
-        end
-      :error ->
-        {:error, "Invalid base64 encoding"}
+  defp import_homework_from_excel(nil, _attributes) do
+    {:error, "Excel file is required"}
+  end
+
+  defp import_homework_from_excel(excel_file, attributes, course_id)
+       when is_binary(excel_file) and is_list(attributes) do
+    Logger.info("attributes are #{inspect(attributes)}")
+
+    case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
+      {:ok, homework_data} ->
+        Logger.info("homework is #{inspect(homework_data)}, course id is #{course_id}")
+        create_homework_from_data(homework_data, course_id)
+
+      {:error, reason} ->
+        {:error, "Failed to import Excel file: #{reason}"}
     end
   end
 
-  defp parse_xlsx_from_binary(binary) do
-    temp_file = System.tmp_dir!() |> Path.join("temp_homework_#{:erlang.system_time()}.xlsx")
-    
-    try do
-      File.write!(temp_file, binary)
-      
-      case Xlsxir.multi_extract(temp_file, 0) do
-        {:ok, rows} when is_list(rows) and length(rows) > 1 ->
-          # Get header row and convert to map format
-          [headers | data_rows] = rows
-          homework_data = 
-            data_rows
-            |> Enum.map(&row_to_homework_map(&1, headers))
-            |> Enum.filter(&(&1 != nil))
-          
-          {:ok, homework_data}
-        {:ok, [_single_header]} ->
-          {:error, "No data rows found in XLSX file"}
-        {:ok, []} ->
-          {:error, "No data found in XLSX file"}
-        {:error, reason} ->
-          {:error, "Failed to parse XLSX: #{inspect(reason)}"}
-      end
-    after
-      File.rm(temp_file)
-    end
+  defp import_homeworks_from_excel(_, _) do
+    {:error, "Invalid parameters"}
   end
 
-  defp row_to_homework_map(row, headers) do
-    # Create mapping from headers to column indices
-    header_mapping = headers
-      |> Enum.with_index()
-      |> Enum.into(%{}, fn {header, index} -> 
-        {String.downcase(String.trim(header)), index} 
-      end)
+  defp create_homework_from_data(homework_data, course_id) when is_list(homework_data) do
+    homeworks =
+      homework_data
+      |> Enum.map(&process_single_homework(&1, course_id))
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(fn {:ok, homework} -> homework end)
 
-    # Helper to get value by column name or index
-    get_value = fn column_name_or_index ->
-      get_with_default = fn default ->
-        value = cond do
-          is_binary(column_name_or_index) and is_map_key(header_mapping, String.downcase(column_name_or_index)) ->
-            index = header_mapping[String.downcase(column_name_or_index)]
-            if index < length(row), do: Enum.at(row, index), else: default
-          
-          is_number(column_name_or_index) and column_name_or_index < length(row) ->
-            Enum.at(row, column_name_or_index, default)
-          
-          true -> default
-        end
-        
-        if value == "" or value == nil, do: default, else: value
-      end
-      
-      get_with_default
-    end
-
-    # Extract values using flexible column mapping
-    title = get_value.("标题").("") || get_value.("title").("") || get_value.(0).("") || ""
-    content = get_value.("内容").("") || get_value.("content").("") || get_value.(1).("") || ""
-    score = get_value.("分数").(nil) || get_value.("score").(nil) || get_value.(2).(nil)
-    course_name = get_value.("课程名称").(nil) || get_value.("course").(nil) || get_value.(3).(nil)
-
-    # Validate required fields
-    if title == "" or content == "" or course_name == nil do
-      nil # Skip invalid rows
+    if length(homeworks) == length(homework_data) do
+      {:ok, homeworks}
     else
-      # Look up course by name
-      course_id = find_course_id_by_name(course_name)
+      failed_count = length(homework_data) - length(homeworks)
+      Logger.error("Failed to import #{failed_count} homeworks")
+      {:ok, homeworks}
+    end
+  end
+
+  defp process_single_homework(homework_map, course_id) do
+    try do
+      # Remove tags from homework_map to avoid processing errors
+      homework_map = Map.delete(homework_map, "tags")
       
-      if course_id == nil do
-        nil # Skip rows with invalid course name
-      else
-        %{
-          title: to_string(title),
-          content: to_string(content),
-          score: parse_score(score),
-          course_id: course_id
-        }
+      # Ensure score is treated as a number if present
+      homework_map = case Map.get(homework_map, "score") do
+        score when is_binary(score) ->
+          case Float.parse(score) do
+            {float_val, ""} -> Map.put(homework_map, "score", float_val)
+            _ -> homework_map
+          end
+        _ -> homework_map
       end
+
+      # Transform remaining values to strings, except score
+      homework_map = 
+        homework_map
+        |> Map.delete("score")  # Remove score temporarily
+        |> MapTransformer.transform_values_to_string()
+        |> Map.put("course_id", course_id)
+        |> then(fn map ->  # Add back score if it existed
+          case Map.get(homework_map, "score") do
+            nil -> map
+            score -> Map.put(map, "score", score)
+          end
+        end)
+
+      create_single_homework(homework_map)
+    rescue
+      error ->
+        Logger.error("Error processing homework: #{inspect(error)}")
+        {:error, error}
     end
   end
 
-  defp parse_score(nil), do: nil
-  defp parse_score(score) when is_binary(score) do
-    case Decimal.parse(score) do
-      {decimal, ""} -> decimal
-      _ -> nil
-    end
-  rescue
-    _ -> nil
-  end
-  defp parse_score(score) when is_number(score), do: Decimal.from_float(score / 1)
-  defp parse_score(%Decimal{} = decimal), do: decimal
-  defp parse_score(_), do: nil
+  defp create_single_homework(homework_map) do
+    Logger.info("homework_map is #{inspect(homework_map)}")
 
-  defp parse_uuid(nil), do: nil
-  defp parse_uuid(uuid_str) when is_binary(uuid_str) do
-    case Ecto.UUID.cast(uuid_str) do
-      {:ok, uuid} -> uuid
-      :error -> nil
-    end
-  end
-  defp parse_uuid(_), do: nil
+    case KgEdu.Knowledge.Homework.create_homework(homework_map) do
+      {:ok, homework} ->
+        {:ok, homework}
 
-  defp find_course_id_by_name(course_name) do
-    case KgEdu.Courses.Course.get_course_by_title(course_name) do
-      {:ok, course} -> course.id
-      {:error, _} -> nil
-    end
-  rescue
-    _ -> nil
-  end
-
-  defp create_homeworks(homeworks_data, created_by_id) do
-    # Use Ash's bulk create functionality
-    homeworks_with_creator = 
-      Enum.map(homeworks_data, fn data ->
-        Map.put(data, :created_by_id, created_by_id)
-      end)
-
-    # Create each homework individually for better error handling
-    results = 
-      Enum.reduce_while(homeworks_with_creator, [], fn homework_data, acc ->
-        case KgEdu.Knowledge.Homework.create_homework(homework_data, []) do
-          {:ok, homework} ->
-            {:cont, [homework | acc]}
-          {:error, error} ->
-            {:halt, {:error, error}}
-        end
-      end)
-
-    case results do
-      {:error, error} -> {:error, error}
-      homeworks -> {:ok, Enum.reverse(homeworks)}
+      {:error, reason} ->
+        Logger.error("Failed to create homework: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 end

@@ -45,6 +45,7 @@ defmodule KgEdu.Knowledge.Resource do
 
     # Import actions
     define :import_knowledge_from_excel, action: :import_from_excel
+    define :import_knowledge_from_llm, action: :import_from_llm
     define :upsert_subject, action: :upsert_subject
     define :upsert_unit, action: :upsert_unit
     define :get_by_name_and_course, action: :by_name_and_course
@@ -55,11 +56,11 @@ defmodule KgEdu.Knowledge.Resource do
 
     destroy :destroy do
       description "Destroy a knowledge resource and its dependent relations"
-      
+
       # Manually delete related records first
       change fn changeset, _context ->
         resource_id = Ash.Changeset.get_attribute(changeset, :id)
-        
+
         # Delete incoming relations
         KgEdu.Knowledge.Relation.list_knowledge_relations(
           authorize?: false,
@@ -72,8 +73,8 @@ defmodule KgEdu.Knowledge.Resource do
             end)
           {:error, _} -> :ok
         end
-        
-        # Delete outgoing relations  
+
+        # Delete outgoing relations
         KgEdu.Knowledge.Relation.list_knowledge_relations(
           authorize?: false,
           query: [filter: [source_knowledge_id: resource_id]]
@@ -85,7 +86,7 @@ defmodule KgEdu.Knowledge.Resource do
             end)
           {:error, _} -> :ok
         end
-        
+
         changeset
       end
     end
@@ -450,6 +451,22 @@ defmodule KgEdu.Knowledge.Resource do
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
         end
+      end
+    end
+
+    action :import_from_llm do
+      description "Import knowledge resources and relations from text using LLM analysis"
+
+      argument :text, :string, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.ImportFromLLM.import_from_text(
+          input.arguments.text,
+          input.arguments.course_id,
+          actor: context.actor,
+          authorize?: context.authorize?
+        )
       end
     end
   end
