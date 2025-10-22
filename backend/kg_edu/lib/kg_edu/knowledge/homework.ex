@@ -9,6 +9,10 @@ defmodule KgEdu.Knowledge.Homework do
   postgres do
     table "homeworks"
     repo KgEdu.Repo
+    
+    references do
+      reference :chapter, on_delete: :delete
+    end
   end
 
   json_api do

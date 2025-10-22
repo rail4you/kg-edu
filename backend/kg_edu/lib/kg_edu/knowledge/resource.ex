@@ -9,6 +9,10 @@ defmodule KgEdu.Knowledge.Resource do
   postgres do
     table "knowledge_resources"
     repo KgEdu.Repo
+    
+    references do
+      reference :chapter, on_delete: :delete
+    end
   end
 
   json_api do
