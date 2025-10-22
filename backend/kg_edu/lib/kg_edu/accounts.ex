@@ -20,6 +20,7 @@ defmodule KgEdu.Accounts do
       rpc_action :get_user, :by_id
       rpc_action :list_users, :get_users
       rpc_action :sign_out, :sign_out
+      rpc_action :import_excel, :import_users_from_excel
     end
   end
 

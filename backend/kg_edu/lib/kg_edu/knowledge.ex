@@ -43,7 +43,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_recent_ai_exercises, :recent_ai_exercises
       rpc_action :link_exercise_to_knowledge, :link_exercise_to_knowledge
       rpc_action :unlink_exercise_from_knowledge, :unlink_exercise_from_knowledge
-      rpc_action :import_exercise_from_xlsx, :import_exercise_from_xlsx
+      rpc_action :import_exercises_from_excel, :import_exercises_from_excel
       rpc_action :export_exercise_template, :export_exercise_template
     end
 

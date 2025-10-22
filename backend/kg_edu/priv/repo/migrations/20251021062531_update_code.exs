@@ -8,7 +8,7 @@ defmodule KgEdu.Repo.Migrations.UpdateCode do
   use Ecto.Migration
 
   def up do
-    create table(:file_templates, primary_key: false) do
+    create_if_not_exists table(:file_templates) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
       add :section, :text, null: false
       add :file_path, :text, null: false
@@ -24,6 +24,6 @@ defmodule KgEdu.Repo.Migrations.UpdateCode do
   end
 
   def down do
-    drop table(:file_templates)
+    drop_if_exists table(:file_templates)
   end
 end

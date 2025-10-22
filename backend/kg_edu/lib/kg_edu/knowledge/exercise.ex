@@ -6,7 +6,7 @@ defmodule KgEdu.Knowledge.Exercise do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
-
+  require Logger
   typescript do
     type_name "Exercise"
   end
@@ -166,6 +166,37 @@ defmodule KgEdu.Knowledge.Exercise do
       end
 
       run {KgEdu.Knowledge.Changes.ExportExerciseTemplate, []}
+    end
+
+    action :import_exercises_from_excel do
+      description "Import multiple exercises from an Excel file with Base64 encoding"
+
+      argument :excel_file, :string do
+        description "Base64 encoded Excel file containing exercise data"
+        allow_nil? false
+      end
+
+      argument :course_id, :string do
+        allow_nil? false
+      end
+
+      argument :attributes, {:array, :atom} do
+        description ""
+        allow_nil? false
+        default [:title, :question_content, :question_type, :answer, :options]
+      end
+
+      run fn input, _context ->
+        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+        case KgEdu.Knowledge.Exercise.ImportFromExcel.parse_excel(
+               input.arguments.excel_file,
+               input.arguments.attributes,
+               input.arguments.course_id
+             ) do
+          {:ok, user} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
     end
   end
 

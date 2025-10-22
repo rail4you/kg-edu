@@ -60,6 +60,7 @@ defmodule KgEdu.Accounts.User do
     define :delete_user, action: :destroy
     define :get_user, action: :read, get_by: [:id]
     define :get_users, action: :read
+    define :import_users_from_excel, action: :import_users_from_excel
   end
 
   actions do
@@ -78,6 +79,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
+      argument :phone, :string do
+        description "The user's name"
+        allow_nil? true
+      end
+
       argument :email, :string do
         description "The user's email"
         allow_nil? true
@@ -86,7 +92,7 @@ defmodule KgEdu.Accounts.User do
       argument :password, :string do
         description "The user's password (will be hashed)"
         allow_nil? false
-        constraints [min_length: 8]
+        constraints min_length: 8
         sensitive? true
       end
 
@@ -103,13 +109,14 @@ defmodule KgEdu.Accounts.User do
       # Validate unique member_id
       change set_attribute(:member_id, arg(:member_id))
       change set_attribute(:name, arg(:name))
+      change set_attribute(:phone, arg(:phone))
       change set_attribute(:email, arg(:email))
       change set_attribute(:role, arg(:role))
     end
 
     update :update do
       description "Update user name and role"
-      accept [:name, :role]
+      accept [:name, :role, :phone]
       require_atomic? false
     end
 
@@ -240,7 +247,6 @@ defmodule KgEdu.Accounts.User do
         sensitive? true
       end
 
-
       argument :role, :atom do
         description "The role of the user (admin, user, teacher). Defaults to :user."
         allow_nil? true
@@ -343,10 +349,36 @@ defmodule KgEdu.Accounts.User do
 
       run {AshAuthentication.Actions.SignOut, action: :sign_out}
     end
+
+    action :import_users_from_excel do
+      description "Import multiple users from an Excel file with Base64 encoding"
+
+      argument :excel_file, :string do
+        description "Base64 encoded Excel file containing user data"
+        allow_nil? false
+      end
+
+      argument :attributes, {:array, :atom} do
+        description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role]"
+        allow_nil? false
+        default [:member_id, :name, :phone, :email, :password, :role]
+      end
+
+      run fn input, _context ->
+        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+        case KgEdu.Accounts.User.ImportFromExcel.parse_excel(
+               input.arguments.excel_file,
+               input.arguments.attributes
+             ) do
+          {:ok, user} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
+    end
   end
 
   policies do
-     policy always() do
+    policy always() do
       authorize_if always()
     end
 
@@ -418,6 +450,11 @@ defmodule KgEdu.Accounts.User do
     end
 
     attribute :name, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :phone, :string do
       allow_nil? true
       public? true
     end

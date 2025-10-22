@@ -24,6 +24,7 @@ defmodule KgEdu.ExcelImport do
       iex> ExcelImport.import_from_excel("base64_string", ["name", "age"])
       {:ok, [%{name: "Alice", age: 25}, %{name: "Bob", age: 30}]}
   """
+  require Logger
   def import_file_from_excel(excel_file, attributes) do
     excel_file_data = File.read!(excel_file) |> Base.encode64()
     import_from_excel(excel_file_data, attributes)
@@ -37,6 +38,7 @@ defmodule KgEdu.ExcelImport do
       {:ok, result}
     else
       {:error, reason} = error ->
+        Logger.info("error is #{inspect(reason)}")
         cleanup_temp_file_if_exists(get_temp_path())
         error
     end
