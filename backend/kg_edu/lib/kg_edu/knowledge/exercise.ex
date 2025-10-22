@@ -269,7 +269,4 @@ defmodule KgEdu.Knowledge.Exercise do
     end
   end
 
-  identities do
-    identity :unique_title_per_course, [:title, :course_id]
   end
-end

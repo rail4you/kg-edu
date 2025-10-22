@@ -8,7 +8,7 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   require Logger
 
   def parse_excel(excel_file, attributes, course_id) do
-    case import_exercise_from_excel(excel_file, attributes,course_id) do
+    case import_exercise_from_excel(excel_file, attributes, course_id) do
       {:ok, exercises} ->
         {:ok, exercises}
 
@@ -57,8 +57,11 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
 
   defp process_single_exercise(exercise_map, course_id) do
     try do
-      # Transform all values to strings first
-      exercise_map = MapTransformer.transform_values_to_string(exercise_map)
+      # Transform all values to strings first, but preserve options as a special case
+      exercise_map = 
+        exercise_map
+        |> MapTransformer.transform_values_to_string()
+        |> map_question_type()
 
       # Process options if present and add course_id directly
       processed_exercise =
@@ -72,6 +75,18 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
         Logger.error("Error processing exercise: #{inspect(error)}")
         {:error, error}
     end
+  end
+
+  defp process_options(%{:options => options} = exercise_map) when is_binary(options) do
+    # Split options by lines and create choices array
+    choices =
+      options
+      |> String.split("\n")
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+
+    options_map = %{"choices" => choices}
+    Map.put(exercise_map, :options, options_map)
   end
 
   defp process_options(%{"options" => options} = exercise_map) when is_binary(options) do
@@ -88,8 +103,25 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
 
   defp process_options(exercise_map), do: exercise_map
 
+  defp map_question_type(%{:question_type => "1"} = exercise_map) do
+    Map.put(exercise_map, :question_type, :multiple_choice)
+  end
+
+  defp map_question_type(%{:question_type => "2"} = exercise_map) do
+    Map.put(exercise_map, :question_type, :essay)
+  end
+
+  defp map_question_type(%{"question_type" => "1"} = exercise_map) do
+    Map.put(exercise_map, "question_type", :multiple_choice)
+  end
+
+  defp map_question_type(%{"question_type" => "2"} = exercise_map) do
+    Map.put(exercise_map, "question_type", :essay)
+  end
+
+  defp map_question_type(exercise_map), do: exercise_map
+
   defp create_single_exercise(exercise_map) do
-    exercise_map = MapTransformer.transform_values_to_string(exercise_map)
     Logger.info("exercise_map is #{inspect(exercise_map)}")
 
     case KgEdu.Knowledge.Exercise.create_exercise(exercise_map) do
@@ -97,6 +129,7 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
         {:ok, exercise}
 
       {:error, reason} ->
+        Logger.error("Failed to create exercise: #{inspect(reason)}")
         {:error, reason}
     end
   end

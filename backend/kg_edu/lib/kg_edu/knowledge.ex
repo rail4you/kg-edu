@@ -57,6 +57,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_concept_questions, :list_concept_questions
       rpc_action :list_method_questions, :list_method_questions
       rpc_action :get_question_flow, :get_question_flow
+      rpc_action :import_questions_from_xlsx, :import_questions_from_xlsx
+      rpc_action :export_question_template, :export_question_template
     end
 
     resource KgEdu.Knowledge.QuestionConnection do

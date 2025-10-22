@@ -7,6 +7,7 @@ defmodule KgEdu.Knowledge.Question do
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
   require Ash.Query
+  require Logger
 
   postgres do
     table "knowledge_questions"
@@ -170,38 +171,52 @@ defmodule KgEdu.Knowledge.Question do
     destroy :destroy do
       description "Delete a question and its connections"
       accept []
-      
+
       change fn changeset, _context ->
         question_id = Ash.Changeset.get_attribute(changeset, :id)
-        
+
         # Delete related connections first
         KgEdu.Knowledge.QuestionConnection
         |> Ash.Query.filter(source_question_id: question_id)
         |> Ash.bulk_destroy!(:destroy, %{})
-        
+
         KgEdu.Knowledge.QuestionConnection
         |> Ash.Query.filter(target_question_id: question_id)
         |> Ash.bulk_destroy!(:destroy, %{})
-        
+
         changeset
       end
     end
 
     # ============ Import/Export Actions ============
-    create :import_questions_from_xlsx do
+    action :import_questions_from_xlsx do
       description "Import questions from XLSX file"
 
-      argument :xlsx_base64, :string do
+      argument :excel_file, :string do
         allow_nil? false
         description "Base64 encoded XLSX file content"
       end
 
-      argument :created_by_id, :uuid do
+      argument :course_id, :uuid do
         allow_nil? false
-        description "User ID who is importing the questions"
+        description "Course ID who is importing the questions"
       end
 
-      change {KgEdu.Knowledge.Changes.ImportQuestionsFromXlsx, []}
+      argument :attributes, {:array, :atom} do
+        allow_nil? false
+      end
+      run fn input, _context ->
+        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+        case KgEdu.Knowledge.Question.ImportFromExcel.parse_excel(
+               input.arguments.excel_file,
+               input.arguments.attributes,
+               input.arguments.course_id
+             ) do
+          {:ok, question} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
+
     end
 
     action :export_question_template do

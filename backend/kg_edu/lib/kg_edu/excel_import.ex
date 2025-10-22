@@ -127,15 +127,20 @@ defmodule KgEdu.ExcelImport do
   Map with attribute-value pairs
   """
   defp map_row_to_attributes(row, attributes) do
-    # Pad row with nil values if it has fewer columns than attributes
-    padded_row = row ++ List.duplicate(nil, length(attributes) - length(row))
-
     # Take only the first n columns where n is the number of attributes
-    relevant_columns = Enum.take(padded_row, length(attributes))
+    relevant_columns = Enum.take(row, length(attributes))
+    
+    # Pad with nil values if row has fewer columns than attributes
+    padded_columns = case length(relevant_columns) < length(attributes) do
+      true -> 
+        relevant_columns ++ List.duplicate(nil, length(attributes) - length(relevant_columns))
+      false -> 
+        relevant_columns
+    end
 
     # Create map by zipping attributes with values
     attributes
-    |> Enum.zip(relevant_columns)
+    |> Enum.zip(padded_columns)
     |> Enum.into(%{})
     |> clean_values()
   end
