@@ -8,6 +8,11 @@ defmodule KgEdu.Accounts.User do
 
   require Logger
 
+  typescript do
+    type_name "User"
+  end
+
+
   authentication do
     add_ons do
       log_out_everywhere do

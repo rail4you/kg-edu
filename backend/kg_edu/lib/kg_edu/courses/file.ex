@@ -6,6 +6,12 @@ defmodule KgEdu.Courses.File do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshTypescript.Resource]
   import Logger
+
+  typescript do
+    type_name "File"
+  end
+
+
   # File storage helper function
   defp store_file(base64_string) do
     # Decode base64 string to binary data

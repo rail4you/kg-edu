@@ -96,6 +96,9 @@ defmodule KgEdu.Knowledge.Homework do
         :title,
         :content,
         :score,
+        :answer_key,
+        :answer_explanation,
+        :auto_gradable,
         :course_id,
         :chapter_id,
         :knowledge_resource_id,
@@ -163,7 +166,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     update :update_homework do
       description "Update a homework"
-      accept [:title, :content, :score, :chapter_id, :knowledge_resource_id]
+      accept [:title, :content, :score, :answer_key, :answer_explanation, :auto_gradable, :chapter_id, :knowledge_resource_id]
       require_atomic? false
 
       # validate fn changeset, _context ->
@@ -299,6 +302,25 @@ defmodule KgEdu.Knowledge.Homework do
       allow_nil? true
       public? true
       description "Maximum score for this homework"
+    end
+
+    attribute :answer_key, :string do
+      allow_nil? true
+      public? true
+      description "Answer key or solution for the homework"
+    end
+
+    attribute :answer_explanation, :string do
+      allow_nil? true
+      public? true
+      description "Explanation of the answer or solution approach"
+    end
+
+    attribute :auto_gradable, :boolean do
+      allow_nil? false
+      default true
+      public? true
+      description "Whether this homework can be automatically graded"
     end
 
     create_timestamp :inserted_at

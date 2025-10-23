@@ -6,6 +6,7 @@
 
 # General application configuration
 import Config
+
 config :waffle,
   version_timeout: 120_000,
   storage: Waffle.Storage.AliyunOss,
@@ -114,7 +115,9 @@ config :spark,
       ]
     ]
   ]
+
 config :ash, :missed_notifications, :ignore
+
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],

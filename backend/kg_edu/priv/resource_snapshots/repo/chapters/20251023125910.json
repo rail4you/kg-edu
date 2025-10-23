@@ -25,18 +25,6 @@
       "type": "text"
     },
     {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "content",
-      "type": "text"
-    },
-    {
       "allow_nil?": true,
       "default": "nil",
       "generated?": false,
@@ -45,8 +33,20 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "score",
-      "type": "decimal"
+      "source": "description",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "0",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "sort_order",
+      "type": "bigint"
     },
     {
       "allow_nil?": false,
@@ -91,7 +91,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "homeworks_course_id_fkey",
+        "name": "chapters_course_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -122,7 +122,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "homeworks_chapter_id_fkey",
+        "name": "chapters_parent_chapter_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -131,69 +131,7 @@
       },
       "scale": null,
       "size": null,
-      "source": "chapter_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "homeworks_knowledge_resource_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "knowledge_resources"
-      },
-      "scale": null,
-      "size": null,
-      "source": "knowledge_resource_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "homeworks_created_by_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "users"
-      },
-      "scale": null,
-      "size": null,
-      "source": "created_by_id",
+      "source": "parent_chapter_id",
       "type": "uuid"
     }
   ],
@@ -202,8 +140,31 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "1386E0AC57D39C838E220C47C99D0E7A9BC4F483CE5A63C28F4131C4F26A2577",
-  "identities": [],
+  "hash": "E50BD6872B85F87788CFA00AA77B2A42FD593C25E8E516CCA7AE05F8D93934CE",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "chapters_unique_title_per_course_parent_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "title"
+        },
+        {
+          "type": "atom",
+          "value": "course_id"
+        },
+        {
+          "type": "atom",
+          "value": "parent_chapter_id"
+        }
+      ],
+      "name": "unique_title_per_course_parent",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": null,
     "global": null,
@@ -211,5 +172,5 @@
   },
   "repo": "Elixir.KgEdu.Repo",
   "schema": null,
-  "table": "homeworks"
+  "table": "chapters"
 }

@@ -13,7 +13,7 @@
       "type": "uuid"
     },
     {
-      "allow_nil?": false,
+      "allow_nil?": true,
       "default": "nil",
       "generated?": false,
       "precision": null,
@@ -33,20 +33,56 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "description",
+      "source": "upload_id",
       "type": "text"
     },
     {
-      "allow_nil?": true,
-      "default": "0",
+      "allow_nil?": false,
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "sort_order",
-      "type": "bigint"
+      "source": "asset_id",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "playback_id",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "duration",
+      "type": "float"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "thumbnail",
+      "type": "text"
     },
     {
       "allow_nil?": false,
@@ -73,7 +109,7 @@
       "type": "utc_datetime_usec"
     },
     {
-      "allow_nil?": false,
+      "allow_nil?": true,
       "default": "nil",
       "generated?": false,
       "precision": null,
@@ -91,16 +127,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "chapters_course_id_fkey",
-        "on_delete": null,
+        "name": "videos_chapter_id_fkey",
+        "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "courses"
+        "table": "chapters"
       },
       "scale": null,
       "size": null,
-      "source": "course_id",
+      "source": "chapter_id",
       "type": "uuid"
     },
     {
@@ -122,16 +158,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "chapters_parent_chapter_id_fkey",
-        "on_delete": "delete",
+        "name": "videos_knowledge_resource_id_fkey",
+        "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "chapters"
+        "table": "knowledge_resources"
       },
       "scale": null,
       "size": null,
-      "source": "parent_chapter_id",
+      "source": "knowledge_resource_id",
       "type": "uuid"
     }
   ],
@@ -140,27 +176,47 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "6D4E7B5481CE3F19E1F403898CCFBC3033D0C21201FF9CF79C78F01EFA7C45A0",
+  "hash": "3DC6BEA77363B7A7D54A4AA9E10F1E6713B396A6A4CEC8CBF8CF855CA58DA370",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "chapters_unique_title_per_course_parent_index",
+      "index_name": "videos_unique_asset_id_index",
       "keys": [
         {
           "type": "atom",
-          "value": "title"
-        },
-        {
-          "type": "atom",
-          "value": "course_id"
-        },
-        {
-          "type": "atom",
-          "value": "parent_chapter_id"
+          "value": "asset_id"
         }
       ],
-      "name": "unique_title_per_course_parent",
+      "name": "unique_asset_id",
+      "nils_distinct?": true,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "videos_unique_playback_id_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "playback_id"
+        }
+      ],
+      "name": "unique_playback_id",
+      "nils_distinct?": true,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "videos_unique_upload_id_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "upload_id"
+        }
+      ],
+      "name": "unique_upload_id",
       "nils_distinct?": true,
       "where": null
     }
@@ -172,5 +228,5 @@
   },
   "repo": "Elixir.KgEdu.Repo",
   "schema": null,
-  "table": "chapters"
+  "table": "videos"
 }

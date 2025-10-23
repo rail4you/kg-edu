@@ -9,8 +9,8 @@ defmodule KgEdu.Accounts do
 
   typescript_rpc do
     resource KgEdu.Accounts.User do
-      rpc_action :sign_in, :sign_in_with_password
-      rpc_action :register, :register_with_password
+      rpc_action :sign_in, :sign_in_with_password, show_metadata: [:token]
+      rpc_action :register, :register_with_password, show_metadata: [:token]
       rpc_action :create_user, :create_user
       rpc_action :reset_password, :reset_password_with_token
       rpc_action :change_password, :change_password

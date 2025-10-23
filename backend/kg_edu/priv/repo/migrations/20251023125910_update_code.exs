@@ -1,4 +1,4 @@
-defmodule KgEdu.Repo.Migrations.MigrateResources3 do
+defmodule KgEdu.Repo.Migrations.UpdateCode do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -37,6 +37,8 @@ defmodule KgEdu.Repo.Migrations.MigrateResources3 do
     drop constraint(:homeworks, "homeworks_chapter_id_fkey")
 
     alter table(:homeworks) do
+      modify :created_by_id, :uuid, null: true
+
       modify :chapter_id,
              references(:chapters,
                column: :id,
@@ -46,9 +48,34 @@ defmodule KgEdu.Repo.Migrations.MigrateResources3 do
                on_delete: :delete_all
              )
     end
+
+    drop constraint(:chapters, "chapters_parent_chapter_id_fkey")
+
+    alter table(:chapters) do
+      modify :parent_chapter_id,
+             references(:chapters,
+               column: :id,
+               name: "chapters_parent_chapter_id_fkey",
+               type: :uuid,
+               prefix: "public",
+               on_delete: :delete_all
+             )
+    end
   end
 
   def down do
+    drop constraint(:chapters, "chapters_parent_chapter_id_fkey")
+
+    alter table(:chapters) do
+      modify :parent_chapter_id,
+             references(:chapters,
+               column: :id,
+               name: "chapters_parent_chapter_id_fkey",
+               type: :uuid,
+               prefix: "public"
+             )
+    end
+
     drop constraint(:homeworks, "homeworks_chapter_id_fkey")
 
     alter table(:homeworks) do
@@ -59,6 +86,8 @@ defmodule KgEdu.Repo.Migrations.MigrateResources3 do
                type: :uuid,
                prefix: "public"
              )
+
+      modify :created_by_id, :uuid, null: false
     end
 
     drop constraint(:knowledge_resources, "knowledge_resources_chapter_id_fkey")
