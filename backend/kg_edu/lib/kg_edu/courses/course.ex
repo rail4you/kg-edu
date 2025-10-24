@@ -5,7 +5,8 @@ defmodule KgEdu.Courses.Course do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource]
-
+  require Logger
+  require Ash.Query
   postgres do
     table "courses"
     repo KgEdu.Repo
@@ -33,12 +34,26 @@ defmodule KgEdu.Courses.Course do
 
   actions do
     defaults [:destroy]
-
     read :read do
-      filter expr(teacher_id == ^actor(:id))
       primary? true
-    end
 
+      prepare fn query, context ->
+            # Teachers see only their courses
+        Logger.info("context is #{inspect(context.actor)}")
+        case context.actor do
+          %{role: :user} ->
+            # Users see all courses
+            query
+
+          %{role: :teacher, id: teacher_id} ->
+            Logger.info("teacher id is #{teacher_id}")
+            Ash.Query.filter(query, teacher_id == ^teacher_id)
+
+          _ ->
+            Ash.Query.filter(query, false)
+        end
+      end
+    end
 
     read :get do
       description "Get a course by ID"
@@ -85,32 +100,36 @@ defmodule KgEdu.Courses.Course do
   end
 
   policies do
-      # Teachers can CRUD their own courses
-      policy [action(:read), action(:create), action(:update), action(:destroy)] do
-        description "Teachers can manage their own courses"
-        # authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
-        authorize_if authorize_if relates_to_actor_via(:teacher)
-      end
+    # Teachers can CRUD their own courses
+    # policy [action(:read)] do
+    #   authorize_if expr("user" == ^actor(:role))
+    # end
 
-      # Admin can CRUD all courses
-      # policy [action(:read), action(:create), action(:update), action(:destroy)] do
-      #   description "Admin can manage all courses"
-      #   authorize_if expr(:admin == ^actor(:role))
-      # end
+    # policy [action(:read), action(:create), action(:update), action(:destroy)] do
+    #   description "Teachers can manage their own courses"
+    #   # authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
+    #   authorize_if relates_to_actor_via(:teacher)
+    # end
 
-      # # Students can read courses they're enrolled in
-      # policy action(:read) do
-      #   description "Students can read enrolled courses"
-      #   authorize_if expr(:user == ^actor(:role) and exists(course_enrollments, member_id == ^actor(:id)))
-      # end
+    # Admin can CRUD all courses
+    # policy [action(:read), action(:create), action(:update), action(:destroy)] do
+    #   description "Admin can manage all courses"
+    #   authorize_if expr(:admin == ^actor(:role))
+    # end
 
-      # # Students can read any course (but not modify)
-      # policy action(:read) do
-      #   description "Students can read any course"
-      #   authorize_if expr(^actor(:role) == :user)
-      # end
+    # # Students can read courses they're enrolled in
+    # policy action(:read) do
+    #   description "Students can read enrolled courses"
+    #   authorize_if expr(:user == ^actor(:role) and exists(course_enrollments, member_id == ^actor(:id)))
+    # end
 
-      # Default policy - forbid everything else
+    # # Students can read any course (but not modify)
+    # policy action(:read) do
+    #   description "Students can read any course"
+    #   authorize_if expr(^actor(:role) == :user)
+    # end
+
+    # Default policy - forbid everything else
     policy always() do
       authorize_if always()
     end

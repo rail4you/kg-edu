@@ -9,7 +9,7 @@ defmodule KgEdu.Knowledge.Homework do
   postgres do
     table "homeworks"
     repo KgEdu.Repo
-    
+
     references do
       reference :chapter, on_delete: :delete
     end
@@ -96,9 +96,7 @@ defmodule KgEdu.Knowledge.Homework do
         :title,
         :content,
         :score,
-        :answer_key,
-        :answer_explanation,
-        :auto_gradable,
+        :answer,
         :course_id,
         :chapter_id,
         :knowledge_resource_id,
@@ -166,7 +164,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     update :update_homework do
       description "Update a homework"
-      accept [:title, :content, :score, :answer_key, :answer_explanation, :auto_gradable, :chapter_id, :knowledge_resource_id]
+      accept [:title, :content, :score, :answer, :chapter_id, :knowledge_resource_id]
       require_atomic? false
 
       # validate fn changeset, _context ->
@@ -304,23 +302,10 @@ defmodule KgEdu.Knowledge.Homework do
       description "Maximum score for this homework"
     end
 
-    attribute :answer_key, :string do
+    attribute :answer, :string do
       allow_nil? true
       public? true
-      description "Answer key or solution for the homework"
-    end
-
-    attribute :answer_explanation, :string do
-      allow_nil? true
-      public? true
-      description "Explanation of the answer or solution approach"
-    end
-
-    attribute :auto_gradable, :boolean do
-      allow_nil? false
-      default true
-      public? true
-      description "Whether this homework can be automatically graded"
+      description "Answer or solution for the homework"
     end
 
     create_timestamp :inserted_at
