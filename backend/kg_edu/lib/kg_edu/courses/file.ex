@@ -78,6 +78,7 @@ defmodule KgEdu.Courses.File do
     define :download_file, action: :download_file
     define :link_file_to_knowledge, action: :link_file_to_knowledge
     define :unlink_file_from_knowledge, action: :unlink_file_from_knowledge
+    define :log_file_view_activity, action: :log_file_view
   end
 
   actions do
@@ -329,6 +330,37 @@ defmodule KgEdu.Courses.File do
       require_atomic? false
 
       change set_attribute(:knowledge_resource_id, nil)
+    end
+
+    action :log_file_view do
+      description "Log file view activity"
+      
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who viewed the file"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the view"
+      end
+
+      run fn input, context ->
+        file_id = input.arguments[:file_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        metadata = input.arguments[:metadata] || %{}
+        
+        if file_id && user_id do
+          KgEdu.Activity.ActivityLog.log_file_view(%{
+            user_id: user_id,
+            file_id: file_id,
+            metadata: metadata
+          })
+        end
+        
+        :ok
+      end
     end
   end
 

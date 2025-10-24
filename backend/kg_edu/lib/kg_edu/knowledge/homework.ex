@@ -37,6 +37,7 @@ defmodule KgEdu.Knowledge.Homework do
     define :unlink_homework_from_knowledge, action: :unlink_homework_from_knowledge
     define :import_homework_from_xlsx, action: :import_homework_from_xlsx
     define :export_homework_template, action: :export_homework_template
+    define :log_homework_submit_activity, action: :log_homework_submit
   end
 
   actions do
@@ -271,6 +272,44 @@ defmodule KgEdu.Knowledge.Homework do
       end
 
       run {KgEdu.Knowledge.Changes.ExportHomeworkTemplate, []}
+    end
+
+    action :log_homework_submit do
+      description "Log homework submission activity"
+      
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who submitted the homework"
+      end
+
+      argument :answer, :string do
+        allow_nil? false
+        description "The answer submitted by the user"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the submission"
+      end
+
+      run fn input, context ->
+        homework_id = input.arguments[:homework_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        answer = input.arguments[:answer]
+        metadata = input.arguments[:metadata] || %{}
+        
+        if homework_id && user_id && answer do
+          KgEdu.Activity.ActivityLog.log_homework_submit(%{
+            user_id: user_id,
+            homework_id: homework_id,
+            answer: answer,
+            metadata: metadata
+          })
+        end
+        
+        :ok
+      end
     end
   end
 

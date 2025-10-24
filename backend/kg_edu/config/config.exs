@@ -121,7 +121,7 @@ config :ash, :missed_notifications, :ignore
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI, KgEdu.Utils]
+  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI, KgEdu.Utils, KgEdu.Activity]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,

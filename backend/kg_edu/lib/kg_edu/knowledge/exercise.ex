@@ -35,6 +35,7 @@ defmodule KgEdu.Knowledge.Exercise do
     define :unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge
     define :import_exercise_from_xlsx, action: :import_exercise_from_xlsx
     define :export_exercise_template, action: :export_exercise_template
+    define :log_exercise_submit_activity, action: :log_exercise_submit
   end
 
   actions do
@@ -196,6 +197,44 @@ defmodule KgEdu.Knowledge.Exercise do
           {:ok, user} -> :ok
           {:error, reason} -> {:error, reason}
         end
+      end
+    end
+
+    action :log_exercise_submit do
+      description "Log exercise submission activity"
+      
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who submitted the exercise"
+      end
+
+      argument :answer, :string do
+        allow_nil? false
+        description "The answer submitted by the user"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the submission"
+      end
+
+      run fn input, context ->
+        exercise_id = input.arguments[:exercise_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        answer = input.arguments[:answer]
+        metadata = input.arguments[:metadata] || %{}
+        
+        if exercise_id && user_id && answer do
+          KgEdu.Activity.ActivityLog.log_exercise_submit(%{
+            user_id: user_id,
+            exercise_id: exercise_id,
+            answer: answer,
+            metadata: metadata
+          })
+        end
+        
+        :ok
       end
     end
   end

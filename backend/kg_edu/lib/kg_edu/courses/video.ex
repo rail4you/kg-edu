@@ -68,6 +68,7 @@ defmodule KgEdu.Courses.Video do
     define :unlink_video_from_knowledge, action: :unlink_video_from_knowledge
     define :link_video_to_chapter, action: :link_video_to_chapter
     define :unlink_video_from_chapter, action: :unlink_video_from_chapter
+    define :log_video_view_activity, action: :log_video_view
   end
 
   actions do
@@ -242,6 +243,37 @@ defmodule KgEdu.Courses.Video do
       require_atomic? false
 
       change set_attribute(:chapter_id, nil)
+    end
+
+    action :log_video_view do
+      description "Log video view activity"
+      
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who viewed the video"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the view"
+      end
+
+      run fn input, context ->
+        video_id = input.arguments[:video_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        metadata = input.arguments[:metadata] || %{}
+        
+        if video_id && user_id do
+          KgEdu.Activity.ActivityLog.log_video_view(%{
+            user_id: user_id,
+            video_id: video_id,
+            metadata: metadata
+          })
+        end
+        
+        :ok
+      end
     end
   end
 
