@@ -81,14 +81,14 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
           "subject": "所属学科名称（重要：所有类型都必须提供）",
           "unit": "所属单元名称（重要：knowledge_unit和knowledge_cell类型必须提供）",
           "description": "知识点描述",
-          "importance_level": "hard|important|normal"
+          "importance_level": "困难|重要|正常"
         }
       ],
       "relations": [
         {
           "source_knowledge": "源知识点名称",
           "target_knowledge": "目标知识点名称",
-          "relation_type": "关系类型名称（如：prerequisite、includes、related_to等）"
+          "relation_type": "关系类型名称（必须是关联关系、包含关系、顺序关系之一）"
         }
       ]
     }
@@ -105,7 +105,7 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
     3. 分析要求：
        - 仔细分析文本中的层级结构（学科->单元->知识点）
-       - 识别知识点之间的逻辑关系（前置条件、包含关系、相关关系等）
+       - 识别知识点之间的逻辑关系（关联关系、包含关系、顺序关系之一）
        - 为关系选择合适的类型名称
        - 确保所有名称在文本中能找到对应或能合理推断
 
@@ -208,7 +208,7 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
       resource.type == "knowledge_unit" and (not is_binary(resource.unit) or resource.unit == "") ->
         {:error, "knowledge_resources[#{index}].unit is required for knowledge_unit type"}
 
-      resource.type == "knowledge_cell" and 
+      resource.type == "knowledge_cell" and
           (not is_binary(resource.unit) or resource.unit == "") and
           (resource.subject == nil or resource.subject == "") ->
         {:error, "knowledge_resources[#{index}].unit or valid subject reference is required for knowledge_cell type"}
@@ -238,7 +238,7 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
   defp create_knowledge_and_relations(llm_result, course_id, opts) do
     # Use Ecto.Repo.transaction to ensure atomicity
     repo = opts[:repo] || KgEdu.Repo
-    
+
     repo.transaction(fn ->
       case create_knowledge_resources(llm_result.knowledge_resources, course_id, opts) do
         {:ok, resource_map} ->
@@ -394,7 +394,7 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
     case find_parent_subject(subject_name, course_id) do
       {:ok, subject_id} ->
         {:ok, subject_id}
-        
+
       {:error, :not_found} ->
         # Create the subject
         subject_attrs = %{
@@ -405,17 +405,17 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
           importance_level: "normal",
           description: "自动创建的学科: #{subject_name}"
         }
-        
+
         case Resource.create_knowledge_resource(subject_attrs, opts) do
           {:ok, subject} ->
             Logger.info("Created parent subject: #{subject_name}")
             {:ok, subject.id}
-            
+
           {:error, reason} ->
             Logger.error("Failed to create parent subject: #{inspect(reason)}")
             {:error, reason}
         end
-        
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -423,11 +423,11 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
   defp find_or_create_default_unit(subject_name, course_id, opts) do
     unit_name = "#{subject_name}默认单元"
-    
+
     case find_parent_unit(unit_name, course_id) do
       {:ok, unit_id} ->
         {:ok, unit_id}
-        
+
       {:error, :not_found} ->
         # First ensure parent subject exists
         case find_or_create_parent_subject(subject_name, course_id, opts) do
@@ -443,21 +443,21 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
               importance_level: "normal",
               description: "自动创建的默认单元"
             }
-            
+
             case Resource.create_knowledge_resource(unit_attrs, opts) do
               {:ok, unit} ->
                 Logger.info("Created default unit: #{unit_name}")
                 {:ok, unit.id}
-                
+
               {:error, reason} ->
                 Logger.error("Failed to create default unit: #{inspect(reason)}")
                 {:error, reason}
             end
-            
+
           {:error, reason} ->
             {:error, reason}
         end
-        
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -551,11 +551,11 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
           display_name: String.capitalize(relation_type_name) |> String.replace("_", " "),
           description: "从文本导入的关系类型: #{relation_type_name}"
         }, authorize?: false) do
-          {:ok, relation_type} -> 
+          {:ok, relation_type} ->
             Logger.info("Created relation type: #{relation_type_name}")
             {:ok, relation_type}
-            
-          {:error, reason} -> 
+
+          {:error, reason} ->
             Logger.error("Failed to create relation type '#{relation_type_name}': #{inspect(reason)}")
             {:error, reason}
         end
