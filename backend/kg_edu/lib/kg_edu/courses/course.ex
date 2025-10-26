@@ -61,13 +61,13 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :teacher_id]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id]
       change set_attribute(:teacher_id, actor(:id))
       # change relate_actor(:teacher_id)
     end
 
     update :update do
-      accept [:title, :description, :image_url, :teacher_id]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id]
       change set_attribute(:teacher_id, actor(:id))
     end
 
@@ -160,6 +160,26 @@ defmodule KgEdu.Courses.Course do
       public? true
     end
 
+    attribute :major, :string do
+      allow_nil? true
+      public? true
+      description "专业 (Major)"
+    end
+
+    attribute :semester, :string do
+      allow_nil? true
+      public? true
+      description "学期 (Semester)"
+    end
+
+    attribute :book_id, :uuid do
+      allow_nil? true
+      public? true
+      description "Associated book ID"
+    end
+
+
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -189,6 +209,18 @@ defmodule KgEdu.Courses.Course do
       public? true
       destination_attribute :course_id
       description "Homeworks for this course"
+    end
+
+    has_one :course_info, KgEdu.Courses.CourseInfo do
+      public? true
+      destination_attribute :course_id
+      description "Course information"
+    end
+
+    belongs_to :book, KgEdu.Courses.Book do
+      allow_nil? true
+      public? true
+      description "Associated textbook for this course"
     end
   end
 end
