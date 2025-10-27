@@ -8,11 +8,6 @@ defmodule KgEdu.Accounts.User do
 
   require Logger
 
-  typescript do
-    type_name "User"
-  end
-
-
   authentication do
     add_ons do
       log_out_everywhere do
@@ -52,6 +47,10 @@ defmodule KgEdu.Accounts.User do
     type "user"
   end
 
+  typescript do
+    type_name "User"
+  end
+
   code_interface do
     define :register_user, action: :register_with_password
     define :sign_in, action: :sign_in_with_password
@@ -66,10 +65,35 @@ defmodule KgEdu.Accounts.User do
     define :get_user, action: :read, get_by: [:id]
     define :get_users, action: :read
     define :import_users_from_excel, action: :import_users_from_excel
+    # student crud
+    define :create_student, action: :create_student
+    define :list_student, action: :list_student
+    define :update_student, action: :update_student
   end
 
   actions do
-    defaults [:read, :create, :destroy]
+    defaults [:read, :destroy]
+
+    create :create_student do
+      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge]
+      argument :password, :string
+      change set_attribute(:role, :user)
+      change {KgEdu.Accounts.User.Changes.CreateUser, []}
+    end
+
+    read :list_student do
+      filter expr(role == :user)
+    end
+
+    update :update_student do
+      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name]
+      argument :password, :string do
+        allow_nil? true
+      end
+      require_atomic? false
+      # change set_attribute(:role, "user")
+      change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
+    end
 
     create :create_user do
       description "Create a new user with specified parameters"
@@ -371,6 +395,7 @@ defmodule KgEdu.Accounts.User do
 
       run fn input, _context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+
         case KgEdu.Accounts.User.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                input.arguments.attributes
@@ -460,6 +485,21 @@ defmodule KgEdu.Accounts.User do
     end
 
     attribute :phone, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :class_name, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :major, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :colledge, :string do
       allow_nil? true
       public? true
     end

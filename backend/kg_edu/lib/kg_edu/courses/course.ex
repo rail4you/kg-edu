@@ -38,12 +38,12 @@ defmodule KgEdu.Courses.Course do
       primary? true
 
       prepare fn query, context ->
-            # Teachers see only their courses
+            # Teachers see only their courses, students see only enrolled courses
         Logger.info("context is #{inspect(context.actor)}")
         case context.actor do
-          %{role: :user} ->
-            # Users see all courses
-            query
+          %{role: :user, id: user_id} ->
+            # Students see only courses they're enrolled in
+            Ash.Query.filter(query, course_enrollments.member_id == ^user_id)
 
           %{role: :teacher, id: teacher_id} ->
             Logger.info("teacher id is #{teacher_id}")
@@ -101,17 +101,12 @@ defmodule KgEdu.Courses.Course do
 
   policies do
     # Teachers can CRUD their own courses
-    # policy [action(:read)] do
-    #   authorize_if expr("user" == ^actor(:role))
-    # end
-
     # policy [action(:read), action(:create), action(:update), action(:destroy)] do
     #   description "Teachers can manage their own courses"
-    #   # authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
-    #   authorize_if relates_to_actor_via(:teacher)
+    #   authorize_if expr(:teacher == ^actor(:role) and teacher_id == ^actor(:id))
     # end
 
-    # Admin can CRUD all courses
+    # # Admin can CRUD all courses
     # policy [action(:read), action(:create), action(:update), action(:destroy)] do
     #   description "Admin can manage all courses"
     #   authorize_if expr(:admin == ^actor(:role))
@@ -121,12 +116,6 @@ defmodule KgEdu.Courses.Course do
     # policy action(:read) do
     #   description "Students can read enrolled courses"
     #   authorize_if expr(:user == ^actor(:role) and exists(course_enrollments, member_id == ^actor(:id)))
-    # end
-
-    # # Students can read any course (but not modify)
-    # policy action(:read) do
-    #   description "Students can read any course"
-    #   authorize_if expr(^actor(:role) == :user)
     # end
 
     # Default policy - forbid everything else

@@ -1,4 +1,5 @@
 defmodule KgEdu.Knowledge.Relation do
+  alias ElixirSense.Log
   use Ash.Resource,
     otp_app: :kg_edu,
     domain: KgEdu.Knowledge,
@@ -6,6 +7,9 @@ defmodule KgEdu.Knowledge.Relation do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
   import Logger, only: [info: 1, error: 1]
+
+  require Logger
+
   postgres do
     table "knowledge_relations"
     repo KgEdu.Repo
@@ -113,7 +117,7 @@ defmodule KgEdu.Knowledge.Relation do
     destroy :destroy do
       description "Delete a knowledge relation"
       accept []
-      
+
       # Relations can be deleted directly as they don't have dependent records
       # that would prevent deletion
     end
@@ -128,29 +132,27 @@ defmodule KgEdu.Knowledge.Relation do
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data) do
           {:ok, sheets} ->
             # Process knowledge resources from sheet1 if available
-            knowledge_result = case Map.get(sheets, :sheet1) do
-              nil -> {:ok, "No knowledge data to import"}
-              _knowledge_data ->
-                # Re-use the same excel data but import only knowledge resources
-                IO.inspect("import knowledge first")
-                KgEdu.Knowledge.Resource.import_kg_from_excel(input.arguments.excel_data,input.arguments.course_id, nil)
-            end
+            # knowledge_result = case Map.get(sheets, :sheet1) do
+            #   nil -> {:ok, "No knowledge data to import"}
+            #   _knowledge_data ->
+            #     # Re-use the same excel data but import only knowledge resources
+            #     IO.inspect("import knowledge first")
+            #     KgEdu.Knowledge.Resource.import_kg_from_excel(input.arguments.excel_data,input.arguments.course_id, nil)
+            # end
 
             # Process relations from sheet2 if available
-            relation_result = case Map.get(sheets, :sheet2) do
+            relation_result = case Map.get(sheets, :sheet1) do
               nil -> {:ok, "No relation data to import"}
               relation_data ->
                 process_relation_import(relation_data, input.arguments.course_id)
             end
 
             # Return combined result
-            case {knowledge_result, relation_result} do
-              {{:ok, knowledge_msg}, {:ok, relation_msg}} ->
+            case relation_result do
+              {:ok, relation_msg} ->
                 :ok
                 # {:ok, "#{knowledge_msg}. #{relation_msg}"}
-              {{:error, reason}, _} ->
-                {:error, reason}
-              {_, {:error, reason}} ->
+              {:error, reason} ->
                 {:error, reason}
             end
 
@@ -201,16 +203,6 @@ defmodule KgEdu.Knowledge.Relation do
 
   # ============ Import Implementation ============
 
-  defp import_relations_from_excel(excel_base64, course_id, _context) do
-    case KgEdu.ExcelParser.parse_from_base64(excel_base64) do
-      {:ok, %{sheet2: relation_data}} ->
-        process_relation_import(relation_data, course_id)
-
-      {:error, reason} ->
-        {:error, "Failed to parse Excel file: #{reason}"}
-    end
-  end
-
   defp process_relation_import(relation_data, course_id) do
     # Process each row of relation data
     result = Enum.reduce_while(relation_data, {:ok, 0}, fn row, {:ok, count} ->
@@ -231,7 +223,7 @@ defmodule KgEdu.Knowledge.Relation do
   defp process_relation_row(row, course_id) when length(row) >= 3 do
     # Extract row data: knowledge1 name, relation type name, knowledge2 name
     [knowledge1_name, relation_type_name, knowledge2_name] = row
-
+    Logger.info("#{knowledge1_name} #{relation_type_name} #{knowledge2_name}")
     # Skip row if any field is missing
     if is_nil(knowledge1_name) or is_nil(relation_type_name) or is_nil(knowledge2_name) or
        knowledge1_name == "" or relation_type_name == "" or knowledge2_name == "" do
@@ -279,7 +271,7 @@ defmodule KgEdu.Knowledge.Relation do
 
   defp find_knowledge_by_name_and_course(name, course_id) do
     # Try exact name match first
-    case KgEdu.Knowledge.Resource.get_by_name_and_course(%{name: name, knowledge_type: :knowledge_cell, course_id: course_id}) do
+    case KgEdu.Knowledge.Resource.get_by_any_name_and_course(%{name: name, course_id: course_id}) do
       {:ok, knowledge} -> {:ok, knowledge}
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
         # Try searching by subject

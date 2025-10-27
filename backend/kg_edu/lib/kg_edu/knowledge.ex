@@ -13,6 +13,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_full_hierarchy, :get_full_hierarchy
       rpc_action :update_resource, :update_knowledge_resource
       rpc_action :destroy_resource, :destroy
+      rpc_action :bulk_destory_knowledges, :bulk_destory_knowledges
       rpc_action :import_knowledge_from_excel, :import_from_excel
       rpc_action :import_knowledge_from_llm, :import_from_llm
       # rpc_action :get_resource, :get_resource

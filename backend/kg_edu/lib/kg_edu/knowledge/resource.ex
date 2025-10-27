@@ -5,11 +5,11 @@ defmodule KgEdu.Knowledge.Resource do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
-
+  require Ash.Query
   postgres do
     table "knowledge_resources"
     repo KgEdu.Repo
-    
+
     references do
       reference :chapter, on_delete: :delete
     end
@@ -31,6 +31,7 @@ defmodule KgEdu.Knowledge.Resource do
     define :create_knowledge_resource, action: :create
     define :update_knowledge_resource, action: :update_knowledge_resource
     define :delete_knowledge_resource, action: :destroy
+    define :bulk_destory_knowledges, action: :bulk_destory_knowledges
 
     # Course-related queries
     define :get_knowledge_resources_by_course, action: :by_course
@@ -53,6 +54,7 @@ defmodule KgEdu.Knowledge.Resource do
     define :upsert_subject, action: :upsert_subject
     define :upsert_unit, action: :upsert_unit
     define :get_by_name_and_course, action: :by_name_and_course
+    define :get_by_any_name_and_course, action: :by_any_name_and_course
   end
 
   actions do
@@ -60,7 +62,7 @@ defmodule KgEdu.Knowledge.Resource do
 
     destroy :destroy do
       description "Destroy a knowledge resource and its dependent relations"
-
+      require_atomic? false
       # Manually delete related records first
       change fn changeset, _context ->
         resource_id = Ash.Changeset.get_attribute(changeset, :id)
@@ -75,7 +77,9 @@ defmodule KgEdu.Knowledge.Resource do
             Enum.each(relations, fn relation ->
               KgEdu.Knowledge.Relation.delete_knowledge_relation(relation, authorize?: false)
             end)
-          {:error, _} -> :ok
+
+          {:error, _} ->
+            :ok
         end
 
         # Delete outgoing relations
@@ -88,10 +92,46 @@ defmodule KgEdu.Knowledge.Resource do
             Enum.each(relations, fn relation ->
               KgEdu.Knowledge.Relation.delete_knowledge_relation(relation, authorize?: false)
             end)
-          {:error, _} -> :ok
+
+          {:error, _} ->
+            :ok
         end
 
         changeset
+      end
+    end
+
+    action :bulk_destory_knowledges do
+      description "Unenroll multiple students from a course"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :knowledge_resource_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of student IDs to unenroll"
+      end
+
+      run fn input, _context ->
+        query =
+          KgEdu.Knowledge.Resource
+          |> Ash.Query.filter(
+            expr(
+              course_id == ^input.arguments.course_id and
+                id in ^input.arguments.knowledge_resource_ids
+            )
+          )
+
+        case Ash.bulk_destroy(query, :destroy, %{}, return_errors?: true, strategy: [:stream]) do
+          _ ->
+            :ok
+            # %Ash.BulkResult{records: records, errors: []} ->
+            #   :ok
+
+            # %Ash.BulkResult{records: records, errors: errors} ->
+            #   {:error, errors}
+        end
       end
     end
 
@@ -346,6 +386,19 @@ defmodule KgEdu.Knowledge.Resource do
              )
     end
 
+    read :by_any_name_and_course do
+      description "Get a knowledge resource by name and course"
+      get? true
+      argument :name, :string, allow_nil?: false
+      # argument :knowledge_type, :atom, allow_nil?: true
+      argument :course_id, :uuid, allow_nil?: false
+
+      filter expr(
+               name == ^arg(:name) and knowledge_type in [:subject, :unit, :knowledge_cell] and
+                 course_id == ^arg(:course_id)
+             )
+    end
+
     create :upsert_subject do
       description "Create or update a subject"
       accept [:name, :course_id, :description, :importance_level]
@@ -450,7 +503,10 @@ defmodule KgEdu.Knowledge.Resource do
       run fn input, _context ->
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data) do
           {:ok, %{sheet1: knowledge_data}} ->
-            process_knowledge_import(knowledge_data, input.arguments.course_id, nil)
+            case process_knowledge_import(knowledge_data, input.arguments.course_id, nil) do
+              {:ok, _} -> :ok
+              {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
+            end
 
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
@@ -466,11 +522,11 @@ defmodule KgEdu.Knowledge.Resource do
 
       run fn input, context ->
         case KgEdu.Knowledge.ImportFromLLM.import_from_text(
-          input.arguments.text,
-          input.arguments.course_id,
-          actor: context.actor,
-          authorize?: context.authorize?
-        ) do
+               input.arguments.text,
+               input.arguments.course_id,
+               actor: context.actor,
+               authorize?: context.authorize?
+             ) do
           {:ok, result} -> :ok
           {:error, reason} -> {:error, reason}
         end
@@ -662,8 +718,9 @@ defmodule KgEdu.Knowledge.Resource do
     case result do
       {:ok, _} ->
         {:ok, "Successfully imported #{length(knowledge_data)} knowledge resources"}
-        # IO.inspect("Successfully imported #{length(knowledge_data)} knowledge resources")
-        # {:ok, :ok}
+
+      # IO.inspect("Successfully imported #{length(knowledge_data)} knowledge resources")
+      # {:ok, :ok}
 
       {:error, reason} ->
         {:error, reason}
@@ -678,8 +735,8 @@ defmodule KgEdu.Knowledge.Resource do
       unit_name,
       knowledge_name,
       description,
-      importance_level,
-      _knowledge_type_rest
+      importance_level
+      # _knowledge_type_rest
     ] = row
 
     # _knowledge_type = List.first(knowledge_type_rest) || nil
@@ -692,7 +749,6 @@ defmodule KgEdu.Knowledge.Resource do
       with {:ok, subject_id, _} = create_or_get_subject(subject_name, course_id, acc),
            {:ok, unit_id, _} = create_or_get_unit(unit_name, course_id, subject_id, acc) do
         # Create the knowledge resource
-
 
         # Create the knowledge resource
         knowledge_attrs = %{
