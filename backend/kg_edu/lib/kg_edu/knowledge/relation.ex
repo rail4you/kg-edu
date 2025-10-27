@@ -81,34 +81,16 @@ defmodule KgEdu.Knowledge.Relation do
 
       change relate_actor(:created_by)
 
-      validate fn changeset, _context ->
-        # Prevent self-references
-        source_id = Ash.Changeset.get_attribute(changeset, :source_knowledge_id)
-        target_id = Ash.Changeset.get_attribute(changeset, :target_knowledge_id)
-
-        if source_id == target_id do
-          {:error, "Source and target knowledge cannot be the same"}
-        else
-          :ok
-        end
-      end
+      # validate {Ash.Changeset.Arg, :source_knowledge_id} != {Ash.Changeset.Arg, :target_knowledge_id},
+      #   message: "Source and target knowledge cannot be the same"
     end
 
     create :create_relation_import do
       description "Create a knowledge relation during import (no actor required)"
       accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
 
-      validate fn changeset, _context ->
-        # Prevent self-references
-        source_id = Ash.Changeset.get_attribute(changeset, :source_knowledge_id)
-        target_id = Ash.Changeset.get_attribute(changeset, :target_knowledge_id)
-
-        if source_id == target_id do
-          {:error, "Source and target knowledge cannot be the same"}
-        else
-          :ok
-        end
-      end
+      # validate {Ash.Changeset.Arg, :source_knowledge_id} != {Ash.Changeset.Arg, :target_knowledge_id},
+      #   message: "Source and target knowledge cannot be the same"
     end
 
     update :update_knowledge_relation do
