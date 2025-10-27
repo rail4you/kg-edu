@@ -39,11 +39,15 @@ defmodule KgEdu.Courses.Course do
 
       prepare fn query, context ->
             # Teachers see only their courses, students see only enrolled courses
+            # Only users see published courses
         Logger.info("context is #{inspect(context.actor)}")
+        
         case context.actor do
           %{role: :user, id: user_id} ->
-            # Students see only courses they're enrolled in
-            Ash.Query.filter(query, course_enrollments.member_id == ^user_id)
+            # Students see only courses they're enrolled in and published
+            query
+            |> Ash.Query.filter(publish_status == true)
+            |> Ash.Query.filter(course_enrollments.member_id == ^user_id)
 
           %{role: :teacher, id: teacher_id} ->
             Logger.info("teacher id is #{teacher_id}")
@@ -61,13 +65,13 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id, :publish_status]
       change set_attribute(:teacher_id, actor(:id))
       # change relate_actor(:teacher_id)
     end
 
     update :update do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id, :publish_status]
       change set_attribute(:teacher_id, actor(:id))
     end
 
@@ -165,6 +169,12 @@ defmodule KgEdu.Courses.Course do
       allow_nil? true
       public? true
       description "Associated book ID"
+    end
+
+    attribute :publish_status, :boolean do
+      default true
+      public? true
+      description "Whether the course is published"
     end
 
 

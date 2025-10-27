@@ -78,7 +78,7 @@ defmodule KgEdu.Accounts.User do
       accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge]
       argument :password, :string
       change set_attribute(:role, :user)
-      change {KgEdu.Accounts.User.Changes.CreateUser, []}
+      change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
     end
 
     read :list_student do
