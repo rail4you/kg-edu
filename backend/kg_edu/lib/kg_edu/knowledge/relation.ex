@@ -9,6 +9,8 @@ defmodule KgEdu.Knowledge.Relation do
   import Logger, only: [info: 1, error: 1]
 
   require Logger
+  require Ash.Query
+  require Ash.Expr
 
   postgres do
     table "knowledge_relations"
@@ -33,6 +35,7 @@ defmodule KgEdu.Knowledge.Relation do
     define :create_relation_import, action: :create_relation_import
     define :update_knowledge_relation, action: :update_knowledge_relation
     define :delete_knowledge_relation, action: :destroy
+    define :bulk_destroy_relations, action: :bulk_destroy_relations
     define :import_relations_from_excel, action: :import_relations_from_excel
   end
 
@@ -120,6 +123,29 @@ defmodule KgEdu.Knowledge.Relation do
 
       # Relations can be deleted directly as they don't have dependent records
       # that would prevent deletion
+    end
+
+    action :bulk_destroy_relations do
+      description "Bulk delete knowledge relations"
+
+      argument :relation_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of relation IDs to delete"
+      end
+
+      run fn input, _context ->
+        query =
+          KgEdu.Knowledge.Relation
+          |> Ash.Query.filter(expr(id in ^input.arguments.relation_ids))
+
+        case Ash.bulk_destroy(query, :destroy, %{}, return_errors?: true, strategy: [:stream]) do
+          %Ash.BulkResult{records: records, errors: []} ->
+            :ok
+
+          %Ash.BulkResult{errors: errors} ->
+            {:error, errors}
+        end
+      end
     end
 
     action :import_relations_from_excel do

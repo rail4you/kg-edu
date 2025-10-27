@@ -24,6 +24,7 @@ defmodule KgEdu.Courses.Book do
     define :update_book, action: :update
     define :delete_book, action: :destroy
     define :get_book, action: :read, get_by: [:id]
+    define :get_book_by_course, action: :by_course
     define :list_books, action: :read
   end
 
@@ -39,8 +40,42 @@ defmodule KgEdu.Courses.Book do
       get? true
     end
 
+    read :by_course do
+      description "Get a book by course ID"
+      get? true
+      argument :course_id, :uuid, allow_nil?: false
+      filter expr(course_id == ^arg(:course_id))
+    end
+
     create :create do
       accept [:title, :publish, :cover_image, :course_id]
+      
+      argument :course_id, :uuid, allow_nil?: false
+      change set_attribute(:course_id, arg(:course_id))
+      
+      validate fn changeset, _context ->
+        # Check if course already has a book
+        course_id = Ash.Changeset.get_attribute(changeset, :course_id)
+        
+        if course_id do
+          case KgEdu.Courses.Book.list_books(
+            authorize?: false,
+            query: [
+              filter: [course_id: course_id],
+              limit: 1
+            ]
+          ) do
+            {:ok, [_existing_book]} ->
+              {:error, "Course already has a book"}
+            {:ok, []} ->
+              :ok
+            {:error, _reason} ->
+              :ok
+          end
+        else
+          :ok
+        end
+      end
     end
 
     update :update do
@@ -76,9 +111,9 @@ defmodule KgEdu.Courses.Book do
     end
 
     attribute :course_id, :uuid do
-      allow_nil? false
+      allow_nil? true
       public? true
-      description "course_id"
+      description "Course ID this book belongs to"
     end
 
     create_timestamp :inserted_at do
@@ -91,10 +126,14 @@ defmodule KgEdu.Courses.Book do
   end
 
   relationships do
-    has_one :course, KgEdu.Courses.Course do
+    belongs_to :course, KgEdu.Courses.Course do
       public? true
-      destination_attribute :book_id
-      description "Course that uses this book"
+      allow_nil? true
+      description "Course this book belongs to"
     end
+  end
+
+  identities do
+    identity :unique_course_book, [:course_id]
   end
 end
