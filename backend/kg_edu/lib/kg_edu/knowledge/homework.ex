@@ -254,7 +254,8 @@ defmodule KgEdu.Knowledge.Homework do
 
         case KgEdu.Knowledge.Homework.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
-               input.arguments.attributes,
+              #  input.arguments.attributes,
+              ["title", "description", "score", "answer"],
                input.arguments.course_id
              ) do
           {:ok, homework} -> :ok
@@ -276,7 +277,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     action :log_homework_submit do
       description "Log homework submission activity"
-      
+
       argument :user_id, :uuid do
         allow_nil? false
         description "User ID who submitted the homework"
@@ -298,7 +299,7 @@ defmodule KgEdu.Knowledge.Homework do
         user_id = input.arguments[:user_id]
         answer = input.arguments[:answer]
         metadata = input.arguments[:metadata] || %{}
-        
+
         if homework_id && user_id && answer do
           KgEdu.Activity.ActivityLog.log_homework_submit(%{
             user_id: user_id,
@@ -307,7 +308,7 @@ defmodule KgEdu.Knowledge.Homework do
             metadata: metadata
           })
         end
-        
+
         :ok
       end
     end
