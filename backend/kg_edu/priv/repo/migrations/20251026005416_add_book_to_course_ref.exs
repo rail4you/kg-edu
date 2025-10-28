@@ -8,14 +8,18 @@ defmodule KgEdu.Repo.Migrations.AddCode do
   use Ecto.Migration
 
   def up do
-    alter table(:books) do
-      add :course_id, :uuid, null: false
+    # Add course_id column if it doesn't exist
+    try do
+      execute("ALTER TABLE books ADD COLUMN IF NOT EXISTS course_id UUID")
+    rescue
+      Postgrex.Error -> 
+        # Column might already exist, ignore error
+        :ok
     end
   end
 
   def down do
-    alter table(:books) do
-      remove :course_id
-    end
+    # Remove column if it exists
+    execute("ALTER TABLE books DROP COLUMN IF EXISTS course_id")
   end
 end
