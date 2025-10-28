@@ -48,38 +48,14 @@ defmodule KgEdu.Courses.Book do
     end
 
     create :create do
-      accept [:title, :publish, :cover_image, :course_id]
+      accept [:title, :publish, :cover_image, :attachment, :course_id]
       
       argument :course_id, :uuid, allow_nil?: false
       change set_attribute(:course_id, arg(:course_id))
-      
-      validate fn changeset, _context ->
-        # Check if course already has a book
-        course_id = Ash.Changeset.get_attribute(changeset, :course_id)
-        
-        if course_id do
-          case KgEdu.Courses.Book.list_books(
-            authorize?: false,
-            query: [
-              filter: [course_id: course_id],
-              limit: 1
-            ]
-          ) do
-            {:ok, [_existing_book]} ->
-              {:error, "Course already has a book"}
-            {:ok, []} ->
-              :ok
-            {:error, _reason} ->
-              :ok
-          end
-        else
-          :ok
-        end
-      end
     end
 
     update :update do
-      accept [:title, :publish, :cover_image]
+      accept [:title, :publish, :cover_image, :attachment, :course_id]
     end
   end
 
@@ -110,6 +86,12 @@ defmodule KgEdu.Courses.Book do
       public? true
     end
 
+    attribute :attachment, :string do
+      allow_nil? true
+      public? true
+      description "Path to the book attachment file"
+    end
+
     attribute :course_id, :uuid do
       allow_nil? true
       public? true
@@ -133,7 +115,5 @@ defmodule KgEdu.Courses.Book do
     end
   end
 
-  identities do
-    identity :unique_course_book, [:course_id]
-  end
+  # identities removed to allow multiple books per course
 end

@@ -5,13 +5,17 @@ defmodule KgEdu.Knowledge.Resource do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
+
   require Ash.Query
+  import Ecto.Query
+
   postgres do
     table "knowledge_resources"
     repo KgEdu.Repo
 
     references do
       reference :chapter, on_delete: :delete
+      reference :exercises, on_delete: :delete
     end
   end
 
@@ -32,6 +36,8 @@ defmodule KgEdu.Knowledge.Resource do
     define :update_knowledge_resource, action: :update_knowledge_resource
     define :delete_knowledge_resource, action: :destroy
     define :bulk_destory_knowledges, action: :bulk_destory_knowledges
+    define :delete_all_knowledges_by_course, action: :delete_all_knowledges_by_course
+    define :delete_all_knowledge, args: [:course_id], action: :delete_all_knowledge
 
     # Course-related queries
     define :get_knowledge_resources_by_course, action: :by_course
@@ -97,6 +103,66 @@ defmodule KgEdu.Knowledge.Resource do
             :ok
         end
 
+        # Delete related files
+        KgEdu.Courses.File.list_files(
+          authorize?: false,
+          query: [filter: [knowledge_resource_id: resource_id]]
+        )
+        |> case do
+          {:ok, files} ->
+            Enum.each(files, fn file ->
+              KgEdu.Courses.File.delete_file(file, authorize?: false)
+            end)
+
+          {:error, _} ->
+            :ok
+        end
+
+        # Delete related videos
+        KgEdu.Courses.Video.list_videos(
+          authorize?: false,
+          query: [filter: [knowledge_resource_id: resource_id]]
+        )
+        |> case do
+          {:ok, videos} ->
+            Enum.each(videos, fn video ->
+              KgEdu.Courses.Video.delete_video(video, authorize?: false)
+            end)
+
+          {:error, _} ->
+            :ok
+        end
+
+        # Delete related homeworks
+        KgEdu.Knowledge.Homework.list_homeworks(
+          authorize?: false,
+          query: [filter: [knowledge_resource_id: resource_id]]
+        )
+        |> case do
+          {:ok, homeworks} ->
+            Enum.each(homeworks, fn homework ->
+              KgEdu.Knowledge.Homework.delete_homework(homework, authorize?: false)
+            end)
+
+          {:error, _} ->
+            :ok
+        end
+
+        # Delete related questions
+        KgEdu.Knowledge.Question.list_questions(
+          authorize?: false,
+          query: [filter: [knowledge_resource_id: resource_id]]
+        )
+        |> case do
+          {:ok, questions} ->
+            Enum.each(questions, fn question ->
+              KgEdu.Knowledge.Question.delstroy_question(question, authorize?: false)
+            end)
+
+          {:error, _} ->
+            :ok
+        end
+
         changeset
       end
     end
@@ -134,6 +200,69 @@ defmodule KgEdu.Knowledge.Resource do
         end
       end
     end
+
+    # action :delete_all_knowledges_by_course do
+    #   description "Delete all knowledge resources for a course using cascade delete"
+
+    #   argument :course_id, :uuid do
+    #     allow_nil? false
+    #     description "The course ID to delete all knowledge resources for"
+    #   end
+
+    #   run fn input, _context ->
+    #     query =
+    #       KgEdu.Knowledge.Resource
+    #       |> Ash.Query.filter(expr(course_id == ^input.arguments.course_id))
+
+    #     case Ash.bulk_destroy(query, :destroy, %{},
+    #            return_errors?: true,
+    #            strategy: [:stream, :atomic],
+    #            return_records?: false) do
+    #       %Ash.BulkResult{status: :success} ->
+    #         :ok
+
+    #       %Ash.BulkResult{status: :partial_success, errors: [_ | _] = errors} ->
+    #         {:error, "Partial deletion completed with #{length(errors)} errors"}
+
+    #       %Ash.BulkResult{status: :error, errors: errors} ->
+    #         {:error, "Failed to delete knowledge resources: #{inspect(errors)}"}
+
+    #       result ->
+    #         {:error, "Unexpected result: #{inspect(result)}"}
+    #     end
+    #   end
+    # end
+
+    action :delete_all_knowledge do
+      :ok
+    end
+
+   action :delete_all_knowledges_by_course do
+  description "Delete all knowledge resources for a course using raw SQL"
+  argument :course_id, :uuid do
+    allow_nil? false
+    description "The course ID to delete all knowledge resources for"
+  end
+
+  run fn input, _context ->
+    course_id = input.arguments.course_id
+
+    # Convert UUID string to binary format for Postgrex
+    course_id_binary = case Ecto.UUID.dump(course_id) do
+      {:ok, binary} -> binary
+      :error -> raise "Invalid UUID format"
+    end
+
+    query = "DELETE FROM knowledge_resources WHERE course_id = $1"
+    case KgEdu.Repo.query(query, [course_id_binary]) do
+      {:ok, %Postgrex.Result{num_rows: rows_deleted}} ->
+        :ok
+        # {:ok, rows_deleted}
+      {:error, reason} ->
+        {:error, "Failed to delete knowledge resources: #{inspect(reason)}"}
+    end
+  end
+end
 
     # ============ Basic Queries ============
     read :by_id do
@@ -501,8 +630,8 @@ defmodule KgEdu.Knowledge.Resource do
       argument :course_id, :uuid, allow_nil?: false
 
       run fn input, _context ->
-        case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data) do
-          {:ok, %{sheet1: knowledge_data}} ->
+        case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
+          {:ok, %{sheet: knowledge_data}} ->
             case process_knowledge_import(knowledge_data, input.arguments.course_id, nil) do
               {:ok, _} -> :ok
               {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
@@ -677,6 +806,12 @@ defmodule KgEdu.Knowledge.Resource do
       public? true
       destination_attribute :knowledge_resource_id
       description "Homeworks related to this knowledge resource"
+    end
+
+    has_many :exercises, KgEdu.Knowledge.Exercise do
+      public? true
+      destination_attribute :knowledge_resource_id
+      description "Exercises related to this knowledge resource"
     end
   end
 

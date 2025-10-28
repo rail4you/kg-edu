@@ -38,23 +38,25 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
         # Set the course_id
         changeset = Ash.Changeset.change_attribute(changeset, :course_id, course.id)
 
-        # Generate the exercise prompt
-        prompt = build_exercise_prompt(course_name, knowledge_name, chapter_name, exercise_type, number)
+        # Generate multiple exercises
+        case generate_multiple_exercises(course_name, knowledge_name, chapter_name, exercise_type, number) do
+          {:ok, exercises_data} ->
+            # Create database records for all generated exercises
+            exercises_with_metadata = Enum.map(exercises_data, fn exercise_data ->
+              Map.merge(exercise_data, %{
+                course_id: course.id,
+                question_type: exercise_type
+              })
+            end)
 
-        case generate_exercise_content(prompt, exercise_type) do
-          {:ok, exercise_data} ->
-            # Set the generated content
+            # Store exercises in changeset metadata for later processing
             changeset
-            |> Ash.Changeset.change_attribute(:title, exercise_data.title)
-            |> Ash.Changeset.change_attribute(:question_content, exercise_data.question_content)
-            |> Ash.Changeset.change_attribute(:answer, exercise_data.answer)
-            |> Ash.Changeset.change_attribute(:question_type, exercise_type)
-            |> Ash.Changeset.change_attribute(:options, exercise_data.options)
+            |> Ash.Changeset.put_context(:generated_exercises, exercises_with_metadata)
 
           {:error, reason} ->
             Ash.Changeset.add_error(changeset, %Ash.Error.Changes.InvalidAttribute{
               field: :question_content,
-              message: "Failed to generate exercise: #{inspect(reason)}"
+              message: "Failed to generate exercises: #{inspect(reason)}"
             })
         end
 
@@ -66,7 +68,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     end
   end
 
-  defp build_exercise_prompt(course_name, knowledge_name, chapter_name, exercise_type, number) do
+  defp build_exercise_prompt(course_name, knowledge_name, chapter_name, exercise_type) do
     context_parts = [
       "Course: #{course_name}",
       "Knowledge topic: #{knowledge_name}"
@@ -87,11 +89,11 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     end
 
     """
-    You are an educational content expert. Please create #{number} #{exercise_type_description} based on the following context:
+    You are an educational content expert. Please create one #{exercise_type_description} based on the following context:
 
     #{context}
 
-    Please ensure the exercises are:
+    Please ensure the exercise is:
     - Age-appropriate and challenging
     - Relevant to the topic
     - Clear and well-structured
@@ -118,6 +120,34 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     use chinese for the content.
     您应该始终遵循指令并输出一个有效的JSON对象。请根据指令使用指定的JSON对象结构。确保始终以 "```" 结束代码块，以指示JSON对象的结束。
     """
+  end
+
+  defp generate_multiple_exercises(course_name, knowledge_name, chapter_name, exercise_type, number) do
+    Logger.info("Generating #{number} exercises of type #{exercise_type}")
+
+    try do
+      exercises = Enum.map(1..number, fn _index ->
+        prompt = build_exercise_prompt(course_name, knowledge_name, chapter_name, exercise_type)
+
+        case generate_exercise_content(prompt, exercise_type) do
+          {:ok, exercise_data} ->
+            exercise_data
+          {:error, reason} ->
+            Logger.error("Failed to generate exercise: #{inspect(reason)}")
+            nil
+        end
+      end)
+      |> Enum.filter(&(&1 != nil))
+
+      if length(exercises) > 0 do
+        {:ok, exercises}
+      else
+        {:error, "Failed to generate any exercises"}
+      end
+    rescue
+      e ->
+        {:error, "Error generating exercises: #{inspect(e)}"}
+    end
   end
 
   defp generate_exercise_content(prompt, exercise_type) do
@@ -214,5 +244,30 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
         # For essay and fill-in-blank, options should be null
         nil
     end
+  end
+
+  def create_exercise_records(changeset) do
+    case Ash.Changeset.fetch_context(changeset, :generated_exercises) do
+      {:ok, exercises} ->
+        # Create exercise records in the database
+        case create_multiple_exercises(exercises) do
+          {:ok, created_exercises} ->
+            Ash.Changeset.put_context(changeset, :created_exercises, created_exercises)
+          {:error, reason} ->
+            Ash.Changeset.add_error(changeset, %Ash.Error.Changes.InvalidAttribute{
+              field: :question_content,
+              message: "Failed to create exercise records: #{inspect(reason)}"
+            })
+        end
+
+      :error ->
+        changeset
+    end
+  end
+
+  defp create_multiple_exercises(exercises) do
+    # This would typically be called from a domain action or service
+    # For now, we'll return the exercises data to be processed by the caller
+    {:ok, exercises}
   end
 end

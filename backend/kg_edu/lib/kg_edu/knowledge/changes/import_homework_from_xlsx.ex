@@ -70,6 +70,15 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
         _ -> homework_map
       end
 
+      # Transform description field to content field
+      homework_map = case Map.get(homework_map, "description") do
+        nil -> homework_map
+        description -> 
+          homework_map
+          |> Map.delete("description")
+          |> Map.put("content", description)
+      end
+
       # Transform remaining values to strings, except score
       homework_map = 
         homework_map

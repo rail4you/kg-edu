@@ -12,6 +12,9 @@ defmodule KgEdu.Knowledge.Homework do
 
     references do
       reference :chapter, on_delete: :delete
+      # reference :exercises, on_delete: :delete
+      # reference :chapter, on_delete: :delete
+      # reference :chapter, on_delete: :delete
     end
   end
 
@@ -255,7 +258,7 @@ defmodule KgEdu.Knowledge.Homework do
         case KgEdu.Knowledge.Homework.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
               #  input.arguments.attributes,
-              ["title", "description", "score", "answer"],
+              ["title", "content", "score", "answer"],
                input.arguments.course_id
              ) do
           {:ok, homework} -> :ok
@@ -358,6 +361,7 @@ defmodule KgEdu.Knowledge.Homework do
       allow_nil? false
       description "The course this homework belongs to"
     end
+
 
     belongs_to :chapter, KgEdu.Courses.Chapter do
       public? true

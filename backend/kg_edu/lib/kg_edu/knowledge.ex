@@ -14,6 +14,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :update_resource, :update_knowledge_resource
       rpc_action :destroy_resource, :destroy
       rpc_action :bulk_destory_knowledges, :bulk_destory_knowledges
+      rpc_action :delete_all_knowledges_by_course, :delete_all_knowledges_by_course
       rpc_action :import_knowledge_from_excel, :import_from_excel
       rpc_action :import_knowledge_from_llm, :import_from_llm
       # rpc_action :get_resource, :get_resource

@@ -11,6 +11,7 @@ defmodule KgEdu.Knowledge.Relation do
   require Logger
   require Ash.Query
   require Ash.Expr
+  import Ecto.Query
 
   postgres do
     table "knowledge_relations"
@@ -36,6 +37,8 @@ defmodule KgEdu.Knowledge.Relation do
     define :update_knowledge_relation, action: :update_knowledge_relation
     define :delete_knowledge_relation, action: :destroy
     define :bulk_destroy_relations, action: :bulk_destroy_relations
+    define :delete_all_knowledge_relations, args: [:course_id], action: :delete_all_knowledge_relations
+    define :delete_all_knowledge_relations_rpc, args: [:course_id], action: :delete_all_knowledge_relations_rpc
     define :import_relations_from_excel, action: :import_relations_from_excel
   end
 
@@ -130,6 +133,83 @@ defmodule KgEdu.Knowledge.Relation do
       end
     end
 
+    action :delete_all_knowledge_relations do
+      description "Delete all knowledge relations for a course using SQL"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "The course ID to delete all knowledge relations for"
+      end
+
+      run fn input, _context ->
+        course_id = input.arguments.course_id
+
+        # Use Ecto query to delete relations where either source or target knowledge belongs to the course
+        source_query = from(r in "knowledge_relations",
+          join: k in "knowledge_resources", on: r.source_knowledge_id == k.id,
+          where: k.course_id == type(^course_id, :binary_id))
+
+        target_query = from(r in "knowledge_relations",
+          join: k in "knowledge_resources", on: r.target_knowledge_id == k.id,
+          where: k.course_id == type(^course_id, :binary_id))
+
+        # Delete relations where source knowledge is in the course
+        case KgEdu.Repo.delete_all(source_query) do
+          {source_deleted, nil} ->
+            # Delete relations where target knowledge is in the course
+            case KgEdu.Repo.delete_all(target_query) do
+              {target_deleted, nil} ->
+                :ok
+
+              {:error, reason} ->
+                {:error, "Failed to delete target relations: #{inspect(reason)}"}
+            end
+
+          {:error, reason} ->
+            {:error, "Failed to delete source relations: #{inspect(reason)}"}
+        end
+      end
+    end
+
+    action :delete_all_knowledge_relations_rpc do
+      description "Delete all knowledge relations for a course using SQL (RPC style with return value)"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "The course ID to delete all knowledge relations for"
+      end
+
+      run fn input, _context ->
+        course_id = input.arguments.course_id
+
+        # Use Ecto query to delete relations where either source or target knowledge belongs to the course
+        source_query = from(r in "knowledge_relations",
+          join: k in "knowledge_resources", on: r.source_knowledge_id == k.id,
+          where: k.course_id == type(^course_id, :binary_id))
+
+        target_query = from(r in "knowledge_relations",
+          join: k in "knowledge_resources", on: r.target_knowledge_id == k.id,
+          where: k.course_id == type(^course_id, :binary_id))
+
+        # Delete relations where source knowledge is in the course
+        case KgEdu.Repo.delete_all(source_query) do
+          {source_deleted, nil} ->
+            # Delete relations where target knowledge is in the course
+            case KgEdu.Repo.delete_all(target_query) do
+              {target_deleted, nil} ->
+                total_deleted = source_deleted + target_deleted
+                {:ok, %{deleted_count: total_deleted, source_deleted: source_deleted, target_deleted: target_deleted}}
+
+              {:error, reason} ->
+                {:error, "Failed to delete target relations: #{inspect(reason)}"}
+            end
+
+          {:error, reason} ->
+            {:error, "Failed to delete source relations: #{inspect(reason)}"}
+        end
+      end
+    end
+
     action :import_relations_from_excel do
       description "Import knowledge relations from Excel file"
 
@@ -137,36 +217,16 @@ defmodule KgEdu.Knowledge.Relation do
       argument :course_id, :uuid, allow_nil?: false
 
       run fn input, _context ->
-        case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data) do
-          {:ok, sheets} ->
-            # Process knowledge resources from sheet1 if available
-            # knowledge_result = case Map.get(sheets, :sheet1) do
-            #   nil -> {:ok, "No knowledge data to import"}
-            #   _knowledge_data ->
-            #     # Re-use the same excel data but import only knowledge resources
-            #     IO.inspect("import knowledge first")
-            #     KgEdu.Knowledge.Resource.import_kg_from_excel(input.arguments.excel_data,input.arguments.course_id, nil)
-            # end
-
-            # Process relations from sheet2 if available
-            relation_result = case Map.get(sheets, :sheet1) do
-              nil -> {:ok, "No relation data to import"}
-              relation_data ->
-                process_relation_import(relation_data, input.arguments.course_id)
-            end
-
-            # Return combined result
-            case relation_result do
-              {:ok, relation_msg} ->
-                :ok
-                # {:ok, "#{knowledge_msg}. #{relation_msg}"}
-              {:error, reason} ->
-                {:error, reason}
+         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
+          {:ok, %{sheet: knowledge_data}} ->
+            case process_relation_import(knowledge_data, input.arguments.course_id) do
+              {:ok, _} -> :ok
+              {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
             end
 
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
-        end
+          end
       end
     end
   end
