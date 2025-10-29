@@ -122,7 +122,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     """
   end
 
-  defp generate_multiple_exercises(course_name, knowledge_name, chapter_name, exercise_type, number) do
+  def generate_multiple_exercises(course_name, knowledge_name, chapter_name, exercise_type, number) do
     Logger.info("Generating #{number} exercises of type #{exercise_type}")
 
     try do

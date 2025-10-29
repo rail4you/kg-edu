@@ -99,12 +99,38 @@ defmodule KgEdu.ExcelImport do
     case rows do
       [_comment_row | data_rows] ->
         try do
-          result = Enum.map(data_rows, fn row ->
-            map_row_to_attributes(row, attributes)
-          end)
+          Logger.info("data rows are #{inspect(data_rows)}")
+          
+          # Handle the case where data_rows might already be a list of processed rows
+          result = case data_rows do
+            [[_ | _] = first_row | _] when is_list(first_row) and is_binary(hd(first_row)) ->
+              # Already processed rows (list of lists with string values)
+              Enum.map(data_rows, fn row ->
+                map_row_to_attributes(row, attributes)
+              end)
+            [[_ | _] = nested_list | _] when is_list(nested_list) ->
+              # Need to extract individual rows from nested structure
+              Enum.map(data_rows, fn nested_row ->
+                case nested_row do
+                  [row] when is_list(row) -> map_row_to_attributes(row, attributes)
+                  row when is_list(row) -> map_row_to_attributes(row, attributes)
+                  _ -> 
+                    Logger.error("Unexpected row format: #{inspect(nested_row)}")
+                    nil
+                end
+              end)
+              |> Enum.filter(&(&1 != nil))
+            _ ->
+              # Individual rows that need processing
+              Enum.map(data_rows, fn row ->
+                map_row_to_attributes(row, attributes)
+              end)
+          end
+          
           {:ok, result}
         rescue
           e ->
+            Logger.error("Error processing rows: #{Exception.message(e)}")
             {:error, "Error processing rows: #{Exception.message(e)}"}
         end
 
@@ -129,12 +155,12 @@ defmodule KgEdu.ExcelImport do
   defp map_row_to_attributes(row, attributes) do
     # Take only the first n columns where n is the number of attributes
     relevant_columns = Enum.take(row, length(attributes))
-    
+
     # Pad with nil values if row has fewer columns than attributes
     padded_columns = case length(relevant_columns) < length(attributes) do
-      true -> 
+      true ->
         relevant_columns ++ List.duplicate(nil, length(attributes) - length(relevant_columns))
-      false -> 
+      false ->
         relevant_columns
     end
 
@@ -149,6 +175,7 @@ defmodule KgEdu.ExcelImport do
   Clean values in the map.
   - Convert empty strings to nil
   - Convert numbers from string format if needed
+  - Clean Unicode escape sequences and normalize text
   """
   defp clean_values(map) do
     map
@@ -157,13 +184,16 @@ defmodule KgEdu.ExcelImport do
         "" -> nil
         nil -> nil
         value when is_binary(value) ->
+          # Clean Unicode escape sequences first
+          cleaned_text = clean_text(value)
+          
           # Try to convert to number if possible
-          case Integer.parse(value) do
+          case Integer.parse(cleaned_text) do
             {int_val, ""} -> int_val
             :error ->
-              case Float.parse(value) do
+              case Float.parse(cleaned_text) do
                 {float_val, ""} -> float_val
-                :error -> value
+                :error -> cleaned_text
               end
           end
         value -> value
@@ -172,6 +202,25 @@ defmodule KgEdu.ExcelImport do
     end)
     |> Enum.into(%{})
   end
+
+  @doc """
+  Clean text by removing Unicode escape sequences and normalizing whitespace.
+  """
+  defp clean_text(text) when is_binary(text) do
+    text
+    # Replace zero-width spaces and other problematic Unicode characters
+    |> String.replace("\u200B", "")
+    |> String.replace("\u200C", "")
+    |> String.replace("\u200D", "")
+    |> String.replace("\uFEFF", "")
+    # Normalize line breaks
+    |> String.replace("\\u200B\\n", "\n")
+    |> String.replace("\\n", "\n")
+    # Clean up excessive whitespace
+    |> String.trim()
+  end
+
+  defp clean_text(value), do: value
 
   @doc """
   Create a temporary file for Excel processing.

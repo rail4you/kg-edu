@@ -61,6 +61,7 @@ defmodule KgEdu.Knowledge.Resource do
     define :upsert_unit, action: :upsert_unit
     define :get_by_name_and_course, action: :by_name_and_course
     define :get_by_any_name_and_course, action: :by_any_name_and_course
+    define :bulk_update_importance_level, action: :bulk_update_importance_level
   end
 
   actions do
@@ -661,6 +662,53 @@ end
         end
       end
     end
+
+    action :bulk_update_importance_level do
+      description "Bulk update importance levels for multiple knowledge resources in a course"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "The course ID to validate knowledge resources belong to"
+      end
+
+      argument :knowledge_resource_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of knowledge resource IDs to update"
+      end
+
+      argument :importance_level, :atom do
+        allow_nil? false
+        constraints one_of: [:hard, :important, :normal]
+        description "New importance level to set"
+      end
+
+      run fn input, _context ->
+        query =
+          KgEdu.Knowledge.Resource
+          |> Ash.Query.filter(
+            course_id == ^input.arguments.course_id and
+            id in ^input.arguments.knowledge_resource_ids
+          )
+
+        case Ash.bulk_update(query, :update_knowledge_resource, %{
+               importance_level: input.arguments.importance_level
+             },
+             return_errors?: true,
+             strategy: [:stream, :atomic]) do
+          %Ash.BulkResult{status: :success} ->
+            :ok
+
+          %Ash.BulkResult{status: :partial_success, errors: [_ | _] = errors} ->
+            {:error, "Partial update completed with #{length(errors)} errors"}
+
+          %Ash.BulkResult{status: :error, errors: errors} ->
+            {:error, "Failed to update knowledge resources: #{inspect(errors)}"}
+
+          result ->
+            {:error, "Unexpected result: #{inspect(result)}"}
+        end
+      end
+    end
   end
 
   policies do
@@ -862,7 +910,7 @@ end
     end
   end
 
-  defp process_knowledge_row(row, course_id, acc) when length(row) >= 6 do
+  defp process_knowledge_row(row, course_id, acc) when length(row) >= 5 do
     # Extract row data: course, subject, unit, name, description, important_level, knowledge_type (optional)
     [
       _course_name,
@@ -870,7 +918,7 @@ end
       unit_name,
       knowledge_name,
       description,
-      importance_level
+      # importance_level
       # _knowledge_type_rest
     ] = row
 
@@ -891,7 +939,7 @@ end
           unit: unit_name,
           name: knowledge_name,
           description: description,
-          importance_level: parse_importance_level(importance_level),
+          # importance_level: parse_importance_level(importance_level),
           knowledge_type: :knowledge_cell,
           course_id: course_id,
           parent_subject_id: subject_id,
