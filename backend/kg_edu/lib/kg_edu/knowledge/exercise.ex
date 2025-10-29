@@ -152,7 +152,7 @@ defmodule KgEdu.Knowledge.Exercise do
         Logger.info("Looking for course with ID: #{course_id}")
 
         # Get course by ID using Ash.get which is designed for primary key lookup
-        case Ash.get(KgEdu.Courses.Course, course_id) do
+        case Ash.get(KgEdu.Courses.Course, course_id, actor: _context.actor) do
           {:ok, course} ->
             # Generate multiple exercises
             case KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise.generate_multiple_exercises(
@@ -170,19 +170,22 @@ defmodule KgEdu.Knowledge.Exercise do
 
                 # Use Ash bulk create to store exercises
                 case Ash.bulk_create(
-                       KgEdu.Knowledge.Exercise,
                        exercises_with_metadata,
+                       KgEdu.Knowledge.Exercise,
                        :create,
                        return_records?: true,
                        return_errors?: true
                      ) do
-                  %{created: created_exercises, errors: []} ->
-                    {:ok, created_exercises}
+                  # %{created: created_exercises, errors: []} ->
+                  #   {:ok, created_exercises}
+                   %Ash.BulkResult{status: :success, records: records} ->
+                    :ok
+                    # {:ok, records}
 
-                  %{created: created_exercises, errors: [_ | _] = errors} ->
-                    # Partial success - return created exercises and log errors
-                    Logger.error("Some exercises failed to create: #{inspect(errors)}")
-                    {:ok, created_exercises}
+                  # %{created: created_exercises, errors: [_ | _] = errors} ->
+                  #   # Partial success - return created exercises and log errors
+                  #   Logger.error("Some exercises failed to create: #{inspect(errors)}")
+                  #   {:ok, created_exercises}
 
                   {:error, reason} ->
                     {:error, reason}
