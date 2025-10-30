@@ -76,6 +76,15 @@ defmodule KgEdu.Courses do
       rpc_action :update_course_info, :update
       rpc_action :delete_course_info, :destroy
     end
+
+    resource KgEdu.Courses.Link do
+      rpc_action :list_links, :read
+      rpc_action :create_link, :create
+      rpc_action :get_link, :read
+      rpc_action :update_link, :update
+      rpc_action :delete_link, :destroy
+      rpc_action :list_links_by_course, :by_course
+    end
   end
 
   json_api do
@@ -120,5 +129,6 @@ defmodule KgEdu.Courses do
     resource KgEdu.Courses.Video
     resource KgEdu.Courses.Book
     resource KgEdu.Courses.CourseInfo
+    resource KgEdu.Courses.Link
   end
 end

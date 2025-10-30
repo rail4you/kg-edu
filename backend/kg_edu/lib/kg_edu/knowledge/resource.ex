@@ -73,6 +73,52 @@ defmodule KgEdu.Knowledge.Resource do
       # Manually delete related records first
       change fn changeset, _context ->
         resource_id = Ash.Changeset.get_attribute(changeset, :id)
+        knowledge_type = Ash.Changeset.get_attribute(changeset, :knowledge_type)
+
+        # Cascade delete based on knowledge type
+        case knowledge_type do
+          :subject ->
+            # Delete all units under this subject
+            KgEdu.Knowledge.Resource.list_units_by_subject(%{subject_id: resource_id})
+            |> case do
+              {:ok, units} ->
+                Enum.each(units, fn unit ->
+                  KgEdu.Knowledge.Resource.delete_knowledge_resource(unit, authorize?: false)
+                end)
+
+              {:error, _} ->
+                :ok
+            end
+
+            # Delete all direct knowledge cells under this subject
+            KgEdu.Knowledge.Resource.list_cells_by_subject(%{subject_id: resource_id})
+            |> case do
+              {:ok, cells} ->
+                Enum.each(cells, fn cell ->
+                  KgEdu.Knowledge.Resource.delete_knowledge_resource(cell, authorize?: false)
+                end)
+
+              {:error, _} ->
+                :ok
+            end
+
+          :knowledge_unit ->
+            # Delete all knowledge cells under this unit
+            KgEdu.Knowledge.Resource.list_cells_by_unit(%{unit_id: resource_id})
+            |> case do
+              {:ok, cells} ->
+                Enum.each(cells, fn cell ->
+                  KgEdu.Knowledge.Resource.delete_knowledge_resource(cell, authorize?: false)
+                end)
+
+              {:error, _} ->
+                :ok
+            end
+
+          :knowledge_cell ->
+            # Just delete itself (no cascading)
+            :ok
+        end
 
         # Delete incoming relations
         KgEdu.Knowledge.Relation.list_knowledge_relations(

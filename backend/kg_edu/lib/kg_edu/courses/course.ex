@@ -221,5 +221,11 @@ defmodule KgEdu.Courses.Course do
       public? true
       description "Associated textbook for this course"
     end
+
+    has_many :links, KgEdu.Courses.Link do
+      public? true
+      destination_attribute :course_id
+      description "Course-related links"
+    end
   end
 end
