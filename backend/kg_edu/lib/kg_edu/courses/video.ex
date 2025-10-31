@@ -51,6 +51,7 @@ defmodule KgEdu.Courses.Video do
       rpc_action :delete_video, :destroy
       rpc_action :get_videos_by_chapter, :by_chapter
       rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
+      rpc_action :get_videos_by_course_ids, :by_course_ids
     end
   end
 
@@ -64,6 +65,7 @@ defmodule KgEdu.Courses.Video do
     define :list_videos, action: :read
     define :get_videos_by_chapter, action: :by_chapter
     define :get_videos_by_knowledge_resource, action: :by_knowledge_resource
+    define :get_videos_by_course_ids, action: :by_course_ids
     define :link_video_to_knowledge, action: :link_video_to_knowledge
     define :unlink_video_from_knowledge, action: :unlink_video_from_knowledge
     define :link_video_to_chapter, action: :link_video_to_chapter
@@ -95,6 +97,21 @@ defmodule KgEdu.Courses.Video do
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
       prepare fn query, _context ->
         Ash.Query.sort(query, title: :asc)
+      end
+    end
+
+    read :by_course_ids do
+      description "Get all videos for specific courses"
+      argument :course_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of course IDs to get videos for"
+      end
+
+      filter expr(chapter.course_id in ^arg(:course_ids))
+      prepare fn query, _context ->
+        query
+        |> Ash.Query.load(:chapter)
+        |> Ash.Query.sort(title: :asc)
       end
     end
 

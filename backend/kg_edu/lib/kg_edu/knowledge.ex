@@ -18,6 +18,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :delete_all_knowledges_by_course, :delete_all_knowledges_by_course
       rpc_action :import_knowledge_from_excel, :import_from_excel
       rpc_action :import_knowledge_from_llm, :import_from_llm
+      rpc_action :get_knowledge_resources_by_name_and_importance, :by_name_and_importance
       # rpc_action :get_resource, :get_resource
     end
 

@@ -42,6 +42,8 @@ defmodule KgEdu.Knowledge.Resource do
     # Course-related queries
     define :get_knowledge_resources_by_course, action: :by_course
     define :search_knowledge_resources, action: :search
+    define :get_knowledge_resources_by_name_and_importance, action: :by_name_and_importance
+    define :debug_list_resources, action: :debug_list
 
     # Hierarchy queries
     define :list_subjects, action: :list_subjects
@@ -329,6 +331,45 @@ end
       description "Search knowledge resources by name"
       argument :query, :string, allow_nil?: false
       filter expr(contains(name, ^arg(:query)))
+    end
+
+    read :debug_list do
+      description "Debug: List all knowledge resources for a course"
+      argument :course_id, :uuid, allow_nil?: true
+      
+      prepare fn query, _context ->
+        course_id_arg = Ash.Query.get_argument(query, :course_id)
+        
+        query
+        |> then(fn q -> 
+          if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
+        end)
+        |> Ash.Query.sort(name: :asc)
+      end
+    end
+
+    read :by_name_and_importance do
+      description "Get knowledge resources by name (search) and importance level"
+      argument :name, :string, allow_nil?: true
+      argument :importance_level, :string, allow_nil?: true
+      argument :course_id, :uuid, allow_nil?: true
+      
+      prepare fn query, _context ->
+        name_arg = Ash.Query.get_argument(query, :name)
+        importance_level_arg = Ash.Query.get_argument(query, :importance_level)
+        course_id_arg = Ash.Query.get_argument(query, :course_id)
+        
+        query
+        |> then(fn q -> 
+          if name_arg, do: Ash.Query.filter(q, contains(name, ^name_arg)), else: q
+        end)
+        |> then(fn q -> 
+          if importance_level_arg, do: Ash.Query.filter(q, importance_level == ^importance_level_arg), else: q
+        end)
+        |> then(fn q -> 
+          if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
+        end)
+      end
     end
 
     # ============ Hierarchy Queries - Level 1: Subjects ============

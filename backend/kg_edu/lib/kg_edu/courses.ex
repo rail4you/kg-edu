@@ -41,6 +41,7 @@ defmodule KgEdu.Courses do
       rpc_action :get_video_by_upload_id, :read
       rpc_action :update_video, :update_video
       rpc_action :delete_video, :destroy
+      rpc_action :get_videos_by_course_ids, :by_course_ids
       # rpc_action :get_videos_by_chapter, :by_chapter
       # rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
       rpc_action :link_video_to_knowledge, :link_video_to_knowledge
