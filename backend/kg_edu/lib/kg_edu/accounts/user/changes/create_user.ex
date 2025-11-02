@@ -27,6 +27,7 @@ defmodule KgEdu.Accounts.User.Changes.CreateUser do
     email = Ash.Changeset.get_argument(changeset, :email) || Keyword.get(opts, :email)
     password = Ash.Changeset.get_argument(changeset, :password) || Keyword.get(opts, :password)
     role = Ash.Changeset.get_argument(changeset, :role) || Keyword.get(opts, :role, :user)
+    tenant_id = Ash.Changeset.get_argument(changeset, :tenant_id) || Keyword.get(opts, :tenant_id)
 
     changeset
     |> Ash.Changeset.change_attributes(%{
@@ -35,6 +36,7 @@ defmodule KgEdu.Accounts.User.Changes.CreateUser do
       email: email,
       role: role
     })
+    |> set_tenant_if_provided(tenant_id)
     |> hash_password()
   end
 
@@ -52,5 +54,18 @@ defmodule KgEdu.Accounts.User.Changes.CreateUser do
 
   defp hash_password(_changeset, nil) do
     {:error, "Password is required"}
+  end
+
+  defp set_tenant_if_provided(changeset, nil), do: changeset
+
+  defp set_tenant_if_provided(changeset, tenant_id) do
+    # Get the organization to find its schema name
+    case KgEdu.Accounts.Organization |> Ash.get(tenant_id) do
+      {:ok, organization} ->
+        Ash.Changeset.set_tenant(changeset, organization.schema_name)
+      {:error, _} ->
+        # If organization doesn't exist, continue without setting tenant
+        changeset
+    end
   end
 end

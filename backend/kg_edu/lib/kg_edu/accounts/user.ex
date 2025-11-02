@@ -77,7 +77,6 @@ defmodule KgEdu.Accounts.User do
     define :list_student, action: :list_student
     define :update_student, action: :update_student
     # super admin tenant management
-    define :create_user_in_tenant, action: :create_user_in_tenant
     define :get_users_from_tenant, action: :get_users_from_tenant
   end
 
@@ -140,6 +139,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
         default :user
         constraints one_of: [:super_admin, :admin, :user, :teacher]
+      end
+
+      argument :tenant_id, :uuid do
+        description "The tenant ID to create the user in (for super admin use)"
+        allow_nil? true
       end
 
       # Use the CreateUser change to handle password hashing and data storage
@@ -235,7 +239,7 @@ defmodule KgEdu.Accounts.User do
       end
     end
 
-    action :super_admin_sign_in do
+    action :super_admin_sign_in, :map do
       description "Super admin sign in that works across all tenants."
 
       argument :member_id, :string do
@@ -273,7 +277,7 @@ defmodule KgEdu.Accounts.User do
             true ->
               # Generate token using the same method as the register action
               case AshAuthentication.Jwt.token_for_user(user) do
-                {:ok, token} ->
+                {:ok, token, _} ->
                   {:ok, %{user | __metadata__: %{token: token}}}
                 {:error, reason} ->
                   {:error, reason}
@@ -283,8 +287,6 @@ defmodule KgEdu.Accounts.User do
           end
         end
       end
-
-      returns :map
     end
 
     read :sign_in_with_token do
@@ -597,94 +599,9 @@ defmodule KgEdu.Accounts.User do
       end
     end
 
-    action :create_user_in_tenant do
-      description "Create a user in a specific tenant (super admin only)"
 
-      argument :member_id, :string do
-        description "The user's member ID"
-        allow_nil? false
-      end
-
-      argument :name, :string do
-        description "The user's name"
-        allow_nil? true
-      end
-
-      argument :phone, :string do
-        description "The user's phone"
-        allow_nil? true
-      end
-
-      argument :email, :string do
-        description "The user's email"
-        allow_nil? true
-      end
-
-      argument :password, :string do
-        description "The user's password (will be hashed)"
-        allow_nil? false
-        constraints min_length: 8
-        sensitive? true
-      end
-
-      argument :role, :atom do
-        description "The user's role (admin, user, teacher)"
-        allow_nil? true
-        default :user
-        constraints one_of: [:admin, :user, :teacher]
-      end
-
-      argument :tenant_id, :uuid do
-        description "The tenant (organization) ID to create the user in"
-        allow_nil? false
-      end
-
-      run fn input, context ->
-        # Get the tenant schema
-        case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
-          {:ok, organization} ->
-            # Create user in the specific tenant
-            KgEdu.Accounts.User
-            |> Ash.Changeset.for_action(:create_user, %{
-              member_id: input.arguments.member_id,
-              name: input.arguments.name,
-              phone: input.arguments.phone,
-              email: input.arguments.email,
-              password: input.arguments.password,
-              role: input.arguments.role
-            })
-            |> Ash.create(tenant: organization.schema_name)
-
-          {:error, reason} ->
-            {:error, :tenant_not_found}
-        end
-      end
-
-      returns :map
-    end
-
-    action :get_users_from_tenant do
+    read :get_users_from_tenant do
       description "Get users from a specific tenant (super admin only)"
-
-      argument :tenant_id, :uuid do
-        description "The tenant (organization) ID to get users from"
-        allow_nil? false
-      end
-
-      run fn input, context ->
-        # Get the tenant schema
-        case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
-          {:ok, organization} ->
-            # Get users from the specific tenant
-            KgEdu.Accounts.User
-            |> Ash.read(tenant: organization.schema_name)
-
-          {:error, reason} ->
-            {:error, :tenant_not_found}
-        end
-      end
-
-      returns {:array, :map}
     end
   end
 

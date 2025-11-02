@@ -28,7 +28,6 @@ defmodule KgEdu.Accounts do
       rpc_action :list_student, :list_student
       rpc_action :update_student, :update_student
       # Super admin tenant management
-      rpc_action :create_user_in_tenant, :create_user_in_tenant
       rpc_action :get_users_from_tenant, :get_users_from_tenant
     end
 
@@ -88,7 +87,7 @@ defmodule KgEdu.Accounts do
     end
   end
 
-  
+
   resources do
     resource KgEdu.Accounts.Token
     resource KgEdu.Accounts.Organization
