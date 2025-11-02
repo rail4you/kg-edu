@@ -40,13 +40,13 @@ config :ash_typescript,
   validate_endpoint: "/rpc/validate",
   input_field_formatter: :camel_case,
   output_field_formatter: :camel_case,
-  require_tenant_parameters: false,
   generate_zod_schemas: true,
   generate_phx_channel_rpc_actions: false,
   generate_validation_functions: true,
   zod_import_path: "zod",
   zod_schema_suffix: "ZodSchema",
-  phoenix_import_path: "phoenix"
+  phoenix_import_path: "phoenix",
+  require_tenant_parameters: true
 
 config :cinder, default_theme: "modern"
 # config :ash_oban, pro?: false

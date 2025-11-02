@@ -3,6 +3,14 @@ defmodule KgEdu.Repo do
     otp_app: :kg_edu
 
   @impl true
+  def all_tenants do
+    for org <-Ash.read!(KgEdu.Accounts.Organization) do
+      org.schema_name
+      # org.schema
+    end
+  end
+
+  @impl true
   def installed_extensions do
     # Add extensions here, and the migration generator will install them.
     ["ash-functions", "citext"]

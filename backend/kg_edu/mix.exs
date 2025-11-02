@@ -41,7 +41,7 @@ defmodule KgEdu.MixProject do
       {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
       {:mux, "~> 3.2"},
-      {:req_llm, "~> 1.0.0-rc.5"},
+      {:req_llm, "~> 1.0.0-rc.8"},
       {:ash_typescript, "~> 0.6"},
       {:cinder, "~> 0.6"},
       # {:mdex, "~> 0.7"},
