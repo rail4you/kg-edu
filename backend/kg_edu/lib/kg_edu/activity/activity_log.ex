@@ -17,6 +17,10 @@ defmodule KgEdu.Activity.ActivityLog do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "activity_log"
   end

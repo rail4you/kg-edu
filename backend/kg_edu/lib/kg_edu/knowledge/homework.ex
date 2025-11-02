@@ -18,6 +18,10 @@ defmodule KgEdu.Knowledge.Homework do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "homework"
   end

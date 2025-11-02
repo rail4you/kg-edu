@@ -21,6 +21,7 @@ defmodule KgEduWeb.Router do
     plug :set_actor, :user
   end
 
+  
   scope "/api", KgEduWeb do
     pipe_through :api
     post "/chat/stream", ChatController, :stream_message
@@ -87,8 +88,9 @@ defmodule KgEduWeb.Router do
     end
   end
 
+  
   scope "/rpc" do
-    pipe_through [:api]
+    pipe_through :api
     post "/run", KgEduWeb.AshTypescriptRpcController, :run
     post "/validate", KgEduWeb.AshTypescriptRpcController, :validate
   end

@@ -11,6 +11,10 @@ defmodule KgEdu.Courses.CourseInfo do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "course_info"
   end

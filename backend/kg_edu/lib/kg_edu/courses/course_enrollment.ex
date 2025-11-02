@@ -12,6 +12,10 @@ defmodule KgEdu.Courses.CourseEnrollment do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "course_enrollment"
   end

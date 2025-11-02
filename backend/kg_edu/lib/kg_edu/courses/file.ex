@@ -63,6 +63,10 @@ defmodule KgEdu.Courses.File do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   code_interface do
     define :create_file, action: :create
     define :upload_file, action: :upload

@@ -19,6 +19,10 @@ defmodule KgEdu.Knowledge.Resource do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "knowledge_resource"
   end

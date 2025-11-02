@@ -12,6 +12,10 @@ defmodule KgEdu.Courses.Course do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "course"
   end
@@ -40,8 +44,9 @@ defmodule KgEdu.Courses.Course do
       prepare fn query, context ->
             # Teachers see only their courses, students see only enrolled courses
             # Only users see published courses
-        Logger.info("context is #{inspect(context.actor)}")
-        
+        Logger.info("context is #{inspect(context)}")
+        Logger.info("actor is #{inspect(context.actor)}")
+
         case context.actor do
           %{role: :user, id: user_id} ->
             # Students see only courses they're enrolled in and published
@@ -66,7 +71,7 @@ defmodule KgEdu.Courses.Course do
 
     create :create do
       accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id, :publish_status]
-      change set_attribute(:teacher_id, actor(:id))
+      # change set_attribute(:teacher_id, actor(:id))
       # change relate_actor(:teacher_id)
     end
 

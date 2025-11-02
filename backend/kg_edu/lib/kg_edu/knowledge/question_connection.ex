@@ -11,6 +11,10 @@ defmodule KgEdu.Knowledge.QuestionConnection do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "knowledge_question_connection"
   end

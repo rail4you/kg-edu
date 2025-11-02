@@ -11,6 +11,10 @@ defmodule KgEdu.Courses.Link do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "link"
   end

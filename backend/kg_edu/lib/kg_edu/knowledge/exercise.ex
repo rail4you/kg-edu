@@ -23,6 +23,10 @@ defmodule KgEdu.Knowledge.Exercise do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "exercise"
   end

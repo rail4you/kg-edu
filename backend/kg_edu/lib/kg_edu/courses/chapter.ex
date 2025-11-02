@@ -9,10 +9,14 @@ defmodule KgEdu.Courses.Chapter do
   postgres do
     table "chapters"
     repo KgEdu.Repo
-    
+
     references do
       reference :parent_chapter, on_delete: :delete
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   typescript do

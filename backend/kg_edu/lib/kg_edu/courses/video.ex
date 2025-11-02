@@ -28,10 +28,14 @@ defmodule KgEdu.Courses.Video do
   postgres do
     table "videos"
     repo KgEdu.Repo
-    
+
     references do
       reference :chapter, on_delete: :delete
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   typescript do

@@ -18,6 +18,10 @@ defmodule KgEdu.Knowledge.Relation do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "knowledge_relation"
   end
