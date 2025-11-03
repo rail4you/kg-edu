@@ -17,6 +17,7 @@ defmodule KgEduWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug KgEduWeb.Plug.SetTenantFromToken
     plug :load_from_bearer
     plug :set_actor, :user
   end

@@ -61,6 +61,7 @@ defmodule KgEdu.Accounts.User do
     define :register_super_admin, action: :register_super_admin
     define :sign_in, action: :sign_in_with_password
     define :super_admin_sign_in, action: :super_admin_sign_in
+    define :sign_in_tenant, action: :sign_in_tenant
     define :sign_out, action: :sign_out
     define :get_current_user, action: :get_current_user
     define :change_password, action: :change_password
@@ -285,6 +286,63 @@ defmodule KgEdu.Accounts.User do
             false ->
               {:error, :invalid_credentials}
           end
+        end
+      end
+    end
+
+    action :sign_in_tenant, :map do
+      description "Sign in to a specific tenant by member_id and password."
+
+      argument :member_id, :string do
+        description "The user's member ID"
+        allow_nil? false
+      end
+
+      argument :password, :string do
+        description "The user's password"
+        allow_nil? false
+        sensitive? true
+      end
+
+      argument :tenant_id, :uuid do
+        description "The tenant ID to sign in to"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        # Get the tenant schema
+        case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
+          {:ok, organization} ->
+            # Search for user in the specific tenant by reading all and filtering
+            case KgEdu.Accounts.User
+                 |> Ash.read(tenant: organization.schema_name) do
+              {:ok, users} ->
+                users
+                |> Enum.find(&(&1.member_id == input.arguments.member_id))
+                |> case do
+                  nil ->
+                    {:error, :invalid_credentials}
+                  user ->
+                    # Use Bcrypt for password verification (as configured in the user resource)
+                    case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
+                      true ->
+                        # Generate token using the same method as the register action
+                        case AshAuthentication.Jwt.token_for_user(user) do
+                          {:ok, token, _} ->
+                            {:ok, %{user | __metadata__: %{token: token}}}
+                          {:error, reason} ->
+                            {:error, reason}
+                        end
+                      false ->
+                        {:error, :invalid_credentials}
+                    end
+                end
+              {:error, reason} ->
+                {:error, reason}
+            end
+
+          {:error, reason} ->
+            {:error, :tenant_not_found}
         end
       end
     end
