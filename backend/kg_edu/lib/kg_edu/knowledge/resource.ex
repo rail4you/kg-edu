@@ -232,24 +232,30 @@ defmodule KgEdu.Knowledge.Resource do
         description "List of student IDs to unenroll"
       end
 
-      run fn input, _context ->
-        query =
-          KgEdu.Knowledge.Resource
-          |> Ash.Query.filter(
-            expr(
-              course_id == ^input.arguments.course_id and
-                id in ^input.arguments.knowledge_resource_ids
-            )
-          )
+      run fn input, context ->
+        # Read all knowledge resources in tenant and filter manually
+        case __MODULE__ |> Ash.read(tenant: context.tenant) do
+          {:ok, resources} ->
+            target_resources =
+              resources
+              |> Enum.filter(&(&1.course_id == input.arguments.course_id and
+                               input.arguments.knowledge_resource_ids |> Enum.member?(&1.id)))
 
-        case Ash.bulk_destroy(query, :destroy, %{}, return_errors?: true, strategy: [:stream]) do
-          _ ->
-            :ok
-            # %Ash.BulkResult{records: records, errors: []} ->
-            #   :ok
-
-            # %Ash.BulkResult{records: records, errors: errors} ->
-            #   {:error, errors}
+            # Destroy the filtered resources one by one
+            case Enum.map(target_resources, fn resource ->
+              KgEdu.Knowledge.Resource.delete_knowledge_resource(resource, tenant: context.tenant, authorize?: false)
+            end) do
+              results ->
+                case Enum.find(results, fn
+                  {:error, _} -> true
+                  _ -> false
+                end) do
+                  nil -> :ok
+                  {:error, reason} -> {:error, reason}
+                end
+            end
+          {:error, reason} ->
+            {:error, reason}
         end
       end
     end
@@ -297,22 +303,31 @@ defmodule KgEdu.Knowledge.Resource do
     description "The course ID to delete all knowledge resources for"
   end
 
-  run fn input, _context ->
+  run fn input, context ->
     course_id = input.arguments.course_id
 
-    # Convert UUID string to binary format for Postgrex
-    course_id_binary = case Ecto.UUID.dump(course_id) do
-      {:ok, binary} -> binary
-      :error -> raise "Invalid UUID format"
-    end
+    # Read all knowledge resources in tenant and filter manually
+    case __MODULE__ |> Ash.read(tenant: context.tenant) do
+      {:ok, resources} ->
+        target_resources =
+          resources
+          |> Enum.filter(&(&1.course_id == course_id))
 
-    query = "DELETE FROM knowledge_resources WHERE course_id = $1"
-    case KgEdu.Repo.query(query, [course_id_binary]) do
-      {:ok, %Postgrex.Result{num_rows: rows_deleted}} ->
-        :ok
-        # {:ok, rows_deleted}
+        # Destroy the filtered resources one by one
+        case Enum.map(target_resources, fn resource ->
+          KgEdu.Knowledge.Resource.delete_knowledge_resource(resource, tenant: context.tenant, authorize?: false)
+        end) do
+          results ->
+            case Enum.find(results, fn
+              {:error, _} -> true
+              _ -> false
+            end) do
+              nil -> :ok
+              {:error, reason} -> {:error, reason}
+            end
+        end
       {:error, reason} ->
-        {:error, "Failed to delete knowledge resources: #{inspect(reason)}"}
+        {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
     end
   end
 end
@@ -721,10 +736,10 @@ end
       argument :excel_data, :string, allow_nil?: false
       argument :course_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
+      run fn input, context ->
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
           {:ok, %{sheet: knowledge_data}} ->
-            case process_knowledge_import(knowledge_data, input.arguments.course_id, nil) do
+            case process_knowledge_import(knowledge_data, input.arguments.course_id, context.tenant) do
               {:ok, _} -> :ok
               {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
             end
@@ -746,7 +761,8 @@ end
                input.arguments.text,
                input.arguments.course_id,
                actor: context.actor,
-               authorize?: context.authorize?
+               authorize?: context.authorize?,
+               tenant: context.tenant
              ) do
           {:ok, result} -> :ok
           {:error, reason} -> {:error, reason}
@@ -773,30 +789,35 @@ end
         description "New importance level to set"
       end
 
-      run fn input, _context ->
-        query =
-          KgEdu.Knowledge.Resource
-          |> Ash.Query.filter(
-            course_id == ^input.arguments.course_id and
-            id in ^input.arguments.knowledge_resource_ids
-          )
+      run fn input, context ->
+        # Read all knowledge resources in tenant and filter manually
+        case __MODULE__ |> Ash.read(tenant: context.tenant) do
+          {:ok, resources} ->
+            target_resources =
+              resources
+              |> Enum.filter(&(&1.course_id == input.arguments.course_id and
+                               input.arguments.knowledge_resource_ids |> Enum.member?(&1.id)))
 
-        case Ash.bulk_update(query, :update_knowledge_resource, %{
-               importance_level: input.arguments.importance_level
-             },
-             return_errors?: true,
-             strategy: [:stream, :atomic]) do
-          %Ash.BulkResult{status: :success} ->
-            :ok
+            # Update the filtered resources one by one
+            case Enum.map(target_resources, fn resource ->
+              KgEdu.Knowledge.Resource.update_knowledge_resource(resource, %{
+                importance_level: input.arguments.importance_level
+              }, tenant: context.tenant)
+            end) do
+              results ->
+                errors = Enum.filter(results, fn
+                  {:error, _} -> true
+                  _ -> false
+                end)
 
-          %Ash.BulkResult{status: :partial_success, errors: [_ | _] = errors} ->
-            {:error, "Partial update completed with #{length(errors)} errors"}
-
-          %Ash.BulkResult{status: :error, errors: errors} ->
-            {:error, "Failed to update knowledge resources: #{inspect(errors)}"}
-
-          result ->
-            {:error, "Unexpected result: #{inspect(result)}"}
+                if length(errors) == 0 do
+                  :ok
+                else
+                  {:error, "Failed to update #{length(errors)} resources: #{inspect(errors)}"}
+                end
+            end
+          {:error, reason} ->
+            {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
         end
       end
     end
@@ -974,14 +995,14 @@ end
     end
   end
 
-  def process_knowledge_import(knowledge_data, course_id, _context) do
+  def process_knowledge_import(knowledge_data, course_id, tenant) do
     # Track created subjects and units for parent relationships
     subjects = %{}
     units = %{}
 
     # Process each row of knowledge data
     result =
-      Enum.reduce_while(knowledge_data, {:ok, %{subjects: subjects, units: units}}, fn row,
+      Enum.reduce_while(knowledge_data, {:ok, %{subjects: subjects, units: units, tenant: tenant}}, fn row,
                                                                                        {:ok, acc} ->
         case process_knowledge_row(row, course_id, acc) do
           {:ok, new_acc} -> {:cont, {:ok, new_acc}}
@@ -1042,14 +1063,14 @@ end
                name: knowledge_name,
                knowledge_type: :knowledge_cell,
                course_id: course_id
-             }) do
+             }, tenant: acc.tenant) do
           {:ok, _existing} ->
             # Resource already exists, skip it
             {:ok, acc}
 
           {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
             # Resource doesn't exist, create it
-            case create_resource_record(knowledge_attrs) do
+            case create_resource_record(knowledge_attrs, acc.tenant) do
               {:ok, _knowledge} ->
                 {:ok, acc}
 
@@ -1075,7 +1096,7 @@ end
            name: subject_name,
            knowledge_type: :subject,
            course_id: course_id
-         }) do
+         }, tenant: acc.tenant) do
       {:ok, subject} ->
         {:ok, subject.id, acc}
 
@@ -1089,7 +1110,7 @@ end
           importance_level: :normal
         }
 
-        case create_resource_record(subject_attrs) do
+        case create_resource_record(subject_attrs, acc.tenant) do
           {:ok, subject} ->
             new_acc = %{acc | subjects: Map.put(acc.subjects, subject_name, subject.id)}
             {:ok, subject.id, new_acc}
@@ -1110,7 +1131,7 @@ end
     else
       IO.inspect("Looking for unit '#{unit_name}' under subject ID #{subject_id}")
 
-      case list_units_by_subject(%{subject_id: subject_id}) do
+      case list_units_by_subject(%{subject_id: subject_id}, tenant: acc.tenant) do
         {:ok, units} ->
           case Enum.find(units, fn unit -> unit.unit == unit_name end) do
             nil ->
@@ -1124,7 +1145,7 @@ end
                 importance_level: :normal
               }
 
-              case create_resource_record(unit_attrs) do
+              case create_resource_record(unit_attrs, acc.tenant) do
                 {:ok, unit} ->
                   new_acc = %{acc | units: Map.put(acc.units, {unit_name, subject_id}, unit.id)}
                   {:ok, unit.id, new_acc}
@@ -1149,8 +1170,8 @@ end
   defp parse_importance_level("normal"), do: :normal
   defp parse_importance_level(_), do: :normal
 
-  defp create_resource_record(attrs) do
-    # Use the code interface to create the resource
-    create_knowledge_resource(attrs)
+  defp create_resource_record(attrs, tenant) do
+    # Use the code interface to create the resource with tenant context
+    create_knowledge_resource(attrs, tenant: tenant)
   end
 end

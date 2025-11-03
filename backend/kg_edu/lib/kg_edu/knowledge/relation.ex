@@ -220,10 +220,10 @@ defmodule KgEdu.Knowledge.Relation do
       argument :excel_data, :string, allow_nil?: false
       argument :course_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
+      run fn input, context ->
          case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
           {:ok, %{sheet: knowledge_data}} ->
-            case process_relation_import(knowledge_data, input.arguments.course_id) do
+            case process_relation_import(knowledge_data, input.arguments.course_id, context.tenant) do
               {:ok, _} -> :ok
               {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
             end
@@ -275,10 +275,10 @@ defmodule KgEdu.Knowledge.Relation do
 
   # ============ Import Implementation ============
 
-  defp process_relation_import(relation_data, course_id) do
+  defp process_relation_import(relation_data, course_id, tenant) do
     # Process each row of relation data
     result = Enum.reduce_while(relation_data, {:ok, 0}, fn row, {:ok, count} ->
-      case process_relation_row(row, course_id) do
+      case process_relation_row(row, course_id, tenant) do
         {:ok} -> {:cont, {:ok, count + 1}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
@@ -292,7 +292,7 @@ defmodule KgEdu.Knowledge.Relation do
     end
   end
 
-  defp process_relation_row(row, course_id) when length(row) >= 3 do
+  defp process_relation_row(row, course_id, tenant) when length(row) >= 3 do
     # Extract row data: knowledge1 name, relation type name, knowledge2 name
     [knowledge1_name, relation_type_name, knowledge2_name] = row
     Logger.info("#{knowledge1_name} #{relation_type_name} #{knowledge2_name}")
@@ -302,9 +302,9 @@ defmodule KgEdu.Knowledge.Relation do
       {:ok}  # Skip empty rows
     else
       # Find knowledge resources by name and course
-      with {:ok, source_knowledge} <- find_knowledge_by_name_and_course(knowledge1_name, course_id),
-           {:ok, target_knowledge} <- find_knowledge_by_name_and_course(knowledge2_name, course_id),
-           {:ok, relation_type} <- create_or_get_relation_type(relation_type_name) do
+      with {:ok, source_knowledge} <- find_knowledge_by_name_and_course(knowledge1_name, course_id, tenant),
+           {:ok, target_knowledge} <- find_knowledge_by_name_and_course(knowledge2_name, course_id, tenant),
+           {:ok, relation_type} <- create_or_get_relation_type(relation_type_name, tenant) do
 
         # Create the relation
         relation_attrs = %{
@@ -314,7 +314,7 @@ defmodule KgEdu.Knowledge.Relation do
         }
         Logger.info("Creating relation: #{inspect(relation_attrs)}")
 
-        case create_relation(relation_attrs) do
+        case create_relation(relation_attrs, tenant) do
           {:ok, _relation} ->
             {:ok}
           {:error, reason} ->
@@ -341,14 +341,15 @@ defmodule KgEdu.Knowledge.Relation do
     {:error, "Invalid row format: #{inspect(row)}. Expected at least 3 columns."}
   end
 
-  defp find_knowledge_by_name_and_course(name, course_id) do
+  defp find_knowledge_by_name_and_course(name, course_id, tenant) do
     # Try exact name match first
-    case KgEdu.Knowledge.Resource.get_by_any_name_and_course(%{name: name, course_id: course_id}) do
+    case KgEdu.Knowledge.Resource.get_by_any_name_and_course(%{name: name, course_id: course_id}, tenant: tenant) do
       {:ok, knowledge} -> {:ok, knowledge}
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
         # Try searching by subject
         case KgEdu.Knowledge.Resource.list_knowledges(
           authorize?: false,
+          tenant: tenant,
           query: [
             filter: [
               subject: name,
@@ -362,6 +363,7 @@ defmodule KgEdu.Knowledge.Relation do
             # Try searching by unit
             case KgEdu.Knowledge.Resource.list_knowledges(
               authorize?: false,
+              tenant: tenant,
               query: [
                 filter: [
                   unit: name,
@@ -373,7 +375,7 @@ defmodule KgEdu.Knowledge.Relation do
               {:ok, [knowledge]} -> {:ok, knowledge}
               {:ok, []} ->
                 # Create basic knowledge resource if not found
-                create_basic_knowledge(name, course_id)
+                create_basic_knowledge(name, course_id, tenant)
               {:error, reason} -> {:error, reason}
             end
           {:error, reason} -> {:error, reason}
@@ -382,7 +384,7 @@ defmodule KgEdu.Knowledge.Relation do
     end
   end
 
-  defp create_basic_knowledge(name, course_id) do
+  defp create_basic_knowledge(name, course_id, tenant) do
     knowledge_attrs = %{
       name: name,
       subject: name,
@@ -392,7 +394,7 @@ defmodule KgEdu.Knowledge.Relation do
       description: "Basic knowledge: #{name}"
     }
 
-    case KgEdu.Knowledge.Resource.create_knowledge_resource(knowledge_attrs, authorize?: false) do
+    case KgEdu.Knowledge.Resource.create_knowledge_resource(knowledge_attrs, authorize?: false, tenant: tenant) do
       {:ok, knowledge} -> {:ok, knowledge}
       {:error, %Ash.Error.Invalid{} = error} ->
         {:error, "Failed to create knowledge resource '#{name}': #{Exception.message(error)}"}
@@ -401,9 +403,9 @@ defmodule KgEdu.Knowledge.Relation do
     end
   end
 
-  defp create_or_get_relation_type(relation_type_name) do
+  defp create_or_get_relation_type(relation_type_name, tenant) do
     # First try to get existing relation type
-    case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name}) do
+    case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name}, tenant: tenant) do
       {:ok, relation_type} ->
         {:ok, relation_type}
 
@@ -413,7 +415,7 @@ defmodule KgEdu.Knowledge.Relation do
           name: relation_type_name,
           display_name: String.capitalize(relation_type_name) |> String.replace("_", " "),
           description: "Relation type: #{String.capitalize(relation_type_name) |> String.replace("_", " ")}"
-        }, authorize?: false) do
+        }, authorize?: false, tenant: tenant) do
           {:ok, relation_type} -> {:ok, relation_type}
           {:error, %Ash.Error.Invalid{} = error} ->
             {:error, "Failed to create relation type '#{relation_type_name}': #{Exception.message(error)}"}
@@ -426,12 +428,12 @@ defmodule KgEdu.Knowledge.Relation do
     end
   end
 
-  defp create_relation(attrs) do
+  defp create_relation(attrs, tenant) do
     # Check if relation already exists
-    case find_existing_relation(attrs) do
+    case find_existing_relation(attrs, tenant) do
       {:ok, []} ->
         # Relation doesn't exist, create it
-        create_relation_import(attrs, authorize?: false)
+        create_relation_import(attrs, authorize?: false, tenant: tenant)
       {:ok, _existing_relation} ->
         # Relation already exists, skip creation
         {:ok, nil}
@@ -440,10 +442,11 @@ defmodule KgEdu.Knowledge.Relation do
     end
   end
 
-  defp find_existing_relation(attrs) do
+  defp find_existing_relation(attrs, tenant) do
     # Find existing relation by source, target, and relation type
     case KgEdu.Knowledge.Relation.list_knowledge_relations(
       authorize?: false,
+      tenant: tenant,
       query: [
         filter: [
           source_knowledge_id: attrs.source_knowledge_id,

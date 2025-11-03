@@ -338,7 +338,7 @@ defmodule KgEdu.Courses.File do
 
     action :log_file_view do
       description "Log file view activity"
-      
+
       argument :user_id, :uuid do
         allow_nil? false
         description "User ID who viewed the file"
@@ -354,7 +354,7 @@ defmodule KgEdu.Courses.File do
         file_id = input.arguments[:file_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
         user_id = input.arguments[:user_id]
         metadata = input.arguments[:metadata] || %{}
-        
+
         if file_id && user_id do
           KgEdu.Activity.ActivityLog.log_file_view(%{
             user_id: user_id,
@@ -362,7 +362,7 @@ defmodule KgEdu.Courses.File do
             metadata: metadata
           })
         end
-        
+
         :ok
       end
     end

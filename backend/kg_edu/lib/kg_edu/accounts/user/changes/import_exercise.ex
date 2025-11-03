@@ -7,8 +7,8 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
 
   require Logger
 
-  def parse_excel(excel_file, attributes, course_id) do
-    case import_exercise_from_excel(excel_file, attributes, course_id) do
+  def parse_excel(excel_file, attributes, course_id, tenant \\ nil) do
+    case import_exercise_from_excel(excel_file, attributes, course_id, tenant) do
       {:ok, exercises} ->
         {:ok, exercises}
 
@@ -17,32 +17,28 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
     end
   end
 
-  defp import_exercise_from_excel(nil, _attributes) do
+  defp import_exercise_from_excel(nil, _attributes, _tenant) do
     {:error, "Excel file is required"}
   end
 
-  defp import_exercise_from_excel(excel_file, attributes, course_id)
+  defp import_exercise_from_excel(excel_file, attributes, course_id, tenant)
        when is_binary(excel_file) and is_list(attributes) do
     Logger.info("attributes are #{inspect(attributes)}")
 
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, exercise_data} ->
         Logger.info("exercise is #{inspect(exercise_data)}, course id is #{course_id}")
-        create_exercise_from_data(exercise_data, course_id)
+        create_exercise_from_data(exercise_data, course_id, tenant)
 
       {:error, reason} ->
         {:error, "Failed to import Excel file: #{reason}"}
     end
   end
 
-  defp import_exercises_from_excel(_, _) do
-    {:error, "Invalid parameters"}
-  end
-
-  defp create_exercise_from_data(exercise_data, course_id) when is_list(exercise_data) do
+  defp create_exercise_from_data(exercise_data, course_id, tenant) when is_list(exercise_data) do
     exercises =
       exercise_data
-      |> Enum.map(&process_single_exercise(&1, course_id))
+      |> Enum.map(&process_single_exercise(&1, course_id, tenant))
       |> Enum.filter(&match?({:ok, _}, &1))
       |> Enum.map(fn {:ok, exercise} -> exercise end)
 
@@ -55,10 +51,10 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
     end
   end
 
-  defp process_single_exercise(exercise_map, course_id) do
+  defp process_single_exercise(exercise_map, course_id, tenant) do
     try do
       # Transform all values to strings first, but preserve options as a special case
-      exercise_map = 
+      exercise_map =
         exercise_map
         |> MapTransformer.transform_values_to_string()
         |> map_question_type()
@@ -68,8 +64,9 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
         exercise_map
         |> process_options()
         |> Map.put("course_id", course_id)
+        |> ensure_atom_question_type()
 
-      create_single_exercise(processed_exercise)
+      create_single_exercise(processed_exercise, tenant)
     rescue
       error ->
         Logger.error("Error processing exercise: #{inspect(error)}")
@@ -121,10 +118,34 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
 
   defp map_question_type(exercise_map), do: exercise_map
 
-  defp create_single_exercise(exercise_map) do
+  # Ensure question_type is an atom, convert if it's a string
+  defp ensure_atom_question_type(exercise_map) do
+    case exercise_map do
+      %{:question_type => type} when is_binary(type) ->
+        atom_type = case type do
+          "multiple_choice" -> :multiple_choice
+          "essay" -> :essay
+          "fill_in_blank" -> :fill_in_blank
+          _ -> :multiple_choice  # default
+        end
+        Map.put(exercise_map, :question_type, atom_type)
+      %{"question_type" => type} when is_binary(type) ->
+        atom_type = case type do
+          "multiple_choice" -> :multiple_choice
+          "essay" -> :essay
+          "fill_in_blank" -> :fill_in_blank
+          _ -> :multiple_choice  # default
+        end
+        Map.put(exercise_map, "question_type", atom_type)
+      _ ->
+        exercise_map
+    end
+  end
+
+  defp create_single_exercise(exercise_map, tenant) do
     Logger.info("exercise_map is #{inspect(exercise_map)}")
 
-    case KgEdu.Knowledge.Exercise.create_exercise(exercise_map) do
+    case KgEdu.Knowledge.Exercise.create_exercise(exercise_map, tenant: tenant) do
       {:ok, exercise} ->
         {:ok, exercise}
 

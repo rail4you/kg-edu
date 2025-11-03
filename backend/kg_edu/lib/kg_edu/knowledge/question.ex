@@ -176,17 +176,17 @@ defmodule KgEdu.Knowledge.Question do
       description "Delete a question and its connections"
       accept []
 
-      change fn changeset, _context ->
+      change fn changeset, context ->
         question_id = Ash.Changeset.get_attribute(changeset, :id)
 
         # Delete related connections first
         KgEdu.Knowledge.QuestionConnection
         |> Ash.Query.filter(source_question_id: question_id)
-        |> Ash.bulk_destroy!(:destroy, %{})
+        |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant)
 
         KgEdu.Knowledge.QuestionConnection
         |> Ash.Query.filter(target_question_id: question_id)
-        |> Ash.bulk_destroy!(:destroy, %{})
+        |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant)
 
         changeset
       end
@@ -209,12 +209,13 @@ defmodule KgEdu.Knowledge.Question do
       argument :attributes, {:array, :atom} do
         allow_nil? false
       end
-      run fn input, _context ->
+      run fn input, context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
         case KgEdu.Knowledge.Question.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                input.arguments.attributes,
-               input.arguments.course_id
+               input.arguments.course_id,
+               context.tenant
              ) do
           {:ok, question} -> :ok
           {:error, reason} -> {:error, reason}
@@ -241,7 +242,7 @@ defmodule KgEdu.Knowledge.Question do
       argument :flow_data, :map, allow_nil?: false
       argument :course_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
+      run fn input, context ->
         flow_data = input.arguments.flow_data
         course_id = input.arguments.course_id
 
@@ -251,7 +252,7 @@ defmodule KgEdu.Knowledge.Question do
             flow_data
             |> Enum.map(fn {level, questions} ->
               Enum.map(questions, fn question_data ->
-                create_question_from_data(question_data, level, course_id)
+                create_question_from_data(question_data, level, course_id, context.tenant)
               end)
             end)
             |> List.flatten()
@@ -355,7 +356,7 @@ defmodule KgEdu.Knowledge.Question do
 
   # ============ Helper Functions ============
 
-  defp create_question_from_data(question_data, level, course_id) do
+  defp create_question_from_data(question_data, level, course_id, tenant) do
     attrs = %{
       title: question_data["title"] || question_data[:title],
       description: question_data["description"] || question_data[:description],
@@ -365,11 +366,11 @@ defmodule KgEdu.Knowledge.Question do
       course_id: course_id
     }
 
-    case KgEdu.Knowledge.Question.create_question(attrs) do
+    case KgEdu.Knowledge.Question.create_question(attrs, tenant: tenant) do
       {:ok, question} ->
         # Create connections if provided
         if question_data["connections"] || question_data[:connections] do
-          create_question_connections(question, question_data["connections"] || question_data[:connections])
+          create_question_connections(question, question_data["connections"] || question_data[:connections], tenant)
         end
         {:ok, question}
 
@@ -378,9 +379,9 @@ defmodule KgEdu.Knowledge.Question do
     end
   end
 
-  defp create_question_connections(_question, _connections) do
+  defp create_question_connections(_question, _connections, _tenant) do
     # TODO: Implement connection creation
-    # This would create QuestionConnection records
+    # This would create QuestionConnection records with tenant context
     :ok
   end
 end

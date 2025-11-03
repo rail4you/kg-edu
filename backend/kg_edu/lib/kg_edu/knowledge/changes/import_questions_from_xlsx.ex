@@ -7,8 +7,8 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
 
   require Logger
 
-  def parse_excel(excel_file, attributes, course_id) do
-    case import_question_from_excel(excel_file, attributes, course_id) do
+  def parse_excel(excel_file, attributes, course_id, tenant \\ nil) do
+    case import_question_from_excel(excel_file, attributes, course_id, tenant) do
       {:ok, questions} ->
         {:ok, questions}
 
@@ -17,18 +17,18 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
     end
   end
 
-  defp import_question_from_excel(nil, _attributes) do
+  defp import_question_from_excel(nil, _attributes, _tenant) do
     {:error, "Excel file is required"}
   end
 
-  defp import_question_from_excel(excel_file, attributes, course_id)
+  defp import_question_from_excel(excel_file, attributes, course_id, tenant)
        when is_binary(excel_file) and is_list(attributes) do
     Logger.info("attributes are #{inspect(attributes)}")
 
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, question_data} ->
         Logger.info("question is #{inspect(question_data)}, course id is #{course_id}")
-        create_question_from_data(question_data, course_id)
+        create_question_from_data(question_data, course_id, tenant)
 
       {:error, reason} ->
         {:error, "Failed to import Excel file: #{reason}"}
@@ -39,10 +39,10 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
     {:error, "Invalid parameters"}
   end
 
-  defp create_question_from_data(question_data, course_id) when is_list(question_data) do
+  defp create_question_from_data(question_data, course_id, tenant) when is_list(question_data) do
     questions =
       question_data
-      |> Enum.map(&process_single_question(&1, course_id))
+      |> Enum.map(&process_single_question(&1, course_id, tenant))
       |> Enum.filter(&match?({:ok, _}, &1))
       |> Enum.map(fn {:ok, question} -> question end)
 
@@ -55,11 +55,11 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
     end
   end
 
-  defp process_single_question(question_map, course_id) do
+  defp process_single_question(question_map, course_id, tenant) do
     try do
       # Remove tags from question_map to avoid processing errors
       question_map = Map.delete(question_map, "tags")
-      
+
       # Transform all values to strings first
       question_map =
         question_map
@@ -70,7 +70,7 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
         question_map
         |> Map.put("course_id", course_id)
 
-      create_single_question(processed_question)
+      create_single_question(processed_question, tenant)
     rescue
       error ->
         Logger.error("Error processing question: #{inspect(error)}")
@@ -78,10 +78,10 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
     end
   end
 
-  defp create_single_question(question_map) do
+  defp create_single_question(question_map, tenant) do
     Logger.info("question_map is #{inspect(question_map)}")
 
-    case KgEdu.Knowledge.Question.create_question(question_map) do
+    case KgEdu.Knowledge.Question.create_question(question_map, tenant: tenant) do
       {:ok, question} ->
         {:ok, question}
 

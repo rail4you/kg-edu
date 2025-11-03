@@ -145,7 +145,7 @@ defmodule KgEdu.Knowledge.Exercise do
         description "Number of exercises to generate"
       end
 
-      run fn input, _context ->
+      run fn input, context ->
         course_id = input.arguments.course_id
         knowledge_name = input.arguments.knowledge_name
         chapter_name = input.arguments.chapter_name
@@ -156,7 +156,7 @@ defmodule KgEdu.Knowledge.Exercise do
         Logger.info("Looking for course with ID: #{course_id}")
 
         # Get course by ID using Ash.get which is designed for primary key lookup
-        case Ash.get(KgEdu.Courses.Course, course_id, actor: _context.actor) do
+        case Ash.get(KgEdu.Courses.Course, course_id, tenant: context.tenant, actor: context.actor) do
           {:ok, course} ->
             # Generate multiple exercises
             case KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise.generate_multiple_exercises(
@@ -178,7 +178,8 @@ defmodule KgEdu.Knowledge.Exercise do
                        KgEdu.Knowledge.Exercise,
                        :create,
                        return_records?: true,
-                       return_errors?: true
+                       return_errors?: true,
+                       tenant: context.tenant
                      ) do
                   # %{created: created_exercises, errors: []} ->
                   #   {:ok, created_exercises}
@@ -251,12 +252,13 @@ defmodule KgEdu.Knowledge.Exercise do
         default [:title, :question_content, :question_type, :answer, :options]
       end
 
-      run fn input, _context ->
+      run fn input, context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
         case KgEdu.Knowledge.Exercise.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                input.arguments.attributes,
-               input.arguments.course_id
+               input.arguments.course_id,
+               context.tenant
              ) do
           {:ok, user} -> :ok
           {:error, reason} -> {:error, reason}

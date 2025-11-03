@@ -7,8 +7,8 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
 
   require Logger
 
-  def parse_excel(excel_file, attributes, course_id) do
-    case import_homework_from_excel(excel_file, attributes, course_id) do
+  def parse_excel(excel_file, attributes, course_id, tenant \\ nil) do
+    case import_homework_from_excel(excel_file, attributes, course_id, tenant) do
       {:ok, homeworks} ->
         {:ok, homeworks}
 
@@ -17,18 +17,18 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
     end
   end
 
-  defp import_homework_from_excel(nil, _attributes) do
+  defp import_homework_from_excel(nil, _attributes, _tenant) do
     {:error, "Excel file is required"}
   end
 
-  defp import_homework_from_excel(excel_file, attributes, course_id)
+  defp import_homework_from_excel(excel_file, attributes, course_id, tenant)
        when is_binary(excel_file) and is_list(attributes) do
     Logger.info("attributes are #{inspect(attributes)}")
 
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, homework_data} ->
         Logger.info("homework is #{inspect(homework_data)}, course id is #{course_id}")
-        create_homework_from_data(homework_data, course_id)
+        create_homework_from_data(homework_data, course_id, tenant)
 
       {:error, reason} ->
         {:error, "Failed to import Excel file: #{reason}"}
@@ -39,10 +39,10 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
     {:error, "Invalid parameters"}
   end
 
-  defp create_homework_from_data(homework_data, course_id) when is_list(homework_data) do
+  defp create_homework_from_data(homework_data, course_id, tenant) when is_list(homework_data) do
     homeworks =
       homework_data
-      |> Enum.map(&process_single_homework(&1, course_id))
+      |> Enum.map(&process_single_homework(&1, course_id, tenant))
       |> Enum.filter(&match?({:ok, _}, &1))
       |> Enum.map(fn {:ok, homework} -> homework end)
 
@@ -55,11 +55,11 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
     end
   end
 
-  defp process_single_homework(homework_map, course_id) do
+  defp process_single_homework(homework_map, course_id, tenant) do
     try do
       # Remove tags from homework_map to avoid processing errors
       homework_map = Map.delete(homework_map, "tags")
-      
+
       # Ensure score is treated as a number if present
       homework_map = case Map.get(homework_map, "score") do
         score when is_binary(score) ->
@@ -73,14 +73,14 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
       # Transform description field to content field
       homework_map = case Map.get(homework_map, "description") do
         nil -> homework_map
-        description -> 
+        description ->
           homework_map
           |> Map.delete("description")
           |> Map.put("content", description)
       end
 
       # Transform remaining values to strings, except score
-      homework_map = 
+      homework_map =
         homework_map
         |> Map.delete("score")  # Remove score temporarily
         |> MapTransformer.transform_values_to_string()
@@ -92,7 +92,7 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
           end
         end)
 
-      create_single_homework(homework_map)
+      create_single_homework(homework_map, tenant)
     rescue
       error ->
         Logger.error("Error processing homework: #{inspect(error)}")
@@ -100,10 +100,10 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
     end
   end
 
-  defp create_single_homework(homework_map) do
+  defp create_single_homework(homework_map, tenant) do
     Logger.info("homework_map is #{inspect(homework_map)}")
 
-    case KgEdu.Knowledge.Homework.create_homework(homework_map) do
+    case KgEdu.Knowledge.Homework.create_homework(homework_map, tenant: tenant) do
       {:ok, homework} ->
         {:ok, homework}
 

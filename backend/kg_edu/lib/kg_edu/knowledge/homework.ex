@@ -125,13 +125,13 @@ defmodule KgEdu.Knowledge.Homework do
         end
       end
 
-      validate fn changeset, _context ->
+      validate fn changeset, context ->
         # If chapter_id is provided, validate it belongs to the same course
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
         chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
 
         if course_id && chapter_id do
-          case KgEdu.Courses.Chapter.get_chapter(chapter_id) do
+          case KgEdu.Courses.Chapter.get_chapter(chapter_id, tenant: context.tenant) do
             {:ok, chapter} ->
               if chapter.course_id == course_id do
                 :ok
@@ -147,13 +147,13 @@ defmodule KgEdu.Knowledge.Homework do
         end
       end
 
-      validate fn changeset, _context ->
+      validate fn changeset, context ->
         # If knowledge_resource_id is provided, validate it belongs to the same course
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
         knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
 
         if course_id && knowledge_resource_id do
-          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id) do
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id, tenant: context.tenant) do
             {:ok, resource} ->
               if resource.course_id == course_id do
                 :ok
@@ -256,14 +256,15 @@ defmodule KgEdu.Knowledge.Homework do
         allow_nil? false
       end
 
-      run fn input, _context ->
+      run fn input, context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
 
         case KgEdu.Knowledge.Homework.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
               #  input.arguments.attributes,
               ["title", "content", "score", "answer"],
-               input.arguments.course_id
+               input.arguments.course_id,
+               context.tenant
              ) do
           {:ok, homework} -> :ok
           {:error, reason} -> {:error, reason}

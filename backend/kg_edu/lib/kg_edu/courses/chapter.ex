@@ -125,13 +125,13 @@ defmodule KgEdu.Courses.Chapter do
       description "Create a new chapter"
       accept [:title, :description, :course_id, :parent_chapter_id, :sort_order]
 
-      validate fn changeset, _context ->
+      validate fn changeset, context ->
         parent_id = Ash.Changeset.get_attribute(changeset, :parent_chapter_id)
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
 
         if parent_id && course_id do
           # If there's a parent, ensure it belongs to the same course
-          case KgEdu.Courses.Chapter.get_chapter(parent_id) do
+          case KgEdu.Courses.Chapter.get_chapter(parent_id, tenant: context.tenant) do
             {:ok, parent} ->
               if parent.course_id == course_id do
                 :ok
