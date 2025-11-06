@@ -85,7 +85,7 @@ defmodule KgEdu.Accounts.User do
     defaults [:read, :destroy]
 
     create :create_student do
-      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge]
+      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge, :avatar_url]
       argument :password, :string
       change set_attribute(:role, :user)
       change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
@@ -96,7 +96,7 @@ defmodule KgEdu.Accounts.User do
     end
 
     update :update_student do
-      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name]
+      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name, :avatar_url]
       argument :password, :string do
         allow_nil? true
       end
@@ -160,7 +160,7 @@ defmodule KgEdu.Accounts.User do
 
     update :update do
       description "Update user name and role"
-      accept [:name, :role, :phone]
+      accept [:name, :role, :phone, :avatar_url]
       require_atomic? false
     end
 
@@ -635,24 +635,65 @@ defmodule KgEdu.Accounts.User do
 
       argument :excel_file, :string do
         description "Base64 encoded Excel file containing user data"
-        allow_nil? false
+        allow_nil? true
+      end
+
+      argument :excelFile, :string do
+        description "Base64 encoded Excel file containing user data (camelCase version)"
+        allow_nil? true
       end
 
       argument :attributes, {:array, :atom} do
         description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role]"
-        allow_nil? false
+        allow_nil? true
         default [:member_id, :name, :phone, :email, :password, :role]
       end
 
-      run fn input, _context ->
-        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+      run fn input, context ->
+        Logger.info("Starting user import")
+        Logger.info("Current context tenant: #{inspect(context.tenant)}")
+        Logger.info("All input arguments: #{inspect(input.arguments)}")
 
-        case KgEdu.Accounts.User.ImportFromExcel.parse_excel(
-               input.arguments.excel_file,
-               input.arguments.attributes
-             ) do
-          {:ok, user} -> :ok
-          {:error, reason} -> {:error, reason}
+        # Extract arguments safely - the API call might be using different field names
+        excel_file = Map.get(input.arguments, :excelFile) || Map.get(input.arguments, :excel_file)
+        attributes = Map.get(input.arguments, :attributes)
+
+        Logger.info("Excel file present: #{not is_nil(excel_file)}")
+        Logger.info("Attributes: #{inspect(attributes)}")
+
+        # Handle tenant logic - use context.tenant as primary source (from request)
+        tenant_to_use = context.tenant
+
+        if is_nil(tenant_to_use) do
+          Logger.error("No tenant context found!")
+          {:error, "Tenant context is required"}
+        else
+          Logger.info("Using tenant context: #{inspect(tenant_to_use)}")
+
+          # Import users with tenant context
+          import_result = try do
+            KgEdu.Accounts.User.ImportFromExcel.parse_excel(
+              excel_file,
+              attributes || [:member_id, :name, :phone, :email, :password, :role],
+              tenant_to_use
+            )
+          rescue
+            e ->
+              Logger.error("Exception during user import: #{Exception.message(e)}")
+              Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+              Logger.error("Excel file length: #{if excel_file, do: byte_size(excel_file), else: nil}")
+              {:error, {:import_exception, Exception.message(e)}}
+          end
+
+          case import_result do
+            {:ok, users} ->
+              Logger.info("Successfully imported #{length(users)} users")
+              :ok
+
+            {:error, reason} ->
+              Logger.error("Failed to import users: #{inspect(reason)}")
+              {:error, reason}
+          end
         end
       end
     end
@@ -775,6 +816,12 @@ defmodule KgEdu.Accounts.User do
       default :user
       constraints one_of: [:super_admin, :admin, :user, :teacher]
       public? true
+    end
+
+    attribute :avatar_url, :string do
+      allow_nil? true
+      public? true
+      description "头像地址 (Avatar URL)"
     end
   end
 

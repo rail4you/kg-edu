@@ -293,7 +293,9 @@ defmodule KgEdu.Activity.ActivityLog do
       description "Additional metadata (answers, timestamps, etc.)"
     end
 
-    create_timestamp :inserted_at
+    create_timestamp :inserted_at do
+      public? true
+    end
   end
 
   relationships do

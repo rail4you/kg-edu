@@ -85,6 +85,8 @@ defmodule KgEdu.Courses do
       rpc_action :update_link, :update
       rpc_action :delete_link, :destroy
       rpc_action :list_links_by_course, :by_course
+      rpc_action :link_to_knowledge, :link_to_knowledge
+      rpc_action :unlink_from_knowledge, :unlink_from_knowledge
     end
   end
 

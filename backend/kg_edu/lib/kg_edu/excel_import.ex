@@ -93,40 +93,26 @@ defmodule KgEdu.ExcelImport do
   @doc """
   Process rows from Excel file.
 
-  Ignores first row (comment row) and maps remaining rows to attributes.
+  Ignores first two rows (comment row and header row) and maps remaining data rows to attributes.
   """
   defp process_rows(rows, attributes) do
     case rows do
-      [_comment_row | data_rows] ->
+      [_comment_row, _header_row | data_rows] ->
         try do
           Logger.info("data rows are #{inspect(data_rows)}")
-          
-          # Handle the case where data_rows might already be a list of processed rows
-          result = case data_rows do
-            [[_ | _] = first_row | _] when is_list(first_row) and is_binary(hd(first_row)) ->
-              # Already processed rows (list of lists with string values)
-              Enum.map(data_rows, fn row ->
-                map_row_to_attributes(row, attributes)
-              end)
-            [[_ | _] = nested_list | _] when is_list(nested_list) ->
-              # Need to extract individual rows from nested structure
-              Enum.map(data_rows, fn nested_row ->
-                case nested_row do
-                  [row] when is_list(row) -> map_row_to_attributes(row, attributes)
-                  row when is_list(row) -> map_row_to_attributes(row, attributes)
-                  _ -> 
-                    Logger.error("Unexpected row format: #{inspect(nested_row)}")
-                    nil
-                end
-              end)
-              |> Enum.filter(&(&1 != nil))
-            _ ->
-              # Individual rows that need processing
-              Enum.map(data_rows, fn row ->
-                map_row_to_attributes(row, attributes)
-              end)
-          end
-          
+
+          # Filter out empty rows and rows that look like headers
+          filtered_rows = filter_valid_data_rows(data_rows)
+
+          # Map each valid row to attributes
+          result = Enum.map(filtered_rows, fn row ->
+            map_row_to_attributes(row, attributes)
+          end)
+
+          # Filter out results that are nil (from invalid rows)
+          result = Enum.filter(result, &(&1 != nil))
+
+          Logger.info("processed #{length(result)} valid rows from #{length(data_rows)} data rows")
           {:ok, result}
         rescue
           e ->
@@ -134,12 +120,54 @@ defmodule KgEdu.ExcelImport do
             {:error, "Error processing rows: #{Exception.message(e)}"}
         end
 
+      [_comment_row | data_rows] ->
+        # Fallback for files with only comment row, no separate header
+        Logger.info("processing rows with only comment row")
+        process_rows([nil, nil | data_rows], attributes)
+
       [] ->
         {:ok, []}
 
       _ ->
-        {:error, "Excel file has no data rows"}
+        {:error, "Excel file has insufficient rows (need at least comment and header rows)"}
     end
+  end
+
+  # Filter out invalid data rows
+  defp filter_valid_data_rows(rows) do
+    Enum.filter(rows, fn row ->
+      case row do
+        nil -> false
+        [] -> false
+        row when is_list(row) ->
+          # Check if row has actual data (not all nil/empty)
+          has_data = row
+                    |> Enum.take(6)  # Take first 6 columns for user data
+                    |> Enum.any?(&(not is_nil(&1) and &1 != ""))
+
+          # Check if row looks like a header (contains common header keywords)
+          looks_like_header = row
+                           |> Enum.take(6)
+                           |> Enum.any?(fn cell ->
+                             cell_str = to_string(cell)
+                             String.contains?(cell_str, "工号") or
+                             String.contains?(cell_str, "姓名") or
+                             String.contains?(cell_str, "电话") or
+                             String.contains?(cell_str, "邮件") or
+                             String.contains?(cell_str, "密码") or
+                             String.contains?(cell_str, "角色") or
+                             String.contains?(cell_str, "member") or
+                             String.contains?(cell_str, "name") or
+                             String.contains?(cell_str, "phone") or
+                             String.contains?(cell_str, "email") or
+                             String.contains?(cell_str, "password") or
+                             String.contains?(cell_str, "role")
+                           end)
+
+          has_data and not looks_like_header
+        _ -> false
+      end
+    end)
   end
 
   @doc """
@@ -150,25 +178,53 @@ defmodule KgEdu.ExcelImport do
   - attributes: List of attribute names
 
   ## Returns
-  Map with attribute-value pairs
+  Map with attribute-value pairs or nil if row is invalid
   """
-  defp map_row_to_attributes(row, attributes) do
-    # Take only the first n columns where n is the number of attributes
-    relevant_columns = Enum.take(row, length(attributes))
+  defp map_row_to_attributes(row, attributes) when is_list(row) do
+    # Skip rows that are too short (less than half the expected columns)
+    if length(row) < div(length(attributes), 2) do
+      Logger.warning("Skipping row with insufficient columns: #{inspect(row)}")
+      nil
+    else
+      # Take only the first n columns where n is the number of attributes
+      relevant_columns = Enum.take(row, length(attributes))
 
-    # Pad with nil values if row has fewer columns than attributes
-    padded_columns = case length(relevant_columns) < length(attributes) do
-      true ->
-        relevant_columns ++ List.duplicate(nil, length(attributes) - length(relevant_columns))
-      false ->
-        relevant_columns
+      # Pad with nil values if row has fewer columns than attributes
+      padded_columns = case length(relevant_columns) < length(attributes) do
+        true ->
+          relevant_columns ++ List.duplicate(nil, length(attributes) - length(relevant_columns))
+        false ->
+          relevant_columns
+      end
+
+      # Create map by zipping attributes with values
+      result = attributes
+               |> Enum.zip(padded_columns)
+               |> Enum.into(%{})
+               |> clean_values()
+
+      # Validate that we have at least the required fields (member_id, name, password)
+      if has_required_basic_fields?(result) do
+        result
+      else
+        Logger.warning("Skipping row missing required fields: #{inspect(result)}")
+        nil
+      end
     end
+  end
 
-    # Create map by zipping attributes with values
-    attributes
-    |> Enum.zip(padded_columns)
-    |> Enum.into(%{})
-    |> clean_values()
+  defp map_row_to_attributes(row, _attributes) do
+    Logger.warning("Invalid row format: #{inspect(row)}")
+    nil
+  end
+
+  # Check if the mapped row has the basic required fields
+  defp has_required_basic_fields?(map) do
+    member_id_present = not is_nil(map[:member_id]) and map[:member_id] != ""
+    name_present = not is_nil(map[:name]) and map[:name] != ""
+    password_present = not is_nil(map[:password]) and map[:password] != ""
+
+    member_id_present and name_present and password_present
   end
 
   @doc """

@@ -30,6 +30,8 @@ defmodule KgEdu.Courses.Link do
     define :get_link, action: :read, get_by: [:id]
     define :list_links, action: :read
     define :list_links_by_course, action: :by_course
+    define :link_to_knowledge, action: :link_to_knowledge
+    define :unlink_from_knowledge, action: :unlink_from_knowledge
   end
 
   actions do
@@ -49,6 +51,23 @@ defmodule KgEdu.Courses.Link do
 
     update :update do
       accept [:title, :url, :category, :course_id]
+    end
+
+    update :link_to_knowledge do
+      description "Link a knowledge resource to this link"
+
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+        description "Knowledge resource ID to link"
+      end
+
+      change set_attribute(:knowledge_resource_id, arg(:knowledge_resource_id))
+    end
+
+    update :unlink_from_knowledge do
+      description "Unlink knowledge resource from this link"
+
+      change set_attribute(:knowledge_resource_id, nil)
     end
 
     read :by_course do
@@ -107,5 +126,12 @@ defmodule KgEdu.Courses.Link do
       public? true
       description "Course this link belongs to"
     end
+
+    belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
+      public? true
+      allow_nil? true
+      description "The knowledge resource this link belongs to"
+    end
+
   end
 end

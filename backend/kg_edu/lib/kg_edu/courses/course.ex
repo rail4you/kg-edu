@@ -70,13 +70,13 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id, :publish_status]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status]
       # change set_attribute(:teacher_id, actor(:id))
       # change relate_actor(:teacher_id)
     end
 
     update :update do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :book_id, :publish_status]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status]
       change set_attribute(:teacher_id, actor(:id))
     end
 
@@ -168,6 +168,12 @@ defmodule KgEdu.Courses.Course do
       allow_nil? true
       public? true
       description "学期 (Semester)"
+    end
+
+    attribute :semester_hours, :integer do
+      allow_nil? true
+      public? true
+      description "学时 (Credit Hours)"
     end
 
     attribute :book_id, :uuid do
