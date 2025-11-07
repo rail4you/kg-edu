@@ -80,13 +80,15 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
       end
 
       # Transform remaining values to strings, except score
+      original_score = Map.get(homework_map, "score")
+
       homework_map =
         homework_map
         |> Map.delete("score")  # Remove score temporarily
         |> MapTransformer.transform_values_to_string()
         |> Map.put("course_id", course_id)
         |> then(fn map ->  # Add back score if it existed
-          case Map.get(homework_map, "score") do
+          case original_score do
             nil -> map
             score -> Map.put(map, "score", score)
           end

@@ -42,11 +42,11 @@ defmodule KgEdu.OpmlParser do
 
     # Process each top-level outline and collect all knowledge items
     top_level_outlines
-    |> Enum.flat_map(&process_outline_with_children(&1, head, nil))
+    |> Enum.flat_map(&process_outline_with_children(&1, head, nil, nil))
     |> Enum.filter(&(&1 != nil))
   end
 
-  defp process_outline_with_children(outline_xml, _head, parent_subject) do
+  defp process_outline_with_children(outline_xml, _head, current_subject, current_unit) do
     # Extract attributes from outline element
     title = SweetXml.xpath(outline_xml, ~x"./@title"s)
     text = SweetXml.xpath(outline_xml, ~x"./@text"s)
@@ -65,17 +65,16 @@ defmodule KgEdu.OpmlParser do
 
       # Has children - this is a subject or unit
       length(children) > 0 ->
-        # Create knowledge items for children with this as parent
-        child_items = children
-                      |> Enum.flat_map(&process_outline_with_children(&1, _head, knowledge_title))
-
-        # If we have more than 1 level of nesting, this is a unit
+        # If we have more than 1 level of nesting, this is a unit or subject
         has_grandchildren = Enum.any?(children, fn child ->
           SweetXml.xpath(child, ~x"./outline"l) != []
         end)
 
         if has_grandchildren do
-          # This is a subject
+          # This is a subject - create it and process children with this as subject
+          child_items = children
+                        |> Enum.flat_map(&process_outline_with_children(&1, _head, knowledge_title, nil))
+
           [%{
             title: knowledge_title,
             description: description,
@@ -84,11 +83,14 @@ defmodule KgEdu.OpmlParser do
             type: determine_type(outline_xml)
           } | child_items]
         else
-          # This is a unit
+          # This is a unit - create it and process children with this as unit
+          child_items = children
+                        |> Enum.flat_map(&process_outline_with_children(&1, _head, current_subject, knowledge_title))
+
           [%{
             title: knowledge_title,
             description: description,
-            subject: parent_subject || "General",
+            subject: current_subject || "General",
             unit: knowledge_title,
             type: determine_type(outline_xml)
           } | child_items]
@@ -99,8 +101,8 @@ defmodule KgEdu.OpmlParser do
         [%{
           title: knowledge_title,
           description: description,
-          subject: parent_subject || "General",
-          unit: nil,
+          subject: current_subject || "General",
+          unit: current_unit,  # Knowledge cells belong to a unit if there is one
           type: determine_type(outline_xml)
         }]
     end

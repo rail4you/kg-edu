@@ -77,6 +77,7 @@ defmodule KgEdu.ExcelImport do
       case Xlsxir.multi_extract(file_path, 0) do
         {:ok, table_id} ->
           rows = Xlsxir.get_list(table_id)
+          Logger.info("Extracted #{inspect(rows)} rows from Excel file")
           Xlsxir.close(table_id)
 
           process_rows(rows, attributes)
@@ -102,7 +103,7 @@ defmodule KgEdu.ExcelImport do
           Logger.info("data rows are #{inspect(data_rows)}")
 
           # Filter out empty rows and rows that look like headers
-          filtered_rows = filter_valid_data_rows(data_rows)
+          filtered_rows = data_rows
 
           # Map each valid row to attributes
           result = Enum.map(filtered_rows, fn row ->
@@ -134,42 +135,6 @@ defmodule KgEdu.ExcelImport do
   end
 
   # Filter out invalid data rows
-  defp filter_valid_data_rows(rows) do
-    Enum.filter(rows, fn row ->
-      case row do
-        nil -> false
-        [] -> false
-        row when is_list(row) ->
-          # Check if row has actual data (not all nil/empty)
-          has_data = row
-                    |> Enum.take(6)  # Take first 6 columns for user data
-                    |> Enum.any?(&(not is_nil(&1) and &1 != ""))
-
-          # Check if row looks like a header (contains common header keywords)
-          looks_like_header = row
-                           |> Enum.take(6)
-                           |> Enum.any?(fn cell ->
-                             cell_str = to_string(cell)
-                             String.contains?(cell_str, "工号") or
-                             String.contains?(cell_str, "姓名") or
-                             String.contains?(cell_str, "电话") or
-                             String.contains?(cell_str, "邮件") or
-                             String.contains?(cell_str, "密码") or
-                             String.contains?(cell_str, "角色") or
-                             String.contains?(cell_str, "member") or
-                             String.contains?(cell_str, "name") or
-                             String.contains?(cell_str, "phone") or
-                             String.contains?(cell_str, "email") or
-                             String.contains?(cell_str, "password") or
-                             String.contains?(cell_str, "role")
-                           end)
-
-          has_data and not looks_like_header
-        _ -> false
-      end
-    end)
-  end
-
   @doc """
   Map a single row to the given attributes.
 
@@ -202,14 +167,14 @@ defmodule KgEdu.ExcelImport do
                |> Enum.zip(padded_columns)
                |> Enum.into(%{})
                |> clean_values()
-
+      result
       # Validate that we have at least the required fields (member_id, name, password)
-      if has_required_basic_fields?(result) do
-        result
-      else
-        Logger.warning("Skipping row missing required fields: #{inspect(result)}")
-        nil
-      end
+      # if has_required_basic_fields?(result) do
+      #   result
+      # else
+      #   Logger.warning("Skipping row missing required fields: #{inspect(result)}")
+      #   nil
+      # end
     end
   end
 
@@ -219,12 +184,26 @@ defmodule KgEdu.ExcelImport do
   end
 
   # Check if the mapped row has the basic required fields
+  # Generic validation that works for different data types
   defp has_required_basic_fields?(map) do
-    member_id_present = not is_nil(map[:member_id]) and map[:member_id] != ""
-    name_present = not is_nil(map[:name]) and map[:name] != ""
-    password_present = not is_nil(map[:password]) and map[:password] != ""
+    # For exercises: title or question_content
+    exercise_fields = not is_nil(map[:title]) and map[:title] != "" or
+                     not is_nil(map[:question_content]) and map[:question_content] != ""
 
-    member_id_present and name_present and password_present
+    # For homeworks: title or content
+    homework_fields = not is_nil(map[:title]) and map[:title] != "" or
+                     not is_nil(map[:content]) and map[:content] != ""
+
+    # For questions: title
+    question_fields = not is_nil(map[:title]) and map[:title] != ""
+
+    # For users: member_id, name, password (legacy)
+    user_fields = not is_nil(map[:member_id]) and map[:member_id] != "" and
+                  not is_nil(map[:name]) and map[:name] != "" and
+                  not is_nil(map[:password]) and map[:password] != ""
+
+    # Accept any valid data type
+    exercise_fields or homework_fields or question_fields or user_fields
   end
 
   @doc """
@@ -242,7 +221,7 @@ defmodule KgEdu.ExcelImport do
         value when is_binary(value) ->
           # Clean Unicode escape sequences first
           cleaned_text = clean_text(value)
-          
+
           # Try to convert to number if possible
           case Integer.parse(cleaned_text) do
             {int_val, ""} -> int_val

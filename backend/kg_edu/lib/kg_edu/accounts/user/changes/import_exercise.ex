@@ -145,6 +145,7 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   defp create_single_exercise(exercise_map, tenant) do
     Logger.info("exercise_map is #{inspect(exercise_map)}")
 
+    # Use the code interface instead of direct Ash call
     case KgEdu.Knowledge.Exercise.create_exercise(exercise_map, tenant: tenant) do
       {:ok, exercise} ->
         {:ok, exercise}
