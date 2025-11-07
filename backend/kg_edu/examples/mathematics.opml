@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Mathematics Curriculum</title>
+    <dateCreated>2025-01-07</dateCreated>
+    <dateModified>2025-01-07</dateModified>
+    <ownerName>Education System</ownerName>
+    <docs>http://dev.opml.org/spec2.html</docs>
+    <expansionState>1,2,3</expansionState>
+    <vertScrollState>1</vertScrollState>
+    <windowTop>0</windowTop>
+    <windowLeft>0</windowLeft>
+    <windowBottom>800</windowBottom>
+    <windowRight>600</windowRight>
+  </head>
+  <body>
+    <!-- Algebra Subject -->
+    <outline text="Algebra" title="Algebra">
+      <outline text="Linear Algebra" title="Linear Algebra">
+        <outline text="Matrices and Determinants" title="Matrices and Determinants" description="Introduction to matrix operations, determinants, and their applications"/>
+        <outline text="Systems of Linear Equations" title="Systems of Linear Equations" description="Methods for solving multiple linear equations simultaneously"/>
+        <outline text="Vector Spaces" title="Vector Spaces" description="Abstract study of vector spaces and linear transformations"/>
+        <outline text="Eigenvalues and Eigenvectors" title="Eigenvalues and Eigenvectors" description="Special vectors that are scaled by linear transformations"/>
+      </outline>
+
+      <outline text="Abstract Algebra" title="Abstract Algebra">
+        <outline text="Group Theory" title="Group Theory" description="Study of algebraic structures called groups"/>
+        <outline text="Ring Theory" title="Ring Theory" description="Algebraic structures with two binary operations"/>
+        <outline text="Field Theory" title="Field Theory" description="Study of fields and their extensions"/>
+        <outline text="Galois Theory" title="Galois Theory" description="Connection between field theory and group theory"/>
+      </outline>
+
+      <outline text="Polynomials" title="Polynomials">
+        <outline text="Polynomial Operations" title="Polynomial Operations" description="Addition, multiplication, and division of polynomials"/>
+        <outline text="Factorization" title="Factorization" description="Breaking polynomials into irreducible factors"/>
+        <outline text="Root Finding" title="Root Finding" description="Methods to find zeros of polynomials"/>
+        <outline text="Rational Root Theorem" title="Rational Root Theorem" description="Method to find rational roots of polynomials"/>
+      </outline>
+    </outline>
+
+    <!-- Calculus Subject -->
+    <outline text="Calculus" title="Calculus">
+      <outline text="Differential Calculus" title="Differential Calculus">
+        <outline text="Limits and Continuity" title="Limits and Continuity" description="Foundation concepts for calculus"/>
+        <outline text="Derivatives" title="Derivatives" description="Rate of change and slopes of tangent lines"/>
+        <outline text="Differentiation Rules" title="Differentiation Rules" description="Power rule, product rule, quotient rule, chain rule"/>
+        <outline text="Applications of Derivatives" title="Applications of Derivatives" description="Optimization, related rates, and curve sketching"/>
+      </outline>
+
+      <outline text="Integral Calculus" title="Integral Calculus">
+        <outline text="Indefinite Integrals" title="Indefinite Integrals" description="Antiderivatives and integration techniques"/>
+        <outline text="Definite Integrals" title="Definite Integrals" description="Area under curves and the Fundamental Theorem of Calculus"/>
+        <outline text="Integration Techniques" title="Integration Techniques" description="Substitution, integration by parts, partial fractions"/>
+        <outline text="Applications of Integrals" title="Applications of Integrals" description="Area, volume, work, and center of mass problems"/>
+      </outline>
+
+      <outline text="Multivariable Calculus" title="Multivariable Calculus">
+        <outline text="Partial Derivatives" title="Partial Derivatives" description="Derivatives of functions with multiple variables"/>
+        <outline text="Multiple Integrals" title="Multiple Integrals" description="Integration over regions in multiple dimensions"/>
+        <outline text="Vector Calculus" title="Vector Calculus" description="Gradient, divergence, curl, and vector fields"/>
+        <outline text="Coordinate Systems" title="Coordinate Systems" description="Polar, cylindrical, and spherical coordinates"/>
+      </outline>
+    </outline>
+
+    <!-- Geometry Subject -->
+    <outline text="Geometry" title="Geometry">
+      <outline text="Euclidean Geometry" title="Euclidean Geometry">
+        <outline text="Points, Lines, and Planes" title="Points, Lines, and Planes" description="Fundamental elements of geometry"/>
+        <outline text="Triangles" title="Triangles" description="Properties, congruence, and similarity of triangles"/>
+        <outline text="Circles" title="Circles" description="Properties of circles and related theorems"/>
+        <outline text="Polygons" title="Polygons" description="Properties of regular and irregular polygons"/>
+      </outline>
+
+      <outline text="Analytic Geometry" title="Analytic Geometry">
+        <outline text="Coordinate Systems" title="Coordinate Systems" description="Cartesian coordinate system and distance formula"/>
+        <outline text="Lines and Equations" title="Lines and Equations" description="Slope-intercept form, point-slope form, and standard form"/>
+        <outline text="Conic Sections" title="Conic Sections" description="Parabolas, ellipses, and hyperbolas"/>
+        <outline text="Transformations" title="Transformations" description="Translations, rotations, reflections, and dilations"/>
+      </outline>
+
+      <outline text="Non-Euclidean Geometry" title="Non-Euclidean Geometry">
+        <outline text="Hyperbolic Geometry" title="Hyperbolic Geometry" description="Geometry with negative curvature"/>
+        <outline text="Spherical Geometry" title="Spherical Geometry" description="Geometry on the surface of a sphere"/>
+        <outline text="Projective Geometry" title="Projective Geometry" description="Geometry without parallel lines"/>
+        <outline text="Differential Geometry" title="Differential Geometry" description="Study of smooth surfaces using calculus"/>
+      </outline>
+    </outline>
+
+    <!-- Statistics Subject -->
+    <outline text="Statistics" title="Statistics">
+      <outline text="Descriptive Statistics" title="Descriptive Statistics">
+        <outline text="Measures of Central Tendency" title="Measures of Central Tendency" description="Mean, median, and mode"/>
+        <outline text="Measures of Dispersion" title="Measures of Dispersion" description="Range, variance, and standard deviation"/>
+        <outline text="Data Visualization" title="Data Visualization" description="Histograms, box plots, and scatter plots"/>
+        <outline text="Probability Distributions" title="Probability Distributions" description="Normal, binomial, and Poisson distributions"/>
+      </outline>
+
+      <outline text="Inferential Statistics" title="Inferential Statistics">
+        <outline text="Hypothesis Testing" title="Hypothesis Testing" description="Null and alternative hypotheses, p-values"/>
+        <outline text="Confidence Intervals" title="Confidence Intervals" description="Estimating population parameters"/>
+        <outline text="Regression Analysis" title="Regression Analysis" description="Linear and multiple regression models"/>
+        <outline text="ANOVA" title="ANOVA" description="Analysis of variance for comparing means"/>
+      </outline>
+    </outline>
+  </body>
+</opml>

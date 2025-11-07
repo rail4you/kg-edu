@@ -63,6 +63,7 @@ defmodule KgEdu.Knowledge.Resource do
     # Import actions
     define :import_knowledge_from_excel, action: :import_from_excel
     define :import_knowledge_from_llm, action: :import_from_llm
+    define :import_knowledge_from_opml, action: :import_from_opml
     define :upsert_subject, action: :upsert_subject
     define :upsert_unit, action: :upsert_unit
     define :get_by_name_and_course, action: :by_name_and_course
@@ -355,12 +356,12 @@ end
     read :debug_list do
       description "Debug: List all knowledge resources for a course"
       argument :course_id, :uuid, allow_nil?: true
-      
+
       prepare fn query, _context ->
         course_id_arg = Ash.Query.get_argument(query, :course_id)
-        
+
         query
-        |> then(fn q -> 
+        |> then(fn q ->
           if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
         end)
         |> Ash.Query.sort(name: :asc)
@@ -372,20 +373,20 @@ end
       argument :name, :string, allow_nil?: true
       argument :importance_level, :string, allow_nil?: true
       argument :course_id, :uuid, allow_nil?: true
-      
+
       prepare fn query, _context ->
         name_arg = Ash.Query.get_argument(query, :name)
         importance_level_arg = Ash.Query.get_argument(query, :importance_level)
         course_id_arg = Ash.Query.get_argument(query, :course_id)
-        
+
         query
-        |> then(fn q -> 
+        |> then(fn q ->
           if name_arg, do: Ash.Query.filter(q, contains(name, ^name_arg)), else: q
         end)
-        |> then(fn q -> 
+        |> then(fn q ->
           if importance_level_arg, do: Ash.Query.filter(q, importance_level == ^importance_level_arg), else: q
         end)
-        |> then(fn q -> 
+        |> then(fn q ->
           if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
         end)
       end
@@ -770,6 +771,26 @@ end
       end
     end
 
+    action :import_from_opml do
+      description "Import knowledge resources from OPML XML data"
+
+      argument :opml_data, :string, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        case KgEdu.OpmlParser.parse_from_text(input.arguments.opml_data) do
+          {:ok, knowledge_data} ->
+            case process_opml_import(knowledge_data, input.arguments.course_id, context.tenant) do
+              {:ok, _} -> :ok
+              {:error, reason} -> {:error, "Failed to process OPML data: #{reason}"}
+            end
+
+          {:error, reason} ->
+            {:error, "Failed to parse OPML data: #{reason}"}
+        end
+      end
+    end
+
     action :bulk_update_importance_level do
       description "Bulk update importance levels for multiple knowledge resources in a course"
 
@@ -983,6 +1004,85 @@ end
 
   def import_from_excel(input, context) do
     import_kg_from_excel(input.excel_base64, input.course_id, context)
+  end
+
+  def process_opml_import(knowledge_data, course_id, tenant) do
+    # Track created subjects and units for parent relationships
+    subjects = %{}
+    units = %{}
+
+    # Process each item from OPML data
+    result =
+      Enum.reduce_while(knowledge_data, {:ok, %{subjects: subjects, units: units, tenant: tenant}}, fn item,
+                                                                                       {:ok, acc} ->
+        case process_opml_item(item, course_id, acc) do
+          {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+
+    case result do
+      {:ok, _} ->
+        {:ok, "Successfully imported #{length(knowledge_data)} knowledge resources from OPML"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp process_opml_item(item, course_id, acc) do
+    # Extract data from OPML item
+    subject_name = Map.get(item, :subject, "General")
+    unit_name = Map.get(item, :unit, nil)
+    knowledge_name = Map.get(item, :title, "")
+    description = Map.get(item, :description, "")
+
+    # Skip if knowledge name is missing
+    if is_nil(knowledge_name) or knowledge_name == "" do
+      {:ok, acc}
+    else
+      # Process or create subject if needed
+      with {:ok, subject_id, _} = create_or_get_subject(subject_name, course_id, acc),
+           {:ok, unit_id, _} = create_or_get_unit(unit_name, course_id, subject_id, acc) do
+        # Create the knowledge resource
+        knowledge_attrs = %{
+          subject: subject_name,
+          unit: unit_name || "",
+          name: knowledge_name,
+          description: description,
+          knowledge_type: :knowledge_cell,
+          course_id: course_id,
+          parent_subject_id: subject_id,
+          parent_unit_id: unit_id
+        }
+
+        # Check if knowledge resource already exists
+        case get_by_name_and_course(%{
+               name: knowledge_name,
+               knowledge_type: :knowledge_cell,
+               course_id: course_id
+             }, tenant: acc.tenant) do
+          {:ok, _existing} ->
+            # Resource already exists, skip it
+            {:ok, acc}
+
+          {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+            # Resource doesn't exist, create it
+            case create_resource_record(knowledge_attrs, acc.tenant) do
+              {:ok, _knowledge} ->
+                {:ok, acc}
+
+              {:error, _reason} ->
+                # Resource likely already exists or there's another issue, skip it
+                {:ok, acc}
+            end
+
+          {:error, _reason} ->
+            # Error checking existing resource, skip it
+            {:ok, acc}
+        end
+      end
+    end
   end
 
   def import_kg_from_excel(excel_base64, course_id, context) do

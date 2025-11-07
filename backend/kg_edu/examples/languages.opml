@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Language Learning Curriculum</title>
+    <dateCreated>2025-01-07</dateCreated>
+    <dateModified>2025-01-07</dateModified>
+    <ownerName>Education System</ownerName>
+    <docs>http://dev.opml.org/spec2.html</docs>
+    <expansionState>1,2,3,4</expansionState>
+    <vertScrollState>1</vertScrollState>
+    <windowTop>0</windowTop>
+    <windowLeft>0</windowLeft>
+    <windowBottom>800</windowBottom>
+    <windowRight>600</windowRight>
+  </head>
+  <body>
+    <!-- English Language Subject -->
+    <outline text="English Language" title="English Language">
+      <outline text="Grammar and Syntax" title="Grammar and Syntax">
+        <outline text="Parts of Speech" title="Parts of Speech" description="Nouns, verbs, adjectives, adverbs, pronouns, prepositions, conjunctions, and interjections"/>
+        <outline text="Sentence Structure" title="Sentence Structure" description="Simple, compound, complex, and compound-complex sentences"/>
+        <outline text="Verb Tenses" title="Verb Tenses" description="Past, present, and future tenses, including perfect and progressive forms"/>
+        <outline text="Punctuation" title="Punctuation" description="Proper use of commas, semicolons, colons, and end punctuation"/>
+        <outline text="Subject-Verb Agreement" title="Subject-Verb Agreement" description="Matching subjects with correct verb forms"/>
+      </outline>
+
+      <outline text="Vocabulary Development" title="Vocabulary Development">
+        <outline text="Word Roots and Prefixes" title="Word Roots and Prefixes" description="Understanding etymology to expand vocabulary"/>
+        <outline text="Synonyms and Antonyms" title="Synonyms and Antonyms" description="Words with similar and opposite meanings"/>
+        <outline text="Context Clues" title="Context Clues" description="Using surrounding text to determine word meaning"/>
+        <outline text="Academic Vocabulary" title="Academic Vocabulary" description="Essential words for academic success"/>
+      </outline>
+
+      <outline text="Reading Comprehension" title="Reading Comprehension">
+        <outline text="Main Idea and Supporting Details" title="Main Idea and Supporting Details" description="Identifying central themes and evidence"/>
+        <outline text="Inference and Prediction" title="Inference and Prediction" description="Drawing conclusions and making educated guesses"/>
+        <outline text="Text Structure Analysis" title="Text Structure Analysis" description="Chronological, cause-effect, and compare-contrast structures"/>
+        <outline text="Critical Reading" title="Critical Reading" description="Evaluating arguments and identifying bias"/>
+      </outline>
+
+      <outline text="Writing Skills" title="Writing Skills">
+        <outline text="Essay Structure" title="Essay Structure" description="Introduction, body paragraphs, and conclusion"/>
+        <outline text="Thesis Statements" title="Thesis Statements" description="Clear and focused main arguments"/>
+        <outline text="Evidence and Support" title="Evidence and Support" description="Using facts, examples, and expert opinions"/>
+        <outline text="Revision and Editing" title="Revision and Editing" description="Improving clarity, coherence, and correctness"/>
+      </outline>
+    </outline>
+
+    <!-- Spanish Language Subject -->
+    <outline text="Spanish Language" title="Spanish Language">
+      <outline text="Basic Spanish" title="Basic Spanish">
+        <outline text="Alphabet and Pronunciation" title="Alphabet and Pronunciation" description="Spanish sounds and accent marks"/>
+        <outline text="Basic Greetings and Introductions" title="Basic Greetings and Introductions" description="Essential conversational phrases"/>
+        <outline text="Numbers and Time" title="Numbers and Time" description="Counting and telling time in Spanish"/>
+        <outline text="Family and Relationships" title="Family and Relationships" description="Vocabulary for family members"/>
+      </outline>
+
+      <outline text="Spanish Grammar" title="Spanish Grammar">
+        <outline text="Gender and Number" title="Gender and Number" description="Masculine/feminine and singular/plural forms"/>
+        <outline text="Verb Conjugations" title="Verb Conjugations" description="Present, preterite, and imperfect tenses"/>
+        <outline text="Ser vs Estar" title="Ser vs Estar" description="When to use each form of 'to be'"/>
+        <outline text="Subjunctive Mood" title="Subjunctive Mood" description="Expressing wishes, emotions, and uncertainty"/>
+      </outline>
+
+      <outline text="Intermediate Spanish" title="Intermediate Spanish">
+        <outline text="Past Tenses" title="Past Tenses" description="Preterite vs imperfect usage"/>
+        <outline text="Commands and Instructions" title="Commands and Instructions" description="Formal and informal commands"/>
+        <outline text="Conditional and Future" title="Conditional and Future" description="Expressing hypothetical and future situations"/>
+        <outline text="Reflexive Verbs" title="Reflexive Verbs" description="Actions performed on oneself"/>
+      </outline>
+    </outline>
+
+    <!-- French Language Subject -->
+    <outline text="French Language" title="French Language">
+      <outline text="Foundational French" title="Foundational French">
+        <outline text="French Pronunciation" title="French Pronunciation" description="Nasal sounds and liaisons"/>
+        <outline text="Basic Vocabulary" title="Basic Vocabulary" description="Common words for daily life"/>
+        <outline text="Polite Expressions" title="Polite Expressions" description="Bonjour, merci, s'il vous plaît, and more"/>
+        <outline text="Classroom French" title="Classroom French" description="Language for educational settings"/>
+      </outline>
+
+      <outline text="French Grammar" title="French Grammar">
+        <outline text="Articles and Gender" title="Articles and Gender" description="Definite, indefinite, and partitive articles"/>
+        <outline text="Verb Conjugation" title="Verb Conjugation" description="Regular and irregular verb patterns"/>
+        <outline text="Adjective Agreement" title="Adjective Agreement" description="Making adjectives match nouns in gender and number"/>
+        <outline text="Question Formation" title="Question Formation" description="Different ways to ask questions"/>
+      </outline>
+
+      <outline text="French Culture" title="French Culture">
+        <outline text="French Cuisine" title="French Cuisine" description="Food vocabulary and dining etiquette"/>
+        <outline text="French Geography" title="French Geography" description="Regions, cities, and landmarks"/>
+        <outline text="French Art and Literature" title="French Art and Literature" description="Major cultural contributions"/>
+        <outline text="French Customs" title="French Customs" description="Social norms and traditions"/>
+      </outline>
+    </outline>
+
+    <!-- Mandarin Chinese Subject -->
+    <outline text="Mandarin Chinese" title="Mandarin Chinese">
+      <outline text="Chinese Fundamentals" title="Chinese Fundamentals">
+        <outline text="Pinyin and Tones" title="Pinyin and Tones" description="Romanization system and four main tones"/>
+        <outline text="Basic Strokes" title="Basic Strokes" description="Fundamental strokes for character writing"/>
+        <outline text="Simple Characters" title="Simple Characters" description="Essential everyday characters"/>
+        <outline text="Numbers and Dates" title="Numbers and Dates" description="Counting and calendar vocabulary"/>
+      </outline>
+
+      <outline text="Chinese Characters" title="Chinese Characters">
+        <outline text="Character Structure" title="Character Structure" description="Radicals and character components"/>
+        <outline text="Character Writing" title="Character Writing" description="Proper stroke order and technique"/>
+        <outline text="Character Meaning" title="Character Meaning" description="Understanding pictographs and ideographs"/>
+        <outline text="Simplified vs Traditional" title="Simplified vs Traditional" description="Differences between character systems"/>
+      </outline>
+
+      <outline text="Chinese Grammar" title="Chinese Grammar">
+        <outline text="Word Order" title="Word Order" description="SVO structure and time-place-manner order"/>
+        <outline text="Measure Words" title="Measure Words" description="Essential classifiers for counting"/>
+        <outline text="Aspect Particles" title="Aspect Particles" description="了, 着, 过 for indicating action states"/>
+        <outline text="Question Particles" title="Question Particles" description="吗, 呢, 吧 for forming questions"/>
+      </outline>
+
+      <outline text="Chinese Culture" title="Chinese Culture">
+        <outline text="Chinese Festivals" title="Chinese Festivals" description="Spring Festival, Mid-Autumn Festival, and more"/>
+        <outline text="Chinese Cuisine" title="Chinese Cuisine" description="Regional dishes and dining etiquette"/>
+        <outline text="Chinese Philosophy" title="Chinese Philosophy" description="Confucianism, Taoism, and Buddhism"/>
+        <outline text="Modern Chinese Society" title="Modern Chinese Society" description="Contemporary life and customs"/>
+      </outline>
+    </outline>
+
+    <!-- Linguistics Subject -->
+    <outline text="Linguistics" title="Linguistics">
+      <outline text="Phonetics and Phonology" title="Phonetics and Phonology">
+        <outline text="Speech Sounds" title="Speech Sounds" description="Vowels, consonants, and articulation"/>
+        <outline text="Phonetic Alphabet" title="Phonetic Alphabet" description="IPA symbols for transcription"/>
+        <outline text="Phonemes" title="Phonemes" description="Sound units that distinguish meaning"/>
+        <outline text="Syllable Structure" title="Syllable Structure" description="How sounds combine into syllables"/>
+      </outline>
+
+      <outline text="Morphology" title="Morphology">
+        <outline text="Morphemes" title="Morphemes" description="Smallest meaningful units of language"/>
+        <outline text="Word Formation" title="Word Formation" description="Derivation, compounding, and inflection"/>
+        <outline text="Morphological Typology" title="Morphological Typology" description="Analytic, synthetic, and polysynthetic languages"/>
+        <outline text="Morphological Processes" title="Morphological Processes" description="Affixation, reduplication, and suppletion"/>
+      </outline>
+
+      <outline text="Syntax" title="Syntax">
+        <outline text="Phrase Structure" title="Phrase Structure" description="Noun phrases, verb phrases, and prepositional phrases"/>
+        <outline text="Sentence Types" title="Sentence Types" description="Declarative, interrogative, imperative, and exclamatory"/>
+        <outline text="Grammatical Relations" title="Grammatical Relations" description="Subject, object, and indirect object"/>
+        <outline text="Universal Grammar" title="Universal Grammar" description="Innate linguistic principles"/>
+      </outline>
+    </outline>
+  </body>
+</opml>
