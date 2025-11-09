@@ -52,14 +52,14 @@ defmodule KgEdu.Courses.Book do
     end
 
     create :create do
-      accept [:title, :publish, :cover_image, :attachment, :course_id]
-      
+      accept [:title, :publish, :cover_image, :attachment, :author, :publisher, :course_id]
+
       argument :course_id, :uuid, allow_nil?: false
       change set_attribute(:course_id, arg(:course_id))
     end
 
     update :update do
-      accept [:title, :publish, :cover_image, :attachment, :course_id]
+      accept [:title, :publish, :cover_image, :attachment, :author, :publisher, :course_id]
     end
   end
 
@@ -94,6 +94,18 @@ defmodule KgEdu.Courses.Book do
       allow_nil? true
       public? true
       description "Path to the book attachment file"
+    end
+
+    attribute :author, :string do
+      allow_nil? true
+      public? true
+      description "Author of the book"
+    end
+
+    attribute :publisher, :string do
+      allow_nil? true
+      public? true
+      description "Publisher of the book"
     end
 
     attribute :course_id, :uuid do
