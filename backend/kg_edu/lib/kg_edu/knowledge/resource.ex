@@ -7,7 +7,9 @@ defmodule KgEdu.Knowledge.Resource do
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
   require Ash.Query
+  require Logger
   import Ecto.Query
+  import Logger, only: [error: 1, info: 1]
 
   postgres do
     table "knowledge_resources"
@@ -64,6 +66,7 @@ defmodule KgEdu.Knowledge.Resource do
     define :import_knowledge_from_excel, action: :import_from_excel
     define :import_knowledge_from_llm, action: :import_from_llm
     define :import_knowledge_from_opml, action: :import_from_opml
+    define :import_knowledge_from_xmind, action: :import_from_xmind
     define :upsert_subject, action: :upsert_subject
     define :upsert_unit, action: :upsert_unit
     define :get_by_name_and_course, action: :by_name_and_course
@@ -791,6 +794,41 @@ end
       end
     end
 
+    action :import_from_xmind do
+      description "Import knowledge resources from XMind file"
+
+      argument :xmind_data, :string, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        # Determine tenant context - use provided tenant or detect it as fallback
+        tenant = context.tenant || detect_tenant_for_course(input.arguments.course_id)
+
+        if is_nil(tenant) do
+          {:error, "Course not found and tenant could not be determined"}
+        else
+          # First validate that the course exists in the determined tenant using raw SQL
+          case validate_course_exists(input.arguments.course_id, tenant) do
+            {:ok, true} ->
+              # Course exists, proceed with XMind import
+              case KgEdu.XmindParser.parse_from_base64(input.arguments.xmind_data) do
+                {:ok, xmind_data} ->
+                  case process_xmind_import(xmind_data, input.arguments.course_id, tenant) do
+                    {:ok, _} -> :ok
+                    {:error, reason} -> {:error, "Failed to process XMind data: #{reason}"}
+                  end
+
+                {:error, reason} ->
+                  {:error, "Failed to parse XMind file: #{reason}"}
+              end
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
+      end
+    end
+
     action :bulk_update_importance_level do
       description "Bulk update importance levels for multiple knowledge resources in a course"
 
@@ -1030,6 +1068,102 @@ end
     end
   end
 
+  def process_xmind_import(xmind_data, course_id, tenant) do
+    # Convert XMind data to knowledge resources format
+    case KgEdu.XmindParser.convert_to_knowledge_resources(xmind_data, course_id) do
+      {:ok, knowledge_resources} ->
+        # Process each knowledge resource
+        result =
+          Enum.reduce_while(knowledge_resources, {:ok, %{created: 0, skipped: 0, subjects: %{}, units: %{}, tenant: tenant}}, fn resource_attrs,
+                                                                                           {:ok, acc} ->
+            case process_xmind_resource(resource_attrs, course_id, acc) do
+              {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+          end)
+
+        case result do
+          {:ok, %{created: created, skipped: skipped}} ->
+            {:ok, "Successfully imported #{created} knowledge resources from XMind (skipped #{skipped} existing)"}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, "Failed to convert XMind data: #{reason}"}
+    end
+  end
+
+  defp process_xmind_resource(resource_attrs, course_id, acc) do
+    # Extract data from XMind resource
+    subject_name = resource_attrs.subject || "General"
+    unit_name = resource_attrs.unit
+    knowledge_name = resource_attrs.name
+
+    # Skip if knowledge name is missing
+    if is_nil(knowledge_name) or knowledge_name == "" do
+      {:ok, acc}
+    else
+      # Process or create subject if needed
+      case create_or_get_subject(subject_name, course_id, acc) do
+        {:ok, subject_id, new_acc} ->
+          case create_or_get_unit(unit_name, course_id, subject_id, new_acc) do
+            {:ok, unit_id, new_acc} ->
+              # Check if resource already exists
+              case get_by_name_and_course(%{
+                     name: knowledge_name,
+                     knowledge_type: resource_attrs.knowledge_type,
+                     course_id: course_id
+                   }, tenant: acc.tenant, authorize?: false) do
+                {:ok, _existing} ->
+                  # Resource already exists, skip it
+                  final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+                  {:ok, final_acc}
+
+                {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+                  # Resource doesn't exist, create it with proper parent relationships
+                  resource_with_parents = %{
+                    resource_attrs |
+                    parent_subject_id: subject_id,
+                    parent_unit_id: unit_id
+                  }
+
+                  case create_resource_record(resource_with_parents, acc.tenant, authorize?: false) do
+                    {:ok, _resource} ->
+                      final_acc = %{new_acc | created: new_acc.created + 1}
+                      {:ok, final_acc}
+
+                    {:error, reason} ->
+                      # Error creating resource, but continue processing others
+                      Logger.error("Failed to create knowledge resource '#{knowledge_name}': #{inspect(reason)}")
+                      final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+                      {:ok, final_acc}
+                  end
+
+                {:error, reason} ->
+                  # Error checking existing resource, skip it
+                  Logger.error("Error checking existing knowledge resource: #{inspect(reason)}")
+                  final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+                  {:ok, final_acc}
+              end
+
+            {:error, reason} ->
+              # Error creating unit, skip this resource
+              Logger.error("Failed to create unit: #{inspect(reason)}")
+              final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+              {:ok, final_acc}
+          end
+
+        {:error, reason} ->
+          # Error creating subject, skip this resource
+          Logger.error("Failed to create subject: #{inspect(reason)}")
+          final_acc = %{acc | skipped: acc.skipped + 1}
+          {:ok, final_acc}
+      end
+    end
+  end
+
   defp process_opml_item(item, course_id, acc) do
     # Extract data from OPML item
     subject_name = Map.get(item, :subject, "General")
@@ -1196,7 +1330,7 @@ end
            name: subject_name,
            knowledge_type: :subject,
            course_id: course_id
-         }, tenant: acc.tenant) do
+         }, tenant: acc.tenant, authorize?: false) do
       {:ok, subject} ->
         {:ok, subject.id, acc}
 
@@ -1210,7 +1344,7 @@ end
           importance_level: :normal
         }
 
-        case create_resource_record(subject_attrs, acc.tenant) do
+        case create_resource_record(subject_attrs, acc.tenant, authorize?: false) do
           {:ok, subject} ->
             new_acc = %{acc | subjects: Map.put(acc.subjects, subject_name, subject.id)}
             {:ok, subject.id, new_acc}
@@ -1231,7 +1365,7 @@ end
     else
       IO.inspect("Looking for unit '#{unit_name}' under subject ID #{subject_id}")
 
-      case list_units_by_subject(%{subject_id: subject_id}, tenant: acc.tenant) do
+      case list_units_by_subject(%{subject_id: subject_id}, tenant: acc.tenant, authorize?: false) do
         {:ok, units} ->
           case Enum.find(units, fn unit -> unit.unit == unit_name end) do
             nil ->
@@ -1245,7 +1379,7 @@ end
                 importance_level: :normal
               }
 
-              case create_resource_record(unit_attrs, acc.tenant) do
+              case create_resource_record(unit_attrs, acc.tenant, authorize?: false) do
                 {:ok, unit} ->
                   new_acc = %{acc | units: Map.put(acc.units, {unit_name, subject_id}, unit.id)}
                   {:ok, unit.id, new_acc}
@@ -1270,8 +1404,78 @@ end
   defp parse_importance_level("normal"), do: :normal
   defp parse_importance_level(_), do: :normal
 
-  defp create_resource_record(attrs, tenant) do
+  defp create_resource_record(attrs, tenant, opts \\ []) do
     # Use the code interface to create the resource with tenant context
-    create_knowledge_resource(attrs, tenant: tenant)
+    options = [tenant: tenant] ++ Keyword.take(opts, [:authorize?])
+    create_knowledge_resource(attrs, options)
+  end
+
+  # ============ Helper Functions ============
+
+  defp detect_tenant_for_course(course_id) do
+    # Get all tenant schemas that start with 'org_'
+    case KgEdu.Repo.query(
+           "SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'org_%' ORDER BY schema_name"
+         ) do
+      {:ok, %{rows: schemas}} when is_list(schemas) ->
+        # Convert UUID string to binary format for PostgreSQL using safe casting
+        case Ecto.UUID.dump(course_id) do
+          {:ok, uuid_binary} ->
+            # Try each tenant schema to find which one contains the course
+            Enum.reduce_while(schemas, nil, fn [schema], _acc ->
+          tenant = String.to_atom(schema)
+          # Use raw SQL query to check if course exists in this tenant schema
+          course_query = """
+          SELECT id FROM "#{schema}".courses WHERE id = $1
+          """
+
+          case KgEdu.Repo.query(course_query, [uuid_binary]) do
+            {:ok, %{rows: []}} ->
+              # No course found in this tenant, continue searching
+              {:cont, nil}
+            {:ok, %{rows: [[_course_id]]}} ->
+              # Course found in this tenant
+              {:halt, tenant}
+            {:error, _reason} ->
+              # Error querying this tenant, continue searching
+              {:cont, nil}
+          end
+            end)
+
+          :error ->
+            # Invalid UUID format
+            nil
+        end
+
+      {:error, _reason} ->
+        nil
+
+      _ ->
+        nil
+    end
+  end
+
+  defp validate_course_exists(course_id, tenant) do
+    # Use raw SQL to validate course exists, bypassing Ash authorization
+    case tenant do
+      nil -> {:error, "No tenant context available"}
+      tenant ->
+        # Convert UUID string to binary format for PostgreSQL using safe casting
+        case Ecto.UUID.dump(course_id) do
+          {:ok, uuid_binary} ->
+            course_query = """
+            SELECT id FROM "#{tenant}".courses WHERE id = $1 LIMIT 1
+            """
+
+            case KgEdu.Repo.query(course_query, [uuid_binary]) do
+              {:ok, %{rows: []}} -> {:error, "Course not found in tenant"}
+              {:ok, %{rows: [[_course_id]]}} -> {:ok, true}
+              {:error, reason} -> {:error, "Failed to validate course: #{inspect(reason)}"}
+            end
+
+          :error ->
+            {:error, "Invalid UUID format for course_id"}
+        end
+    end
   end
 end

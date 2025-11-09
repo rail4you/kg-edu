@@ -14,6 +14,7 @@ defmodule KgEdu.Courses do
       rpc_action :update_course, :update
       rpc_action :destroy_course, :destroy
       rpc_action :get_course, :get
+      rpc_action :calculate_course_statistics, :calculate_course_statistics
     end
 
     resource KgEdu.Courses.Chapter do

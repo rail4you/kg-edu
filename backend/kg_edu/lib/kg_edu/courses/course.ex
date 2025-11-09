@@ -34,8 +34,14 @@ defmodule KgEdu.Courses.Course do
     define :list_courses_by_teacher, action: :by_teacher
     define :list_courses_by_student, action: :by_student
     define :get_course_by_title, action: :by_title
+    define :calculate_course_statistics, action: :calculate_course_statistics
   end
 
+
+     aggregates do
+    # Count videos through chapters
+    count :videos_count, [:chapters, :videos]
+  end
   actions do
     defaults [:destroy]
     read :read do
@@ -105,6 +111,95 @@ defmodule KgEdu.Courses.Course do
       get? true
       argument :title, :string, allow_nil?: false
       filter expr(title == ^arg(:title))
+    end
+
+    action :calculate_course_statistics do
+      description "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "The course ID to calculate statistics for"
+      end
+
+      run fn input, context ->
+        course_id = input.arguments.course_id
+
+        try do
+          # Get knowledge resource statistics
+          {:ok, all_resources} = KgEdu.Knowledge.Resource.list_knowledges(
+            authorize?: false,
+            tenant: context.tenant,
+            query: [filter: [course_id: course_id]]
+          )
+
+          # Count by knowledge type
+          subject_count = Enum.count(all_resources, &(&1.knowledge_type == :subject))
+          unit_count = Enum.count(all_resources, &(&1.knowledge_type == :knowledge_unit))
+          cell_count = Enum.count(all_resources, &(&1.knowledge_type == :knowledge_cell))
+          total_knowledge = length(all_resources)
+
+          # Get files count
+          {:ok, files} = KgEdu.Courses.File.list_files(
+            authorize?: false,
+            tenant: context.tenant,
+            query: [filter: [course_id: course_id]]
+          )
+          file_count = length(files)
+
+          # Get videos count through chapters
+          {:ok, chapters} = KgEdu.Courses.Chapter.list_chapters(
+            authorize?: false,
+            tenant: context.tenant,
+            query: [filter: [course_id: course_id]]
+          )
+
+          chapter_ids = Enum.map(chapters, & &1.id)
+
+          video_count = if length(chapter_ids) > 0 do
+            {:ok, videos} = KgEdu.Courses.Video.list_videos(
+              authorize?: false,
+              tenant: context.tenant,
+              query: [filter: [chapter_id: [in: chapter_ids]]]
+            )
+            length(videos)
+          else
+            0
+          end
+
+          # Also check videos directly linked to knowledge resources in this course
+          {:ok, knowledge_videos} = KgEdu.Courses.Video.list_videos(
+            authorize?: false,
+            tenant: context.tenant,
+            query: [load: [:knowledge_resource]]
+          )
+
+          # Count videos where the associated knowledge resource belongs to this course
+          course_video_count = Enum.count(knowledge_videos, fn video ->
+            video.knowledge_resource && video.knowledge_resource.course_id == course_id
+          end)
+
+          total_videos = video_count + course_video_count
+
+          {:ok, %{
+            course_id: course_id,
+            knowledge_hierarchy: %{
+              total_knowledge_resources: total_knowledge,
+              subjects: subject_count,
+              units: unit_count,
+              cells: cell_count
+            },
+            media_counts: %{
+              total_files: file_count,
+              total_videos: total_videos
+            },
+            calculated_at: DateTime.utc_now()
+          }}
+
+        rescue
+          error ->
+            {:error, "Failed to calculate course statistics: #{inspect(error)}"}
+        end
+      end
     end
   end
 
@@ -238,5 +333,8 @@ defmodule KgEdu.Courses.Course do
       destination_attribute :course_id
       description "Course-related links"
     end
+
+
+
   end
 end

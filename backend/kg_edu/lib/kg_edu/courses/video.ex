@@ -268,7 +268,7 @@ defmodule KgEdu.Courses.Video do
 
     action :log_video_view do
       description "Log video view activity"
-      
+
       argument :user_id, :uuid do
         allow_nil? false
         description "User ID who viewed the video"
@@ -284,7 +284,7 @@ defmodule KgEdu.Courses.Video do
         video_id = input.arguments[:video_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
         user_id = input.arguments[:user_id]
         metadata = input.arguments[:metadata] || %{}
-        
+
         if video_id && user_id do
           KgEdu.Activity.ActivityLog.log_video_view(%{
             user_id: user_id,
@@ -292,7 +292,7 @@ defmodule KgEdu.Courses.Video do
             metadata: metadata
           })
         end
-        
+
         :ok
       end
     end
@@ -360,6 +360,7 @@ defmodule KgEdu.Courses.Video do
       allow_nil? true
       description "The chapter this video belongs to"
     end
+
 
     belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
       public? true

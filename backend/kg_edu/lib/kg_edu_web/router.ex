@@ -22,7 +22,7 @@ defmodule KgEduWeb.Router do
     plug :set_actor, :user
   end
 
-  
+
   scope "/api", KgEduWeb do
     pipe_through :api
     post "/chat/stream", ChatController, :stream_message
@@ -32,8 +32,6 @@ defmodule KgEduWeb.Router do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes do
-      live "/chat", ChatLive
-      live "/chat/:conversation_id", ChatLive
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
@@ -89,7 +87,7 @@ defmodule KgEduWeb.Router do
     end
   end
 
-  
+
   scope "/rpc" do
     pipe_through :api
     post "/run", KgEduWeb.AshTypescriptRpcController, :run
@@ -118,6 +116,7 @@ defmodule KgEduWeb.Router do
     get "/download/template", DownloadController, :template
     post "/files/upload", FileUploadController, :upload
     get "/files/template", FileUploadController, :download_template
+    post "/files/import-xmind", FileUploadController, :import_xmind
     post "/videos/upload", UploadVideoController, :direct_upload
     post "/videos/upload-waffle", UploadVideoController, :upload
     post "/videos/:video_id/link-chapter", UploadVideoController, :link_to_chapter
