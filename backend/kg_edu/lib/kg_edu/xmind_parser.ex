@@ -30,43 +30,27 @@ defmodule KgEdu.XmindParser do
   Parse an XMind file from binary data.
   """
   def parse_from_binary(binary_data) do
-    # Create a temporary file to work with the ZIP
-    temp_file = System.tmp_dir!() |> Path.join("temp_xmind_#{System.unique_integer()}.xmind")
-    temp_dir = System.tmp_dir!() |> Path.join("temp_xmind_extract_#{System.unique_integer()}")
-
     try do
-      # Write binary data to temp file
-      case File.write(temp_file, binary_data) do
-        :ok ->
-          # Create extraction directory
-          File.mkdir_p!(temp_dir)
+      # Use Erlang's :zip module to extract directly from binary data
+      case :zip.extract(binary_data, [:memory]) do
+        {:ok, files} ->
+          # Find content.xml in the extracted files
+          case Enum.find(files, fn {filename, _content} -> filename == ~c"content.xml" end) do
+            {~c"content.xml", content_binary} ->
+              content_xml = :erlang.binary_to_list(content_binary)
+              parse_content_xml(content_xml)
 
-          # Use system unzip command for more reliable extraction
-          case System.cmd("unzip", ["-q", temp_file, "-d", temp_dir]) do
-            {_, 0} ->
-              # Read the extracted content.xml
-              content_file = Path.join(temp_dir, "content.xml")
-              case File.read(content_file) do
-                {:ok, content} ->
-                  parse_content_xml(content)
-
-                {:error, reason} ->
-                  {:error, "Failed to read extracted content.xml: #{reason}"}
-              end
-
-            {error_output, exit_code} ->
-              {:error, "Failed to extract XMind file (exit code #{exit_code}): #{error_output}"}
+            nil ->
+              {:error, "content.xml not found in XMind file"}
           end
 
         {:error, reason} ->
-          {:error, "Failed to write temporary XMind file: #{reason}"}
+          {:error, "Failed to extract XMIND file: #{inspect(reason)}"}
       end
-    after
-      # Clean up temporary files
-      File.rm(temp_file)
-      if File.exists?(temp_dir) do
-        File.rm_rf!(temp_dir)
-      end
+    rescue
+      error ->
+        Logger.error("Failed to parse XMind binary data: #{inspect(error)}")
+        {:error, "Failed to parse XMind binary data: #{inspect(error)}"}
     end
   end
 
