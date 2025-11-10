@@ -5,6 +5,7 @@ FROM hexpm/elixir:1.17.3-erlang-27.1.2-ubuntu-jammy-20240808 AS builder
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Set build ENV
