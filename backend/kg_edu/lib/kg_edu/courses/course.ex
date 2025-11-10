@@ -38,9 +38,12 @@ defmodule KgEdu.Courses.Course do
   end
 
 
-     aggregates do
+  aggregates do
     # Count videos through chapters
     count :videos_count, [:chapters, :videos]
+    count :knowledge_resources_count, :knowledge_resources do
+      public? true
+    end
   end
   actions do
     defaults [:destroy]

@@ -242,22 +242,28 @@ defmodule KgEdu.Knowledge.Resource do
           {:ok, resources} ->
             target_resources =
               resources
-              |> Enum.filter(&(&1.course_id == input.arguments.course_id and
-                               input.arguments.knowledge_resource_ids |> Enum.member?(&1.id)))
+              |> Enum.filter(
+                &(&1.course_id == input.arguments.course_id and
+                    input.arguments.knowledge_resource_ids |> Enum.member?(&1.id))
+              )
 
             # Destroy the filtered resources one by one
             case Enum.map(target_resources, fn resource ->
-              KgEdu.Knowledge.Resource.delete_knowledge_resource(resource, tenant: context.tenant, authorize?: false)
-            end) do
+                   KgEdu.Knowledge.Resource.delete_knowledge_resource(resource,
+                     tenant: context.tenant,
+                     authorize?: false
+                   )
+                 end) do
               results ->
                 case Enum.find(results, fn
-                  {:error, _} -> true
-                  _ -> false
-                end) do
+                       {:error, _} -> true
+                       _ -> false
+                     end) do
                   nil -> :ok
                   {:error, reason} -> {:error, reason}
                 end
             end
+
           {:error, reason} ->
             {:error, reason}
         end
@@ -300,41 +306,46 @@ defmodule KgEdu.Knowledge.Resource do
       :ok
     end
 
-   action :delete_all_knowledges_by_course do
-  description "Delete all knowledge resources for a course using raw SQL"
-  argument :course_id, :uuid do
-    allow_nil? false
-    description "The course ID to delete all knowledge resources for"
-  end
+    action :delete_all_knowledges_by_course do
+      description "Delete all knowledge resources for a course using raw SQL"
 
-  run fn input, context ->
-    course_id = input.arguments.course_id
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "The course ID to delete all knowledge resources for"
+      end
 
-    # Read all knowledge resources in tenant and filter manually
-    case __MODULE__ |> Ash.read(tenant: context.tenant) do
-      {:ok, resources} ->
-        target_resources =
-          resources
-          |> Enum.filter(&(&1.course_id == course_id))
+      run fn input, context ->
+        course_id = input.arguments.course_id
 
-        # Destroy the filtered resources one by one
-        case Enum.map(target_resources, fn resource ->
-          KgEdu.Knowledge.Resource.delete_knowledge_resource(resource, tenant: context.tenant, authorize?: false)
-        end) do
-          results ->
-            case Enum.find(results, fn
-              {:error, _} -> true
-              _ -> false
-            end) do
-              nil -> :ok
-              {:error, reason} -> {:error, reason}
+        # Read all knowledge resources in tenant and filter manually
+        case __MODULE__ |> Ash.read(tenant: context.tenant) do
+          {:ok, resources} ->
+            target_resources =
+              resources
+              |> Enum.filter(&(&1.course_id == course_id))
+
+            # Destroy the filtered resources one by one
+            case Enum.map(target_resources, fn resource ->
+                   KgEdu.Knowledge.Resource.delete_knowledge_resource(resource,
+                     tenant: context.tenant,
+                     authorize?: false
+                   )
+                 end) do
+              results ->
+                case Enum.find(results, fn
+                       {:error, _} -> true
+                       _ -> false
+                     end) do
+                  nil -> :ok
+                  {:error, reason} -> {:error, reason}
+                end
             end
+
+          {:error, reason} ->
+            {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
         end
-      {:error, reason} ->
-        {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
+      end
     end
-  end
-end
 
     # ============ Basic Queries ============
     read :by_id do
@@ -387,7 +398,9 @@ end
           if name_arg, do: Ash.Query.filter(q, contains(name, ^name_arg)), else: q
         end)
         |> then(fn q ->
-          if importance_level_arg, do: Ash.Query.filter(q, importance_level == ^importance_level_arg), else: q
+          if importance_level_arg,
+            do: Ash.Query.filter(q, importance_level == ^importance_level_arg),
+            else: q
         end)
         |> then(fn q ->
           if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
@@ -743,7 +756,11 @@ end
       run fn input, context ->
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
           {:ok, %{sheet: knowledge_data}} ->
-            case process_knowledge_import(knowledge_data, input.arguments.course_id, context.tenant) do
+            case process_knowledge_import(
+                   knowledge_data,
+                   input.arguments.course_id,
+                   context.tenant
+                 ) do
               {:ok, _} -> :ok
               {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
             end
@@ -801,29 +818,24 @@ end
       argument :course_id, :uuid, allow_nil?: false
 
       run fn input, context ->
+        Logger.info("context: #{inspect(context)}")
         # Determine tenant context - use provided tenant or detect it as fallback
-        tenant = context.tenant || detect_tenant_for_course(input.arguments.course_id)
+        tenant = context.tenant
 
         if is_nil(tenant) do
           {:error, "Course not found and tenant could not be determined"}
         else
           # First validate that the course exists in the determined tenant using raw SQL
-          case validate_course_exists(input.arguments.course_id, tenant) do
-            {:ok, true} ->
-              # Course exists, proceed with XMind import
-              case KgEdu.XmindParser.parse_from_base64(input.arguments.xmind_data) do
-                {:ok, xmind_data} ->
-                  case process_xmind_import(xmind_data, input.arguments.course_id, tenant) do
-                    {:ok, _} -> :ok
-                    {:error, reason} -> {:error, "Failed to process XMind data: #{reason}"}
-                  end
-
-                {:error, reason} ->
-                  {:error, "Failed to parse XMind file: #{reason}"}
+          # Course exists, proceed with XMind import
+          case KgEdu.XmindParser.parse_from_base64(input.arguments.xmind_data) do
+            {:ok, xmind_data} ->
+              case process_xmind_import(xmind_data, input.arguments.course_id, tenant) do
+                {:ok, _} -> :ok
+                {:error, reason} -> {:error, "Failed to process XMind data: #{reason}"}
               end
 
             {:error, reason} ->
-              {:error, reason}
+              {:error, "Failed to parse XMind file: #{reason}"}
           end
         end
       end
@@ -854,20 +866,27 @@ end
           {:ok, resources} ->
             target_resources =
               resources
-              |> Enum.filter(&(&1.course_id == input.arguments.course_id and
-                               input.arguments.knowledge_resource_ids |> Enum.member?(&1.id)))
+              |> Enum.filter(
+                &(&1.course_id == input.arguments.course_id and
+                    input.arguments.knowledge_resource_ids |> Enum.member?(&1.id))
+              )
 
             # Update the filtered resources one by one
             case Enum.map(target_resources, fn resource ->
-              KgEdu.Knowledge.Resource.update_knowledge_resource(resource, %{
-                importance_level: input.arguments.importance_level
-              }, tenant: context.tenant)
-            end) do
+                   KgEdu.Knowledge.Resource.update_knowledge_resource(
+                     resource,
+                     %{
+                       importance_level: input.arguments.importance_level
+                     },
+                     tenant: context.tenant
+                   )
+                 end) do
               results ->
-                errors = Enum.filter(results, fn
-                  {:error, _} -> true
-                  _ -> false
-                end)
+                errors =
+                  Enum.filter(results, fn
+                    {:error, _} -> true
+                    _ -> false
+                  end)
 
                 if length(errors) == 0 do
                   :ok
@@ -875,6 +894,7 @@ end
                   {:error, "Failed to update #{length(errors)} resources: #{inspect(errors)}"}
                 end
             end
+
           {:error, reason} ->
             {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
         end
@@ -886,6 +906,10 @@ end
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -1051,13 +1075,16 @@ end
 
     # Process each item from OPML data
     result =
-      Enum.reduce_while(knowledge_data, {:ok, %{subjects: subjects, units: units, tenant: tenant}}, fn item,
-                                                                                       {:ok, acc} ->
-        case process_opml_item(item, course_id, acc) do
-          {:ok, new_acc} -> {:cont, {:ok, new_acc}}
-          {:error, reason} -> {:halt, {:error, reason}}
+      Enum.reduce_while(
+        knowledge_data,
+        {:ok, %{subjects: subjects, units: units, tenant: tenant}},
+        fn item, {:ok, acc} ->
+          case process_opml_item(item, course_id, acc) do
+            {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
         end
-      end)
+      )
 
     case result do
       {:ok, _} ->
@@ -1074,17 +1101,21 @@ end
       {:ok, knowledge_resources} ->
         # Process each knowledge resource
         result =
-          Enum.reduce_while(knowledge_resources, {:ok, %{created: 0, skipped: 0, subjects: %{}, units: %{}, tenant: tenant}}, fn resource_attrs,
-                                                                                           {:ok, acc} ->
-            case process_xmind_resource(resource_attrs, course_id, acc) do
-              {:ok, new_acc} -> {:cont, {:ok, new_acc}}
-              {:error, reason} -> {:halt, {:error, reason}}
+          Enum.reduce_while(
+            knowledge_resources,
+            {:ok, %{created: 0, skipped: 0, subjects: %{}, units: %{}, tenant: tenant}},
+            fn resource_attrs, {:ok, acc} ->
+              case process_xmind_resource(resource_attrs, course_id, acc) do
+                {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+                {:error, reason} -> {:halt, {:error, reason}}
+              end
             end
-          end)
+          )
 
         case result do
           {:ok, %{created: created, skipped: skipped}} ->
-            {:ok, "Successfully imported #{created} knowledge resources from XMind (skipped #{skipped} existing)"}
+            {:ok,
+             "Successfully imported #{created} knowledge resources from XMind (skipped #{skipped} existing)"}
 
           {:error, reason} ->
             {:error, reason}
@@ -1111,11 +1142,15 @@ end
           case create_or_get_unit(unit_name, course_id, subject_id, new_acc) do
             {:ok, unit_id, new_acc} ->
               # Check if resource already exists
-              case get_by_name_and_course(%{
-                     name: knowledge_name,
-                     knowledge_type: resource_attrs.knowledge_type,
-                     course_id: course_id
-                   }, tenant: acc.tenant, authorize?: false) do
+              case get_by_name_and_course(
+                     %{
+                       name: knowledge_name,
+                       knowledge_type: resource_attrs.knowledge_type,
+                       course_id: course_id
+                     },
+                     tenant: acc.tenant,
+                     authorize?: false
+                   ) do
                 {:ok, _existing} ->
                   # Resource already exists, skip it
                   final_acc = %{new_acc | skipped: new_acc.skipped + 1}
@@ -1124,19 +1159,24 @@ end
                 {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
                   # Resource doesn't exist, create it with proper parent relationships
                   resource_with_parents = %{
-                    resource_attrs |
-                    parent_subject_id: subject_id,
-                    parent_unit_id: unit_id
+                    resource_attrs
+                    | parent_subject_id: subject_id,
+                      parent_unit_id: unit_id
                   }
 
-                  case create_resource_record(resource_with_parents, acc.tenant, authorize?: false) do
+                  case create_resource_record(resource_with_parents, acc.tenant,
+                         authorize?: false
+                       ) do
                     {:ok, _resource} ->
                       final_acc = %{new_acc | created: new_acc.created + 1}
                       {:ok, final_acc}
 
                     {:error, reason} ->
                       # Error creating resource, but continue processing others
-                      Logger.error("Failed to create knowledge resource '#{knowledge_name}': #{inspect(reason)}")
+                      Logger.error(
+                        "Failed to create knowledge resource '#{knowledge_name}': #{inspect(reason)}"
+                      )
+
                       final_acc = %{new_acc | skipped: new_acc.skipped + 1}
                       {:ok, final_acc}
                   end
@@ -1191,11 +1231,14 @@ end
         }
 
         # Check if knowledge resource already exists
-        case get_by_name_and_course(%{
-               name: knowledge_name,
-               knowledge_type: :knowledge_cell,
-               course_id: course_id
-             }, tenant: acc.tenant) do
+        case get_by_name_and_course(
+               %{
+                 name: knowledge_name,
+                 knowledge_type: :knowledge_cell,
+                 course_id: course_id
+               },
+               tenant: acc.tenant
+             ) do
           {:ok, _existing} ->
             # Resource already exists, skip it
             {:ok, acc}
@@ -1236,13 +1279,16 @@ end
 
     # Process each row of knowledge data
     result =
-      Enum.reduce_while(knowledge_data, {:ok, %{subjects: subjects, units: units, tenant: tenant}}, fn row,
-                                                                                       {:ok, acc} ->
-        case process_knowledge_row(row, course_id, acc) do
-          {:ok, new_acc} -> {:cont, {:ok, new_acc}}
-          {:error, reason} -> {:halt, {:error, reason}}
+      Enum.reduce_while(
+        knowledge_data,
+        {:ok, %{subjects: subjects, units: units, tenant: tenant}},
+        fn row, {:ok, acc} ->
+          case process_knowledge_row(row, course_id, acc) do
+            {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
         end
-      end)
+      )
 
     case result do
       {:ok, _} ->
@@ -1263,7 +1309,7 @@ end
       subject_name,
       unit_name,
       knowledge_name,
-      description,
+      description
       # importance_level
       # _knowledge_type_rest
     ] = row
@@ -1293,11 +1339,14 @@ end
         }
 
         # Check if knowledge resource already exists
-        case get_by_name_and_course(%{
-               name: knowledge_name,
-               knowledge_type: :knowledge_cell,
-               course_id: course_id
-             }, tenant: acc.tenant) do
+        case get_by_name_and_course(
+               %{
+                 name: knowledge_name,
+                 knowledge_type: :knowledge_cell,
+                 course_id: course_id
+               },
+               tenant: acc.tenant
+             ) do
           {:ok, _existing} ->
             # Resource already exists, skip it
             {:ok, acc}
@@ -1326,11 +1375,15 @@ end
   end
 
   defp create_or_get_subject(subject_name, course_id, acc) do
-    case get_by_name_and_course(%{
-           name: subject_name,
-           knowledge_type: :subject,
-           course_id: course_id
-         }, tenant: acc.tenant, authorize?: false) do
+    case get_by_name_and_course(
+           %{
+             name: subject_name,
+             knowledge_type: :subject,
+             course_id: course_id
+           },
+           tenant: acc.tenant,
+           authorize?: false
+         ) do
       {:ok, subject} ->
         {:ok, subject.id, acc}
 
@@ -1423,23 +1476,25 @@ end
           {:ok, uuid_binary} ->
             # Try each tenant schema to find which one contains the course
             Enum.reduce_while(schemas, nil, fn [schema], _acc ->
-          tenant = String.to_atom(schema)
-          # Use raw SQL query to check if course exists in this tenant schema
-          course_query = """
-          SELECT id FROM "#{schema}".courses WHERE id = $1
-          """
+              tenant = String.to_atom(schema)
+              # Use raw SQL query to check if course exists in this tenant schema
+              course_query = """
+              SELECT id FROM "#{schema}".courses WHERE id = $1
+              """
 
-          case KgEdu.Repo.query(course_query, [uuid_binary]) do
-            {:ok, %{rows: []}} ->
-              # No course found in this tenant, continue searching
-              {:cont, nil}
-            {:ok, %{rows: [[_course_id]]}} ->
-              # Course found in this tenant
-              {:halt, tenant}
-            {:error, _reason} ->
-              # Error querying this tenant, continue searching
-              {:cont, nil}
-          end
+              case KgEdu.Repo.query(course_query, [uuid_binary]) do
+                {:ok, %{rows: []}} ->
+                  # No course found in this tenant, continue searching
+                  {:cont, nil}
+
+                {:ok, %{rows: [[_course_id]]}} ->
+                  # Course found in this tenant
+                  {:halt, tenant}
+
+                {:error, _reason} ->
+                  # Error querying this tenant, continue searching
+                  {:cont, nil}
+              end
             end)
 
           :error ->
@@ -1458,7 +1513,9 @@ end
   defp validate_course_exists(course_id, tenant) do
     # Use raw SQL to validate course exists, bypassing Ash authorization
     case tenant do
-      nil -> {:error, "No tenant context available"}
+      nil ->
+        {:error, "No tenant context available"}
+
       tenant ->
         # Convert UUID string to binary format for PostgreSQL using safe casting
         case Ecto.UUID.dump(course_id) do

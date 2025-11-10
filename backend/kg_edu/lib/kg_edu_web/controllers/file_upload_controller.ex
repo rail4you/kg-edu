@@ -66,17 +66,35 @@ defmodule KgEduWeb.FileUploadController do
   end
 
   def import_xmind(conn, %{"file" => file_upload, "course_id" => course_id}) do
-    # Validate file extension
-    if not String.ends_with?(file_upload.filename, ".xmind") do
-      conn
-      |> put_status(:bad_request)
-      |> json(%{
-        success: false,
-        errors: ["Only .xmind files are allowed"]
-      })
-    else
-      # Read file content and convert to base64
-      case File.read(file_upload.path) do
+    # Validate file upload structure
+    cond do
+      file_upload == nil ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          success: false,
+          errors: ["No file provided"]
+        })
+
+      not is_map(file_upload) or Map.get(file_upload, :path) == nil ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          success: false,
+          errors: ["Invalid file format. Expected multipart form data with file upload."]
+        })
+
+      not String.ends_with?(file_upload.filename, ".xmind") ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          success: false,
+          errors: ["Only .xmind files are allowed"]
+        })
+
+      true ->
+        # Read file content and convert to base64
+        case File.read(file_upload.path) do
         {:ok, file_content} ->
           base64_data = Base.encode64(file_content)
 
