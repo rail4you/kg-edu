@@ -10,6 +10,7 @@ defmodule KgEdu.Courses do
   typescript_rpc do
     resource KgEdu.Courses.Course do
       rpc_action :list_courses, :read
+      rpc_action :get_all_courses, :get_all_courses
       rpc_action :create_course, :create
       rpc_action :update_course, :update
       rpc_action :destroy_course, :destroy

@@ -34,6 +34,7 @@ defmodule KgEdu.Courses.Course do
     define :list_courses_by_teacher, action: :by_teacher
     define :list_courses_by_student, action: :by_student
     define :get_course_by_title, action: :by_title
+    define :get_all_courses, action: :get_all_courses
     define :calculate_course_statistics, action: :calculate_course_statistics
   end
 
@@ -114,6 +115,11 @@ defmodule KgEdu.Courses.Course do
       get? true
       argument :title, :string, allow_nil?: false
       filter expr(title == ^arg(:title))
+    end
+
+    read :get_all_courses do
+      description "Get all courses from tenant"
+      # No actor filtering - returns all courses in the tenant
     end
 
     action :calculate_course_statistics, :map do
