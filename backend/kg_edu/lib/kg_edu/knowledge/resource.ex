@@ -41,7 +41,7 @@ defmodule KgEdu.Knowledge.Resource do
     define :create_knowledge_resource, action: :create
     define :update_knowledge_resource, action: :update_knowledge_resource
     define :delete_knowledge_resource, action: :destroy
-    define :bulk_destory_knowledges, action: :bulk_destory_knowledges
+    define :bulk_destroy_knowledges, action: :bulk_destroy_knowledges
     define :delete_all_knowledges_by_course, action: :delete_all_knowledges_by_course
     define :delete_all_knowledge, args: [:course_id], action: :delete_all_knowledge
 
@@ -72,6 +72,7 @@ defmodule KgEdu.Knowledge.Resource do
     define :get_by_name_and_course, action: :by_name_and_course
     define :get_by_any_name_and_course, action: :by_any_name_and_course
     define :bulk_update_importance_level, action: :bulk_update_importance_level
+    define :get_course_learning_stats_by_student, action: :get_course_learning_stats_by_student
   end
 
   actions do
@@ -224,7 +225,7 @@ defmodule KgEdu.Knowledge.Resource do
       end
     end
 
-    action :bulk_destory_knowledges do
+    action :bulk_destroy_knowledges do
       description "Unenroll multiple students from a course"
 
       argument :course_id, :uuid do
@@ -900,6 +901,176 @@ defmodule KgEdu.Knowledge.Resource do
         end
       end
     end
+
+    action :get_course_learning_stats_by_student, :map do
+      description "Get learning statistics for all knowledge resources in a course, grouped by student"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "Course ID to get learning statistics for"
+      end
+
+      run fn input, context ->
+        course_id = input.arguments.course_id
+        tenant = context.tenant
+
+        # Get all knowledge resources for the course with their relationships
+        Logger.info("Getting knowledge resources for course_id: #{course_id}, tenant: #{tenant}")
+        case get_knowledge_resources_by_course(%{course_id: course_id},
+               tenant: tenant,
+               authorize?: false,
+               actor: nil,
+               load: [:videos, :files, :homeworks, :exercises]
+             ) do
+          {:ok, knowledge_resources} ->
+            Logger.info("Found #{length(knowledge_resources)} knowledge resources for course #{course_id}")
+
+            # Collect all material IDs from all knowledge resources in the course
+            all_video_ids =
+              knowledge_resources
+              |> Enum.flat_map(fn resource -> (resource.videos || []) |> Enum.map(& &1.id) end)
+
+            all_file_ids =
+              knowledge_resources
+              |> Enum.flat_map(fn resource -> (resource.files || []) |> Enum.map(& &1.id) end)
+
+            all_homework_ids =
+              knowledge_resources
+              |> Enum.flat_map(fn resource -> (resource.homeworks || []) |> Enum.map(& &1.id) end)
+
+            all_exercise_ids =
+              knowledge_resources
+              |> Enum.flat_map(fn resource -> (resource.exercises || []) |> Enum.map(& &1.id) end)
+
+            Logger.info("Course materials - Videos: #{length(all_video_ids)}, Files: #{length(all_file_ids)}, Homework: #{length(all_homework_ids)}, Exercises: #{length(all_exercise_ids)}")
+
+            # Get all activity logs for this tenant
+            case KgEdu.Activity.ActivityLog.list_activity_logs(
+                   tenant: tenant,
+                   authorize?: false,
+                   actor: nil
+                 ) do
+              {:ok, all_logs} ->
+                Logger.info("Found #{length(all_logs)} total activity logs")
+
+                # Filter logs for materials belonging to this course's knowledge resources
+                course_logs =
+                  all_logs
+                  |> Enum.filter(fn log ->
+                    (log.resource_type in ["KgEdu.Courses.File", "File"] and log.resource_id in all_file_ids) or
+                    (log.resource_type in ["KgEdu.Courses.Video", "Video"] and log.resource_id in all_video_ids) or
+                    (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and log.resource_id in all_homework_ids) or
+                    (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and log.resource_id in all_exercise_ids)
+                  end)
+
+                Logger.info("Found #{length(course_logs)} activity logs for course materials")
+
+                # Group logs by student
+                student_logs_map = Enum.group_by(course_logs, & &1.user_id)
+
+                # Calculate totals for the course
+                total_videos = length(all_video_ids)
+                total_files = length(all_file_ids)
+                total_exercises = length(all_exercise_ids)
+                total_homeworks = length(all_homework_ids)
+
+                # Generate stats for each student
+                Logger.info("student_logs_map: #{inspect(student_logs_map)}")
+                student_stats =
+                  student_logs_map
+                  |> Enum.map(fn {student_id, logs} ->
+                    # Count completed activities by type (unique materials per student)
+                    completed_videos =
+                      logs
+                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and &1.action_type in [:video_view, :view]))
+                      |> Enum.map(& &1.resource_id)
+                      |> Enum.uniq()
+                      |> length()
+
+                    completed_files =
+                      logs
+                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.File", "File"] and &1.action_type in [:file_view, :view, :download]))
+                      |> Enum.map(& &1.resource_id)
+                      |> Enum.uniq()
+                      |> length()
+
+                    completed_exercises =
+                      logs
+                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and &1.action_type in [:exercise_submit, :submit, :complete]))
+                      |> Enum.map(& &1.resource_id)
+                      |> Enum.uniq()
+                      |> length()
+
+                    completed_homework =
+                      logs
+                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and &1.action_type in [:homework_submit, :submit, :complete]))
+                      |> Enum.map(& &1.resource_id)
+                      |> Enum.uniq()
+                      |> length()
+
+                    # Calculate completion ratios
+                    video_completion = if total_videos > 0, do: completed_videos / total_videos, else: 0.0
+                    file_completion = if total_files > 0, do: completed_files / total_files, else: 0.0
+                    exercise_completion = if total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0
+                    homework_completion = if total_homeworks > 0, do: completed_homework / total_homeworks, else: 0.0
+
+                    total_completed = completed_videos + completed_files + completed_exercises + completed_homework
+                    total_resources = total_videos + total_files + total_exercises + total_homeworks
+                    overall_completion = if total_resources > 0, do: total_completed / total_resources, else: 0.0
+
+                    %{
+                      student_id: student_id,
+                      course_id: course_id,
+                      videos: %{
+                        completed: completed_videos,
+                        total: total_videos,
+                        completion_ratio: video_completion
+                      },
+                      files: %{
+                        completed: completed_files,
+                        total: total_files,
+                        completion_ratio: file_completion
+                      },
+                      exercises: %{
+                        completed: completed_exercises,
+                        total: total_exercises,
+                        completion_ratio: exercise_completion
+                      },
+                      homeworks: %{
+                        completed: completed_homework,
+                        total: total_homeworks,
+                        completion_ratio: homework_completion
+                      },
+                      overall: %{
+                        total_completed: total_completed,
+                        total_resources: total_resources,
+                        completion_ratio: overall_completion
+                      }
+                    }
+                  end)
+
+                Logger.info("student_stats result: #{inspect(student_stats)}")
+                Logger.info("About to return {:ok, student_stats}")
+
+                result = {:ok, student_stats}
+                Logger.info("Final result: #{inspect(result)}")
+
+                # Ash Framework generic actions must return {:ok, result}
+                final_result = {:ok, student_stats}
+                Logger.info("Final result (Ash format): #{inspect(final_result)}")
+                final_result
+
+              {:error, reason} ->
+                Logger.error("Failed to get activity logs: #{inspect(reason)}")
+                {:error, "Failed to get activity logs: #{inspect(reason)}"}
+            end
+
+          {:error, reason} ->
+            Logger.error("Failed to get knowledge resources: #{inspect(reason)}")
+            {:error, "Failed to get knowledge resources: #{inspect(reason)}"}
+        end
+      end
+    end
   end
 
   policies do
@@ -1463,6 +1634,60 @@ defmodule KgEdu.Knowledge.Resource do
     create_knowledge_resource(attrs, options)
   end
 
+  calculations do
+    calculate :student_learning_stats, :map do
+      argument :student_id, :uuid do
+        allow_nil? false
+      end
+
+      calculation fn resource, args ->
+        student_id = args[:student_id]
+        tenant = Ash.Changeset.get_tenant(resource)
+
+        case get_resource_learning_stats_via_materials(resource, student_id, tenant) do
+          {:ok, stats} -> stats
+          {:error, _reason} ->
+            # Fallback to basic resource counts if calculation fails
+            total_videos = length(resource.videos || [])
+            total_files = length(resource.files || [])
+            total_exercises = length(resource.exercises || [])
+            total_homeworks = length(resource.homeworks || [])
+
+            %{
+              resource_id: resource.id,
+              resource_name: resource.name,
+              student_id: student_id,
+              videos: %{
+                completed: 0,
+                total: total_videos,
+                completion_ratio: 0
+              },
+              files: %{
+                completed: 0,
+                total: total_files,
+                completion_ratio: 0
+              },
+              exercises: %{
+                completed: 0,
+                total: total_exercises,
+                completion_ratio: 0
+              },
+              homeworks: %{
+                completed: 0,
+                total: total_homeworks,
+                completion_ratio: 0
+              },
+              overall: %{
+                total_completed: 0,
+                total_resources: total_videos + total_files + total_exercises + total_homeworks,
+                completion_ratio: 0
+              }
+            }
+        end
+      end
+    end
+  end
+
   # ============ Helper Functions ============
 
   defp detect_tenant_for_course(course_id) do
@@ -1533,6 +1758,165 @@ defmodule KgEdu.Knowledge.Resource do
           :error ->
             {:error, "Invalid UUID format for course_id"}
         end
+    end
+  end
+
+  # Helper function to calculate learning stats via associated materials
+  defp get_resource_learning_stats_via_materials(resource, student_id, tenant) do
+    # Load relationships if not already loaded
+    resource_with_relationships =
+      case {resource.videos, resource.files, resource.homeworks, resource.exercises} do
+        {%Ash.NotLoaded{}, _, _, _} ->
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
+                 tenant: tenant,
+                 authorize?: false,
+                 actor: nil,
+                 load: [:videos, :files, :homeworks, :exercises]) do
+            {:ok, loaded_resource} -> loaded_resource
+            {:error, _reason} -> resource
+          end
+        {_, %Ash.NotLoaded{}, _, _} ->
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
+                 tenant: tenant,
+                 authorize?: false,
+                 actor: nil,
+                 load: [:videos, :files, :homeworks, :exercises]) do
+            {:ok, loaded_resource} -> loaded_resource
+            {:error, _reason} -> resource
+          end
+        {_, _, %Ash.NotLoaded{}, _} ->
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
+                 tenant: tenant,
+                 authorize?: false,
+                 actor: nil,
+                 load: [:videos, :files, :homeworks, :exercises]) do
+            {:ok, loaded_resource} -> loaded_resource
+            {:error, _reason} -> resource
+          end
+        {_, _, _, %Ash.NotLoaded{}} ->
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
+                 tenant: tenant,
+                 authorize?: false,
+                 actor: nil,
+                 load: [:videos, :files, :homeworks, :exercises]) do
+            {:ok, loaded_resource} -> loaded_resource
+            {:error, _reason} -> resource
+          end
+        _ ->
+          resource
+      end
+
+    # Get all material IDs associated with this knowledge resource
+    video_ids = case resource_with_relationships.videos do
+      %Ash.NotLoaded{} -> []
+      videos -> videos |> Enum.map(& &1.id)
+    end
+
+    file_ids = case resource_with_relationships.files do
+      %Ash.NotLoaded{} -> []
+      files -> files |> Enum.map(& &1.id)
+    end
+
+    homework_ids = case resource_with_relationships.homeworks do
+      %Ash.NotLoaded{} -> []
+      homeworks -> homeworks |> Enum.map(& &1.id)
+    end
+
+    exercise_ids = case resource_with_relationships.exercises do
+      %Ash.NotLoaded{} -> []
+      exercises -> exercises |> Enum.map(& &1.id)
+    end
+
+    # Get activity logs for this student and these materials
+    case KgEdu.Activity.ActivityLog.list_activity_logs(actor: nil, tenant: tenant) do
+      {:ok, all_logs} ->
+        # Filter logs for this student and associated materials
+        student_logs =
+          all_logs
+          |> Enum.filter(&(&1.user_id == student_id))
+          |> Enum.filter(fn log ->
+            (log.resource_type in ["KgEdu.Courses.File", "File"] and log.resource_id in file_ids) or
+            (log.resource_type in ["KgEdu.Courses.Video", "Video"] and log.resource_id in video_ids) or
+            (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and log.resource_id in homework_ids) or
+            (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and log.resource_id in exercise_ids)
+          end)
+
+        # Count completed activities by type
+        completed_videos =
+          student_logs
+          |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and &1.action_type in [:video_view, :view]))
+          |> Enum.map(& &1.resource_id)
+          |> Enum.uniq()
+          |> length()
+
+        completed_files =
+          student_logs
+          |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.File", "File"] and &1.action_type in [:file_view, :view, :download]))
+          |> Enum.map(& &1.resource_id)
+          |> Enum.uniq()
+          |> length()
+
+        completed_exercises =
+          student_logs
+          |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and &1.action_type in [:exercise_submit, :submit, :complete]))
+          |> Enum.map(& &1.resource_id)
+          |> Enum.uniq()
+          |> length()
+
+        completed_homework =
+          student_logs
+          |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and &1.action_type in [:homework_submit, :submit, :complete]))
+          |> Enum.map(& &1.resource_id)
+          |> Enum.uniq()
+          |> length()
+
+        # Calculate totals
+        total_videos = length(video_ids)
+        total_files = length(file_ids)
+        total_exercises = length(exercise_ids)
+        total_homework = length(homework_ids)
+
+        total_completed = completed_videos + completed_files + completed_exercises + completed_homework
+        total_resources = total_videos + total_files + total_exercises + total_homework
+
+        overall_ratio = if total_resources > 0, do: total_completed / total_resources, else: 0.0
+
+        stats = %{
+          resource_id: resource.id,
+          resource_name: resource.name,
+          student_id: student_id,
+          videos: %{
+            completed: completed_videos,
+            total: total_videos,
+            completion_ratio: if(total_videos > 0, do: completed_videos / total_videos, else: 0.0)
+          },
+          files: %{
+            completed: completed_files,
+            total: total_files,
+            completion_ratio: if(total_files > 0, do: completed_files / total_files, else: 0.0)
+          },
+          exercises: %{
+            completed: completed_exercises,
+            total: total_exercises,
+            completion_ratio: if(total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0)
+          },
+          homeworks: %{
+            completed: completed_homework,
+            total: total_homework,
+            completion_ratio: if(total_homework > 0, do: completed_homework / total_homework, else: 0.0)
+          },
+          overall: %{
+            total_completed: total_completed,
+            total_resources: total_resources,
+            completion_ratio: overall_ratio
+          }
+        }
+
+        {:ok, stats}
+
+      {:error, reason} ->
+        Logger.error("Failed to fetch activity logs for learning stats: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 end

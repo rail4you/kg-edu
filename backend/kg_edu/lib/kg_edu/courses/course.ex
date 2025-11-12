@@ -116,7 +116,7 @@ defmodule KgEdu.Courses.Course do
       filter expr(title == ^arg(:title))
     end
 
-    action :calculate_course_statistics do
+    action :calculate_course_statistics, :map do
       description "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
 
       argument :course_id, :uuid do

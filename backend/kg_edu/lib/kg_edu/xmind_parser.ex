@@ -34,14 +34,24 @@ defmodule KgEdu.XmindParser do
       # Use Erlang's :zip module to extract directly from binary data
       case :zip.extract(binary_data, [:memory]) do
         {:ok, files} ->
-          # Find content.xml in the extracted files
-          case Enum.find(files, fn {filename, _content} -> filename == ~c"content.xml" end) do
-            {~c"content.xml", content_binary} ->
-              content_xml = :erlang.binary_to_list(content_binary)
-              parse_content_xml(content_xml)
+          # Try to find content.json first (preferred format)
+          case Enum.find(files, fn {filename, _content} -> filename == ~c"content.json" end) do
+            {~c"content.json", content_binary} ->
+              Logger.info("Found content.json, parsing JSON format")
+              content_json = :erlang.binary_to_list(content_binary)
+              parse_content_json(content_json)
 
             nil ->
-              {:error, "content.xml not found in XMind file"}
+              # Fallback to content.xml if JSON not found
+              case Enum.find(files, fn {filename, _content} -> filename == ~c"content.xml" end) do
+                {~c"content.xml", content_binary} ->
+                  Logger.info("Found content.xml, parsing XML format")
+                  content_xml = :erlang.binary_to_list(content_binary)
+                  parse_content_xml(content_xml)
+
+                nil ->
+                  {:error, "Neither content.json nor content.xml found in XMind file"}
+              end
           end
 
         {:error, reason} ->
@@ -64,6 +74,37 @@ defmodule KgEdu.XmindParser do
 
       {:error, reason} ->
         {:error, "Failed to read XMind file: #{reason}"}
+    end
+  end
+
+  @doc """
+  Parse the content.json from an XMind file.
+  """
+  def parse_content_json(content_json) do
+    try do
+      # Parse JSON string to Elixir terms
+      content_list = Jason.decode!(content_json)
+
+      # Extract the root topic from the first sheet (assuming single sheet)
+      case get_root_topic_from_content(content_list) do
+        nil ->
+          {:error, "No root topic found in content.json"}
+
+        root_topic ->
+          # Extract the main topics (children of root)
+          main_topics = get_children_from_topic(root_topic)
+
+          knowledge_data =
+            main_topics
+            |> Enum.map(&extract_json_topic_hierarchy/1)
+            |> List.flatten()
+
+          {:ok, knowledge_data}
+      end
+    rescue
+      error ->
+        Logger.error("Failed to parse XMind content.json: #{inspect(error)}")
+        {:error, "Failed to parse XMind content JSON: #{inspect(error)}"}
     end
   end
 
@@ -296,6 +337,148 @@ defmodule KgEdu.XmindParser do
   # Extract children topics from a topic element
   defp extract_children(topic) do
     SweetXml.xpath(topic, ~x"./children/topics/topic"l)
+  end
+
+  # ============ JSON Parsing Helper Functions ============
+
+  # Get the root topic from content list
+  defp get_root_topic_from_content(content_list) when is_list(content_list) do
+    case Enum.find(content_list, fn item ->
+           Map.get(item, "class") == "sheet" and Map.has_key?(item, "rootTopic")
+         end) do
+      nil -> nil
+      sheet -> Map.get(sheet, "rootTopic")
+    end
+  end
+
+  defp get_root_topic_from_content(_), do: nil
+
+  # Get children from a topic in JSON format
+  defp get_children_from_topic(topic) when is_map(topic) do
+    case Map.get(topic, "children") do
+      %{"attached" => children} when is_list(children) -> children
+      _ -> []
+    end
+  end
+
+  defp get_children_from_topic(_), do: []
+
+  # Extract title from a topic in JSON format
+  defp extract_json_title(topic) when is_map(topic) do
+    Map.get(topic, "title", "")
+  end
+
+  defp extract_json_title(_), do: ""
+
+  # Extract hierarchy from a JSON topic and its children
+  defp extract_json_topic_hierarchy(topic) do
+    topic_title = extract_json_title(topic)
+    children = get_children_from_topic(topic)
+
+    Logger.info("Extracting JSON topic hierarchy for: #{topic_title}")
+    Logger.info("Found #{length(children)} children")
+
+    case children do
+      [] ->
+        Logger.info("No children found, creating knowledge cell")
+        [%{
+          title: topic_title,
+          level: :knowledge_cell,
+          subject: nil,
+          unit: nil
+        }]
+
+      _ ->
+        Logger.info("Children found, creating subject and child resources")
+        parent_resource = %{
+          title: topic_title,
+          level: :subject,
+          subject: topic_title,
+          unit: nil
+        }
+
+        # Process its children
+        child_resources = children
+        |> Enum.map(&extract_json_child_hierarchy(&1, topic_title))
+        |> List.flatten()
+
+        Logger.info("Created #{length(child_resources)} child resources")
+
+        [parent_resource | child_resources]
+    end
+  end
+
+  # Extract hierarchy from child topics in JSON format (second level = units, third level = knowledge cells)
+  defp extract_json_child_hierarchy(child_topic, parent_title) do
+    child_title = extract_json_title(child_topic)
+    child_children = get_children_from_topic(child_topic)
+
+    Logger.info("Processing JSON child topic: #{child_title} (parent: #{parent_title})")
+    Logger.info("Child has #{length(child_children)} grand-children")
+
+    case child_children do
+      [] ->
+        Logger.info("No grand-children, treating as knowledge cell")
+        [%{
+          title: child_title,
+          level: :knowledge_cell,
+          subject: parent_title,
+          unit: nil
+        }]
+
+      _ ->
+        Logger.info("Has grand-children, treating as knowledge unit")
+        # Create the unit resource
+        unit_resource = %{
+          title: child_title,
+          level: :knowledge_unit,
+          subject: parent_title,
+          unit: child_title
+        }
+
+        # Process its children as knowledge cells
+        cell_resources = child_children
+        |> Enum.map(&extract_json_grandchild_as_cell(&1, parent_title, child_title))
+        |> List.flatten()
+
+        Logger.info("Created #{length(cell_resources)} cell resources for unit #{child_title}")
+
+        [unit_resource | cell_resources]
+    end
+  end
+
+  # Extract grandchild topics as knowledge cells in JSON format (third level and beyond)
+  defp extract_json_grandchild_as_cell(grandchild_topic, subject_title, unit_title) do
+    grandchild_title = extract_json_title(grandchild_topic)
+    grandchild_children = get_children_from_topic(grandchild_topic)
+
+    case grandchild_children do
+      [] ->
+        # This is a knowledge cell
+        [%{
+          title: grandchild_title,
+          level: :knowledge_cell,
+          subject: subject_title,
+          unit: unit_title
+        }]
+
+      _ ->
+        # This grandchild has children, treat it as a knowledge cell too
+        # and process all its descendants as knowledge cells
+        cell_resource = %{
+          title: grandchild_title,
+          level: :knowledge_cell,
+          subject: subject_title,
+          unit: unit_title
+        }
+
+        # Process its children recursively as knowledge cells
+        descendant_cells = grandchild_children
+        |> Enum.map(&extract_json_grandchild_as_cell(&1, subject_title, unit_title))
+        |> List.flatten()
+
+        [cell_resource | descendant_cells]
+    end
   end
 
   @doc """
