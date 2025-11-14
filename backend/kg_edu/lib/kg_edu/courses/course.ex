@@ -122,6 +122,7 @@ defmodule KgEdu.Courses.Course do
       # No actor filtering - returns all courses in the tenant
     end
 
+    
     action :calculate_course_statistics, :map do
       description "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
 
