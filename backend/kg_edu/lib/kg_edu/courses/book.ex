@@ -30,6 +30,7 @@ defmodule KgEdu.Courses.Book do
     define :get_book, action: :read, get_by: [:id]
     define :get_book_by_course, action: :by_course
     define :list_books, action: :read
+    define :list_books_by_creator, action: :by_creator
   end
 
   actions do
@@ -51,11 +52,18 @@ defmodule KgEdu.Courses.Book do
       filter expr(course_id == ^arg(:course_id))
     end
 
+    read :by_creator do
+      description "Get books created by a specific user"
+      argument :created_by_id, :uuid, allow_nil?: false
+      filter expr(created_by_id == ^arg(:created_by_id))
+    end
+
     create :create do
-      accept [:title, :publish, :cover_image, :attachment, :author, :publisher, :course_id]
+      accept [:title, :publish, :cover_image, :attachment, :author, :publisher, :course_id, :created_by_id]
 
       argument :course_id, :uuid, allow_nil?: false
       change set_attribute(:course_id, arg(:course_id))
+      change set_attribute(:created_by_id, actor(:id))
     end
 
     update :update do
@@ -114,6 +122,12 @@ defmodule KgEdu.Courses.Book do
       description "Course ID this book belongs to"
     end
 
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public? true
+      description "ID of the user who created this book"
+    end
+
     create_timestamp :inserted_at do
       public? true
     end
@@ -128,6 +142,12 @@ defmodule KgEdu.Courses.Book do
       public? true
       allow_nil? true
       description "Course this book belongs to"
+    end
+
+    belongs_to :created_by, KgEdu.Accounts.User do
+      public? true
+      allow_nil? true
+      description "The user who created this book"
     end
   end
 

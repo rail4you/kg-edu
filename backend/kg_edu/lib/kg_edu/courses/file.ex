@@ -78,6 +78,7 @@ defmodule KgEdu.Courses.File do
     define :list_files_by_course, action: :by_course
     define :list_files_by_purpose, action: :by_purpose
     define :list_files_by_knowledge_resource, action: :by_knowledge_resource
+    define :list_files_by_creator, action: :by_creator
     define :generate_example_files, action: :generate_examples
     define :download_file, action: :download_file
     define :link_file_to_knowledge, action: :link_file_to_knowledge
@@ -89,7 +90,9 @@ defmodule KgEdu.Courses.File do
     defaults [:read, :update, :destroy]
     create :create do
       description "Create a new file record"
-      accept [:filename, :path, :size, :file_type, :purpose, :course_id, :knowledge_resource_id]
+      accept [:filename, :path, :size, :file_type, :purpose, :course_id, :knowledge_resource_id, :created_by_id]
+
+      change set_attribute(:created_by_id, actor(:id))
     end
 
     action :download_file do
@@ -148,6 +151,7 @@ defmodule KgEdu.Courses.File do
       end
 
       change manage_relationship(:course_id, :course, type: :append_and_remove)
+      change set_attribute(:created_by_id, actor(:id))
 
       change fn changeset, _context ->
         upload = Ash.Changeset.get_argument(changeset, :upload)
@@ -220,6 +224,7 @@ defmodule KgEdu.Courses.File do
       change manage_relationship(:knowledge_resource_id, :knowledge_resource,
                type: :append_and_remove
              )
+      change set_attribute(:created_by_id, actor(:id))
 
       change fn changeset, _context ->
         case Ash.Changeset.get_argument(changeset, :file) do
@@ -292,6 +297,16 @@ defmodule KgEdu.Courses.File do
       end
 
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
+    end
+
+    read :by_creator do
+      description "Get files created by a specific user"
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(created_by_id == ^arg(:created_by_id))
     end
 
     create :generate_examples do
@@ -436,6 +451,12 @@ defmodule KgEdu.Courses.File do
       default "course_file"
     end
 
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public? true
+      description "ID of the user who created this file"
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -449,6 +470,12 @@ defmodule KgEdu.Courses.File do
     belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
       allow_nil? true
       public? true
+    end
+
+    belongs_to :created_by, KgEdu.Accounts.User do
+      public? true
+      allow_nil? true
+      description "The user who created this file"
     end
   end
 end
