@@ -129,14 +129,15 @@ defmodule KgEdu.Courses.Course do
       description "Get a course by ID for guest access (no authentication required)"
       get? true
 
-      prepare fn query, _context ->
-        # Bypass actor filtering - allow guest access to published courses only
-        query
-        |> Ash.Query.filter(publish_status == true)
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "The course ID to retrieve"
       end
+
+      filter expr(id == ^arg(:course_id))
     end
 
-    
+
     action :calculate_course_statistics, :map do
       description "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
 
