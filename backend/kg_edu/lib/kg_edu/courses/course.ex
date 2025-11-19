@@ -58,7 +58,7 @@ defmodule KgEdu.Courses.Course do
         Logger.info("context is #{inspect(context)}")
         Logger.info("actor is #{inspect(context.actor)}")
 
-        case context.actor do
+        query = case context.actor do
           %{role: :user, id: user_id} ->
             # Students see only courses they're enrolled in and published
             query
@@ -72,6 +72,8 @@ defmodule KgEdu.Courses.Course do
           _ ->
             Ash.Query.filter(query, false)
         end
+
+        query |> Ash.Query.load(:subject_category)
       end
     end
 
@@ -81,13 +83,13 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status, :subject_category]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status, :subject_category_id]
       # change set_attribute(:teacher_id, actor(:id))
       # change relate_actor(:teacher_id)
     end
 
     update :update do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status, :subject_category]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status, :subject_category_id]
       change set_attribute(:teacher_id, actor(:id))
     end
 
@@ -305,12 +307,6 @@ defmodule KgEdu.Courses.Course do
       description "Whether the course is published"
     end
 
-    attribute :subject_category, :string do
-      allow_nil? true
-      public? true
-      description "学科分类 (Subject Category) - e.g., 理工, 文学, 医学, 经济"
-    end
-
 
 
     create_timestamp :inserted_at
@@ -354,6 +350,12 @@ defmodule KgEdu.Courses.Course do
       allow_nil? true
       public? true
       description "Associated textbook for this course"
+    end
+
+    belongs_to :subject_category, KgEdu.Courses.SubjectCategory do
+      allow_nil? true
+      public? true
+      description "Subject category for this course"
     end
 
     has_many :links, KgEdu.Courses.Link do

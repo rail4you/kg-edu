@@ -91,6 +91,15 @@ defmodule KgEdu.Courses do
       rpc_action :link_to_knowledge, :link_to_knowledge
       rpc_action :unlink_from_knowledge, :unlink_from_knowledge
     end
+
+    resource KgEdu.Courses.SubjectCategory do
+      rpc_action :create_subject_category, :create
+      rpc_action :list_subject_categories, :read
+      rpc_action :get_subject_category, :read
+      rpc_action :get_subject_category_by_name, :by_name
+      rpc_action :update_subject_category, :update
+      rpc_action :delete_subject_category, :destroy
+    end
   end
 
   json_api do
@@ -136,5 +145,6 @@ defmodule KgEdu.Courses do
     resource KgEdu.Courses.Book
     resource KgEdu.Courses.CourseInfo
     resource KgEdu.Courses.Link
+    resource KgEdu.Courses.SubjectCategory
   end
 end
