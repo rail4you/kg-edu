@@ -35,6 +35,7 @@ defmodule KgEdu.Courses.Course do
     define :list_courses_by_student, action: :by_student
     define :get_course_by_title, action: :by_title
     define :get_all_courses, action: :get_all_courses
+    define :get_course_by_guest, action: :get_course_by_guest
     define :calculate_course_statistics, action: :calculate_course_statistics
   end
 
@@ -80,13 +81,13 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status, :subject_category]
       # change set_attribute(:teacher_id, actor(:id))
       # change relate_actor(:teacher_id)
     end
 
     update :update do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status]
+      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :book_id, :publish_status, :subject_category]
       change set_attribute(:teacher_id, actor(:id))
     end
 
@@ -120,6 +121,17 @@ defmodule KgEdu.Courses.Course do
     read :get_all_courses do
       description "Get all courses from tenant"
       # No actor filtering - returns all courses in the tenant
+    end
+
+    read :get_course_by_guest do
+      description "Get a course by ID for guest access (no authentication required)"
+      get? true
+
+      prepare fn query, _context ->
+        # Bypass actor filtering - allow guest access to published courses only
+        query
+        |> Ash.Query.filter(publish_status == true)
+      end
     end
 
     
@@ -291,6 +303,12 @@ defmodule KgEdu.Courses.Course do
       default true
       public? true
       description "Whether the course is published"
+    end
+
+    attribute :subject_category, :string do
+      allow_nil? true
+      public? true
+      description "学科分类 (Subject Category) - e.g., 理工, 文学, 医学, 经济"
     end
 
 
