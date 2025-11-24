@@ -52,7 +52,7 @@ defmodule KgEdu.Knowledge.QuestionConnection do
       description "Get all connections from a source question"
       argument :source_question_id, :uuid, allow_nil?: false
       filter expr(source_question_id == ^arg(:source_question_id))
-      
+
       prepare fn query, _context ->
         Ash.Query.sort(query, created_at: :asc)
       end
@@ -62,7 +62,7 @@ defmodule KgEdu.Knowledge.QuestionConnection do
       description "Get all connections to a target question"
       argument :target_question_id, :uuid, allow_nil?: false
       filter expr(target_question_id == ^arg(:target_question_id))
-      
+
       prepare fn query, _context ->
         Ash.Query.sort(query, created_at: :asc)
       end
@@ -72,7 +72,7 @@ defmodule KgEdu.Knowledge.QuestionConnection do
       description "Get all connections for a course"
       argument :course_id, :uuid, allow_nil?: false
       filter expr(course_id == ^arg(:course_id))
-      
+
       prepare fn query, _context ->
         query
         |> Ash.Query.sort(created_at: :asc)
@@ -83,32 +83,33 @@ defmodule KgEdu.Knowledge.QuestionConnection do
     # ============ Create Actions ============
     create :create_connection do
       description "Create a new question connection"
-      
+
       accept [
         :source_question_id,
         :target_question_id,
         :course_id,
-        :connection_type
+        :connection_type,
+        :created_by_id
       ]
-      
+
       validate fn changeset, _context ->
         source_id = Ash.Changeset.get_attribute(changeset, :source_question_id)
         target_id = Ash.Changeset.get_attribute(changeset, :target_question_id)
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
-        
+
         cond do
           is_nil(source_id) ->
             {:error, "Source question ID is required"}
-          
+
           is_nil(target_id) ->
             {:error, "Target question ID is required"}
-          
+
           source_id == target_id ->
             {:error, "Source and target questions cannot be the same"}
-          
+
           is_nil(course_id) ->
             {:error, "Course ID is required"}
-          
+
           true ->
             :ok
         end
@@ -118,23 +119,24 @@ defmodule KgEdu.Knowledge.QuestionConnection do
     # ============ Batch Actions ============
     action :create_from_flow_data do
       description "Create connections from flow edge data"
-      
+
       argument :edges, {:array, :map}, allow_nil?: false
       argument :question_id_map, :map, allow_nil?: false
       argument :course_id, :uuid, allow_nil?: false
-      
+
       run fn input, _context ->
         edges = input.arguments.edges
         question_id_map = input.arguments.question_id_map
         course_id = input.arguments.course_id
-        
-        results = Enum.map(edges, fn edge ->
-          create_connection_from_edge(edge, question_id_map, course_id)
-        end)
-        
+
+        results =
+          Enum.map(edges, fn edge ->
+            create_connection_from_edge(edge, question_id_map, course_id)
+          end)
+
         successful = Enum.count(results, fn {status, _} -> status == :ok end)
         failed = Enum.count(results, fn {status, _} -> status == :error end)
-        
+
         if failed > 0 do
           {:error, "Created #{successful} connections, #{failed} failed"}
         else
@@ -153,6 +155,11 @@ defmodule KgEdu.Knowledge.QuestionConnection do
   attributes do
     uuid_primary_key :id
 
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public? true
+    end
+
     attribute :connection_type, :atom do
       allow_nil? true
       constraints one_of: [:hierarchy, :dependency, :related]
@@ -161,7 +168,6 @@ defmodule KgEdu.Knowledge.QuestionConnection do
       description "Type of connection between questions"
     end
 
-    
     timestamps()
   end
 
@@ -182,6 +188,12 @@ defmodule KgEdu.Knowledge.QuestionConnection do
       allow_nil? false
       description "The target question in the connection"
     end
+
+    belongs_to :created_by, KgEdu.Accounts.User do
+      public? true
+      allow_nil? true
+      description "User who created this connection"
+    end
   end
 
   identities do
@@ -193,14 +205,14 @@ defmodule KgEdu.Knowledge.QuestionConnection do
   defp create_connection_from_edge(edge, question_id_map, course_id) do
     source_id = get_question_id_from_key(edge["source"] || edge[:source], question_id_map)
     target_id = get_question_id_from_key(edge["target"] || edge[:target], question_id_map)
-    
+
     cond do
       is_nil(source_id) ->
         {:error, "Source question not found: #{inspect(edge["source"] || edge[:source])}"}
-      
+
       is_nil(target_id) ->
         {:error, "Target question not found: #{inspect(edge["target"] || edge[:target])}"}
-      
+
       true ->
         connection_attrs = %{
           source_question_id: source_id,
@@ -208,7 +220,7 @@ defmodule KgEdu.Knowledge.QuestionConnection do
           course_id: course_id,
           connection_type: edge["type"] || edge[:type] || :hierarchy
         }
-        
+
         create_connection(connection_attrs)
     end
   end

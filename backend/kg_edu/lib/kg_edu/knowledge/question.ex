@@ -137,7 +137,8 @@ defmodule KgEdu.Knowledge.Question do
         :course_id,
         :question_level,
         :position,
-        :tags
+        :tags,
+        :created_by_id
       ]
 
       validate fn changeset, _context ->
@@ -313,6 +314,12 @@ defmodule KgEdu.Knowledge.Question do
       default []
       public? true
       description "Tags associated with the question"
+    end
+
+
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public?  true
     end
 
 
