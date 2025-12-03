@@ -1,9 +1,50 @@
+defmodule KgEduWeb.Plugs.LoadActor do
+    import Plug.Conn
+    require Ash.Query
+
+    def init(opts), do: opts
+
+    def call(conn, _opts) do
+      with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+           {:ok, tenant} <- verify_token(token) do
+        conn
+        # |> assign(:actor, user)
+        |> assign(:tenant, tenant)
+        # |> assign(:current_user, user)
+      else
+        _ ->
+          conn
+          |> assign(:tenant, nil)
+      end
+    end
+
+    defp verify_token(token) do
+      # Use AshAuthentication.Jwt to verify the token
+      case AshAuthentication.Jwt.peek(token) do
+        {:ok, %{"sub" => subject, "tenant" => tenant}} ->
+          # Load the user from the subject (usually user_id)
+          # user = KgEdu.Accounts.User
+          # |> Ash.get(subject)
+
+          case tenant do
+            nil -> {:error, :tenant_not_found}
+            _ -> {:ok, tenant}
+          end
+
+        {:error, _} = error ->
+          error
+      end
+    end
+  end
+
 defmodule KgEduWeb.Router do
   use KgEduWeb, :router
 
   use AshAuthentication.Phoenix.Router
 
   import AshAuthentication.Plug.Helpers
+
+
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -17,9 +58,20 @@ defmodule KgEduWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug KgEduWeb.Plug.SetTenantFromToken
     plug :load_from_bearer
     plug :set_actor, :user
+    plug KgEduWeb.Plugs.LoadActor
   end
+
+  pipeline :api_upload do
+    plug :accepts, ["json", "multipart"]
+    plug KgEduWeb.Plug.SetTenantFromToken
+    plug :load_from_bearer
+    plug :set_actor, :user
+    plug KgEduWeb.Plugs.LoadActor
+  end
+
 
   scope "/api", KgEduWeb do
     pipe_through :api
@@ -30,8 +82,6 @@ defmodule KgEduWeb.Router do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes do
-      live "/chat", ChatLive
-      live "/chat/:conversation_id", ChatLive
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
@@ -88,7 +138,7 @@ defmodule KgEduWeb.Router do
   end
 
   scope "/rpc" do
-    pipe_through [:api]
+    pipe_through :api
     post "/run", KgEduWeb.AshTypescriptRpcController, :run
     post "/validate", KgEduWeb.AshTypescriptRpcController, :validate
   end
@@ -103,7 +153,6 @@ defmodule KgEduWeb.Router do
     forward "/", KgEduWeb.AshJsonApiRouter
   end
 
-
   scope "/webhooks", KgEduWeb do
     pipe_through :api
     post "/mux", UploadVideoController, :webhook
@@ -113,9 +162,15 @@ defmodule KgEduWeb.Router do
   scope "/api", KgEduWeb do
     pipe_through :api
     get "/download/template", DownloadController, :template
+  end
+
+  scope "/api", KgEduWeb do
+    pipe_through :api_upload
     post "/files/upload", FileUploadController, :upload
     get "/files/template", FileUploadController, :download_template
+    post "/files/import-xmind", FileUploadController, :import_xmind
     post "/videos/upload", UploadVideoController, :direct_upload
+    post "/videos/upload-waffle", UploadVideoController, :upload
     post "/videos/:video_id/link-chapter", UploadVideoController, :link_to_chapter
     post "/videos/:video_id/unlink-chapter", UploadVideoController, :unlink_from_chapter
   end
@@ -150,7 +205,6 @@ defmodule KgEduWeb.Router do
     #   overrides: [KgEduWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
     # )
   end
-
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:kg_edu, :dev_routes) do

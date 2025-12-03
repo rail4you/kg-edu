@@ -7,19 +7,46 @@
 # General application configuration
 import Config
 
+config :waffle,
+  version_timeout: 120_000,
+  storage: Waffle.Storage.AliyunOss,
+  bucket: "kg-edu",
+  region: "cn-beijing",
+  endpoint: "oss-cn-beijing.aliyuncs.com",
+  access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+  access_key_secret: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
+
+# config :waffle,
+#   storage: Waffle.Storage.S3,
+#   # or {:system, "AWS_S3_BUCKET"}
+#   bucket: "kg-edu",
+#   # or {:system, "ASSET_HOST"}
+#   asset_host: "http://static.example.com"
+
+# config :ex_aws,
+#   json_codec: Jason
+
+# config :ex_aws, :s3, %{
+#   access_key_id: "LTAI5tA3M63FNf9qJPGwHGMU",
+#   secret_access_key: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI",
+#   scheme: "https://",
+#   host: "s3.oss-cn-beijing.aliyuncs.com",
+#   region: "cn-beijing",
+# }
+
 config :ash_typescript,
   output_file: "../../minimal-vite-ts/src/lib/ash_rpc.ts",
   run_endpoint: "/rpc/run",
   validate_endpoint: "/rpc/validate",
   input_field_formatter: :camel_case,
   output_field_formatter: :camel_case,
-  require_tenant_parameters: false,
   generate_zod_schemas: true,
   generate_phx_channel_rpc_actions: false,
   generate_validation_functions: true,
   zod_import_path: "zod",
   zod_schema_suffix: "ZodSchema",
-  phoenix_import_path: "phoenix"
+  phoenix_import_path: "phoenix",
+  require_tenant_parameters: true
 
 config :cinder, default_theme: "modern"
 # config :ash_oban, pro?: false
@@ -89,16 +116,18 @@ config :spark,
     ]
   ]
 
+config :ash, :missed_notifications, :ignore
+
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI]
+  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI, KgEdu.Utils, KgEdu.Activity]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,
   secret_key_base: "kjoy3o1zeidquwy1398juxzldjlksahdk3",
   url: [host: "localhost"],
-   static_url: [path: "/"],
+  static_url: [path: "/"],
   static: [
     at: "/",
     from: :my_app,
@@ -153,14 +182,16 @@ config :phoenix, :json_library, Jason
 
 # ReqLLM configuration for AI exercise generation
 config :kg_edu, :reqllm,
-  api_key: System.get_env("OPENROUTER_API_KEY") || "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",
+  api_key:
+    System.get_env("OPENROUTER_API_KEY") ||
+      "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",
   model: "openrouter:z-ai/glm-4.5"
 
 # Waffle configuration for file uploads
-config :waffle,
-  storage: Waffle.Storage.Local,
-  asset_host: "http://localhost:4000",
-  uploads_dir: "priv/uploads"
+# config :waffle,
+#   storage: Waffle.Storage.Local,
+#   asset_host: "http://localhost:4000",
+#   uploads_dir: "priv/uploads"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

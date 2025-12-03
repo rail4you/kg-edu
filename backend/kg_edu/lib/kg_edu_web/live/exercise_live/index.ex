@@ -5,6 +5,7 @@ defmodule KgEduWeb.ExerciseLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
+      <div data-theme="green" class="rounded-lg p-4">
       <.header>
         Listing Exercises
         <:actions>
@@ -56,6 +57,7 @@ defmodule KgEduWeb.ExerciseLive.Index do
           </.link>
         </:action>
       </.table>
+      </div>
     </Layouts.app>
     """
   end

@@ -5,10 +5,21 @@ defmodule KgEdu.Knowledge.Homework do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
-
+  require Logger
   postgres do
     table "homeworks"
     repo KgEdu.Repo
+
+    references do
+      reference :chapter, on_delete: :delete
+      # reference :exercises, on_delete: :delete
+      # reference :chapter, on_delete: :delete
+      # reference :chapter, on_delete: :delete
+    end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   json_api do
@@ -33,6 +44,7 @@ defmodule KgEdu.Knowledge.Homework do
     define :unlink_homework_from_knowledge, action: :unlink_homework_from_knowledge
     define :import_homework_from_xlsx, action: :import_homework_from_xlsx
     define :export_homework_template, action: :export_homework_template
+    define :log_homework_submit_activity, action: :log_homework_submit
   end
 
   actions do
@@ -49,6 +61,7 @@ defmodule KgEdu.Knowledge.Homework do
       description "Get homeworks for a specific course"
       argument :course_id, :uuid, allow_nil?: false
       filter expr(course_id == ^arg(:course_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
       end
@@ -58,6 +71,7 @@ defmodule KgEdu.Knowledge.Homework do
       description "Get homeworks for a specific chapter"
       argument :chapter_id, :uuid, allow_nil?: false
       filter expr(chapter_id == ^arg(:chapter_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
       end
@@ -67,6 +81,7 @@ defmodule KgEdu.Knowledge.Homework do
       description "Get homeworks for a specific knowledge resource"
       argument :knowledge_resource_id, :uuid, allow_nil?: false
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
       end
@@ -76,6 +91,7 @@ defmodule KgEdu.Knowledge.Homework do
       description "Get homeworks created by a specific user"
       argument :created_by_id, :uuid, allow_nil?: false
       filter expr(created_by_id == ^arg(:created_by_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
       end
@@ -83,10 +99,12 @@ defmodule KgEdu.Knowledge.Homework do
 
     create :create do
       description "Create a new homework"
+
       accept [
         :title,
         :content,
         :score,
+        :answer,
         :course_id,
         :chapter_id,
         :knowledge_resource_id,
@@ -100,25 +118,27 @@ defmodule KgEdu.Knowledge.Homework do
         knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
 
         if is_nil(course_id) && is_nil(chapter_id) && is_nil(knowledge_resource_id) do
-          {:error, "Homework must be associated with at least a course, chapter, or knowledge resource"}
+          {:error,
+           "Homework must be associated with at least a course, chapter, or knowledge resource"}
         else
           :ok
         end
       end
 
-      validate fn changeset, _context ->
+      validate fn changeset, context ->
         # If chapter_id is provided, validate it belongs to the same course
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
         chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
 
         if course_id && chapter_id do
-          case KgEdu.Courses.Chapter.get_chapter(chapter_id) do
+          case KgEdu.Courses.Chapter.get_chapter(chapter_id, tenant: context.tenant) do
             {:ok, chapter} ->
               if chapter.course_id == course_id do
                 :ok
               else
                 {:error, "Chapter must belong to the same course"}
               end
+
             {:error, _} ->
               {:error, "Chapter not found"}
           end
@@ -127,19 +147,20 @@ defmodule KgEdu.Knowledge.Homework do
         end
       end
 
-      validate fn changeset, _context ->
+      validate fn changeset, context ->
         # If knowledge_resource_id is provided, validate it belongs to the same course
         course_id = Ash.Changeset.get_attribute(changeset, :course_id)
         knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
 
         if course_id && knowledge_resource_id do
-          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id) do
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id, tenant: context.tenant) do
             {:ok, resource} ->
               if resource.course_id == course_id do
                 :ok
               else
                 {:error, "Knowledge resource must belong to the same course"}
               end
+
             {:error, _} ->
               {:error, "Knowledge resource not found"}
           end
@@ -151,7 +172,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     update :update_homework do
       description "Update a homework"
-      accept [:title, :content, :score, :chapter_id, :knowledge_resource_id]
+      accept [:title, :content, :score, :answer, :chapter_id, :knowledge_resource_id]
       require_atomic? false
 
       # validate fn changeset, _context ->
@@ -206,7 +227,9 @@ defmodule KgEdu.Knowledge.Homework do
         description "The knowledge resource ID to link to"
       end
 
-      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource,
+               type: :append_and_remove
+             )
     end
 
     update :unlink_homework_from_knowledge do
@@ -216,20 +239,37 @@ defmodule KgEdu.Knowledge.Homework do
       change set_attribute(:knowledge_resource_id, nil)
     end
 
-    create :import_homework_from_xlsx do
-      description "Import homework from XLSX file"
+    action :import_homework_from_xlsx do
+      description "Import homeworks from XLSX file"
 
-      argument :xlsx_base64, :string do
+      argument :excel_file, :string do
         allow_nil? false
         description "Base64 encoded XLSX file content"
       end
 
-      argument :created_by_id, :uuid do
+      argument :course_id, :uuid do
         allow_nil? false
-        description "User ID who is importing the homework"
+        description "Course ID who is importing the questions"
       end
 
-      change {KgEdu.Knowledge.Changes.ImportHomeworkFromXlsx, []}
+      argument :attributes, {:array, :atom} do
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+
+        case KgEdu.Knowledge.Homework.ImportFromExcel.parse_excel(
+               input.arguments.excel_file,
+              #  input.arguments.attributes,
+              ["title", "content", "score", "answer"],
+               input.arguments.course_id,
+               context.tenant
+             ) do
+          {:ok, homework} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
     end
 
     action :export_homework_template do
@@ -241,6 +281,44 @@ defmodule KgEdu.Knowledge.Homework do
       end
 
       run {KgEdu.Knowledge.Changes.ExportHomeworkTemplate, []}
+    end
+
+    action :log_homework_submit do
+      description "Log homework submission activity"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who submitted the homework"
+      end
+
+      argument :answer, :string do
+        allow_nil? false
+        description "The answer submitted by the user"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the submission"
+      end
+
+      run fn input, context ->
+        homework_id = input.arguments[:homework_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        answer = input.arguments[:answer]
+        metadata = input.arguments[:metadata] || %{}
+
+        if homework_id && user_id && answer do
+          KgEdu.Activity.ActivityLog.log_homework_submit(%{
+            user_id: user_id,
+            homework_id: homework_id,
+            answer: answer,
+            metadata: metadata
+          })
+        end
+
+        :ok
+      end
     end
   end
 
@@ -272,6 +350,12 @@ defmodule KgEdu.Knowledge.Homework do
       description "Maximum score for this homework"
     end
 
+    attribute :answer, :string do
+      allow_nil? true
+      public? true
+      description "Answer or solution for the homework"
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -282,6 +366,7 @@ defmodule KgEdu.Knowledge.Homework do
       allow_nil? false
       description "The course this homework belongs to"
     end
+
 
     belongs_to :chapter, KgEdu.Courses.Chapter do
       public? true
@@ -297,7 +382,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     belongs_to :created_by, KgEdu.Accounts.User do
       public? true
-      allow_nil? false
+      allow_nil? true
       description "The user who created this homework"
     end
   end

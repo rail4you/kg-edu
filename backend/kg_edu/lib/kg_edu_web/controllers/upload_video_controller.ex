@@ -2,6 +2,51 @@ defmodule KgEduWeb.UploadVideoController do
   use KgEduWeb, :controller
   require Logger
 
+  alias KgEdu.Courses.Video
+
+  def upload(conn, %{"video" => video_upload, "chapter_id" => chapter_id} = params) do
+    title = Map.get(params, "title")
+
+    upload_params = %{
+      upload: video_upload,
+      chapter_id: chapter_id,
+      title: title || ""
+    }
+
+    case Video.upload_video(upload_params) do
+      {:ok, video} ->
+        json(conn, %{
+          success: true,
+          data: %{
+            id: video.id,
+            title: video.title,
+            playback_id: video.playback_id,
+            thumbnail: video.thumbnail,
+            duration: video.duration,
+            chapter_id: video.chapter_id,
+            inserted_at: video.inserted_at
+          }
+        })
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          errors: Ash.Error.to_ash_error(changeset)
+        })
+    end
+  end
+
+  def upload(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{
+      success: false,
+      errors: ["Video and chapter_id are required"]
+    })
+  end
+
   def direct_upload(conn, _params) do
     asset = KgEdu.VideoUploader.create_video_asset()
 
@@ -42,7 +87,7 @@ defmodule KgEduWeb.UploadVideoController do
     case Ash.get(KgEdu.Courses.Video, upload_id, filter: [upload_id: upload_id]) do
       {:ok, video} ->
         # Update existing video with asset_id
-        case Ash.update(video, :update_video, %{asset_id: asset_id}) do
+        case Ash.update(video, %{asset_id: asset_id}) do
           {:ok, updated_video} ->
             Logger.info("Updated video #{updated_video.id} with asset_id: #{asset_id}")
 
@@ -50,7 +95,7 @@ defmodule KgEduWeb.UploadVideoController do
             Logger.error("Failed to update video #{video.id}: #{inspect(error)}")
         end
 
-      {:error, :not_found} ->
+      {:error, _error} ->
         # Create a new video record with upload_id and asset_id
         # We'll update other fields when the video is ready
         video_attrs = %{
@@ -108,7 +153,7 @@ defmodule KgEduWeb.UploadVideoController do
   def link_to_chapter(conn, %{"video_id" => video_id, "chapter_id" => chapter_id}) do
     case Ash.get(KgEdu.Courses.Video, video_id) do
       {:ok, video} ->
-        case Ash.update(video, :link_video_to_chapter, %{chapter_id: chapter_id}) do
+        case Ash.update(video, %{chapter_id: chapter_id}) do
           {:ok, updated_video} ->
             json(conn, %{
               success: true,
@@ -130,7 +175,7 @@ defmodule KgEduWeb.UploadVideoController do
             })
         end
 
-      {:error, :not_found} ->
+      {:error, _error} ->
         conn
         |> put_status(:not_found)
         |> json(%{
@@ -152,7 +197,7 @@ defmodule KgEduWeb.UploadVideoController do
   def unlink_from_chapter(conn, %{"video_id" => video_id}) do
     case Ash.get(KgEdu.Courses.Video, video_id) do
       {:ok, video} ->
-        case Ash.update(video, :unlink_video_from_chapter, %{}) do
+        case Ash.update(video, %{chapter_id: nil}) do
           {:ok, updated_video} ->
             json(conn, %{
               success: true,
@@ -174,7 +219,7 @@ defmodule KgEduWeb.UploadVideoController do
             })
         end
 
-      {:error, :not_found} ->
+      {:error, _error} ->
         conn
         |> put_status(:not_found)
         |> json(%{

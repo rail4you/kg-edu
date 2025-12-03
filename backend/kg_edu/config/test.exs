@@ -13,7 +13,9 @@ config :kg_edu, KgEdu.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "kg_edu_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database: "kg_edu_dev",
+  port: 5433,
+  database: "kg_edu_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 

@@ -6,9 +6,16 @@ defmodule KgEdu.Knowledge.Question do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
+  require Ash.Query
+  require Logger
+
   postgres do
     table "knowledge_questions"
     repo KgEdu.Repo
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   json_api do
@@ -25,7 +32,7 @@ defmodule KgEdu.Knowledge.Question do
     define :list_questions, action: :read
     define :create_question, action: :create
     define :update_question, action: :update_question
-    define :delete_question, action: :destroy
+    define :delstroy_question, action: :destroy
 
     # Question level queries
     define :list_global_questions, action: :list_global_questions
@@ -35,10 +42,14 @@ defmodule KgEdu.Knowledge.Question do
     # Flow queries
     define :get_question_flow, action: :get_question_flow
     define :get_question_connections, action: :get_question_connections
+
+    # Import/Export
+    define :import_questions_from_xlsx, action: :import_questions_from_xlsx
+    define :export_question_template, action: :export_question_template
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     # ============ Basic Queries ============
     read :by_id do
@@ -126,7 +137,8 @@ defmodule KgEdu.Knowledge.Question do
         :course_id,
         :question_level,
         :position,
-        :tags
+        :tags,
+        :created_by_id
       ]
 
       validate fn changeset, _context ->
@@ -157,7 +169,71 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Update Actions ============
     update :update_question do
       description "Update a question"
-      accept [:title, :description, :position, :tags]
+      accept [:title, :description, :position, :tags, :question_level, :course_id]
+    end
+
+    # ============ Destroy Actions ============
+    destroy :destroy do
+      description "Delete a question and its connections"
+      accept []
+
+      change fn changeset, context ->
+        question_id = Ash.Changeset.get_attribute(changeset, :id)
+
+        # Delete related connections first
+        KgEdu.Knowledge.QuestionConnection
+        |> Ash.Query.filter(source_question_id: question_id)
+        |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant)
+
+        KgEdu.Knowledge.QuestionConnection
+        |> Ash.Query.filter(target_question_id: question_id)
+        |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant)
+
+        changeset
+      end
+    end
+
+    # ============ Import/Export Actions ============
+    action :import_questions_from_xlsx do
+      description "Import questions from XLSX file"
+
+      argument :excel_file, :string do
+        allow_nil? false
+        description "Base64 encoded XLSX file content"
+      end
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "Course ID who is importing the questions"
+      end
+
+      argument :attributes, {:array, :atom} do
+        allow_nil? false
+      end
+      run fn input, context ->
+        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+        case KgEdu.Knowledge.Question.ImportFromExcel.parse_excel(
+               input.arguments.excel_file,
+               input.arguments.attributes,
+               input.arguments.course_id,
+               context.tenant
+             ) do
+          {:ok, question} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
+
+    end
+
+    action :export_question_template do
+      description "Generate question template XLSX as base64"
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "User ID requesting the template"
+      end
+
+      run {KgEdu.Knowledge.Changes.ExportQuestionTemplate, []}
     end
 
     # ============ Batch Actions ============
@@ -167,7 +243,7 @@ defmodule KgEdu.Knowledge.Question do
       argument :flow_data, :map, allow_nil?: false
       argument :course_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
+      run fn input, context ->
         flow_data = input.arguments.flow_data
         course_id = input.arguments.course_id
 
@@ -177,7 +253,7 @@ defmodule KgEdu.Knowledge.Question do
             flow_data
             |> Enum.map(fn {level, questions} ->
               Enum.map(questions, fn question_data ->
-                create_question_from_data(question_data, level, course_id)
+                create_question_from_data(question_data, level, course_id, context.tenant)
               end)
             end)
             |> List.flatten()
@@ -241,6 +317,12 @@ defmodule KgEdu.Knowledge.Question do
     end
 
 
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public?  true
+    end
+
+
     timestamps()
   end
 
@@ -281,7 +363,7 @@ defmodule KgEdu.Knowledge.Question do
 
   # ============ Helper Functions ============
 
-  defp create_question_from_data(question_data, level, course_id) do
+  defp create_question_from_data(question_data, level, course_id, tenant) do
     attrs = %{
       title: question_data["title"] || question_data[:title],
       description: question_data["description"] || question_data[:description],
@@ -291,11 +373,11 @@ defmodule KgEdu.Knowledge.Question do
       course_id: course_id
     }
 
-    case KgEdu.Knowledge.Question.create_question(attrs) do
+    case KgEdu.Knowledge.Question.create_question(attrs, tenant: tenant) do
       {:ok, question} ->
         # Create connections if provided
         if question_data["connections"] || question_data[:connections] do
-          create_question_connections(question, question_data["connections"] || question_data[:connections])
+          create_question_connections(question, question_data["connections"] || question_data[:connections], tenant)
         end
         {:ok, question}
 
@@ -304,9 +386,9 @@ defmodule KgEdu.Knowledge.Question do
     end
   end
 
-  defp create_question_connections(_question, _connections) do
+  defp create_question_connections(_question, _connections, _tenant) do
     # TODO: Implement connection creation
-    # This would create QuestionConnection records
+    # This would create QuestionConnection records with tenant context
     :ok
   end
 end

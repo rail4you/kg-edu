@@ -163,9 +163,13 @@ defmodule KgEduWeb.Layouts do
                   <.link
                     navigate={~p"/#{item.path}"}
                     class={
-                      if @current_page == item.page,
-                        do: "bg-blue-100 text-blue-700",
-                        else: "hover:bg-gray-100"
+                      if @current_page == item.page do
+                        if item.page in [:resources, :exercises],
+                          do: "bg-green-100 text-green-700",
+                          else: "bg-blue-100 text-blue-700"
+                      else
+                        "hover:bg-gray-100"
+                      end
                     }
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

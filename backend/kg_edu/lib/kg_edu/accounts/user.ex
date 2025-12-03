@@ -43,31 +43,124 @@ defmodule KgEdu.Accounts.User do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "user"
   end
 
+  typescript do
+    type_name "User"
+  end
+
   code_interface do
     define :register_user, action: :register_with_password
+    define :register_user_in_tenant, action: :register_user_in_tenant
+    define :register_super_admin, action: :register_super_admin
     define :sign_in, action: :sign_in_with_password
+    define :super_admin_sign_in, action: :super_admin_sign_in
+    define :sign_in_tenant, action: :sign_in_tenant
     define :sign_out, action: :sign_out
     define :get_current_user, action: :get_current_user
     define :change_password, action: :change_password
     define :request_password_reset, action: :request_password_reset_token
     define :reset_password, action: :reset_password_with_token
-    define :create_user, action: :create
+    define :create_user, action: :create_user
     define :update_user, action: :update
     define :delete_user, action: :destroy
     define :get_user, action: :read, get_by: [:id]
     define :get_users, action: :read
+    define :import_users_from_excel, action: :import_users_from_excel
+    # student crud
+    define :create_student, action: :create_student
+    define :list_student, action: :list_student
+    define :update_student, action: :update_student
+    # super admin tenant management
+    define :get_users_from_tenant, action: :get_users_from_tenant
   end
 
   actions do
-    defaults [:read, :create, :destroy]
+    defaults [:read, :destroy]
+
+    create :create_student do
+      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge, :avatar_url]
+      argument :password, :string
+      change set_attribute(:role, :user)
+      change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
+    end
+
+    read :list_student do
+      filter expr(role == :user)
+    end
+
+    update :update_student do
+      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name, :avatar_url]
+      argument :password, :string do
+        allow_nil? true
+      end
+      require_atomic? false
+      # change set_attribute(:role, "user")
+      change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
+    end
+
+    create :create_user do
+      description "Create a new user with specified parameters"
+
+      argument :member_id, :string do
+        description "The user's member ID"
+        allow_nil? false
+      end
+
+      argument :name, :string do
+        description "The user's name"
+        allow_nil? true
+      end
+
+      argument :phone, :string do
+        description "The user's name"
+        allow_nil? true
+      end
+
+      argument :email, :string do
+        description "The user's email"
+        allow_nil? true
+      end
+
+      argument :password, :string do
+        description "The user's password (will be hashed)"
+        allow_nil? false
+        constraints min_length: 8
+        sensitive? true
+      end
+
+      argument :role, :atom do
+        description "The user's role (super_admin, admin, user, teacher)"
+        allow_nil? true
+        default :user
+        constraints one_of: [:super_admin, :admin, :user, :teacher]
+      end
+
+      argument :tenant_id, :uuid do
+        description "The tenant ID to create the user in (for super admin use)"
+        allow_nil? true
+      end
+
+      # Use the CreateUser change to handle password hashing and data storage
+      change {__MODULE__.Changes.CreateUser, []}
+
+      # Validate unique member_id
+      change set_attribute(:member_id, arg(:member_id))
+      change set_attribute(:name, arg(:name))
+      change set_attribute(:phone, arg(:phone))
+      change set_attribute(:email, arg(:email))
+      change set_attribute(:role, arg(:role))
+    end
 
     update :update do
       description "Update user name and role"
-      accept [:name, :role]
+      accept [:name, :role, :phone, :avatar_url]
       require_atomic? false
     end
 
@@ -147,6 +240,113 @@ defmodule KgEdu.Accounts.User do
       end
     end
 
+    action :super_admin_sign_in, :map do
+      description "Super admin sign in that works across all tenants."
+
+      argument :member_id, :string do
+        description "The super admin's member ID"
+        allow_nil? false
+      end
+
+      argument :password, :string do
+        description "The super admin's password"
+        allow_nil? false
+        sensitive? true
+      end
+
+      run fn input, context ->
+        # Search across all tenants for super admin
+        results =
+          KgEdu.Repo.all_tenants()
+          |> Enum.flat_map(fn tenant_schema ->
+            case KgEdu.Accounts.User |> Ash.read(tenant: tenant_schema) do
+              {:ok, users} ->
+                users
+                |> Enum.filter(&(&1.role == :super_admin))
+                |> Enum.filter(&(&1.member_id == input.arguments.member_id))
+              _ -> []
+            end
+          end)
+
+        case List.first(results) do
+          nil ->
+            {:error, :invalid_credentials}
+
+          user ->
+            # Use Bcrypt for password verification (as configured in the user resource)
+            case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
+            true ->
+              # Generate token using the same method as the register action
+              case AshAuthentication.Jwt.token_for_user(user) do
+                {:ok, token, _} ->
+                  {:ok, %{user | __metadata__: %{token: token}}}
+                {:error, reason} ->
+                  {:error, reason}
+              end
+            false ->
+              {:error, :invalid_credentials}
+          end
+        end
+      end
+    end
+
+    action :sign_in_tenant, :map do
+      description "Sign in to a specific tenant by member_id and password."
+
+      argument :member_id, :string do
+        description "The user's member ID"
+        allow_nil? false
+      end
+
+      argument :password, :string do
+        description "The user's password"
+        allow_nil? false
+        sensitive? true
+      end
+
+      argument :tenant_id, :uuid do
+        description "The tenant ID to sign in to"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        # Get the tenant schema
+        case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
+          {:ok, organization} ->
+            # Search for user in the specific tenant by reading all and filtering
+            case KgEdu.Accounts.User
+                 |> Ash.read(tenant: organization.schema_name) do
+              {:ok, users} ->
+                users
+                |> Enum.find(&(&1.member_id == input.arguments.member_id))
+                |> case do
+                  nil ->
+                    {:error, :invalid_credentials}
+                  user ->
+                    # Use Bcrypt for password verification (as configured in the user resource)
+                    case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
+                      true ->
+                        # Generate token using the same method as the register action
+                        case AshAuthentication.Jwt.token_for_user(user) do
+                          {:ok, token, _} ->
+                            {:ok, %{user | __metadata__: %{token: token}}}
+                          {:error, reason} ->
+                            {:error, reason}
+                        end
+                      false ->
+                        {:error, :invalid_credentials}
+                    end
+                end
+              {:error, reason} ->
+                {:error, reason}
+            end
+
+          {:error, reason} ->
+            {:error, :tenant_not_found}
+        end
+      end
+    end
+
     read :sign_in_with_token do
       # In the generated sign in components, we validate the
       # email and password directly in the LiveView
@@ -198,12 +398,11 @@ defmodule KgEdu.Accounts.User do
         sensitive? true
       end
 
-
       argument :role, :atom do
         description "The role of the user (admin, user, teacher). Defaults to :user."
         allow_nil? true
         default :user
-        constraints one_of: [:admin, :user, :teacher]
+        constraints one_of: [:super_admin, :admin, :user, :teacher]
       end
 
       # Sets the student_id from the argument
@@ -229,6 +428,135 @@ defmodule KgEdu.Accounts.User do
 
       # Log user registration data
       change {__MODULE__.Changes.LogUserRegistration, []}
+    end
+
+    action :register_user_in_tenant do
+      description "Register a new user in a specific tenant."
+
+      argument :member_id, :string do
+        allow_nil? false
+      end
+
+      argument :name, :string do
+        allow_nil? true
+      end
+
+      argument :password, :string do
+        description "The proposed password for the user, in plain text."
+        allow_nil? false
+        constraints min_length: 8
+        sensitive? true
+      end
+
+      argument :password_confirmation, :string do
+        description "The proposed password for the user (again), in plain text."
+        allow_nil? false
+        sensitive? true
+      end
+
+      argument :role, :atom do
+        description "The role of the user (admin, user, teacher). Defaults to :user."
+        allow_nil? true
+        default :user
+        constraints one_of: [:admin, :user, :teacher]
+      end
+
+      argument :tenant_id, :uuid do
+        description "The tenant (organization) ID to register the user in"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        # Get the tenant schema
+        case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
+          {:ok, organization} ->
+            # Register user in the specific tenant
+            case KgEdu.Accounts.User
+                 |> Ash.Changeset.for_action(:register_with_password, %{
+                   member_id: input.arguments.member_id,
+                   name: input.arguments.name,
+                   password: input.arguments.password,
+                   password_confirmation: input.arguments.password_confirmation,
+                   role: input.arguments.role
+                 })
+                 |> Ash.create(tenant: organization.schema_name) do
+              {:ok, user} ->
+                # Generate token using the same method as the register action
+                token = AshAuthentication.Jwt.token_for_user(user)
+                {:ok, %{user | __metadata__: %{token: token}}}
+              error ->
+                error
+            end
+
+          {:error, reason} ->
+            {:error, :tenant_not_found}
+        end
+      end
+
+      returns :map
+    end
+
+    action :register_super_admin do
+      description "Register a new super admin (requires no tenant context)."
+
+      argument :member_id, :string do
+        allow_nil? false
+      end
+
+      argument :name, :string do
+        allow_nil? true
+      end
+
+      argument :password, :string do
+        description "The proposed password for the super admin, in plain text."
+        allow_nil? false
+        constraints min_length: 8
+        sensitive? true
+      end
+
+      argument :password_confirmation, :string do
+        description "The proposed password for the super admin (again), in plain text."
+        allow_nil? false
+        sensitive? true
+      end
+
+      run fn input, context ->
+        # Find a default tenant or create one for super admin storage
+        tenants = KgEdu.Repo.all_tenants()
+
+        target_tenant = case tenants do
+          [] ->
+            # Create a default system tenant if none exists
+            case KgEdu.Accounts.Organization |> Ash.Changeset.for_action(:create, %{name: "System"}) |> Ash.create() do
+              {:ok, org} -> org.schema_name
+              _ -> nil
+            end
+          [first_tenant | _] -> first_tenant
+        end
+
+        if target_tenant do
+          case KgEdu.Accounts.User
+               |> Ash.Changeset.for_action(:register_with_password, %{
+                 member_id: input.arguments.member_id,
+                 name: input.arguments.name,
+                 password: input.arguments.password,
+                 password_confirmation: input.arguments.password_confirmation,
+                 role: :super_admin
+               })
+               |> Ash.create(tenant: target_tenant) do
+            {:ok, user} ->
+              # Generate token using the same method as the register action
+              token = AshAuthentication.Jwt.token_for_user(user)
+              {:ok, %{user | __metadata__: %{token: token}}}
+            error ->
+              error
+          end
+        else
+          {:error, :no_tenant_available}
+        end
+      end
+
+      returns :map
     end
 
     action :request_password_reset_token do
@@ -301,10 +629,83 @@ defmodule KgEdu.Accounts.User do
 
       run {AshAuthentication.Actions.SignOut, action: :sign_out}
     end
+
+    action :import_users_from_excel do
+      description "Import multiple users from an Excel file with Base64 encoding"
+
+      argument :excel_file, :string do
+        description "Base64 encoded Excel file containing user data"
+        allow_nil? true
+      end
+
+      argument :excelFile, :string do
+        description "Base64 encoded Excel file containing user data (camelCase version)"
+        allow_nil? true
+      end
+
+      argument :attributes, {:array, :atom} do
+        description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role]"
+        allow_nil? true
+        default [:member_id, :name, :phone, :email, :password, :role]
+      end
+
+      run fn input, context ->
+        Logger.info("Starting user import")
+        Logger.info("Current context tenant: #{inspect(context.tenant)}")
+        Logger.info("All input arguments: #{inspect(input.arguments)}")
+
+        # Extract arguments safely - the API call might be using different field names
+        excel_file = Map.get(input.arguments, :excelFile) || Map.get(input.arguments, :excel_file)
+        attributes = Map.get(input.arguments, :attributes)
+
+        Logger.info("Excel file present: #{not is_nil(excel_file)}")
+        Logger.info("Attributes: #{inspect(attributes)}")
+
+        # Handle tenant logic - use context.tenant as primary source (from request)
+        tenant_to_use = context.tenant
+
+        if is_nil(tenant_to_use) do
+          Logger.error("No tenant context found!")
+          {:error, "Tenant context is required"}
+        else
+          Logger.info("Using tenant context: #{inspect(tenant_to_use)}")
+
+          # Import users with tenant context
+          import_result = try do
+            KgEdu.Accounts.User.ImportFromExcel.parse_excel(
+              excel_file,
+              attributes || [:member_id, :name, :phone, :email, :password, :role],
+              tenant_to_use
+            )
+          rescue
+            e ->
+              Logger.error("Exception during user import: #{Exception.message(e)}")
+              Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+              Logger.error("Excel file length: #{if excel_file, do: byte_size(excel_file), else: nil}")
+              {:error, {:import_exception, Exception.message(e)}}
+          end
+
+          case import_result do
+            {:ok, users} ->
+              Logger.info("Successfully imported #{length(users)} users")
+              :ok
+
+            {:error, reason} ->
+              Logger.error("Failed to import users: #{inspect(reason)}")
+              {:error, reason}
+          end
+        end
+      end
+    end
+
+
+    read :get_users_from_tenant do
+      description "Get users from a specific tenant (super admin only)"
+    end
   end
 
   policies do
-     policy always() do
+    policy always() do
       authorize_if always()
     end
 
@@ -380,6 +781,26 @@ defmodule KgEdu.Accounts.User do
       public? true
     end
 
+    attribute :phone, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :class_name, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :major, :string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :colledge, :string do
+      allow_nil? true
+      public? true
+    end
+
     attribute :email, :ci_string do
       allow_nil? true
       public? true
@@ -393,8 +814,14 @@ defmodule KgEdu.Accounts.User do
     attribute :role, :atom do
       allow_nil? false
       default :user
-      constraints one_of: [:admin, :user, :teacher]
+      constraints one_of: [:super_admin, :admin, :user, :teacher]
       public? true
+    end
+
+    attribute :avatar_url, :string do
+      allow_nil? true
+      public? true
+      description "头像地址 (Avatar URL)"
     end
   end
 

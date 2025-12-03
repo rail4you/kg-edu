@@ -5,6 +5,7 @@ defmodule KgEduWeb.ExerciseLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
+      <div data-theme="green" class="rounded-lg p-4">
       <.header>
         Exercise {@exercise.id}
         <:subtitle>This is a exercise record from your database.</:subtitle>
@@ -38,6 +39,7 @@ defmodule KgEduWeb.ExerciseLive.Show do
 
         <:item title="Created by">{@exercise.created_by_id}</:item>
       </.list>
+      </div>
     </Layouts.app>
     """
   end

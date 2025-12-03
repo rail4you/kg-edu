@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Science Curriculum</title>
+    <dateCreated>2025-01-07</dateCreated>
+    <dateModified>2025-01-07</dateModified>
+    <ownerName>Education System</ownerName>
+    <docs>http://dev.opml.org/spec2.html</docs>
+    <expansionState>1,2,3,4</expansionState>
+    <vertScrollState>1</vertScrollState>
+    <windowTop>0</windowTop>
+    <windowLeft>0</windowLeft>
+    <windowBottom>800</windowBottom>
+    <windowRight>600</windowRight>
+  </head>
+  <body>
+    <!-- Physics Subject -->
+    <outline text="Physics" title="Physics">
+      <outline text="Classical Mechanics" title="Classical Mechanics">
+        <outline text="Newton's Laws of Motion" title="Newton's Laws of Motion" description="Three fundamental laws governing motion and forces"/>
+        <outline text="Kinematics" title="Kinematics" description="Study of motion without considering forces"/>
+        <outline text="Dynamics" title="Dynamics" description="Study of forces and their effects on motion"/>
+        <outline text="Energy and Momentum" title="Energy and Momentum" description="Conservation laws and work-energy theorem"/>
+        <outline text="Rotational Motion" title="Rotational Motion" description="Angular velocity, torque, and moment of inertia"/>
+      </outline>
+
+      <outline text="Thermodynamics" title="Thermodynamics">
+        <outline text="Temperature and Heat" title="Temperature and Heat" description="Concepts of temperature, heat capacity, and heat transfer"/>
+        <outline text="Laws of Thermodynamics" title="Laws of Thermodynamics" description="Four fundamental laws governing energy and entropy"/>
+        <outline text="Ideal Gas Law" title="Ideal Gas Law" description="Relationship between pressure, volume, and temperature"/>
+        <outline text="Heat Engines" title="Heat Engines" description="Conversion of heat to work and efficiency"/>
+      </outline>
+
+      <outline text="Electromagnetism" title="Electromagnetism">
+        <outline text="Electrostatics" title="Electrostatics" description="Study of electric charges at rest"/>
+        <outline text="Electric Current" title="Electric Current" description="Flow of electric charge and Ohm's law"/>
+        <outline text="Magnetism" title="Magnetism" description="Magnetic fields and electromagnetic induction"/>
+        <outline text="Maxwell's Equations" title="Maxwell's Equations" description="Four fundamental equations of electromagnetism"/>
+      </outline>
+
+      <outline text="Modern Physics" title="Modern Physics">
+        <outline text="Quantum Mechanics" title="Quantum Mechanics" description="Wave-particle duality and uncertainty principle"/>
+        <outline text="Special Relativity" title="Special Relativity" description="Einstein's theory of space and time"/>
+        <outline text="Atomic Physics" title="Atomic Physics" description="Structure of atoms and electron configurations"/>
+        <outline text="Nuclear Physics" title="Nuclear Physics" description="Radioactivity, fission, and fusion"/>
+      </outline>
+    </outline>
+
+    <!-- Chemistry Subject -->
+    <outline text="Chemistry" title="Chemistry">
+      <outline text="Atomic Structure" title="Atomic Structure">
+        <outline text="Atomic Models" title="Atomic Models" description="Historical development of atomic theory"/>
+        <outline text="Electron Configuration" title="Electron Configuration" description="Distribution of electrons in atomic orbitals"/>
+        <outline text="Periodic Table" title="Periodic Table" description="Organization of elements by atomic properties"/>
+        <outline text="Chemical Bonding" title="Chemical Bonding" description="Ionic, covalent, and metallic bonds"/>
+      </outline>
+
+      <outline text="Chemical Reactions" title="Chemical Reactions">
+        <outline text="Reaction Types" title="Reaction Types" description="Synthesis, decomposition, single and double replacement"/>
+        <outline text="Balancing Equations" title="Balancing Equations" description="Conservation of mass in chemical reactions"/>
+        <outline text="Stoichiometry" title="Stoichiometry" description="Quantitative relationships in chemical reactions"/>
+        <outline text="Reaction Rates" title="Reaction Rates" description="Factors affecting reaction speed"/>
+      </outline>
+
+      <outline text="Organic Chemistry" title="Organic Chemistry">
+        <outline text="Hydrocarbons" title="Hydrocarbons" description="Alkanes, alkenes, and alkynes"/>
+        <outline text="Functional Groups" title="Functional Groups" description="Alcohols, aldehydes, ketones, and carboxylic acids"/>
+        <outline text="Polymers" title="Polymers" description="Large molecules made of repeating units"/>
+        <outline text="Biochemistry" title="Biochemistry" description="Chemistry of living organisms"/>
+      </outline>
+    </outline>
+
+    <!-- Biology Subject -->
+    <outline text="Biology" title="Biology">
+      <outline text="Cell Biology" title="Cell Biology">
+        <outline text="Cell Structure" title="Cell Structure" description="Organelles and their functions"/>
+        <outline text="Cell Membrane" title="Cell Membrane" description="Structure and transport mechanisms"/>
+        <outline text="Cell Division" title="Cell Division" description="Mitosis and meiosis"/>
+        <outline text="Cellular Respiration" title="Cellular Respiration" description="Energy production in cells"/>
+      </outline>
+
+      <outline text="Genetics" title="Genetics">
+        <outline text="DNA and RNA" title="DNA and RNA" description="Structure and function of nucleic acids"/>
+        <outline text="Gene Expression" title="Gene Expression" description="Transcription and translation"/>
+        <outline text="Mendelian Genetics" title="Mendelian Genetics" description="Laws of inheritance"/>
+        <outline text="Genetic Engineering" title="Genetic Engineering" description="Recombinant DNA and CRISPR"/>
+      </outline>
+
+      <outline text="Ecology" title="Ecology">
+        <outline text="Ecosystems" title="Ecosystems" description="Interactions between organisms and environment"/>
+        <outline text="Food Chains" title="Food Chains" description="Energy flow through ecosystems"/>
+        <outline text="Population Dynamics" title="Population Dynamics" description="Growth and regulation of populations"/>
+        <outline text="Conservation Biology" title="Conservation Biology" description="Protection of endangered species"/>
+      </outline>
+    </outline>
+
+    <!-- Earth Science Subject -->
+    <outline text="Earth Science" title="Earth Science">
+      <outline text="Geology" title="Geology">
+        <outline text="Rock Types" title="Rock Types" description="Igneous, sedimentary, and metamorphic rocks"/>
+        <outline text="Plate Tectonics" title="Plate Tectonics" description="Movement of Earth's lithospheric plates"/>
+        <outline text="Mineralogy" title="Mineralogy" description="Study of minerals and their properties"/>
+        <outline text="Geological Time" title="Geological Time" description="Earth's history and dating methods"/>
+      </outline>
+
+      <outline text="Meteorology" title="Meteorology">
+        <outline text="Atmosphere" title="Atmosphere" description="Layers and composition of Earth's atmosphere"/>
+        <outline text="Weather Patterns" title="Weather Patterns" description="High and low pressure systems"/>
+        <outline text="Climate Change" title="Climate Change" description="Long-term changes in Earth's climate"/>
+        <outline text="Severe Weather" title="Severe Weather" description="Hurricanes, tornadoes, and thunderstorms"/>
+      </outline>
+    </outline>
+  </body>
+</opml>

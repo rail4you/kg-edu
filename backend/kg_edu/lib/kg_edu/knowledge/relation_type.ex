@@ -11,6 +11,10 @@ defmodule KgEdu.Knowledge.RelationType do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "relation_type"
   end
@@ -30,7 +34,15 @@ defmodule KgEdu.Knowledge.RelationType do
   end
 
   actions do
-    defaults [:read, :create, :update, :destroy]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:name, :display_name, :description]
+    end
+
+    update :update do
+      accept [:name, :display_name, :description]
+    end
 
     read :by_id do
       description "Get a relation type by ID"

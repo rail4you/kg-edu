@@ -5,6 +5,7 @@ defmodule KgEduWeb.ExerciseLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
+      <div data-theme="green" class="rounded-lg p-4">
       <.header>
         {@page_title}
         <:subtitle>Use this form to manage exercise records in your database.</:subtitle>
@@ -137,6 +138,7 @@ defmodule KgEduWeb.ExerciseLive.Form do
         <.button phx-disable-with="Saving..." variant="primary">Save Exercise</.button>
         <.button navigate={return_path(@return_to, @exercise)}>Cancel</.button>
       </.form>
+      </div>
     </Layouts.app>
     """
   end

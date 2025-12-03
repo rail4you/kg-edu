@@ -11,9 +11,17 @@ defmodule KgEdu.Knowledge do
       rpc_action :create_resource, :create
       rpc_action :get_subject_with_units, :get_subject_with_units
       rpc_action :get_full_hierarchy, :get_full_hierarchy
-      rpc_action :update_resource, :update
+      rpc_action :update_resource, :update_knowledge_resource
       rpc_action :destroy_resource, :destroy
+      rpc_action :bulk_destroy_knowledges, :bulk_destroy_knowledges
+      rpc_action :bulk_update_importance_level, :bulk_update_importance_level
+      rpc_action :delete_all_knowledges_by_course, :delete_all_knowledges_by_course
       rpc_action :import_knowledge_from_excel, :import_from_excel
+      rpc_action :import_knowledge_from_llm, :import_from_llm
+      rpc_action :import_knowledge_from_opml, :import_from_opml
+      rpc_action :get_knowledge_resources_by_name_and_importance, :by_name_and_importance
+      rpc_action :get_course_learning_stats_by_student, :get_course_learning_stats_by_student
+      # rpc_action :get_resource_learning_stats, :student_learning_stats
       # rpc_action :get_resource, :get_resource
     end
 
@@ -21,6 +29,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_relations, :read
       rpc_action :create_relation, :create
       rpc_action :destroy_relation, :destroy
+      rpc_action :update_relation, :update_knowledge_relation
       rpc_action :get_knowledge_relation, :by_id
       rpc_action :import_relations_from_excel, :import_relations_from_excel
     end
@@ -35,15 +44,16 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.Exercise do
       rpc_action :list_exercises, :read
       rpc_action :create_exercise, :create
-      rpc_action :destroy_exercise, :destroy
+      rpc_action :destroy_exercises, :destroy
       rpc_action :get_exercise, :by_id
       rpc_action :update_exercise, :update_exercise
       rpc_action :generate_ai_exercise, :generate_ai_exercise
       rpc_action :get_recent_ai_exercises, :recent_ai_exercises
       rpc_action :link_exercise_to_knowledge, :link_exercise_to_knowledge
       rpc_action :unlink_exercise_from_knowledge, :unlink_exercise_from_knowledge
-      rpc_action :import_exercise_from_xlsx, :import_exercise_from_xlsx
+      rpc_action :import_exercises_from_excel, :import_exercises_from_excel
       rpc_action :export_exercise_template, :export_exercise_template
+      # rpc_action :get_exercise_completion_stats, :get_exercise_completion_stats
     end
 
     resource KgEdu.Knowledge.Question do
@@ -56,6 +66,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_concept_questions, :list_concept_questions
       rpc_action :list_method_questions, :list_method_questions
       rpc_action :get_question_flow, :get_question_flow
+      rpc_action :import_questions_from_xlsx, :import_questions_from_xlsx
+      rpc_action :export_question_template, :export_question_template
     end
 
     resource KgEdu.Knowledge.QuestionConnection do
@@ -82,6 +94,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :unlink_homework_from_knowledge, :unlink_homework_from_knowledge
       rpc_action :import_homework_from_xlsx, :import_homework_from_xlsx
       rpc_action :export_homework_template, :export_homework_template
+      # rpc_action :get_homework_completion_stats, :get_homework_completion_stats
     end
   end
 

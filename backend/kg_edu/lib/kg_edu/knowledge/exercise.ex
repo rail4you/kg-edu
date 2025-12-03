@@ -6,6 +6,8 @@ defmodule KgEdu.Knowledge.Exercise do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
+  require Logger
+  require Ash.Query
 
   typescript do
     type_name "Exercise"
@@ -15,6 +17,14 @@ defmodule KgEdu.Knowledge.Exercise do
   postgres do
     table "exercises"
     repo KgEdu.Repo
+
+    references do
+      reference :knowledge_resource, on_delete: :delete
+    end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   json_api do
@@ -35,10 +45,12 @@ defmodule KgEdu.Knowledge.Exercise do
     define :unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge
     define :import_exercise_from_xlsx, action: :import_exercise_from_xlsx
     define :export_exercise_template, action: :export_exercise_template
+    define :log_exercise_submit_activity, action: :log_exercise_submit
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
+
 
     read :by_id do
       description "Get an exercise by ID"
@@ -104,11 +116,11 @@ defmodule KgEdu.Knowledge.Exercise do
       change set_attribute(:knowledge_resource_id, nil)
     end
 
-    create :generate_ai_exercise do
-      description "Generate an AI exercise based on course, knowledge, chapter, and exercise type"
-      argument :course_name, :string do
+    action :generate_ai_exercise do
+      description "Generate AI exercises based on course, knowledge, chapter, and exercise type using bulk create"
+      argument :course_id, :uuid do
         allow_nil? false
-        description "Name of the course"
+        description "Course ID to generate exercises for"
       end
 
       argument :knowledge_name, :string do
@@ -133,11 +145,66 @@ defmodule KgEdu.Knowledge.Exercise do
         description "Number of exercises to generate"
       end
 
-      accept [:course_id]
+      run fn input, context ->
+        course_id = input.arguments.course_id
+        knowledge_name = input.arguments.knowledge_name
+        chapter_name = input.arguments.chapter_name
+        exercise_type = input.arguments.exercise_type
+        number = input.arguments.number
 
-      change set_attribute(:ai_type, :ai_generated)
+        # Debug: Log the course_id we're looking for
+        Logger.info("Looking for course with ID: #{course_id}")
 
-      change {KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise, []}
+        # Get course by ID using Ash.get which is designed for primary key lookup
+        case Ash.get(KgEdu.Courses.Course, course_id, tenant: context.tenant, actor: context.actor) do
+          {:ok, course} ->
+            # Generate multiple exercises
+            case KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise.generate_multiple_exercises(
+                   course.title, knowledge_name, chapter_name, exercise_type, number
+                 ) do
+              {:ok, exercises_data} ->
+                # Prepare exercise data for bulk create
+                exercises_with_metadata = Enum.map(exercises_data, fn exercise_data ->
+                  Map.merge(exercise_data, %{
+                    course_id: course.id,
+                    question_type: exercise_type,
+                    ai_type: :ai_generated
+                  })
+                end)
+
+                # Use Ash bulk create to store exercises
+                case Ash.bulk_create(
+                       exercises_with_metadata,
+                       KgEdu.Knowledge.Exercise,
+                       :create,
+                       return_records?: true,
+                       return_errors?: true,
+                       tenant: context.tenant
+                     ) do
+                  # %{created: created_exercises, errors: []} ->
+                  #   {:ok, created_exercises}
+                   %Ash.BulkResult{status: :success, records: records} ->
+                    :ok
+                    # {:ok, records}
+
+                  # %{created: created_exercises, errors: [_ | _] = errors} ->
+                  #   # Partial success - return created exercises and log errors
+                  #   Logger.error("Some exercises failed to create: #{inspect(errors)}")
+                  #   {:ok, created_exercises}
+
+                  {:error, reason} ->
+                    {:error, reason}
+                end
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+
+          {:error, reason} ->
+            Logger.error("Failed to find course: #{inspect(reason)}")
+            {:error, "Course not found with ID: #{course_id}"}
+        end
+      end
     end
 
     create :import_exercise_from_xlsx do
@@ -165,6 +232,76 @@ defmodule KgEdu.Knowledge.Exercise do
       end
 
       run {KgEdu.Knowledge.Changes.ExportExerciseTemplate, []}
+    end
+
+    action :import_exercises_from_excel do
+      description "Import multiple exercises from an Excel file with Base64 encoding"
+
+      argument :excel_file, :string do
+        description "Base64 encoded Excel file containing exercise data"
+        allow_nil? false
+      end
+
+      argument :course_id, :string do
+        allow_nil? false
+      end
+
+      argument :attributes, {:array, :atom} do
+        description ""
+        allow_nil? false
+        default [:title, :question_content, :question_type, :answer, :options]
+      end
+
+      run fn input, context ->
+        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+        case KgEdu.Knowledge.Exercise.ImportFromExcel.parse_excel(
+               input.arguments.excel_file,
+               input.arguments.attributes,
+               input.arguments.course_id,
+               context.tenant
+             ) do
+          {:ok, user} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
+    end
+
+    action :log_exercise_submit do
+      description "Log exercise submission activity"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who submitted the exercise"
+      end
+
+      argument :answer, :string do
+        allow_nil? false
+        description "The answer submitted by the user"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the submission"
+      end
+
+      run fn input, context ->
+        exercise_id = input.arguments[:exercise_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        answer = input.arguments[:answer]
+        metadata = input.arguments[:metadata] || %{}
+
+        if exercise_id && user_id && answer do
+          KgEdu.Activity.ActivityLog.log_exercise_submit(%{
+            user_id: user_id,
+            exercise_id: exercise_id,
+            answer: answer,
+            metadata: metadata
+          })
+        end
+
+        :ok
+      end
     end
   end
 
@@ -237,7 +374,4 @@ defmodule KgEdu.Knowledge.Exercise do
     end
   end
 
-  identities do
-    identity :unique_title_per_course, [:title, :course_id]
   end
-end

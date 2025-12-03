@@ -5,6 +5,12 @@ defmodule KgEdu.Courses.File do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshTypescript.Resource]
+  import Logger
+
+  typescript do
+    type_name "File"
+  end
+
 
   # File storage helper function
   defp store_file(base64_string) do
@@ -57,9 +63,14 @@ defmodule KgEdu.Courses.File do
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   code_interface do
     define :create_file, action: :create
     define :upload_file, action: :upload
+    define :upload_phoenix_file, action: :upload_phoenix
     define :update_file, action: :update
     define :delete_file, action: :destroy
     define :get_file, action: :read, get_by: [:id]
@@ -67,14 +78,22 @@ defmodule KgEdu.Courses.File do
     define :list_files_by_course, action: :by_course
     define :list_files_by_purpose, action: :by_purpose
     define :list_files_by_knowledge_resource, action: :by_knowledge_resource
+    define :list_files_by_creator, action: :by_creator
     define :generate_example_files, action: :generate_examples
     define :download_file, action: :download_file
     define :link_file_to_knowledge, action: :link_file_to_knowledge
     define :unlink_file_from_knowledge, action: :unlink_file_from_knowledge
+    define :log_file_view_activity, action: :log_file_view
   end
 
   actions do
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read, :update, :destroy]
+    create :create do
+      description "Create a new file record"
+      accept [:filename, :path, :size, :file_type, :purpose, :course_id, :knowledge_resource_id, :created_by_id]
+
+      change set_attribute(:created_by_id, actor(:id))
+    end
 
     action :download_file do
       description "Download file content by file ID"
@@ -113,6 +132,68 @@ defmodule KgEdu.Courses.File do
       end
     end
 
+    create :upload_phoenix do
+      description "Upload a file using Phoenix upload plug and create file record"
+
+      argument :upload, :map do
+        allow_nil? false
+        description "Phoenix upload plug data"
+      end
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "Course ID to associate the file with"
+      end
+
+      argument :purpose, :string do
+        allow_nil? true
+        default "course_file"
+      end
+
+      change manage_relationship(:course_id, :course, type: :append_and_remove)
+      change set_attribute(:created_by_id, actor(:id))
+
+      change fn changeset, _context ->
+        upload = Ash.Changeset.get_argument(changeset, :upload)
+        course_id = Ash.Changeset.get_argument(changeset, :course_id)
+
+        case upload do
+          nil ->
+            Ash.Changeset.add_error(changeset, "File upload is required")
+
+          %Plug.Upload{path: temp_path, filename: original_filename, content_type: content_type} ->
+            # Store file using Waffle
+            case KgEduWeb.CourseFileUploader.store({upload, course_id}) do
+              {:ok, file_url} ->
+                # Get file size
+                case File.stat(temp_path) do
+                  {:ok, stat} ->
+                    Logger.info("Stored file at #{file_url} with size #{stat.size}")
+                    file_url = KgEduWeb.CourseFileUploader.url({file_url, course_id})
+                    changeset
+                    |> Ash.Changeset.change_attribute(:filename, original_filename)
+                    |> Ash.Changeset.change_attribute(:path, file_url)
+                    |> Ash.Changeset.change_attribute(:size, stat.size)
+                    |> Ash.Changeset.change_attribute(:file_type, content_type)
+                    |> Ash.Changeset.change_attribute(
+                      :purpose,
+                      Ash.Changeset.get_argument(changeset, :purpose)
+                    )
+
+                  {:error, _reason} ->
+                    Ash.Changeset.add_error(changeset, "Failed to get file size")
+                end
+
+              {:error, reason} ->
+                Ash.Changeset.add_error(changeset, "Failed to store file: #{inspect(reason)}")
+            end
+
+          _ ->
+            Ash.Changeset.add_error(changeset, "Invalid upload format")
+        end
+      end
+    end
+
     create :upload do
       description "Upload a file and create file record"
 
@@ -143,6 +224,7 @@ defmodule KgEdu.Courses.File do
       change manage_relationship(:knowledge_resource_id, :knowledge_resource,
                type: :append_and_remove
              )
+      change set_attribute(:created_by_id, actor(:id))
 
       change fn changeset, _context ->
         case Ash.Changeset.get_argument(changeset, :file) do
@@ -217,6 +299,16 @@ defmodule KgEdu.Courses.File do
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
     end
 
+    read :by_creator do
+      description "Get files created by a specific user"
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(created_by_id == ^arg(:created_by_id))
+    end
+
     create :generate_examples do
       description "Generate example files for a knowledge resource"
 
@@ -257,6 +349,37 @@ defmodule KgEdu.Courses.File do
       require_atomic? false
 
       change set_attribute(:knowledge_resource_id, nil)
+    end
+
+    action :log_file_view do
+      description "Log file view activity"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who viewed the file"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata about the view"
+      end
+
+      run fn input, context ->
+        file_id = input.arguments[:file_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        user_id = input.arguments[:user_id]
+        metadata = input.arguments[:metadata] || %{}
+
+        if file_id && user_id do
+          KgEdu.Activity.ActivityLog.log_file_view(%{
+            user_id: user_id,
+            file_id: file_id,
+            metadata: metadata
+          })
+        end
+
+        :ok
+      end
     end
   end
 
@@ -328,18 +451,31 @@ defmodule KgEdu.Courses.File do
       default "course_file"
     end
 
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public? true
+      description "ID of the user who created this file"
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
 
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
+      public? true
       allow_nil? true
     end
 
     belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
       allow_nil? true
       public? true
+    end
+
+    belongs_to :created_by, KgEdu.Accounts.User do
+      public? true
+      allow_nil? true
+      description "The user who created this file"
     end
   end
 end

@@ -10,10 +10,13 @@ defmodule KgEdu.Courses do
   typescript_rpc do
     resource KgEdu.Courses.Course do
       rpc_action :list_courses, :read
+      rpc_action :get_all_courses, :get_all_courses
+      rpc_action :get_course_by_guest, :get_course_by_guest
       rpc_action :create_course, :create
       rpc_action :update_course, :update
       rpc_action :destroy_course, :destroy
       rpc_action :get_course, :get
+      rpc_action :calculate_course_statistics, :calculate_course_statistics
     end
 
     resource KgEdu.Courses.Chapter do
@@ -26,7 +29,8 @@ defmodule KgEdu.Courses do
 
     resource KgEdu.Courses.File do
       rpc_action :list_files, :read
-      rpc_action :upload_file, :upload
+      # rpc_action :upload_file, :upload
+      rpc_action :create_file, :create
       rpc_action :delete_file, :destroy
       rpc_action :link_file_to_knowledge, :link_file_to_knowledge
       rpc_action :unlink_file_from_knowledge, :unlink_file_from_knowledge
@@ -40,12 +44,61 @@ defmodule KgEdu.Courses do
       rpc_action :get_video_by_upload_id, :read
       rpc_action :update_video, :update_video
       rpc_action :delete_video, :destroy
+      rpc_action :get_videos_by_course_ids, :by_course_ids
       # rpc_action :get_videos_by_chapter, :by_chapter
       # rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
       rpc_action :link_video_to_knowledge, :link_video_to_knowledge
       rpc_action :unlink_video_from_knowledge, :unlink_video_from_knowledge
       rpc_action :link_video_to_chapter, :link_video_to_chapter
       rpc_action :unlink_video_from_chapter, :unlink_video_from_chapter
+    end
+
+    resource KgEdu.Courses.CourseEnrollment do
+      rpc_action :enroll_student, :create
+      rpc_action :unenroll_student, :destroy
+      rpc_action :get_enrollment, :read
+      rpc_action :list_enrollments, :read
+      rpc_action :list_enrollments_by_course, :by_course
+      rpc_action :list_enrollments_by_student, :by_student
+      rpc_action :bulk_enroll_students, :bulk_enroll
+      rpc_action :bulk_unenroll_students, :bulk_unenroll_students
+      rpc_action :check_enrollment_status, :enrollment_status
+    end
+
+    resource KgEdu.Courses.Book do
+      rpc_action :list_books, :read
+      rpc_action :create_book, :create
+      rpc_action :get_book, :read
+      rpc_action :update_book, :update
+      rpc_action :delete_book, :destroy
+    end
+
+    resource KgEdu.Courses.CourseInfo do
+      rpc_action :list_course_infos, :read
+      rpc_action :create_course_info, :create
+      rpc_action :get_course_info, :read
+      rpc_action :update_course_info, :update
+      rpc_action :delete_course_info, :destroy
+    end
+
+    resource KgEdu.Courses.Link do
+      rpc_action :list_links, :read
+      rpc_action :create_link, :create
+      rpc_action :get_link, :read
+      rpc_action :update_link, :update
+      rpc_action :delete_link, :destroy
+      rpc_action :list_links_by_course, :by_course
+      rpc_action :link_to_knowledge, :link_to_knowledge
+      rpc_action :unlink_from_knowledge, :unlink_from_knowledge
+    end
+
+    resource KgEdu.Courses.SubjectCategory do
+      rpc_action :create_subject_category, :create
+      rpc_action :list_subject_categories, :read
+      rpc_action :get_subject_category, :read
+      rpc_action :get_subject_category_by_name, :by_name
+      rpc_action :update_subject_category, :update
+      rpc_action :delete_subject_category, :destroy
     end
   end
 
@@ -89,5 +142,9 @@ defmodule KgEdu.Courses do
     resource KgEdu.Courses.Chapter
     resource KgEdu.Courses.File
     resource KgEdu.Courses.Video
+    resource KgEdu.Courses.Book
+    resource KgEdu.Courses.CourseInfo
+    resource KgEdu.Courses.Link
+    resource KgEdu.Courses.SubjectCategory
   end
 end

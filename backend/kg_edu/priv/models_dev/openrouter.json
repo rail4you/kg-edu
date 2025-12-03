@@ -124,6 +124,39 @@
     {
       "attachment": true,
       "cost": {
+        "cache_read": 0.1,
+        "cache_write": 1.25,
+        "input": 1,
+        "output": 5
+      },
+      "id": "anthropic/claude-4.5-haiku",
+      "knowledge": "2025-02-31",
+      "last_updated": "2025-10-15",
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Claude Haiku 4.5",
+      "open_weights": false,
+      "provider": "openrouter",
+      "provider_model_id": "anthropic/claude-4.5-haiku",
+      "reasoning": true,
+      "release_date": "2025-10-15",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": true,
+      "cost": {
         "input": 0.6,
         "output": 1.8
       },
@@ -335,6 +368,41 @@
       "provider_model_id": "z-ai/glm-4.5-air",
       "reasoning": true,
       "release_date": "2025-07-28",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": true,
+      "cost": {
+        "cache_read": 0.025,
+        "input": 0.1,
+        "output": 0.4
+      },
+      "id": "google/gemini-2.5-flash-lite",
+      "knowledge": "2025-01",
+      "last_updated": "2025-06-17",
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Gemini 2.5 Flash Lite",
+      "open_weights": false,
+      "provider": "openrouter",
+      "provider_model_id": "google/gemini-2.5-flash-lite",
+      "reasoning": true,
+      "release_date": "2025-06-17",
       "temperature": true,
       "tool_call": true
     },
@@ -680,6 +748,40 @@
       "provider_model_id": "cognitivecomputations/dolphin3.0-mistral-24b",
       "reasoning": false,
       "release_date": "2025-02-13",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": true,
+      "cost": {
+        "cache_read": 1.25,
+        "input": 5,
+        "output": 10
+      },
+      "id": "openai/gpt-5-image",
+      "knowledge": "2024-10-01",
+      "last_updated": "2025-10-14",
+      "limit": {
+        "context": 400000,
+        "output": 128000
+      },
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text",
+          "image"
+        ]
+      },
+      "name": "GPT-5 Image",
+      "open_weights": false,
+      "provider": "openrouter",
+      "provider_model_id": "openai/gpt-5-image",
+      "reasoning": true,
+      "release_date": "2025-10-14",
       "temperature": true,
       "tool_call": true
     },
@@ -1250,8 +1352,8 @@
       "knowledge": "2025-04",
       "last_updated": "2025-07-29",
       "limit": {
-        "context": 131072,
-        "output": 33000
+        "context": 262000,
+        "output": 262000
       },
       "modalities": {
         "input": [
@@ -1268,7 +1370,7 @@
       "reasoning": false,
       "release_date": "2025-07-29",
       "temperature": true,
-      "tool_call": false
+      "tool_call": true
     },
     {
       "attachment": false,
@@ -1993,6 +2095,41 @@
       "tool_call": false
     },
     {
+      "attachment": true,
+      "cost": {
+        "cache_read": 0.031,
+        "input": 0.3,
+        "output": 2.5
+      },
+      "id": "google/gemini-2.5-flash-preview-09-2025",
+      "knowledge": "2025-01",
+      "last_updated": "2025-09-25",
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Gemini 2.5 Flash Preview 09-25",
+      "open_weights": false,
+      "provider": "openrouter",
+      "provider_model_id": "google/gemini-2.5-flash-preview-09-2025",
+      "reasoning": true,
+      "release_date": "2025-09-25",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
       "attachment": false,
       "cost": {
         "input": 0.3,
@@ -2328,6 +2465,41 @@
       "tool_call": true
     },
     {
+      "attachment": true,
+      "cost": {
+        "cache_read": 0.025,
+        "input": 0.1,
+        "output": 0.4
+      },
+      "id": "google/gemini-2.5-flash-lite-preview-09-2025",
+      "knowledge": "2025-01",
+      "last_updated": "2025-09-25",
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Gemini 2.5 Flash Lite Preview 09-25",
+      "open_weights": false,
+      "provider": "openrouter",
+      "provider_model_id": "google/gemini-2.5-flash-lite-preview-09-2025",
+      "reasoning": true,
+      "release_date": "2025-09-25",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
       "attachment": false,
       "cost": {
         "input": 1.2,
@@ -2444,6 +2616,36 @@
       "provider_model_id": "google/gemma-3-27b-it",
       "reasoning": false,
       "release_date": "2025-03-12",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.8
+      },
+      "id": "qwen/qwen3-30b-a3b-thinking-2507",
+      "knowledge": "2025-04",
+      "last_updated": "2025-07-29",
+      "limit": {
+        "context": 262000,
+        "output": 262000
+      },
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Qwen3 30B A3B Thinking 2507",
+      "open_weights": true,
+      "provider": "openrouter",
+      "provider_model_id": "qwen/qwen3-30b-a3b-thinking-2507",
+      "reasoning": true,
+      "release_date": "2025-07-29",
       "temperature": true,
       "tool_call": true
     },
@@ -3151,6 +3353,36 @@
       "provider_model_id": "openai/gpt-4o-mini",
       "reasoning": false,
       "release_date": "2024-07-18",
+      "temperature": true,
+      "tool_call": true
+    },
+    {
+      "attachment": false,
+      "cost": {
+        "input": 0.14,
+        "output": 1.4
+      },
+      "id": "qwen/qwen3-next-80b-a3b-thinking",
+      "knowledge": "2025-04",
+      "last_updated": "2025-09-11",
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Qwen3 Next 80B A3B Thinking",
+      "open_weights": true,
+      "provider": "openrouter",
+      "provider_model_id": "qwen/qwen3-next-80b-a3b-thinking",
+      "reasoning": true,
+      "release_date": "2025-09-11",
       "temperature": true,
       "tool_call": true
     },

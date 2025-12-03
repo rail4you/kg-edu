@@ -35,9 +35,14 @@ defmodule KgEdu.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:mux, "~> 3.2"},
-      {:req_llm, "~> 1.0.0-rc.5"},
-      {:ash_typescript, "~> 0.3"},
+      {:waffle_aliyun_oss, "~> 0.4.1"},
+      {:ex_aws, "~> 2.1.2"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.6"},
+      # {:mux, "~> 3.2"},
+      {:req_llm, "~> 1.0.0-rc.8"},
+      {:ash_typescript, "~> 0.6"},
       {:cinder, "~> 0.6"},
       # {:mdex, "~> 0.7"},
       # {:ash_oban, "~> 0.4"},
@@ -51,10 +56,10 @@ defmodule KgEdu.MixProject do
       {:ash_admin, "~> 0.13"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},
-      {:ash_postgres, "~> 2.0"},
+      {:ash_postgres, "~> 2.6"},
       {:ash_json_api, "~> 1.0"},
       {:ash_phoenix, "~> 2.0"},
-      {:ash, "~> 3.0"},
+      {:ash, "~> 3.7"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:phoenix, "~> 1.8.0-rc.4", override: true},
       {:phoenix_ecto, "~> 4.5"},
@@ -86,8 +91,8 @@ defmodule KgEdu.MixProject do
       {:bandit, "~> 1.5"},
       {:cors_plug, "~> 3.0"},
       {:xlsxir, "~> 1.6"},
-      {:daisy_ui_components, "~> 0.9"},
-      {:live_debugger, "~> 0.4.0", only: :dev}
+      {:elixlsx, "~> 0.6"},
+      {:daisy_ui_components, "~> 0.9"}
     ]
   end
 

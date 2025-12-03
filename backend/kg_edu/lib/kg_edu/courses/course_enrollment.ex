@@ -4,15 +4,24 @@ defmodule KgEdu.Courses.CourseEnrollment do
     domain: KgEdu.Courses,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Resource, AshTypescript.Rpc]
 
+  require Ash.Query
   postgres do
     table "course_enrollments"
     repo KgEdu.Repo
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   json_api do
     type "course_enrollment"
+  end
+
+  typescript do
+    type_name "CourseEnrollment"
   end
 
   code_interface do
@@ -22,10 +31,13 @@ defmodule KgEdu.Courses.CourseEnrollment do
     define :list_enrollments, action: :read
     define :list_enrollments_by_course, action: :by_course
     define :list_enrollments_by_student, action: :by_student
+    define :bulk_enroll_students, action: :bulk_enroll
+    define :bulk_unenroll_students, action: :bulk_unenroll_students
+    define :check_enrollment_status, action: :enrollment_status
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :update]
 
     create :create do
       accept [:course_id, :member_id]
@@ -35,6 +47,42 @@ defmodule KgEdu.Courses.CourseEnrollment do
         set_attribute(:enrolled_at, &DateTime.utc_now/0)
       ])
     end
+
+    destroy :destroy do
+      primary? true
+    end
+
+
+    action :bulk_enroll do
+      description "Enroll multiple students in a course"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :member_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of student IDs to enroll"
+      end
+
+      run fn input, context ->
+        input =
+          input.arguments.member_ids
+          |> Enum.map(fn member_id ->
+            %{member_id: member_id, course_id: input.arguments.course_id}
+          end)
+
+        case Ash.bulk_create(input, __MODULE__, :create, return_records?: true, tenant: context.tenant) do
+          %Ash.BulkResult{records: records, errors: []} ->
+            :ok
+
+          %Ash.BulkResult{records: records, errors: errors} ->
+            {:error, errors}
+        end
+      end
+    end
+
+    # change {KgEdu.Courses.Changes.BulkEnrollStudents, []}
 
     read :by_course do
       description "Get enrollments for a specific course"
@@ -54,6 +102,61 @@ defmodule KgEdu.Courses.CourseEnrollment do
       end
 
       filter expr(member_id == ^arg(:member_id))
+    end
+
+    read :enrollment_status do
+      description "Check if a student is enrolled in a course"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :member_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(course_id == ^arg(:course_id) and member_id == ^arg(:member_id))
+      get? true
+    end
+
+    action :bulk_unenroll_students do
+      description "Unenroll multiple students from a course"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :member_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of student IDs to unenroll"
+      end
+
+      run fn input, context ->
+        # Read all enrollments and filter manually
+        case __MODULE__ |> Ash.read(tenant: context.tenant) do
+          {:ok, enrollments} ->
+            target_enrollments =
+              enrollments
+              |> Enum.filter(&(&1.course_id == input.arguments.course_id and
+                               input.arguments.member_ids |> Enum.member?(&1.member_id)))
+
+            # Destroy the filtered enrollments one by one
+            case Enum.map(target_enrollments, fn enrollment ->
+              Ash.destroy(enrollment, tenant: context.tenant)
+            end) do
+              results ->
+                case Enum.find(results, fn
+                  {:error, _} -> true
+                  _ -> false
+                end) do
+                  nil -> :ok
+                  {:error, reason} -> {:error, reason}
+                end
+            end
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
     end
   end
 
@@ -107,12 +210,14 @@ defmodule KgEdu.Courses.CourseEnrollment do
 
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
-      allow_nil? false
+      allow_nil? true
     end
 
     belongs_to :student, KgEdu.Accounts.User do
       domain KgEdu.Accounts
-      allow_nil? false
+      allow_nil? true
+      define_attribute? false
+      source_attribute :member_id
     end
   end
 

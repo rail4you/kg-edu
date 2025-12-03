@@ -1,9 +1,11 @@
 import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
-config :mux,
-  access_token_id: System.get_env("MUX_TOKEN_ID") || "5d03c8ed-21f9-452f-9d9f-5cc28d93b6a5",
-  access_token_secret: System.get_env("MUX_TOKEN_SECRET") || "/TeA9kOSZGHNiQybPSKNBatuNekN4nGKnadGVm12m6KDL+bHjnnDmPr8YBaoNX9WhTG0LtmyaTa"
+# config :mux,
+#   access_token_id: System.get_env("MUX_TOKEN_ID") || "5d03c8ed-21f9-452f-9d9f-5cc28d93b6a5",
+#   access_token_secret:
+#     System.get_env("MUX_TOKEN_SECRET") ||
+#       "/TeA9kOSZGHNiQybPSKNBatuNekN4nGKnadGVm12m6KDL+bHjnnDmPr8YBaoNX9WhTG0LtmyaTa"
 
 # Configure your database
 config :kg_edu, KgEdu.Repo,
@@ -95,5 +97,9 @@ config :swoosh, :api_client, false
 
 # Development ReqLLM configuration with fallback
 config :kg_edu, :reqllm,
-  api_key: System.get_env("OPENROUTER_API_KEY") || "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",
+  api_key:
+    System.get_env("OPENROUTER_API_KEY") ||
+      "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",
   model: "openrouter:z-ai/glm-4.5"
+
+Code.compiler_options(warnings_as_errors: false)

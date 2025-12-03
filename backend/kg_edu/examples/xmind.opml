@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>中文教育课程体系</title>
+    <dateCreated>2025-01-07</dateCreated>
+    <dateModified>2025-01-07</dateModified>
+    <ownerName>教育系统</ownerName>
+    <docs>http://dev.opml.org/spec2.html</docs>
+    <expansionState>1,2,3,4,5</expansionState>
+    <vertScrollState>1</vertScrollState>
+    <windowTop>0</windowTop>
+    <windowLeft>0</windowLeft>
+    <windowBottom>800</windowBottom>
+    <windowRight>600</windowRight>
+  </head>
+  <body>
+    <!-- 语文课程 -->
+    <outline text="语文" title="语文">
+      <outline text="古代文学" title="古代文学">
+        <outline text="诗经" title="诗经" description="中国最早的诗歌总集，收录西周至春秋中叶诗歌"/>
+        <outline text="楚辞" title="楚辞" description="战国时期楚国文学代表，以屈原作品为主"/>
+        <outline text="汉赋" title="汉赋" description="汉代文学主要形式，讲究辞藻华丽和对仗工整"/>
+        <outline text="唐诗" title="唐诗" description="唐代诗歌达到中国古典诗歌巅峰，李白杜甫为代表"/>
+        <outline text="宋词" title="宋词" description="宋代文学成就最高的文学形式，苏轼李清照为代表"/>
+        <outline text="元曲" title="元曲" description="元代文学代表形式，包括散曲和杂剧"/>
+      </outline>
+
+      <outline text="现代文学" title="现代文学">
+        <outline text="鲁迅作品" title="鲁迅作品" description="现代文学奠基人，代表作品《狂人日记》《阿Q正传》"/>
+        <outline text="茅盾作品" title="茅盾作品" description="现实主义文学代表，代表作《子夜》"/>
+        <outline text="巴金作品" title="巴金作品" description="现代文学巨匠，代表作《家》《春》《秋》"/>
+        <outline text="老舍作品" title="老舍作品" description="京味文学代表，代表作《骆驼祥子》《茶馆》"/>
+        <outline text="曹禺作品" title="曹禺作品" description="现代戏剧奠基人，代表作《雷雨》《日出》"/>
+      </outline>
+
+      <outline text="语言文字" title="语言文字">
+        <outline text="汉字基础" title="汉字基础" description="汉字起源、结构、演变规律"/>
+        <outline text="词汇学" title="词汇学" description="词汇构成、词义分析、词汇发展"/>
+        <outline text="语法学" title="语法学" description="句子结构、语法规则、语法现象"/>
+        <outline text="修辞学" title="修辞学" description="修辞手法、语言表达效果"/>
+        <outline text="语音学" title="语音学" description="汉语拼音、声调、语音变化"/>
+      </outline>
+
+      <outline text="写作技巧" title="写作技巧">
+        <outline text="记叙文写作" title="记叙文写作" description="记叙六要素、叙述顺序、描写手法"/>
+        <outline text="说明文写作" title="说明文写作" description="说明方法、结构安排、语言准确性"/>
+        <outline text="议论文写作" title="议论文写作" description="论点论据论证、论证方法、逻辑结构"/>
+        <outline text="应用文写作" title="应用文写作" description="书信、通知、报告等实用文体"/>
+        <outline text="创意写作" title="创意写作" description="小说、诗歌、散文创作技巧"/>
+      </outline>
+    </outline>
+
+    <!-- 数学课程 -->
+    <outline text="数学" title="数学">
+      <outline text="代数" title="代数">
+        <outline text="有理数" title="有理数" description="正数、负数、分数、小数的概念与运算"/>
+        <outline text="整式与分式" title="整式与分式" description="多项式运算、因式分解、分式化简"/>
+        <outline text="方程与不等式" title="方程与不等式" description="一元二次方程、方程组、不等式解法"/>
+        <outline text="函数" title="函数" description="函数概念、一次函数、二次函数、反比例函数"/>
+        <outline text="数列" title="数列" description="等差数列、等比数列、数列求和"/>
+      </outline>
+
+      <outline text="几何" title="几何">
+        <outline text="平面几何" title="平面几何" description="点线面、三角形、四边形、圆的基本性质"/>
+        <outline text="立体几何" title="立体几何" description="空间图形、三视图、空间几何体"/>
+        <outline text="解析几何" title="解析几何" description="坐标系、直线、圆、椭圆、双曲线、抛物线"/>
+        <outline text="几何变换" title="几何变换" description="平移、旋转、对称、位似变换"/>
+        <outline text="向量" title="向量" description="平面向量、空间向量的概念与运算"/>
+      </outline>
+
+      <outline text="概率统计" title="概率统计">
+        <outline text="数据收集" title="数据收集" description="普查、抽样、数据整理方法"/>
+        <outline text="数据描述" title="数据描述" description="平均数、中位数、众数、方差、标准差"/>
+        <outline text="概率基础" title="概率基础" description="随机事件、概率定义、古典概型"/>
+        <outline text="统计图表" title="统计图表" description="条形图、折线图、饼图、直方图"/>
+        <outline text="统计推断" title="统计推断" description="假设检验、置信区间、回归分析"/>
+      </outline>
+
+      <outline text="微积分" title="微积分">
+        <outline text="极限与连续" title="极限与连续" description="极限概念、连续性判断、无穷小"/>
+        <outline text="导数与微分" title="导数与微分" description="导数定义、求导法则、导数应用"/>
+        <outline text="积分" title="积分" description="不定积分、定积分、积分应用"/>
+        <outline text="微分方程" title="微分方程" description="一阶微分方程、二阶微分方程"/>
+        <outline text="多元函数" title="多元函数" description="偏导数、重积分、向量分析"/>
+      </outline>
+    </outline>
+
+    <!-- 英语课程 -->
+    <outline text="英语" title="英语">
+      <outline text="词汇" title="词汇">
+        <outline text="基础词汇" title="基础词汇" description="日常交流常用词汇，约3000个核心词汇"/>
+        <outline text="学术词汇" title="学术词汇" description="学术写作和阅读必备词汇"/>
+        <outline text="商务词汇" title="商务词汇" description="商务沟通和国际贸易词汇"/>
+        <outline text="词汇记忆法" title="词汇记忆法" description="词根词缀、联想记忆、语境记忆"/>
+        <outline text="词汇运用" title="词汇运用" description="词汇搭配、同义词辨析、词汇扩展"/>
+      </outline>
+
+      <outline text="语法" title="语法">
+        <outline text="句子结构" title="句子结构" description="主谓宾、定状补、复合句结构"/>
+        <outline text="时态语态" title="时态语态" description="16种时态、被动语态、虚拟语气"/>
+        <outline text="非谓语动词" title="非谓语动词" description="不定式、动名词、分词用法"/>
+        <outline text="从句" title="从句" description="名词性从句、定语从句、状语从句"/>
+        <outline text="特殊句型" title="特殊句型" description="强调句、倒装句、省略句"/>
+      </outline>
+
+      <outline text="听说" title="听说">
+        <outline text="语音语调" title="语音语调" description="音标、重音、节奏、语调模式"/>
+        <outline text="听力理解" title="听力理解" description="精听、泛听、笔记技巧"/>
+        <outline text="口语表达" title="口语表达" description="日常对话、演讲技巧、辩论技能"/>
+        <outline text="交际策略" title="交际策略" description="开场白、话题转换、礼貌用语"/>
+        <outline text="文化差异" title="文化差异" description="中西文化差异、跨文化交际"/>
+      </outline>
+
+      <outline text="读写" title="读写">
+        <outline text="阅读技巧" title="阅读技巧" description="略读、查读、精读、批判性阅读"/>
+        <outline text="写作结构" title="写作结构" description="段落结构、篇章组织、逻辑衔接"/>
+        <outline text="学术写作" title="学术写作" description="论文格式、引用规范、学术规范"/>
+        <outline text="商务写作" title="商务写作" description="邮件写作、报告写作、合同文本"/>
+        <outline text="创意写作" title="创意写作" description="小说、诗歌、散文创作"/>
+      </outline>
+    </outline>
+
+    <!-- 物理课程 -->
+    <outline text="物理" title="物理">
+      <outline text="力学" title="力学">
+        <outline text="运动学" title="运动学" description="质点运动、直线运动、曲线运动、圆周运动"/>
+        <outline text="动力学" title="动力学" description="牛顿三定律、万有引力、动量守恒"/>
+        <outline text="能量与功" title="能量与功" description="动能、势能、机械能守恒、功率"/>
+        <outline text="刚体转动" title="刚体转动" description="转动定律、角动量、转动惯量"/>
+        <outline text="振动与波" title="振动与波" description="简谐振动、机械波、声波"/>
+      </outline>
+
+      <outline text="热学" title="热学">
+        <outline text="分子动理论" title="分子动理论" description="分子运动论、温度、压强"/>
+        <outline text="热力学定律" title="热力学定律" description="热力学第一定律、第二定律、第三定律"/>
+        <outline text="理想气体" title="理想气体" description="理想气体状态方程、内能"/>
+        <outline text="相变" title="相变" description="熔化、凝固、汽化、液化"/>
+        <outline text="热传递" title="热传递" description="传导、对流、辐射"/>
+      </outline>
+
+      <outline text="电磁学" title="电磁学">
+        <outline text="静电场" title="静电场" description="库仑定律、电场强度、电势"/>
+        <outline text="恒定电流" title="恒定电流" description="欧姆定律、电路分析、电功率"/>
+        <outline text="磁场" title="磁场" description="磁场概念、安培力、洛伦兹力"/>
+        <outline text="电磁感应" title="电磁感应" description="法拉第定律、楞次定律、自感"/>
+        <outline text="电磁波" title="电磁波" description="麦克斯韦方程组、电磁波传播"/>
+      </outline>
+
+      <outline text="光学" title="光学">
+        <outline text="几何光学" title="几何光学" description="光的直线传播、反射、折射、透镜"/>
+        <outline text="波动光学" title="波动光学" description="光的干涉、衍射、偏振"/>
+        <outline text="量子光学" title="量子光学" description="光电效应、光子、波粒二象性"/>
+        <outline text="激光" title="激光" description="激光原理、激光应用"/>
+        <outline text="光纤通信" title="光纤通信" description="光纤原理、光通信技术"/>
+      </outline>
+
+      <outline text="现代物理" title="现代物理">
+        <outline text="相对论" title="相对论" description="狭义相对论、广义相对论、时空观"/>
+        <outline text="量子力学" title="量子力学" description="波函数、薛定谔方程、不确定性原理"/>
+        <outline text="原子物理" title="原子物理" description="原子结构、光谱、量子数"/>
+        <outline text="核物理" title="核物理" description="原子核、放射性、核反应"/>
+        <outline text="粒子物理" title="粒子物理" description="基本粒子、标准模型、守恒定律"/>
+      </outline>
+    </outline>
+
+    <!-- 化学课程 -->
+    <outline text="化学" title="化学">
+      <outline text="无机化学" title="无机化学">
+        <outline text="元素周期律" title="元素周期律" description="元素周期表、周期性、原子结构"/>
+        <outline text="化学键" title="化学键" description="离子键、共价键、金属键、氢键"/>
+        <outline text="化学反应" title="化学反应" description="氧化还原反应、酸碱反应、沉淀反应"/>
+        <outline text="溶液化学" title="溶液化学" description="溶解度、浓度、渗透压"/>
+        <outline text="配位化学" title="配位化学" description="配合物、配位键、配位平衡"/>
+      </outline>
+
+      <outline text="有机化学" title="有机化学">
+        <outline text="烃类化合物" title="烃类化合物" description="烷烃、烯烃、炔烃、芳香烃"/>
+        <outline text="含氧有机物" title="含氧有机物" description="醇、酚、醚、醛、酮、羧酸"/>
+        <outline text="含氮有机物" title="含氮有机物" description="胺、酰胺、硝基化合物"/>
+        <outline text="高分子化合物" title="高分子化合物" description="塑料、橡胶、纤维"/>
+        <outline text="生物有机化学" title="生物有机化学" description="糖类、蛋白质、核酸、脂质"/>
+      </outline>
+
+      <outline text="物理化学" title="物理化学">
+        <outline text="化学热力学" title="化学热力学" description="焓、熵、自由能、化学平衡"/>
+        <outline text="化学动力学" title="化学动力学" description="反应速率、反应机理、催化剂"/>
+        <outline text="电化学" title="电化学" description="原电池、电解池、电极电势"/>
+        <outline text="表面化学" title="表面化学" description="表面张力、吸附、胶体"/>
+        <outline text="量子化学" title="量子化学" description="分子轨道理论、价键理论"/>
+      </outline>
+
+      <outline text="分析化学" title="分析化学">
+        <outline text="定量分析" title="定量分析" description="滴定分析、重量分析、仪器分析"/>
+        <outline text="定性分析" title="定性分析" description="离子鉴定、化学鉴别"/>
+        <outline text="仪器分析" title="仪器分析" description="光谱分析、色谱分析、质谱分析"/>
+        <outline text="环境分析" title="环境分析" description="水质分析、大气分析、土壤分析"/>
+        <outline text="药物分析" title="药物分析" description="药品检验、质量控制"/>
+      </outline>
+
+      <outline text="材料化学" title="材料化学">
+        <outline text="金属材料" title="金属材料" description="合金、金属腐蚀、表面处理"/>
+        <outline text="陶瓷材料" title="陶瓷材料" description="传统陶瓷、特种陶瓷、玻璃"/>
+        <outline text="高分子材料" title="高分子材料" description="工程塑料、功能高分子"/>
+        <outline text="复合材料" title="复合材料" description="纤维增强复合材料、层压材料"/>
+        <outline text="纳米材料" title="纳米材料" description="纳米颗粒、纳米管、石墨烯"/>
+      </outline>
+    </outline>
+
+    <!-- 生物课程 -->
+    <outline text="生物" title="生物">
+      <outline text="细胞生物学" title="细胞生物学">
+        <outline text="细胞结构" title="细胞结构" description="细胞膜、细胞核、细胞器"/>
+        <outline text="细胞代谢" title="细胞代谢" description="酶、ATP、呼吸作用、光合作用"/>
+        <outline text="细胞分裂" title="细胞分裂" description="有丝分裂、减数分裂、细胞周期"/>
+        <outline text="细胞分化" title="细胞分化" description="干细胞、组织形成、器官发育"/>
+        <outline text="细胞通讯" title="细胞通讯" description="信号传导、细胞识别、免疫应答"/>
+      </outline>
+
+      <outline text="遗传学" title="遗传学">
+        <outline text="遗传物质" title="遗传物质" description="DNA结构、RNA功能、染色体"/>
+        <outline text="基因表达" title="基因表达" description="转录、翻译、基因调控"/>
+        <outline text="遗传规律" title="遗传规律" description="孟德尔定律、伴性遗传、连锁互换"/>
+        <outline text="基因工程" title="基因工程" description="重组DNA、基因克隆、基因治疗"/>
+        <outline text="基因组学" title="基因组学" description="人类基因组计划、生物信息学"/>
+      </outline>
+
+      <outline text="生态学" title="生态学">
+        <outline text="个体生态" title="个体生态" description="生态位、适应、生存策略"/>
+        <outline text="种群生态" title="种群生态" description="种群增长、种群结构、种群调节"/>
+        <outline text="群落生态" title="群落生态" description="物种多样性、群落结构、生态位分化"/>
+        <outline text="生态系统" title="生态系统" description="食物链、能量流动、物质循环"/>
+        <outline text="保护生物学" title="保护生物学" description="生物多样性保护、濒危物种保护"/>
+      </outline>
+
+      <outline text="进化生物学" title="进化生物学">
+        <outline text="进化理论" title="进化理论" description="达尔文进化论、现代综合进化论"/>
+        <outline text="物种形成" title="物种形成" description="物种概念、隔离机制、形成过程"/>
+        <outline text="分子进化" title="分子进化" description="分子钟、系统发育、进化树"/>
+        <outline text="人类进化" title="人类进化" description="人类起源、古人类学、人种分化"/>
+        <outline text="协同进化" title="协同进化" description="捕食者-猎物、寄主-寄生、互利共生"/>
+      </outline>
+
+      <outline text="生理学" title="生理学">
+        <outline text="神经生理" title="神经生理" description="神经元、突触传递、神经调节"/>
+        <outline text="内分泌生理" title="内分泌生理" description="激素、内分泌腺、激素调节"/>
+        <outline text="循环生理" title="循环生理" description="心脏、血管、血压、血液循环"/>
+        <outline text="呼吸生理" title="呼吸生理" description="肺、气体交换、呼吸调节"/>
+        <outline text="消化生理" title="消化生理" description="消化系统、营养吸收、代谢调节"/>
+      </outline>
+    </outline>
+
+    <!-- 历史课程 -->
+    <outline text="历史" title="历史">
+      <outline text="中国古代史" title="中国古代史">
+        <outline text="先秦时期" title="先秦时期" description="夏商周三代、春秋战国、诸子百家"/>
+        <outline text="秦汉时期" title="秦汉时期" description="秦统一、汉初文景之治、汉武帝时期"/>
+        <outline text="魏晋南北朝" title="魏晋南北朝" description="三国鼎立、西晋东晋、南北朝分裂"/>
+        <outline text="隋唐时期" title="隋唐时期" description="隋朝统一、贞观之治、开元盛世"/>
+        <outline text="宋元明清" title="宋元明清" description="宋朝经济、元朝统治、明朝强盛、清朝衰落"/>
+      </outline>
+
+      <outline text="中国近现代史" title="中国近现代史">
+        <outline text="晚清时期" title="晚清时期" description="鸦片战争、太平天国、洋务运动、甲午战争"/>
+        <outline text="民国时期" title="民国时期" description="辛亥革命、北洋政府、抗日战争、国共内战"/>
+        <outline text="新中国成立" title="新中国成立" description="建国初期、社会主义改造、大跃进、文化大革命"/>
+        <outline text="改革开放" title="改革开放" description="经济特区、市场经济建设、现代化建设"/>
+        <outline text="新时代中国" title="新时代中国" description="中国梦、一带一路、科技强国"/>
+      </outline>
+
+      <outline text="世界古代史" title="世界古代史">
+        <outline text="古代文明" title="古代文明" description="古埃及、古巴比伦、古印度、古中国"/>
+        <outline text="古典文明" title="古典文明" description="古希腊、古罗马、波斯帝国"/>
+        <outline text="中世纪" title="中世纪" description="封建制度、基督教文明、伊斯兰文明"/>
+        <outline text="文艺复兴" title="文艺复兴" description="人文主义、艺术复兴、科学革命"/>
+        <outline text="地理大发现" title="地理大发现" description="新航路开辟、殖民扩张、世界市场形成"/>
+      </outline>
+
+      <outline text="世界近现代史" title="世界近现代史">
+        <outline text="工业革命" title="工业革命" description="蒸汽机、工厂制度、资本主义发展"/>
+        <outline text="民族主义" title="民族主义" description="民族觉醒、独立运动、民族国家建立"/>
+        <outline text="世界大战" title="世界大战" description="第一次世界大战、第二次世界大战"/>
+        <outline text="冷战时期" title="冷战时期" description="美苏对峙、军备竞赛、代理人战争"/>
+        <outline text="全球化时代" title="全球化时代" description="经济全球化、信息革命、文化交流"/>
+      </outline>
+
+      <outline text="历史专题" title="历史专题">
+        <outline text="科技史" title="科技史" description="古代科技、近代科学、现代科技革命"/>
+        <outline text="文化史" title="文化史" description="思想文化、艺术发展、宗教传播"/>
+        <outline text="经济史" title="经济史" description="农业文明、工业文明、知识经济"/>
+        <outline text="社会史" title="社会史" description="社会变迁、家庭结构、生活方式"/>
+        <outline text="环境史" title="环境史" description="人地关系、环境变迁、可持续发展"/>
+      </outline>
+    </outline>
+
+    <!-- 地理课程 -->
+    <outline text="地理" title="地理">
+      <outline text="自然地理" title="自然地理">
+        <outline text="地球概论" title="地球概论" description="地球形状、地球运动、地球结构"/>
+        <outline text="大气环境" title="大气环境" description="大气成分、大气环流、天气气候"/>
+        <outline text="水环境" title="水环境" description="水循环、海洋环境、河流湖泊"/>
+        <outline text="地貌环境" title="地貌环境" description="内力作用、外力作用、地形类型"/>
+        <outline text="土壤环境" title="土壤环境" description="土壤形成、土壤类型、土壤保护"/>
+      </outline>
+
+      <outline text="人文地理" title="人文地理">
+        <outline text="人口地理" title="人口地理" description="人口分布、人口迁移、人口问题"/>
+        <outline text="城市地理" title="城市地理" description="城市化、城市体系、城市规划"/>
+        <outline text="经济地理" title="经济地理" description="农业布局、工业布局、服务业发展"/>
+        <outline text="文化地理" title="文化地理" description="文化景观、文化传播、文化区划"/>
+        <outline text="旅游地理" title="旅游地理" description="旅游资源、旅游规划、旅游影响"/>
+      </outline>
+
+      <outline text="中国地理" title="中国地理">
+        <outline text="地形地貌" title="地形地貌" description="三大阶梯、主要山脉、平原高原"/>
+        <outline text="气候水文" title="气候水文" description="季风气候、主要河流、湖泊分布"/>
+        <outline text="自然资源" title="自然资源" description="土地资源、水资源、矿产资源、能源资源"/>
+        <outline text="农业分布" title="农业分布" description="粮食作物、经济作物、畜牧业布局"/>
+        <outline text="工业布局" title="工业布局" description="重工业基地、轻工业基地、高新技术产业"/>
+      </outline>
+
+      <outline text="世界地理" title="世界地理">
+        <outline text="亚洲" title="亚洲" description="东亚、东南亚、南亚、西亚、中亚"/>
+        <outline text="欧洲" title="欧洲" description="西欧、南欧、中欧、东欧、北欧"/>
+        <outline text="非洲" title="非洲" description="北非、东非、西非、中非、南非"/>
+        <outline text="美洲" title="美洲" description="北美洲、中美洲、南美洲"/>
+        <outline text="大洋洲" title="大洋洲" description="澳大利亚、新西兰、太平洋岛屿"/>
+      </outline>
+
+      <outline text="地理信息技术" title="地理信息技术">
+        <outline text="地图学" title="地图学" description="地图投影、地图制图、地图应用"/>
+        <outline text="遥感技术" title="遥感技术" description="遥感原理、遥感应用、图像处理"/>
+        <outline text="地理信息系统" title="地理信息系统" description="GIS原理、空间分析、决策支持"/>
+        <outline text="全球定位系统" title="全球定位系统" description="GPS原理、定位技术、导航应用"/>
+        <outline text="数字地球" title="数字地球" description="数字地球概念、技术应用、未来发展"/>
+      </outline>
+    </outline>
+  </body>
+</opml>

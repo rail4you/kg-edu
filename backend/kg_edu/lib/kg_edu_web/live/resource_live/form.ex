@@ -5,12 +5,13 @@ defmodule KgEduWeb.ResourceLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        {@page_title}
-        <:subtitle>Use this form to manage resource records in your database.</:subtitle>
-      </.header>
+      <div data-theme="green" class="rounded-lg p-4">
+        <.header>
+          {@page_title}
+          <:subtitle>Use this form to manage resource records in your database.</:subtitle>
+        </.header>
 
-      <.form for={@form} id="resource-form" phx-change="validate" phx-submit="save">
+        <.form for={@form} id="resource-form" phx-change="validate" phx-submit="save">
         <fieldset>
           <.input field={@form[:name]} type="text" label="Name" />
           <.input field={@form[:description]} type="text" label="Description" />
@@ -19,6 +20,7 @@ defmodule KgEduWeb.ResourceLive.Form do
         <.button phx-disable-with="Saving..." variant="primary">Save Resource</.button>
         <.button navigate={return_path(@return_to, @resource)}>Cancel</.button>
       </.form>
+      </div>
     </Layouts.app>
     """
   end

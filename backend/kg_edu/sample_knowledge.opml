@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Computer Science Knowledge Structure</title>
+    <dateCreated>2025-01-07</dateCreated>
+    <dateModified>2025-01-07</dateModified>
+    <ownerName>Education System</ownerName>
+    <docs>http://dev.opml.org/spec2.html</docs>
+    <expansionState>1,2</expansionState>
+    <vertScrollState>1</vertScrollState>
+    <windowTop>0</windowTop>
+    <windowLeft>0</windowLeft>
+    <windowBottom>800</windowBottom>
+    <windowRight>600</windowRight>
+  </head>
+  <body>
+    <!-- Programming Fundamentals Subject -->
+    <outline text="Programming Fundamentals" title="Programming Fundamentals">
+      <outline text="Basic Concepts" title="Basic Concepts">
+        <outline text="Variables and Data Types" title="Variables and Data Types" description="Understanding how to store and manipulate data in programs"/>
+        <outline text="Control Structures" title="Control Structures" description="Conditional statements and loops for program flow control"/>
+        <outline text="Functions and Methods" title="Functions and Methods" description="Reusable code blocks and modular programming"/>
+      </outline>
+
+      <outline text="Object-Oriented Programming" title="Object-Oriented Programming">
+        <outline text="Classes and Objects" title="Classes and Objects" description="Blueprints and instances in OOP"/>
+        <outline text="Inheritance" title="Inheritance" description="Creating hierarchical relationships between classes"/>
+        <outline text="Polymorphism" title="Polymorphism" description="Multiple forms of the same interface"/>
+        <outline text="Encapsulation" title="Encapsulation" description="Bundling data and methods together"/>
+      </outline>
+
+      <outline text="Data Structures" title="Data Structures">
+        <outline text="Arrays and Lists" title="Arrays and Lists" description="Linear collections of elements"/>
+        <outline text="Stacks and Queues" title="Stacks and Queues" description="LIFO and FIFO data structures"/>
+        <outline text="Trees" title="Trees" description="Hierarchical data organization"/>
+        <outline text="Hash Tables" title="Hash Tables" description="Key-value pair storage with fast lookup"/>
+      </outline>
+    </outline>
+
+    <!-- Web Development Subject -->
+    <outline text="Web Development" title="Web Development">
+      <outline text="Frontend Development" title="Frontend Development">
+        <outline text="HTML Fundamentals" title="HTML Fundamentals" description="Structure and semantics of web pages"/>
+        <outline text="CSS Styling" title="CSS Styling" description="Visual presentation and layout of web pages"/>
+        <outline text="JavaScript Programming" title="JavaScript Programming" description="Interactive behavior and client-side scripting"/>
+        <outline text="Responsive Design" title="Responsive Design" description="Adapting layouts for different screen sizes"/>
+      </outline>
+
+      <outline text="Backend Development" title="Backend Development">
+        <outline text="Server-side Programming" title="Server-side Programming" description="Running code on servers to handle requests"/>
+        <outline text="RESTful APIs" title="RESTful APIs" description="Design principles for web services"/>
+        <outline text="Database Integration" title="Database Integration" description="Connecting applications to data storage"/>
+        <outline text="Authentication and Security" title="Authentication and Security" description="Protecting applications and user data"/>
+      </outline>
+
+      <outline text="Modern Frameworks" title="Modern Frameworks">
+        <outline text="React.js" title="React.js" description="Component-based UI library"/>
+        <outline text="Vue.js" title="Vue.js" description="Progressive JavaScript framework"/>
+        <outline text="Angular" title="Angular" description="Full-featured MVC framework"/>
+        <outline text="Node.js" title="Node.js" description="JavaScript runtime for server-side development"/>
+      </outline>
+    </outline>
+
+    <!-- Computer Science Theory Subject -->
+    <outline text="Computer Science Theory" title="Computer Science Theory">
+      <outline text="Algorithms" title="Algorithms">
+        <outline text="Sorting Algorithms" title="Sorting Algorithms" description="Techniques for ordering data"/>
+        <outline text="Searching Algorithms" title="Searching Algorithms" description="Methods for finding specific data"/>
+        <outline text="Graph Algorithms" title="Graph Algorithms" description="Algorithms for network problems"/>
+        <outline text="Dynamic Programming" title="Dynamic Programming" description="Optimization through subproblem solutions"/>
+      </outline>
+
+      <outline text="Computational Complexity" title="Computational Complexity">
+        <outline text="Big O Notation" title="Big O Notation" description="Measuring algorithm efficiency"/>
+        <outline text="Time Complexity" title="Time Complexity" description="Analysis of algorithm runtime"/>
+        <outline text="Space Complexity" title="Space Complexity" description="Analysis of memory usage"/>
+        <outline text="NP-Completeness" title="NP-Completeness" description="Computational hardness classification"/>
+      </outline>
+
+      <outline text="Computer Architecture" title="Computer Architecture">
+        <outline text="Binary Systems" title="Binary Systems" description="Foundation of digital computing"/>
+        <outline text="CPU Design" title="CPU Design" description="Processor architecture and instruction sets"/>
+        <outline text="Memory Hierarchy" title="Memory Hierarchy" description="Cache, RAM, and storage systems"/>
+        <outline text="Instruction Pipelining" title="Instruction Pipelining" description="Optimizing instruction execution"/>
+      </outline>
+    </outline>
+
+    <!-- Software Engineering Subject -->
+    <outline text="Software Engineering" title="Software Engineering">
+      <outline text="Development Methodologies" title="Development Methodologies">
+        <outline text="Agile Development" title="Agile Development" description="Iterative and incremental development"/>
+        <outline text="Scrum Framework" title="Scrum Framework" description="Sprint-based project management"/>
+        <outline text="Kanban Method" title="Kanban Method" description="Visual workflow management"/>
+        <outline text="DevOps Practices" title="DevOps Practices" description="Integration of development and operations"/>
+      </outline>
+
+      <outline text="Software Testing" title="Software Testing">
+        <outline text="Unit Testing" title="Unit Testing" description="Testing individual components"/>
+        <outline text="Integration Testing" title="Integration Testing" description="Testing component interactions"/>
+        <outline text="System Testing" title="System Testing" description="Testing complete systems"/>
+        <outline text="Test-Driven Development" title="Test-Driven Development" description="Writing tests before code"/>
+      </outline>
+
+      <outline text="Version Control" title="Version Control">
+        <outline text="Git Fundamentals" title="Git Fundamentals" description="Distributed version control system"/>
+        <outline text="Branching Strategies" title="Branching Strategies" description="Managing parallel development"/>
+        <outline text="Collaboration Workflows" title="Collaboration Workflows" description="Team-based development practices"/>
+        <outline text="Continuous Integration" title="Continuous Integration" description="Automated build and testing"/>
+      </outline>
+    </outline>
+  </body>
+</opml>

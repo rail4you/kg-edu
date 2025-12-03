@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Business Studies Curriculum</title>
+    <dateCreated>2025-01-07</dateCreated>
+    <dateModified>2025-01-07</dateModified>
+    <ownerName>Education System</ownerName>
+    <docs>http://dev.opml.org/spec2.html</docs>
+    <expansionState>1,2,3,4</expansionState>
+    <vertScrollState>1</vertScrollState>
+    <windowTop>0</windowTop>
+    <windowLeft>0</windowLeft>
+    <windowBottom>800</windowBottom>
+    <windowRight>600</windowRight>
+  </head>
+  <body>
+    <!-- Business Management Subject -->
+    <outline text="Business Management" title="Business Management">
+      <outline text="Strategic Planning" title="Strategic Planning">
+        <outline text="Mission and Vision" title="Mission and Vision" description="Defining organizational purpose and future direction"/>
+        <outline text="SWOT Analysis" title="SWOT Analysis" description="Strengths, weaknesses, opportunities, and threats assessment"/>
+        <outline text="Market Analysis" title="Market Analysis" description="Industry trends and competitive landscape"/>
+        <outline text="Goal Setting" title="Goal Setting" description="SMART goals and strategic objectives"/>
+      </outline>
+
+      <outline text="Operations Management" title="Operations Management">
+        <outline text="Supply Chain Management" title="Supply Chain Management" description="Managing flow of goods and services"/>
+        <outline text="Quality Control" title="Quality Control" description="Six Sigma and Total Quality Management"/>
+        <outline text="Process Improvement" title="Process Improvement" description="Lean manufacturing and continuous improvement"/>
+        <outline text="Project Management" title="Project Management" description="Planning, executing, and closing projects"/>
+      </outline>
+
+      <outline text="Leadership" title="Leadership">
+        <outline text="Leadership Styles" title="Leadership Styles" description="Transactional, transformational, and servant leadership"/>
+        <outline text="Team Building" title="Team Building" description="Creating effective and cohesive teams"/>
+        <outline text="Communication Skills" title="Communication Skills" description="Effective business communication strategies"/>
+        <outline text="Decision Making" title="Decision Making" description="Rational and intuitive decision processes"/>
+      </outline>
+    </outline>
+
+    <!-- Finance Subject -->
+    <outline text="Finance" title="Finance">
+      <outline text="Financial Accounting" title="Financial Accounting">
+        <outline text="Financial Statements" title="Financial Statements" description="Balance sheet, income statement, and cash flow statement"/>
+        <outline text="Accounting Principles" title="Accounting Principles" description="GAAP and IFRS standards"/>
+        <outline text="Bookkeeping" title="Bookkeeping" description="Double-entry bookkeeping systems"/>
+        <outline text="Financial Analysis" title="Financial Analysis" description="Ratio analysis and trend analysis"/>
+      </outline>
+
+      <outline text="Corporate Finance" title="Corporate Finance">
+        <outline text="Capital Budgeting" title="Capital Budgeting" description="NPV, IRR, and payback period methods"/>
+        <outline text="Cost of Capital" title="Cost of Capital" description="WACC and required rates of return"/>
+        <outline text="Capital Structure" title="Capital Structure" description="Debt vs equity financing decisions"/>
+        <outline text="Dividend Policy" title="Dividend Policy" description="Dividend payout strategies and impacts"/>
+      </outline>
+
+      <outline text="Investment Analysis" title="Investment Analysis">
+        <outline text="Stock Valuation" title="Stock Valuation" description="Discounted cash flow and relative valuation"/>
+        <outline text="Bond Valuation" title="Bond Valuation" description="Yield to maturity and bond pricing"/>
+        <outline text="Portfolio Theory" title="Portfolio Theory" description="Modern portfolio theory and diversification"/>
+        <outline text="Risk Management" title="Risk Management" description="Hedging and risk mitigation strategies"/>
+      </outline>
+    </outline>
+
+    <!-- Marketing Subject -->
+    <outline text="Marketing" title="Marketing">
+      <outline text="Marketing Fundamentals" title="Marketing Fundamentals">
+        <outline text="Marketing Mix" title="Marketing Mix" description="Product, price, place, and promotion (4Ps)"/>
+        <outline text="Market Research" title="Market Research" description="Primary and secondary research methods"/>
+        <outline text="Consumer Behavior" title="Consumer Behavior" description="Understanding customer decision-making"/>
+        <outline text="Market Segmentation" title="Market Segmentation" description="Demographic, geographic, and psychographic segmentation"/>
+      </outline>
+
+      <outline text="Digital Marketing" title="Digital Marketing">
+        <outline text="SEO and SEM" title="SEO and SEM" description="Search engine optimization and marketing"/>
+        <outline text="Social Media Marketing" title="Social Media Marketing" description="Facebook, Instagram, LinkedIn strategies"/>
+        <outline text="Content Marketing" title="Content Marketing" description="Blogging, video, and podcast strategies"/>
+        <outline text="Email Marketing" title="Email Marketing" description="Campaign management and automation"/>
+      </outline>
+
+      <outline text="Brand Management" title="Brand Management">
+        <outline text="Brand Strategy" title="Brand Strategy" description="Positioning and brand architecture"/>
+        <outline text="Brand Identity" title="Brand Identity" description="Logo, colors, and visual elements"/>
+        <outline text="Brand Equity" title="Brand Equity" description="Building and measuring brand value"/>
+        <outline text="Crisis Management" title="Crisis Management" description="Handling brand reputation issues"/>
+      </outline>
+    </outline>
+
+    <!-- Entrepreneurship Subject -->
+    <outline text="Entrepreneurship" title="Entrepreneurship">
+      <outline text="Startup Development" title="Startup Development">
+        <outline text="Business Models" title="Business Models" description="Canvas, lean startup methodology"/>
+        <outline text="Minimum Viable Product" title="Minimum Viable Product" description="Building and testing initial products"/>
+        <outline text="Product-Market Fit" title="Product-Market Fit" description="Finding the right market for your product"/>
+        <outline text="Scaling Strategies" title="Scaling Strategies" description="Growth hacking and expansion tactics"/>
+      </outline>
+
+      <outline text="Funding and Investment" title="Funding and Investment">
+        <outline text="Bootstrapping" title="Bootstrapping" description="Self-funding and revenue-based financing"/>
+        <outline text="Angel Investors" title="Angel Investors" description="Early-stage investment strategies"/>
+        <outline text="Venture Capital" title="Venture Capital" description="VC funding rounds and valuation"/>
+        <outline text="Crowdfunding" title="Crowdfunding" description="Platforms and campaign strategies"/>
+      </outline>
+
+      <outline text="Legal and Regulatory" title="Legal and Regulatory">
+        <outline text="Business Registration" title="Business Registration" description="LLC, corporation, and partnership structures"/>
+        <outline text="Intellectual Property" title="Intellectual Property" description="Patents, trademarks, and copyrights"/>
+        <outline text="Contracts" title="Contracts" description="Business agreements and legal documents"/>
+        <outline text="Compliance" title="Compliance" description="Regulatory requirements and standards"/>
+      </outline>
+    </outline>
+  </body>
+</opml>

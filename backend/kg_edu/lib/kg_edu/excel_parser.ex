@@ -13,10 +13,10 @@ defmodule KgEdu.ExcelParser do
   ## Returns
   {:ok, %{sheet1: knowledge_data, sheet2: relation_data}} or {:error, reason}
   """
-  def parse_from_base64(base64_data) do
+  def parse_from_base64(base64_data, index) do
     case Base.decode64(base64_data) do
       {:ok, binary_data} ->
-        parse_excel_binary(binary_data)
+        parse_excel_binary(binary_data, index)
 
       :error ->
         {:error, "Invalid base64 data"}
@@ -26,13 +26,13 @@ defmodule KgEdu.ExcelParser do
   @doc """
   Parse Excel file from binary data.
   """
-  def parse_excel_binary(binary_data) do
+  def parse_excel_binary(binary_data, index) do
     try do
       # Create temporary file
       temp_path = System.tmp_dir!() |> Path.join("temp_import_#{System.system_time()}.xlsx")
 
       File.write!(temp_path, binary_data)
-      result = parse_excel_file(temp_path)
+      result = parse_excel_file(temp_path, index)
       File.rm(temp_path)
 
       result
@@ -45,10 +45,10 @@ defmodule KgEdu.ExcelParser do
   @doc """
   Parse Excel file and extract data from both sheets.
   """
-  def parse_excel_file(file_path) do
-    with {:ok, sheet1_data} <- parse_sheet(file_path,  0),
-         {:ok, sheet2_data} <- parse_sheet(file_path,  1) do
-      {:ok, %{sheet1: sheet1_data, sheet2: sheet2_data}}
+  def parse_excel_file(file_path, index) do
+    with {:ok, sheet_data} <- parse_sheet(file_path,  index) do
+        #  {:ok, sheet2_data} <- parse_sheet(file_path,  1) do
+      {:ok, %{sheet: sheet_data}}
     else
       {:error, reason} -> {:error, reason}
     end

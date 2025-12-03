@@ -19,21 +19,33 @@ defmodule KgEdu.Knowledge.Changes.ExportHomeworkTemplate do
 
   defp generate_template_xlsx do
     try do
-      # Create CSV data with headers and example (easier to handle than XLSX)
-      csv_data = """
-      Title,Content,Score,Course ID,Chapter ID (Optional),Knowledge Resource ID (Optional)
-      Example: Math Homework 1,"Complete exercises 1-10 on page 25",100.0,550e8400-e29b-41d4-a716-446655440000,550e8400-e29b-41d4-a716-446655440001,
-      """
+      # Create template data
+      headers = [
+        "标题", "内容", "分数", "课程名称"
+      ]
       
-      # Encode to base64
-      csv_base64 = Base.encode64(csv_data)
-      
-      # Note: This generates a CSV template instead of XLSX for simplicity
-      # The client can request this as a downloadable file with .csv extension
-      {:ok, csv_base64}
+      example_rows = [
+        ["第一章练习题", "完成教材第25页的练习1-10", "100", "数学基础"],
+        ["期中复习", "复习第1-5章的所有知识点", "150", "数学基础"],
+        ["实验作业三", "完成实验手册中的编程项目", "80", "数据结构"]
+      ]
+
+      # Convert to XLSX format using Elixlsx
+      sheet = %Elixlsx.Sheet{
+        name: "Homework",
+        rows: [headers | example_rows]
+      }
+
+      case Elixlsx.write_to_memory(%Elixlsx.Workbook{sheets: [sheet]}, "homework_template") do
+        {:ok, {_filename, content}} ->
+          xlsx_base64 = Base.encode64(content)
+          {:ok, xlsx_base64}
+        {:error, reason} ->
+          {:error, "Failed to generate XLSX: #{inspect(reason)}"}
+      end
     rescue
-      error ->
-        {:error, "Error generating template: #{inspect(error)}"}
+      e ->
+        {:error, "Failed to generate template: #{Exception.message(e)}"}
     end
   end
 end
