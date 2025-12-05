@@ -51,6 +51,17 @@ defmodule KgEdu.Accounts do
       rpc_action :get_backup_statistics, :get_backup_statistics
       rpc_action :create_scheduled_backups, :create_scheduled_backups
     end
+
+    resource KgEdu.Accounts.Class do
+      rpc_action :create_class, :create
+      rpc_action :update_class, :update
+      rpc_action :delete_class, :destroy
+      rpc_action :get_class, :read
+      rpc_action :list_classes, :read
+      rpc_action :get_classes_by_college, :get_classes_by_college
+      rpc_action :get_classes_by_major, :get_classes_by_major
+      rpc_action :create_class_with_students, :create_class_with_students
+    end
   end
 
   json_api do
@@ -92,6 +103,7 @@ defmodule KgEdu.Accounts do
   resources do
     resource KgEdu.Accounts.Token
     resource KgEdu.Accounts.Organization
+    resource KgEdu.Accounts.Class
     resource KgEdu.Accounts.User do
       define :create_user , action: :create_user
     end

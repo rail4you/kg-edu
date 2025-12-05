@@ -77,6 +77,12 @@ defmodule KgEdu.Accounts.User do
     define :create_student, action: :create_student
     define :list_student, action: :list_student
     define :update_student, action: :update_student
+    # class-based queries
+    define :get_students_by_class, action: :get_students_by_class
+    define :list_student_classes, action: :list_student_classes
+    define :create_students_for_class, action: :create_students_for_class
+    # class management
+    define :remove_student_from_class, action: :remove_student_from_class
     # super admin tenant management
     define :get_users_from_tenant, action: :get_users_from_tenant
   end
@@ -85,10 +91,59 @@ defmodule KgEdu.Accounts.User do
     defaults [:read, :destroy]
 
     create :create_student do
-      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge, :avatar_url]
-      argument :password, :string
+      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge, :avatar_url, :class_id, :job_title, :bio]
+      argument :password, :string do
+        description "Student password (will be hashed)"
+        allow_nil? false
+        constraints min_length: 8
+        sensitive? true
+      end
       change set_attribute(:role, :user)
+      change AshAuthentication.Strategy.Password.HashPasswordChange
       change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
+    end
+
+    action :create_students_for_class, :map do
+      description "Create multiple students for a specific class"
+
+      argument :class_name, :string do
+        description "The class name to assign students to"
+        allow_nil? false
+      end
+
+      argument :students, {:array, :map} do
+        description "List of student maps with member_id, name, phone, email, password"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        class_name = input.arguments.class_name
+        students = input.arguments.students
+
+        results = Enum.map(students, fn student_attrs ->
+          student_with_class = Map.put(student_attrs, :class_name, class_name)
+
+          case KgEdu.Accounts.User
+               |> Ash.Changeset.for_action(:create_student, student_with_class)
+               |> Ash.create(tenant: context.tenant) do
+            {:ok, student} -> {:ok, student}
+            {:error, error} -> {:error, "Failed to create student #{student_attrs[:member_id]}: #{inspect(error)}"}
+          end
+        end)
+
+        # Separate successful and failed results
+        {successful, failed} = Enum.split_with(results, fn
+          {:ok, _} -> true
+          {:error, _} -> false
+        end)
+
+        {:ok, %{
+          created: length(successful),
+          failed: length(failed),
+          errors: Enum.map(failed, &elem(&1, 1)),
+          students: Enum.map(successful, &elem(&1, 1))
+        }}
+      end
     end
 
     read :list_student do
@@ -96,13 +151,46 @@ defmodule KgEdu.Accounts.User do
     end
 
     update :update_student do
-      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name, :avatar_url]
+      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name, :avatar_url, :class_id, :job_title, :bio]
       argument :password, :string do
         allow_nil? true
       end
       require_atomic? false
       # change set_attribute(:role, "user")
       change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
+    end
+
+    update :remove_student_from_class do
+      description "Remove a student from their class (set class_id to nil)"
+      accept []
+
+      change set_attribute(:class_id, nil)
+      change set_attribute(:class_name, nil)
+
+      # Note: This action should only be called on student users (role == :user)
+    end
+
+    
+    read :get_students_by_class do
+      description "Get students filtered by class name"
+      argument :class_name, :string do
+        description "The class name to filter students by"
+        allow_nil? true
+      end
+
+      argument :class_id, :uuid do
+        description "The class ID to filter students by"
+        allow_nil? true
+      end
+
+      filter expr(role == :user and
+                 ((not is_nil(^arg(:class_name)) and class_name == ^arg(:class_name)) or
+                  (not is_nil(^arg(:class_id)) and class_id == ^arg(:class_id))))
+    end
+
+    read :list_student_classes do
+      description "Get all unique class names from student users"
+      filter expr(role == :user and not is_nil(class_name))
     end
 
     create :create_user do
@@ -147,6 +235,16 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
+      argument :job_title, :string do
+        description "The user's job title (职称)"
+        allow_nil? true
+      end
+
+      argument :bio, :string do
+        description "The user's personal bio (个人简介)"
+        allow_nil? true
+      end
+
       # Use the CreateUser change to handle password hashing and data storage
       change {__MODULE__.Changes.CreateUser, []}
 
@@ -156,11 +254,13 @@ defmodule KgEdu.Accounts.User do
       change set_attribute(:phone, arg(:phone))
       change set_attribute(:email, arg(:email))
       change set_attribute(:role, arg(:role))
+      change set_attribute(:job_title, arg(:job_title))
+      change set_attribute(:bio, arg(:bio))
     end
 
     update :update do
-      description "Update user name and role"
-      accept [:name, :role, :phone, :avatar_url]
+      description "Update user profile information"
+      accept [:name, :role, :phone, :avatar_url, :job_title, :bio, :class_id, :class_name]
       require_atomic? false
     end
 
@@ -405,12 +505,26 @@ defmodule KgEdu.Accounts.User do
         constraints one_of: [:super_admin, :admin, :user, :teacher]
       end
 
+      argument :job_title, :string do
+        description "The user's job title (职称)"
+        allow_nil? true
+      end
+
+      argument :bio, :string do
+        description "The user's personal bio (个人简介)"
+        allow_nil? true
+      end
+
       # Sets the student_id from the argument
       change set_attribute(:member_id, arg(:member_id))
       change set_attribute(:name, arg(:name))
 
       # Sets the role from the argument
       change set_attribute(:role, arg(:role))
+
+      # Sets optional profile fields
+      change set_attribute(:job_title, arg(:job_title))
+      change set_attribute(:bio, arg(:bio))
 
       # Hashes the provided password
       change AshAuthentication.Strategy.Password.HashPasswordChange
@@ -461,6 +575,16 @@ defmodule KgEdu.Accounts.User do
         constraints one_of: [:admin, :user, :teacher]
       end
 
+      argument :job_title, :string do
+        description "The user's job title (职称)"
+        allow_nil? true
+      end
+
+      argument :bio, :string do
+        description "The user's personal bio (个人简介)"
+        allow_nil? true
+      end
+
       argument :tenant_id, :uuid do
         description "The tenant (organization) ID to register the user in"
         allow_nil? false
@@ -477,7 +601,9 @@ defmodule KgEdu.Accounts.User do
                    name: input.arguments.name,
                    password: input.arguments.password,
                    password_confirmation: input.arguments.password_confirmation,
-                   role: input.arguments.role
+                   role: input.arguments.role,
+                   job_title: input.arguments.job_title,
+                   bio: input.arguments.bio
                  })
                  |> Ash.create(tenant: organization.schema_name) do
               {:ok, user} ->
@@ -801,6 +927,12 @@ defmodule KgEdu.Accounts.User do
       public? true
     end
 
+    attribute :class_id, :uuid do
+      allow_nil? true
+      public? true
+      description "关联的班级ID (Related Class ID)"
+    end
+
     attribute :email, :ci_string do
       allow_nil? true
       public? true
@@ -823,11 +955,29 @@ defmodule KgEdu.Accounts.User do
       public? true
       description "头像地址 (Avatar URL)"
     end
+
+    attribute :job_title, :string do
+      allow_nil? true
+      public? true
+      description "职称 (Job Title)"
+    end
+
+    attribute :bio, :string do
+      allow_nil? true
+      public? true
+      description "个人简介 (Personal Bio)"
+    end
   end
 
   calculations do
     calculate :auth_token, :string do
       calculation expr(context[:token])
+    end
+  end
+
+  relationships do
+    belongs_to :class, KgEdu.Accounts.Class do
+      allow_nil? true
     end
   end
 
