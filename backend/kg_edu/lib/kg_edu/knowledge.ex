@@ -96,6 +96,19 @@ defmodule KgEdu.Knowledge do
       rpc_action :export_homework_template, :export_homework_template
       # rpc_action :get_homework_completion_stats, :get_homework_completion_stats
     end
+
+    resource KgEdu.Knowledge.KnowledgePointCognitive do
+      rpc_action :list_knowledge_point_cognitives, :read
+      rpc_action :create_knowledge_point_cognitive, :create
+      rpc_action :destroy_knowledge_point_cognitive, :destroy
+      rpc_action :update_knowledge_point_cognitive, :update
+      rpc_action :get_knowledge_point_cognitive, :by_id
+      rpc_action :get_cognitives_by_knowledge_point, :by_knowledge_point
+      rpc_action :get_cognitives_by_knowledge_point_and_level, :by_knowledge_point_and_level
+      rpc_action :get_knowledge_point_cognitive_by_knowledge_cid_and_level, :get_knowledge_point_cognitive_by_knowledge_cid_and_level
+      rpc_action :get_cognitives_by_level, :by_level
+      rpc_action :get_cognitives_by_course, :by_course
+    end
   end
 
 
@@ -108,5 +121,6 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.Question
     resource KgEdu.Knowledge.QuestionConnection
     resource KgEdu.Knowledge.Homework
+    resource KgEdu.Knowledge.KnowledgePointCognitive
   end
 end

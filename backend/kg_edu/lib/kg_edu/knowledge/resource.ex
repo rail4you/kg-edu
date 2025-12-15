@@ -1227,6 +1227,12 @@ defmodule KgEdu.Knowledge.Resource do
       destination_attribute :knowledge_resource_id
       description "Exercises related to this knowledge resource"
     end
+
+    has_many :knowledge_point_cognitives, KgEdu.Knowledge.KnowledgePointCognitive do
+      public? true
+      destination_attribute :knowledge_resource_id
+      description "Cognitive resources for this knowledge point at different levels"
+    end
   end
 
   # identities do

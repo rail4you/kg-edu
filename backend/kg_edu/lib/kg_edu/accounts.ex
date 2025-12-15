@@ -50,6 +50,8 @@ defmodule KgEdu.Accounts do
       rpc_action :get_migration_status, :get_migration_status
       rpc_action :get_backup_statistics, :get_backup_statistics
       rpc_action :create_scheduled_backups, :create_scheduled_backups
+      rpc_action :get_organization_summary, :get_organization_summary
+      rpc_action :get_all_organization_summary, :get_all_organization_summary
     end
 
     resource KgEdu.Accounts.Class do
@@ -95,6 +97,15 @@ defmodule KgEdu.Accounts do
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
         index :get_users, route: "/"
+      end
+
+      # Organization endpoints
+      base_route "/organizations", KgEdu.Accounts.Organization do
+        get :by_id, route: "/:id"
+        index :read, route: "/"
+        post :create, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
       end
     end
   end

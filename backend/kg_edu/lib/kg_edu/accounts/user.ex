@@ -91,7 +91,7 @@ defmodule KgEdu.Accounts.User do
     defaults [:read, :destroy]
 
     create :create_student do
-      accept [:member_id, :name, :phone, :email, :class_name, :major, :colledge, :avatar_url, :class_id, :job_title, :bio]
+      accept [:member_id, :name, :phone, :email, :class_name, :major, :school, :colledge, :avatar_url, :class_id, :job_title, :bio]
       argument :password, :string do
         description "Student password (will be hashed)"
         allow_nil? false
@@ -151,7 +151,7 @@ defmodule KgEdu.Accounts.User do
     end
 
     update :update_student do
-      accept [:member_id, :name, :phone, :email, :major, :colledge, :class_name, :avatar_url, :class_id, :job_title, :bio]
+      accept [:member_id, :name, :phone, :email, :major, :school, :colledge, :class_name, :avatar_url, :class_id, :job_title, :bio]
       argument :password, :string do
         allow_nil? true
       end
@@ -245,6 +245,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
+      argument :school, :string do
+        description "The user's school (学校)"
+        allow_nil? true
+      end
+
       # Use the CreateUser change to handle password hashing and data storage
       change {__MODULE__.Changes.CreateUser, []}
 
@@ -256,11 +261,12 @@ defmodule KgEdu.Accounts.User do
       change set_attribute(:role, arg(:role))
       change set_attribute(:job_title, arg(:job_title))
       change set_attribute(:bio, arg(:bio))
+      change set_attribute(:school, arg(:school))
     end
 
     update :update do
       description "Update user profile information"
-      accept [:name, :role, :phone, :avatar_url, :job_title, :bio, :class_id, :class_name]
+      accept [:name, :role, :phone, :email, :avatar_url, :job_title, :bio, :class_id, :class_name, :school]
       require_atomic? false
     end
 
@@ -515,6 +521,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
+      argument :school, :string do
+        description "The user's school (学校)"
+        allow_nil? true
+      end
+
       # Sets the student_id from the argument
       change set_attribute(:member_id, arg(:member_id))
       change set_attribute(:name, arg(:name))
@@ -525,6 +536,7 @@ defmodule KgEdu.Accounts.User do
       # Sets optional profile fields
       change set_attribute(:job_title, arg(:job_title))
       change set_attribute(:bio, arg(:bio))
+      change set_attribute(:school, arg(:school))
 
       # Hashes the provided password
       change AshAuthentication.Strategy.Password.HashPasswordChange
@@ -585,6 +597,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
+      argument :school, :string do
+        description "The user's school (学校)"
+        allow_nil? true
+      end
+
       argument :tenant_id, :uuid do
         description "The tenant (organization) ID to register the user in"
         allow_nil? false
@@ -603,7 +620,8 @@ defmodule KgEdu.Accounts.User do
                    password_confirmation: input.arguments.password_confirmation,
                    role: input.arguments.role,
                    job_title: input.arguments.job_title,
-                   bio: input.arguments.bio
+                   bio: input.arguments.bio,
+                   school: input.arguments.school
                  })
                  |> Ash.create(tenant: organization.schema_name) do
               {:ok, user} ->
@@ -920,6 +938,12 @@ defmodule KgEdu.Accounts.User do
     attribute :major, :string do
       allow_nil? true
       public? true
+    end
+
+    attribute :school, :string do
+      allow_nil? true
+      public? true
+      description "学校 (School)"
     end
 
     attribute :colledge, :string do

@@ -11,7 +11,6 @@ defmodule KgEdu.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader],
       consolidate_protocols: Mix.env() != :dev
     ]
   end
@@ -61,7 +60,7 @@ defmodule KgEdu.MixProject do
       {:ash_phoenix, "~> 2.0"},
       {:ash, "~> 3.7"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
-      {:phoenix, "~> 1.8.0-rc.4", override: true},
+      {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},
       {:postgrex, ">= 0.0.0"},

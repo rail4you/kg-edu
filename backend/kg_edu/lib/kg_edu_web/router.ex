@@ -162,6 +162,12 @@ defmodule KgEduWeb.Router do
   scope "/api", KgEduWeb do
     pipe_through :api
     get "/download/template", DownloadController, :template
+
+    # Organization statistics endpoints
+    get "/organizations/summary", OrganizationController, :get_all_summary
+    post "/organizations/summary", OrganizationController, :get_all_summary
+    get "/organizations/:organization_id/summary", OrganizationController, :get_summary
+    post "/organizations/summary/:organization_id", OrganizationController, :get_summary
   end
 
   scope "/api", KgEduWeb do
