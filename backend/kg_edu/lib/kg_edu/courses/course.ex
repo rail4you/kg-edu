@@ -4,7 +4,8 @@ defmodule KgEdu.Courses.Course do
     domain: KgEdu.Courses,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource],
+    primary_read_warning?: false
   require Logger
   require Ash.Query
   postgres do
@@ -25,7 +26,7 @@ defmodule KgEdu.Courses.Course do
     type_name "Course"
   end
 
-  code_interface do
+code_interface do
     define :create_course, action: :create
     define :update_course, action: :update
     define :delete_course, action: :destroy
@@ -38,6 +39,9 @@ defmodule KgEdu.Courses.Course do
     define :get_course_by_guest, action: :get_course_by_guest
     define :calculate_course_statistics, action: :calculate_course_statistics
     define :course_overview, action: :course_overview
+    define :create_course_with_primary_teacher, action: :create_with_primary_teacher
+    define :get_courses_for_teacher, action: :get_courses_for_teacher
+    define :my_courses, action: :my_courses
   end
 
 
@@ -56,21 +60,36 @@ defmodule KgEdu.Courses.Course do
       prepare fn query, context ->
             # Teachers see only their courses, students see only enrolled courses
             # Only users see published courses
-        Logger.info("context is #{inspect(context)}")
-        Logger.info("actor is #{inspect(context.actor)}")
+        Logger.info("COURSE LIST: context is #{inspect(context)}")
+        Logger.info("COURSE LIST: actor is #{inspect(context.actor)}")
 
         query = case context.actor do
           %{role: :user, id: user_id} ->
+            Logger.info("COURSE LIST: Filtering courses for student #{user_id}")
             # Students see only courses they're enrolled in and published
             query
             |> Ash.Query.filter(publish_status == true)
             |> Ash.Query.filter(course_enrollments.member_id == ^user_id)
 
           %{role: :teacher, id: teacher_id} ->
-            Logger.info("teacher id is #{teacher_id}")
-            Ash.Query.filter(query, teacher_id == ^teacher_id)
+            Logger.info("COURSE LIST: Filtering courses for teacher #{teacher_id}")
+            # Teachers see courses where they are either:
+            # 1. The primary teacher (teacher_id matches)
+            # 2. Assigned to the course through CourseAssignment
+            Ash.Query.filter(query, teacher_id == ^teacher_id or course_assignments.teacher_id == ^teacher_id)
 
-          _ ->
+          %{role: :admin} ->
+            Logger.info("COURSE LIST: Admin can see all courses")
+            # Admins can see all courses
+            query
+
+          %{role: :super_admin} ->
+            Logger.info("COURSE LIST: Super admin can see all courses")
+            # Super admins can see all courses
+            query
+
+          other ->
+            Logger.info("COURSE LIST: No access for actor: #{inspect(other)}")
             Ash.Query.filter(query, false)
         end
 
@@ -84,24 +103,156 @@ defmodule KgEdu.Courses.Course do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id]
-      # change set_attribute(:teacher_id, actor(:id))
-      # change relate_actor(:teacher_id)
+      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id]
+    end
+
+    action :create_with_primary_teacher, :map do
+      description "Create a course with a primary teacher assignment"
+
+      argument :title, :string do
+        description "The course title"
+        allow_nil? false
+      end
+
+      argument :description, :string do
+        description "The course description"
+        allow_nil? true
+      end
+
+      argument :image_url, :string do
+        description "The course image URL"
+        allow_nil? true
+      end
+
+      argument :major, :string do
+        description "The course major"
+        allow_nil? true
+      end
+
+      argument :semester, :string do
+        description "The course semester"
+        allow_nil? true
+      end
+
+      argument :semester_hours, :integer do
+        description "The course semester hours"
+        allow_nil? true
+      end
+
+      argument :credits, :integer do
+        description "The course credits"
+        allow_nil? true
+      end
+
+      argument :book_id, :uuid do
+        description "The course book ID"
+        allow_nil? true
+      end
+
+      argument :publish_status, :boolean do
+        description "Whether the course is published"
+        allow_nil? true
+        default true
+      end
+
+      argument :subject_category_id, :uuid do
+        description "The course subject category ID"
+        allow_nil? true
+      end
+
+      argument :primary_teacher_id, :uuid do
+        description "ID of the primary teacher for this course"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        course_attrs = %{
+          title: input.arguments.title,
+          description: input.arguments.description,
+          image_url: input.arguments.image_url,
+          major: input.arguments.major,
+          semester: input.arguments.semester,
+          semester_hours: input.arguments.semester_hours,
+          credits: input.arguments.credits,
+          book_id: input.arguments.book_id,
+          publish_status: input.arguments.publish_status,
+          subject_category_id: input.arguments.subject_category_id
+        }
+
+        try do
+          # Create the course first
+          case KgEdu.Courses.Course |> Ash.Changeset.for_action(:create, course_attrs) |> Ash.create(tenant: context.tenant) do
+            {:ok, course} ->
+              # Create primary teacher assignment
+              assignment_attrs = %{
+                course_id: course.id,
+                teacher_id: input.arguments.primary_teacher_id,
+                role: :primary_teacher,
+                assigned_by_id: context.actor.id,
+                assigned_at: DateTime.utc_now()
+              }
+
+              case KgEdu.Courses.CourseAssignment |> Ash.Changeset.for_action(:create, assignment_attrs) |> Ash.create(tenant: context.tenant) do
+                {:ok, _assignment} ->
+                  {:ok, course}
+                {:error, assignment_error} ->
+                  # Rollback course creation if assignment fails
+                  case Ash.destroy(course, tenant: context.tenant) do
+                    :ok -> {:error, "Failed to create teacher assignment: #{inspect(assignment_error)}"}
+                    _ -> {:error, "Failed to create teacher assignment and failed to rollback course: #{inspect(assignment_error)}"}
+                  end
+              end
+            {:error, course_error} ->
+              {:error, "Failed to create course: #{inspect(course_error)}"}
+          end
+        rescue
+          error ->
+            {:error, "Failed to create course with primary teacher: #{inspect(error)}"}
+        end
+      end
     end
 
     update :update do
-      accept [:title, :description, :image_url, :teacher_id, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id]
-      change set_attribute(:teacher_id, actor(:id))
+      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id]
     end
 
     read :by_teacher do
-      description "Get courses taught by a specific teacher"
+      description "Get courses taught by a specific teacher (primary teacher or through assignments)"
 
       argument :teacher_id, :uuid do
         allow_nil? false
       end
 
-      filter expr(teacher_id == ^arg(:teacher_id))
+      filter expr(teacher_id == ^arg(:teacher_id) or course_assignments.teacher_id == ^arg(:teacher_id))
+    end
+
+    read :get_courses_for_teacher do
+      description "Get all courses that a teacher has access to (as primary teacher, assistant, or guest)"
+
+      argument :teacher_id, :uuid do
+        description "The teacher ID to get courses for"
+        allow_nil? false
+      end
+
+      filter expr(teacher_id == ^arg(:teacher_id) or course_assignments.teacher_id == ^arg(:teacher_id))
+    end
+
+    read :my_courses do
+      description "Get courses created by the current teacher (only primary teacher courses, not assigned courses)"
+
+      prepare fn query, context ->
+        case context.actor do
+          %{role: :teacher, id: teacher_id} ->
+            # Only return courses where the teacher is the primary teacher (creator)
+            query
+            |> Ash.Query.filter(teacher_id == ^teacher_id)
+            |> Ash.Query.load(:subject_category)
+
+          _ ->
+            # Non-teacher roles get no results
+            Ash.Query.filter(query, false)
+        end
+      end
     end
 
     read :by_student do
@@ -574,10 +725,12 @@ defmodule KgEdu.Courses.Course do
   end
 
   relationships do
-    belongs_to :teacher, KgEdu.Accounts.User do
-      domain KgEdu.Accounts
-      allow_nil? false
+    has_many :course_assignments, KgEdu.Courses.CourseAssignment do
+      public? true
+      destination_attribute :course_id
+      description "Teacher assignments for this course"
     end
+
 
     has_many :course_enrollments, KgEdu.Courses.CourseEnrollment do
       public? true

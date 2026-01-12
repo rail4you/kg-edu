@@ -569,12 +569,15 @@ defmodule KgEdu.Knowledge.Resource do
       accept [
         :name,
         :description,
+        :tag,
+        :dimension,
         :course_id,
         :chapter_id,
         :subject,
         :unit,
         :parent_subject_id,
         :parent_unit_id,
+        :parent_knowledge_resource_id,
         :importance_level,
         :knowledge_type
       ]
@@ -623,7 +626,7 @@ defmodule KgEdu.Knowledge.Resource do
 
     # ============ Update Actions ============
     update :update_knowledge_resource do
-      accept [:name, :importance_level, :description]
+      accept [:name, :importance_level, :description, :tag, :dimension, :parent_knowledge_resource_id]
     end
 
     # ============ Import Actions ============
@@ -1130,6 +1133,18 @@ defmodule KgEdu.Knowledge.Resource do
       public? true
     end
 
+    attribute :tag, :string do
+      allow_nil? true
+      public? true
+      description "Tag or label for categorizing the knowledge resource"
+    end
+
+    attribute :dimension, :string do
+      allow_nil? true
+      public? true
+      description "Cognitive dimension or category of the knowledge resource"
+    end
+
     timestamps()
   end
 
@@ -1164,6 +1179,13 @@ defmodule KgEdu.Knowledge.Resource do
       description "Parent unit (for cells that belong to a unit)"
     end
 
+    # Generic parent knowledge resource (self-referential for hierarchical tree structure)
+    belongs_to :parent_knowledge_resource, __MODULE__ do
+      public? true
+      allow_nil? true
+      description "Parent knowledge resource (generic hierarchical relationship for tree structure)"
+    end
+
     # Children relationships
     has_many :child_units, __MODULE__ do
       public? true
@@ -1191,6 +1213,13 @@ defmodule KgEdu.Knowledge.Resource do
       destination_attribute :parent_subject_id
       filter expr(knowledge_type == :knowledge_cell)
       description "All knowledge cells that belong to this subject (regardless of unit)"
+    end
+
+    # Generic child knowledge resources (self-referential for hierarchical tree structure)
+    has_many :child_knowledge_resources, __MODULE__ do
+      public? true
+      destination_attribute :parent_knowledge_resource_id
+      description "All child knowledge resources in the hierarchical tree"
     end
 
     # ============ Other Relationships ============

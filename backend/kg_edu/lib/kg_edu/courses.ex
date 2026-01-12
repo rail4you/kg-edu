@@ -18,6 +18,7 @@ defmodule KgEdu.Courses do
       rpc_action :get_course, :get
       rpc_action :calculate_course_statistics, :calculate_course_statistics
       rpc_action :course_overview, :course_overview
+      rpc_action :my_courses, :my_courses
     end
 
     resource KgEdu.Courses.Chapter do
@@ -110,6 +111,18 @@ defmodule KgEdu.Courses do
       rpc_action :delete_course_video, :destroy
       rpc_action :list_course_videos_by_course, :by_course
     end
+
+    resource KgEdu.Courses.CourseAssignment do
+      rpc_action :create_course_assignment, :create
+      rpc_action :list_course_assignments, :read
+      rpc_action :get_course_assignment, :read
+      rpc_action :update_course_assignment, :update
+      rpc_action :delete_course_assignment, :destroy
+      rpc_action :list_assignments_by_teacher, :by_teacher
+      rpc_action :list_assignments_by_course, :by_course
+      rpc_action :assign_course_to_teacher, :create
+      rpc_action :remove_course_from_teacher, :remove_course_from_teacher
+    end
   end
 
   json_api do
@@ -149,6 +162,7 @@ defmodule KgEdu.Courses do
   resources do
     resource KgEdu.Courses.Course
     resource KgEdu.Courses.CourseEnrollment
+    resource KgEdu.Courses.CourseAssignment
     resource KgEdu.Courses.Chapter
     resource KgEdu.Courses.File
     resource KgEdu.Courses.Video
