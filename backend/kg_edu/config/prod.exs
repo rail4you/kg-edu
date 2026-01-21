@@ -37,3 +37,8 @@ config :kg_edu, KgEduWeb.Endpoint,
     gzip: false,
     only: ~w(js css images fonts favicon.ico robots.txt index.html)
   ]
+
+# Email API endpoint for production
+# Should be set via environment variable
+config :kg_edu, :email_api,
+  endpoint: System.get_env("EMAIL_API_ENDPOINT", "http://kg-edu-ai-agent:5000/agent/email")

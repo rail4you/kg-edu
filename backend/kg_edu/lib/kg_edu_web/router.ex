@@ -76,6 +76,7 @@ defmodule KgEduWeb.Router do
   scope "/api", KgEduWeb do
     pipe_through :api
     post "/chat/stream", ChatController, :stream_message
+    get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
   end
 
   scope "/live", KgEduWeb do

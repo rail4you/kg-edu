@@ -8,6 +8,7 @@ defmodule KgEdu.Knowledge do
   typescript_rpc do
     resource KgEdu.Knowledge.Resource do
       rpc_action :list_subjects, :list_subjects
+      rpc_action :list_knowledges, :read
       rpc_action :create_resource, :create
       rpc_action :get_subject_with_units, :get_subject_with_units
       rpc_action :get_full_hierarchy, :get_full_hierarchy
@@ -21,6 +22,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :import_knowledge_from_opml, :import_from_opml
       rpc_action :get_knowledge_resources_by_name_and_importance, :by_name_and_importance
       rpc_action :get_course_learning_stats_by_student, :get_course_learning_stats_by_student
+      rpc_action :add_tag_to_knowledge, :add_tag
+      rpc_action :remove_tag_from_knowledge, :remove_tag
       # rpc_action :get_resource_learning_stats, :student_learning_stats
       # rpc_action :get_resource, :get_resource
     end
@@ -66,6 +69,9 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_concept_questions, :list_concept_questions
       rpc_action :list_method_questions, :list_method_questions
       rpc_action :get_question_flow, :get_question_flow
+      rpc_action :get_questions_by_knowledge, :by_knowledge_resource
+      rpc_action :link_question_to_knowledge, :link_question_to_knowledge
+      rpc_action :unlink_question_from_knowledge, :unlink_question_from_knowledge
       rpc_action :import_questions_from_xlsx, :import_questions_from_xlsx
       rpc_action :export_question_template, :export_question_template
     end
@@ -109,6 +115,82 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_cognitives_by_level, :by_level
       rpc_action :get_cognitives_by_course, :by_course
     end
+
+    resource KgEdu.Knowledge.MainAbility do
+      rpc_action :list_main_abilities, :read
+      rpc_action :create_main_ability, :create
+      rpc_action :update_main_ability, :update
+      rpc_action :destroy_main_ability, :destroy
+      rpc_action :get_main_ability, :read
+      rpc_action :get_main_abilities_by_course, :by_course
+      rpc_action :get_main_ability_by_name, :by_name
+    end
+
+    resource KgEdu.Knowledge.SubAbility do
+      rpc_action :list_sub_abilities, :read
+      rpc_action :create_sub_ability, :create
+      rpc_action :update_sub_ability, :update
+      rpc_action :destroy_sub_ability, :destroy
+      rpc_action :get_sub_ability, :read
+      rpc_action :get_sub_abilities_by_main_ability, :by_main_ability
+      rpc_action :get_sub_ability_by_name, :by_name
+    end
+
+    resource KgEdu.Knowledge.SubAbilityKnowledgeResource do
+      rpc_action :create_join, :create
+      rpc_action :destroy_join, :destroy
+      rpc_action :get_joins_by_sub_ability, :by_sub_ability
+      rpc_action :get_joins_by_knowledge_resource, :by_knowledge_resource
+    end
+
+    resource KgEdu.Knowledge.UserCase do
+      rpc_action :list_user_cases, :read
+      rpc_action :create_user_case, :create
+      rpc_action :update_user_case, :update
+      rpc_action :destroy_user_case, :destroy
+      rpc_action :get_user_case, :read
+      rpc_action :get_user_cases_by_knowledge_resource, :by_knowledge_resource
+    end
+
+    resource KgEdu.Knowledge.Exam do
+      rpc_action :list_exams, :read
+      rpc_action :create_exam, :create
+      rpc_action :update_exam, :update
+      rpc_action :destroy_exam, :destroy
+      rpc_action :get_exam, :by_id
+      rpc_action :get_exams_by_course, :by_course
+      rpc_action :get_exams_by_creator, :by_creator
+      rpc_action :add_exercise_to_exam, :add_exercise
+      rpc_action :remove_exercise_from_exam, :remove_exercise
+    end
+
+    resource KgEdu.Knowledge.ExamExercise do
+      rpc_action :list_exam_exercises, :read
+      rpc_action :create_exam_exercise, :create
+      rpc_action :update_exam_exercise, :update
+      rpc_action :destroy_exam_exercise, :destroy
+      rpc_action :get_exam_exercise, :by_id
+      rpc_action :get_exercises_by_exam, :by_exam
+    end
+
+    resource KgEdu.Knowledge.StudentExam do
+      rpc_action :list_student_exams, :read
+      rpc_action :get_student_exam, :by_id
+      rpc_action :get_student_exams_by_exam, :by_exam
+      rpc_action :get_student_exams_by_student, :by_student
+      rpc_action :get_student_exam_for_student, :for_student
+      rpc_action :start_exam, :start_exam
+      rpc_action :submit_exam, :submit_exam
+      rpc_action :grade_exam, :grade_exam
+    end
+
+    resource KgEdu.Knowledge.StudentExamAnswer do
+      rpc_action :list_student_exam_answers, :read
+      rpc_action :get_student_exam_answer, :by_id
+      rpc_action :get_answers_by_student_exam, :by_student_exam
+      rpc_action :submit_answer, :submit_answer
+      rpc_action :grade_answer, :grade_answer
+    end
   end
 
 
@@ -122,5 +204,13 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.QuestionConnection
     resource KgEdu.Knowledge.Homework
     resource KgEdu.Knowledge.KnowledgePointCognitive
+    resource KgEdu.Knowledge.MainAbility
+    resource KgEdu.Knowledge.SubAbility
+    resource KgEdu.Knowledge.SubAbilityKnowledgeResource
+    resource KgEdu.Knowledge.UserCase
+    resource KgEdu.Knowledge.Exam
+    resource KgEdu.Knowledge.ExamExercise
+    resource KgEdu.Knowledge.StudentExam
+    resource KgEdu.Knowledge.StudentExamAnswer
   end
 end

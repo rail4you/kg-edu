@@ -43,6 +43,13 @@ defmodule KgEdu.Knowledge.Question do
     define :get_question_flow, action: :get_question_flow
     define :get_question_connections, action: :get_question_connections
 
+    # Knowledge resource queries
+    define :get_questions_by_knowledge, action: :by_knowledge_resource
+
+    # Link/Unlink actions
+    define :link_question_to_knowledge, action: :link_question_to_knowledge
+    define :unlink_question_from_knowledge, action: :unlink_question_from_knowledge
+
     # Import/Export
     define :import_questions_from_xlsx, action: :import_questions_from_xlsx
     define :export_question_template, action: :export_question_template
@@ -170,6 +177,43 @@ defmodule KgEdu.Knowledge.Question do
     update :update_question do
       description "Update a question"
       accept [:title, :description, :position, :tags, :question_level, :course_id]
+    end
+
+    # ============ Link/Unlink Actions ============
+    update :link_question_to_knowledge do
+      description "Link a question to a knowledge resource"
+      require_atomic? false
+
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+        description "The knowledge resource ID to link to"
+      end
+
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource,
+               type: :append_and_remove
+             )
+    end
+
+    update :unlink_question_from_knowledge do
+      description "Unlink a question from its knowledge resource"
+      require_atomic? false
+
+      change set_attribute(:knowledge_resource_id, nil)
+    end
+
+    # ============ Knowledge Resource Queries ============
+    read :by_knowledge_resource do
+      description "Get all questions for a specific knowledge resource"
+      argument :knowledge_resource_id, :uuid do
+        allow_nil? false
+        description "Knowledge resource ID"
+      end
+
+      filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
+
+      prepare fn query, _context ->
+        Ash.Query.sort(query, question_level: :asc, position: :asc)
+      end
     end
 
     # ============ Destroy Actions ============

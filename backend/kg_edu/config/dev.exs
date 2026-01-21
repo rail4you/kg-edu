@@ -37,6 +37,10 @@ config :kg_edu, KgEduWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:kg_edu, ~w(--watch)]}
   ]
 
+# Email API endpoint for development
+config :kg_edu, :email_api,
+  endpoint: System.get_env("EMAIL_API_ENDPOINT") || "http://localhost:5000/agent/email"
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

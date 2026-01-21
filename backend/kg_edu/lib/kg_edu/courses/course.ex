@@ -103,7 +103,7 @@ code_interface do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id]
+      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id, :teacher_id]
     end
 
     action :create_with_primary_teacher, :map do
@@ -213,7 +213,7 @@ code_interface do
     end
 
     update :update do
-      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id]
+      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id, :teacher_id]
     end
 
     read :by_teacher do
@@ -783,7 +783,10 @@ code_interface do
       description "Course videos"
     end
 
-
-
+    has_many :main_abilities, KgEdu.Knowledge.MainAbility do
+      public? true
+      destination_attribute :course_id
+      description "Main abilities for this course"
+    end
   end
 end

@@ -59,8 +59,13 @@ defmodule KgEdu.Knowledge.Resource do
     define :get_subject_with_units, action: :get_subject_with_units
     define :get_unit_with_cells, action: :get_unit_with_cells
     define :get_full_hierarchy, action: :get_full_hierarchy
+    define :get_full_hierarchy_nested, action: :get_full_hierarchy_nested
     define :get_parent, action: :get_parent
     define :get_children, action: :get_children
+
+    # Tag actions
+    define :add_tag_to_knowledge, action: :add_tag
+    define :remove_tag_from_knowledge, action: :remove_tag
 
     # Import actions
     define :import_knowledge_from_excel, action: :import_from_excel
@@ -541,7 +546,7 @@ defmodule KgEdu.Knowledge.Resource do
     end
 
     read :get_full_hierarchy do
-      description "Get the full hierarchy for a course (subjects with units and cells)"
+      description "Get the full hierarchy for a course (subjects with units and cells, supporting nested cells up to level 7)"
       argument :course_id, :uuid, allow_nil?: false
 
       filter expr(
@@ -552,10 +557,41 @@ defmodule KgEdu.Knowledge.Resource do
       prepare fn query, _context ->
         query
         |> Ash.Query.load(
+          # Load units under subjects
           child_units: [
+            # Load cells under units (level 3)
             :child_cells
           ],
+          # Load direct cells under subjects (no unit, level 3)
           direct_cells: [],
+          # Load all cells under subjects (for backward compatibility)
+          subject_cells: []
+        )
+        |> Ash.Query.sort(subject: :asc, name: :asc)
+      end
+    end
+
+    # Action that returns fully nested hierarchy (processed server-side)
+    read :get_full_hierarchy_nested do
+      description "Get the full hierarchy with cells automatically nested (up to level 7). This action builds nested structure server-side."
+      argument :course_id, :uuid, allow_nil?: false
+
+      filter expr(
+               course_id == ^arg(:course_id) and
+                 knowledge_type == :subject
+             )
+
+      prepare fn query, _context ->
+        query
+        |> Ash.Query.load(
+          # Load units under subjects
+          child_units: [
+            # Load cells under units (level 3)
+            :child_cells
+          ],
+          # Load direct cells under subjects (no unit, level 3)
+          direct_cells: [],
+          # Load all cells under subjects (for backward compatibility)
           subject_cells: []
         )
         |> Ash.Query.sort(subject: :asc, name: :asc)
@@ -586,6 +622,7 @@ defmodule KgEdu.Knowledge.Resource do
         knowledge_type = Ash.Changeset.get_attribute(changeset, :knowledge_type)
         parent_subject_id = Ash.Changeset.get_attribute(changeset, :parent_subject_id)
         parent_unit_id = Ash.Changeset.get_attribute(changeset, :parent_unit_id)
+        parent_knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :parent_knowledge_resource_id)
 
         case knowledge_type do
           :subject ->
@@ -610,13 +647,21 @@ defmodule KgEdu.Knowledge.Resource do
             end
 
           :knowledge_cell ->
-            # Cells must have either a parent subject or parent unit (not both)
+            # Cells can have:
+            # - parent_subject_id (direct child of subject)
+            # - parent_unit_id (child of a unit)
+            # - parent_knowledge_resource_id (nested child of another cell, for levels 4-7)
             cond do
-              is_nil(parent_subject_id) and is_nil(parent_unit_id) ->
-                {:error, "Knowledge cells must have either a parent subject or parent unit"}
+              # Cell must have at least one parent
+              is_nil(parent_subject_id) and is_nil(parent_unit_id) and is_nil(parent_knowledge_resource_id) ->
+                {:error, "Knowledge cells must have a parent (subject, unit, or another cell)"}
 
-              # not is_nil(parent_subject_id) and not is_nil(parent_unit_id) ->
-              #   {:error, "Knowledge cells cannot have both a parent subject and parent unit"}
+              # Cannot have multiple parent types
+              (not is_nil(parent_subject_id) and not is_nil(parent_unit_id)) or
+              (not is_nil(parent_subject_id) and not is_nil(parent_knowledge_resource_id)) or
+              (not is_nil(parent_unit_id) and not is_nil(parent_knowledge_resource_id)) ->
+                {:error, "Knowledge cells can only have one parent (subject, unit, or cell)"}
+
               true ->
                 :ok
             end
@@ -627,6 +672,91 @@ defmodule KgEdu.Knowledge.Resource do
     # ============ Update Actions ============
     update :update_knowledge_resource do
       accept [:name, :importance_level, :description, :tag, :dimension, :parent_knowledge_resource_id]
+    end
+
+    update :add_tag do
+      description "Append a tag to the knowledge resource's tag string (tags are separated by semicolons)"
+      require_atomic? false
+
+      argument :tag, :string do
+        description "The tag word to append"
+        allow_nil? false
+      end
+
+      change fn changeset, _context ->
+        tag_to_add = Ash.Changeset.get_argument(changeset, :tag)
+
+        # Clean the tag: trim whitespace and remove any semicolons
+        cleaned_tag = tag_to_add
+          |> String.trim()
+          |> String.replace(";", "")
+
+        if cleaned_tag == "" do
+          changeset
+        else
+          # Get current tags or default to empty string
+          current_tags = Ash.Changeset.get_attribute(changeset, :tag) || ""
+
+          # Append the new tag
+          new_tags = if current_tags == "" do
+            cleaned_tag
+          else
+            # Check if tag already exists
+            existing_tags = current_tags
+              |> String.split(";", trim: true)
+              |> Enum.map(&String.trim/1)
+              |> MapSet.new()
+
+            if cleaned_tag in existing_tags do
+              # Tag already exists, don't add it again
+              current_tags
+            else
+              "#{current_tags};#{cleaned_tag}"
+            end
+          end
+
+          Ash.Changeset.change_attribute(changeset, :tag, new_tags)
+        end
+      end
+    end
+
+    update :remove_tag do
+      description "Remove a tag from the knowledge resource's tag string"
+      require_atomic? false
+
+      argument :tag, :string do
+        description "The tag word to remove"
+        allow_nil? false
+      end
+
+      change fn changeset, _context ->
+        tag_to_remove = Ash.Changeset.get_argument(changeset, :tag)
+
+        # Clean the tag: trim whitespace and remove any semicolons
+        cleaned_tag = tag_to_remove
+          |> String.trim()
+          |> String.replace(";", "")
+
+        if cleaned_tag == "" do
+          changeset
+        else
+          # Get current tags or default to empty string
+          current_tags = Ash.Changeset.get_attribute(changeset, :tag) || ""
+
+          if current_tags == "" do
+            changeset
+          else
+            # Remove the tag if it exists
+            new_tags = current_tags
+              |> String.split(";", trim: true)
+              |> Enum.map(&String.trim/1)
+              |> Enum.reject(&(&1 == cleaned_tag))
+              |> Enum.join(";")
+
+            Ash.Changeset.change_attribute(changeset, :tag, new_tags)
+          end
+        end
+      end
     end
 
     # ============ Import Actions ============
@@ -1215,6 +1345,14 @@ defmodule KgEdu.Knowledge.Resource do
       description "All knowledge cells that belong to this subject (regardless of unit)"
     end
 
+    # Nested child cells (cells that have this cell as parent via parent_knowledge_resource_id)
+    has_many :nested_child_cells, __MODULE__ do
+      public? true
+      destination_attribute :parent_knowledge_resource_id
+      filter expr(knowledge_type == :knowledge_cell)
+      description "Knowledge cells that are nested under this cell (for hierarchical cell structure up to level 7)"
+    end
+
     # Generic child knowledge resources (self-referential for hierarchical tree structure)
     has_many :child_knowledge_resources, __MODULE__ do
       public? true
@@ -1261,6 +1399,12 @@ defmodule KgEdu.Knowledge.Resource do
       public? true
       destination_attribute :knowledge_resource_id
       description "Cognitive resources for this knowledge point at different levels"
+    end
+
+    has_many :user_cases, KgEdu.Knowledge.UserCase do
+      public? true
+      destination_attribute :knowledge_resource_id
+      description "User cases (examples) that illustrate this knowledge resource"
     end
   end
 
@@ -1953,5 +2097,89 @@ defmodule KgEdu.Knowledge.Resource do
         Logger.error("Failed to fetch activity logs for learning stats: #{inspect(reason)}")
         {:error, reason}
     end
+  end
+
+  # ============ Helper Functions ============
+
+  @doc """
+  Build a nested cell hierarchy from flat cells based on parent_knowledge_resource_id.
+  This function takes a list of cells and returns them structured as a nested tree.
+  """
+  def build_nested_cell_hierarchy(cells) when is_list(cells) do
+    # Separate root cells (those WITHOUT parent_knowledge_resource_id) from nested cells
+    {root_cells, nested_cells} = Enum.split_with(cells, fn cell ->
+      is_nil(cell.parent_knowledge_resource_id)
+    end)
+
+    # Build a map of nested cells by their parent_id
+    nested_by_parent = Enum.group_by(nested_cells, fn cell ->
+      cell.parent_knowledge_resource_id
+    end)
+
+    # Recursively build the tree
+    build_tree(root_cells, nested_by_parent)
+  end
+
+  defp build_tree(cells, children_map) do
+    Enum.map(cells, fn cell ->
+      children = Map.get(children_map, cell.id, [])
+      nested_children = build_tree(children, children_map)
+
+      # Add nestedChildCells to the cell map (using camelCase for consistency)
+      cell
+      |> Map.put(:nestedChildCells, nested_children)
+    end)
+  end
+
+  @doc """
+  Automatically nest cells by creation order when parent_knowledge_resource_id is not set.
+  This is useful for flat hierarchies where cells should be nested based on their creation order.
+  """
+  def auto_nest_cells_by_order(cells, opts \\ []) do
+    level_3_count = Keyword.get(opts, :level_3_count, 2)
+
+    # Sort by creation time
+    sorted_cells = Enum.sort_by(cells, & &1.inserted_at)
+
+    # Split into level 3 (root) and nested cells
+    {level_3_cells, nested_cells} = Enum.split(sorted_cells, level_3_count)
+
+    # Build parent-child relationships
+    build_nested_structure_by_order(level_3_cells, nested_cells, level_3_cells)
+  end
+
+  defp build_nested_structure_by_order(parents, remaining_cells, all_cells) do
+    if Enum.empty?(remaining_cells) do
+      parents
+    else
+      # Assign each remaining cell to a parent
+      {new_parents, still_remaining} =
+        Enum.reduce(remaining_cells, {parents, []}, fn cell, {acc_parents, acc_remaining} ->
+          # Find parent: use previous cell or cycle through level_3 cells
+          parent_index = min(length(all_cells) - length(acc_remaining) - 1, length(all_cells) - 1)
+          parent = Enum.at(all_cells, parent_index)
+
+          if parent do
+            # Create nested relationship
+            updated_parents = update_nested_children(acc_parents, parent.id, cell)
+            {updated_parents, acc_remaining}
+          else
+            {acc_parents, [cell | acc_remaining]}
+          end
+        end)
+
+      build_nested_structure_by_order(new_parents, still_remaining, all_cells)
+    end
+  end
+
+  defp update_nested_children(parents, parent_id, child) do
+    Enum.map(parents, fn
+      %{id: ^parent_id} = parent ->
+        existing_children = Map.get(parent, :nestedChildren, [])
+        Map.put(parent, :nestedChildren, existing_children ++ [child])
+
+      parent ->
+        parent
+    end)
   end
 end
