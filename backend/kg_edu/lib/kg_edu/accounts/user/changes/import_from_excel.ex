@@ -178,9 +178,37 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
       errors
     end
 
+    # Handle class assignment for user role only
+    {class_id, class_name, errors} = if role == :user and not is_nil(user_map[:class]) and user_map[:class] != "" do
+      case find_or_create_class(user_map[:class], tenant_schema, user_map) do
+        {:ok, class_id} ->
+          {class_id, user_map[:class], errors}
+        {:error, reason} ->
+          {nil, nil, ["Failed to assign class: #{reason}" | errors]}
+      end
+    else
+      {nil, nil, errors}
+    end
+
     if errors == [] do
+      # Start with the user_map
       processed_map = user_map
         |> Map.put(:role, role)
+
+      # Only add class fields for user role, remove :class key for all roles
+      processed_map = processed_map
+        |> Map.delete(:class)
+
+      processed_map = if role == :user do
+        processed_map
+        |> Map.put(:class_name, class_name)
+        |> Map.put(:class_id, class_id)
+      else
+        # Remove class-related fields for non-user roles
+        processed_map
+        |> Map.delete(:class_name)
+        |> Map.delete(:class_id)
+      end
 
       {:ok, processed_map}
     else
@@ -188,18 +216,145 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     end
   end
 
-  # Create user in appropriate tenant context
+  # Find or create a class based on class name and optional college/major
+  defp find_or_create_class(class_name, tenant_schema, user_map) do
+    Logger.info("Looking for class: #{class_name}")
+
+    # Extract optional college and major from user_map if available
+    college = Map.get(user_map, :college)
+    major = Map.get(user_map, :major)
+
+    # Try to find existing class by name first
+    find_result = try do
+      # Read all classes and filter manually (simpler approach)
+      case Ash.read(KgEdu.Accounts.Class, tenant: tenant_schema) do
+        {:ok, classes} ->
+          # Find matching class by name (and college/major if provided)
+          matching_class = Enum.find(classes, fn class ->
+            name_match = class.name == class_name
+
+            # Handle nil values properly in comparisons
+            college_match = case {college, class.college} do
+              {nil, _} -> true  # No college filter specified, match all
+              {"", _} -> true  # Empty college filter, match all
+              {_user_college, nil} -> false  # User has college but class doesn't
+              {user_college, class_college} -> user_college == class_college  # Both have values, compare
+            end
+
+            major_match = case {major, class.major} do
+              {nil, _} -> true  # No major filter specified, match all
+              {"", _} -> true  # Empty major filter, match all
+              {_user_major, nil} -> false  # User has major but class doesn't
+              {user_major, class_major} -> user_major == class_major  # Both have values, compare
+            end
+
+            name_match and college_match and major_match
+          end)
+
+          case matching_class do
+            nil ->
+              Logger.info("Class not found, creating new class")
+              create_new_class(class_name, tenant_schema, college, major)
+
+            class ->
+              Logger.info("Found existing class: #{class.id}")
+              {:ok, class.id}
+          end
+
+        {:error, reason} ->
+          Logger.error("Error reading classes: #{inspect(reason)}")
+          {:error, "Failed to read classes: #{inspect(reason)}"}
+      end
+    rescue
+      e ->
+        Logger.error("Exception while finding class: #{Exception.message(e)}")
+        Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+        {:error, Exception.message(e)}
+    end
+
+    find_result
+  end
+
+  # Create a new class with the given name and optional college/major
+  defp create_new_class(class_name, tenant_schema, college, major) do
+    Logger.info("Creating new class: #{class_name}")
+
+    class_attrs = %{
+      name: class_name,
+      college: college,
+      major: major
+    }
+
+    try do
+      case KgEdu.Accounts.Class
+           |> Ash.Changeset.for_create(:create, class_attrs)
+           |> Ash.create(tenant: tenant_schema) do
+        {:ok, class} ->
+          Logger.info("Successfully created class with ID: #{class.id}")
+          {:ok, class.id}
+
+        {:error, reason} ->
+          Logger.error("Failed to create class: #{inspect(reason)}")
+          {:error, "Failed to create class: #{inspect(reason)}"}
+      end
+    rescue
+      e ->
+        Logger.error("Exception while creating class: #{Exception.message(e)}")
+        {:error, Exception.message(e)}
+    end
+  end
+
+  # Create user in appropriate tenant context (with upsert logic)
   defp create_user_in_tenant(user_map, nil) do
     # No tenant specified - use current tenant context
-    KgEdu.Accounts.User.create_user(user_map)
+    upsert_user(user_map, nil)
   end
 
   defp create_user_in_tenant(user_map, tenant_schema) when is_binary(tenant_schema) do
     # Create user using tenant context directly (like knowledge resource import)
     Logger.info("Creating user #{user_map[:member_id]} in tenant schema: #{tenant_schema}")
+    upsert_user(user_map, tenant_schema)
+  end
+
+  # Upsert user: check if exists, update if so, create if not
+  defp upsert_user(user_map, tenant_schema) do
+    member_id = user_map[:member_id]
 
     try do
-      # Create user within tenant context
+      # First, try to find existing user by member_id
+      find_result = Ash.read(KgEdu.Accounts.User, tenant: tenant_schema)
+
+      case find_result do
+        {:ok, users} ->
+          existing_user = Enum.find(users, fn u -> u.member_id == member_id end)
+
+          case existing_user do
+            nil ->
+              # User doesn't exist, create new user
+              Logger.info("User #{member_id} not found, creating new user")
+              create_new_user(user_map, tenant_schema)
+
+            user ->
+              # User exists, update the user
+              Logger.info("User #{member_id} exists (ID: #{user.id}), updating user and class association")
+              update_existing_user(user, user_map, tenant_schema)
+          end
+
+        {:error, reason} ->
+          Logger.error("Failed to read users for upsert: #{inspect(reason)}")
+          {:error, reason}
+      end
+    rescue
+      e ->
+        Logger.error("Exception during upsert for user #{member_id}: #{Exception.message(e)}")
+        Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+        {:error, "Upsert failed: #{Exception.message(e)}"}
+    end
+  end
+
+  # Create a new user
+  defp create_new_user(user_map, tenant_schema) do
+    try do
       create_result = KgEdu.Accounts.User
                     |> Ash.Changeset.for_create(:create_user, user_map)
                     |> Ash.create(tenant: tenant_schema)
@@ -222,17 +377,35 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     end
   end
 
-  # Format Ash errors to readable strings
-  defp format_ash_error(error) when is_struct(error, Ash.Error.Invalid) do
-    case error.errors do
-      [%{field: field, message: message} | _] ->
-        "#{field}: #{message}"
-      _ ->
-        "Validation error"
+  # Update an existing user
+  defp update_existing_user(user, user_map, tenant_schema) do
+    try do
+      # Prepare update attributes (exclude password and member_id from update)
+      update_attrs = user_map
+        |> Map.drop([:password, :member_id])
+
+      # Update user using the update action
+      update_result = user
+                    |> Ash.Changeset.for_update(:update, update_attrs)
+                    |> Ash.update(tenant: tenant_schema)
+
+      case update_result do
+        {:ok, updated_user} ->
+          Logger.info("Successfully updated user: #{user_map[:member_id]}")
+          {:ok, updated_user}
+
+        {:error, reason} ->
+          Logger.error("Failed to update user #{user_map[:member_id]}: #{inspect(reason)}")
+          {:error, reason}
+      end
+    rescue
+      e ->
+        Logger.error("Failed to update user #{user_map[:member_id]}: #{Exception.message(e)}")
+        Logger.error("User data that failed: #{inspect(user_map)}")
+        Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+        {:error, "Failed to update user in tenant context: #{Exception.message(e)}"}
     end
   end
-
-  defp format_ash_error(error), do: to_string(error)
 
   defp validate_required_fields(user_map, required_fields) do
     missing_fields =

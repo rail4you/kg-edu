@@ -250,6 +250,16 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
+      argument :class_name, :string do
+        description "The class name (for student users)"
+        allow_nil? true
+      end
+
+      argument :class_id, :uuid do
+        description "The class ID (for student users)"
+        allow_nil? true
+      end
+
       # Use the CreateUser change to handle password hashing and data storage
       change {__MODULE__.Changes.CreateUser, []}
 
@@ -262,6 +272,8 @@ defmodule KgEdu.Accounts.User do
       change set_attribute(:job_title, arg(:job_title))
       change set_attribute(:bio, arg(:bio))
       change set_attribute(:school, arg(:school))
+      change set_attribute(:class_name, arg(:class_name))
+      change set_attribute(:class_id, arg(:class_id))
     end
 
     update :update do
@@ -775,7 +787,9 @@ defmodule KgEdu.Accounts.User do
     end
 
     action :import_users_from_excel do
-      description "Import multiple users from an Excel file with Base64 encoding"
+      description "Import multiple users from an Excel file with Base64 encoding.
+                   For users with role 'user', the 'class' column will be used to assign them to a class.
+                   If the class exists, it will be used; otherwise, a new class will be created."
 
       argument :excel_file, :string do
         description "Base64 encoded Excel file containing user data"
@@ -788,9 +802,9 @@ defmodule KgEdu.Accounts.User do
       end
 
       argument :attributes, {:array, :atom} do
-        description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role]"
+        description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role, :class]"
         allow_nil? true
-        default [:member_id, :name, :phone, :email, :password, :role]
+        default [:member_id, :name, :phone, :email, :password, :role, :class]
       end
 
       run fn input, context ->
@@ -818,7 +832,7 @@ defmodule KgEdu.Accounts.User do
           import_result = try do
             KgEdu.Accounts.User.ImportFromExcel.parse_excel(
               excel_file,
-              attributes || [:member_id, :name, :phone, :email, :password, :role],
+              attributes || [:member_id, :name, :phone, :email, :password, :role, :class],
               tenant_to_use
             )
           rescue
@@ -845,6 +859,8 @@ defmodule KgEdu.Accounts.User do
 
     read :get_users_from_tenant do
       description "Get users from a specific tenant (super admin only)"
+      # Load the class relationship so users with class_id include class data
+      prepare build(load: [:class])
     end
   end
 

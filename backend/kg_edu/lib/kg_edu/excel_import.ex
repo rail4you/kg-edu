@@ -225,9 +225,11 @@ defmodule KgEdu.ExcelImport do
           # Try to convert to number if possible
           case Integer.parse(cleaned_text) do
             {int_val, ""} -> int_val
+            {int_val, _remainder} -> int_val  # Accept partial parsing (e.g., "1234566`" -> 1234566)
             :error ->
               case Float.parse(cleaned_text) do
                 {float_val, ""} -> float_val
+                {float_val, _remainder} -> float_val  # Accept partial parsing
                 :error -> cleaned_text
               end
           end

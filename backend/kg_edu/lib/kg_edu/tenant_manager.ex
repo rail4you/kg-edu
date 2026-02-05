@@ -29,23 +29,33 @@ defmodule KgEdu.TenantManager do
 
   @doc """
   Create a user in a specific tenant
+
+  Note: user_attrs must include password_confirmation for registration
   """
   def create_user_in_tenant(user_attrs, tenant_id, current_user) do
     # Verify current user is super admin
     if current_user.role == :super_admin do
-      KgEdu.Accounts.User.create_user_in_tenant(Map.put(user_attrs, :tenant_id, tenant_id))
+      KgEdu.Accounts.User.register_user_in_tenant(user_attrs)
     else
       {:error, :unauthorized}
     end
   end
 
   @doc """
-  Get users from a specific tenant
+  Get users from a specific tenant (including class data for student users)
   """
   def list_users_from_tenant(tenant_id, current_user) do
     # Verify current user is super admin
     if current_user.role == :super_admin do
-      KgEdu.Accounts.User.get_users_from_tenant(%{tenant_id: tenant_id})
+      case get_tenant_schema(tenant_id) do
+        {:ok, schema_name} ->
+          # Query users with tenant context and class relationship loaded
+          User
+          |> Ash.Query.load(:class)
+          |> Ash.read(tenant: schema_name)
+        {:error, reason} ->
+          {:error, reason}
+      end
     else
       {:error, :unauthorized}
     end

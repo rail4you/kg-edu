@@ -22,9 +22,10 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
                 conn
                 |> put_private(:ash_tenant, tenant)
                 |> assign(:ash_tenant, tenant)
+                |> assign(:tenant, tenant)  # For Ash.PlugHelpers.get_tenant/1
                 |> assign(:current_user, user)  # Set user for set_actor plug
                 |> put_private(:ash_context, %{tenant: tenant, actor: user})
-                |> put_private(:ash_actor, user)
+                |> put_private(:ash, %{tenant: tenant, actor: user, context: %{tenant: tenant}})
               {:error, reason} ->
                 # User loading failed, log and set tenant only
                 require Logger
@@ -32,14 +33,18 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
                 conn
                 |> put_private(:ash_tenant, tenant)
                 |> assign(:ash_tenant, tenant)
+                |> assign(:tenant, tenant)  # For Ash.PlugHelpers.get_tenant/1
                 |> put_private(:ash_context, %{tenant: tenant})
+                |> put_private(:ash, %{tenant: tenant, context: %{tenant: tenant}})
             end
           {:ok, %{"tenant" => tenant}} when not is_nil(tenant) ->
             # Token has tenant but no subject - just set tenant
             conn
             |> put_private(:ash_tenant, tenant)
             |> assign(:ash_tenant, tenant)
+            |> assign(:tenant, tenant)  # For Ash.PlugHelpers.get_tenant/1
             |> put_private(:ash_context, %{tenant: tenant})
+            |> put_private(:ash, %{tenant: tenant, context: %{tenant: tenant}})
           {:ok, _token_data} ->
             # Token valid but no tenant or subject - continue without tenant
             conn
@@ -52,7 +57,9 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
                 conn
                 |> put_private(:ash_tenant, tenant)
                 |> assign(:ash_tenant, tenant)
+                |> assign(:tenant, tenant)  # For Ash.PlugHelpers.get_tenant/1
                 |> put_private(:ash_context, %{tenant: tenant})
+                |> put_private(:ash, %{tenant: tenant, context: %{tenant: tenant}})
               {:ok, _} ->
                 conn
               {:error, _reason} ->
