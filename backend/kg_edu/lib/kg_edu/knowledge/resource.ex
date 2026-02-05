@@ -18,6 +18,9 @@ defmodule KgEdu.Knowledge.Resource do
     references do
       reference :chapter, on_delete: :delete
       reference :exercises, on_delete: :delete
+      reference :parent_subject, on_delete: :delete
+      reference :parent_unit, on_delete: :delete
+      reference :parent_knowledge_resource, on_delete: :delete
     end
   end
 
@@ -85,149 +88,8 @@ defmodule KgEdu.Knowledge.Resource do
 
     destroy :destroy do
       description "Destroy a knowledge resource and its dependent relations"
-      require_atomic? false
-      # Manually delete related records first
-      change fn changeset, _context ->
-        resource_id = Ash.Changeset.get_attribute(changeset, :id)
-        knowledge_type = Ash.Changeset.get_attribute(changeset, :knowledge_type)
-
-        # Cascade delete based on knowledge type
-        case knowledge_type do
-          :subject ->
-            # Delete all units under this subject
-            KgEdu.Knowledge.Resource.list_units_by_subject(%{subject_id: resource_id})
-            |> case do
-              {:ok, units} ->
-                Enum.each(units, fn unit ->
-                  KgEdu.Knowledge.Resource.delete_knowledge_resource(unit, authorize?: false)
-                end)
-
-              {:error, _} ->
-                :ok
-            end
-
-            # Delete all direct knowledge cells under this subject
-            KgEdu.Knowledge.Resource.list_cells_by_subject(%{subject_id: resource_id})
-            |> case do
-              {:ok, cells} ->
-                Enum.each(cells, fn cell ->
-                  KgEdu.Knowledge.Resource.delete_knowledge_resource(cell, authorize?: false)
-                end)
-
-              {:error, _} ->
-                :ok
-            end
-
-          :knowledge_unit ->
-            # Delete all knowledge cells under this unit
-            KgEdu.Knowledge.Resource.list_cells_by_unit(%{unit_id: resource_id})
-            |> case do
-              {:ok, cells} ->
-                Enum.each(cells, fn cell ->
-                  KgEdu.Knowledge.Resource.delete_knowledge_resource(cell, authorize?: false)
-                end)
-
-              {:error, _} ->
-                :ok
-            end
-
-          :knowledge_cell ->
-            # Just delete itself (no cascading)
-            :ok
-        end
-
-        # Delete incoming relations
-        KgEdu.Knowledge.Relation.list_knowledge_relations(
-          authorize?: false,
-          query: [filter: [target_knowledge_id: resource_id]]
-        )
-        |> case do
-          {:ok, relations} ->
-            Enum.each(relations, fn relation ->
-              KgEdu.Knowledge.Relation.delete_knowledge_relation(relation, authorize?: false)
-            end)
-
-          {:error, _} ->
-            :ok
-        end
-
-        # Delete outgoing relations
-        KgEdu.Knowledge.Relation.list_knowledge_relations(
-          authorize?: false,
-          query: [filter: [source_knowledge_id: resource_id]]
-        )
-        |> case do
-          {:ok, relations} ->
-            Enum.each(relations, fn relation ->
-              KgEdu.Knowledge.Relation.delete_knowledge_relation(relation, authorize?: false)
-            end)
-
-          {:error, _} ->
-            :ok
-        end
-
-        # Delete related files
-        KgEdu.Courses.File.list_files(
-          authorize?: false,
-          query: [filter: [knowledge_resource_id: resource_id]]
-        )
-        |> case do
-          {:ok, files} ->
-            Enum.each(files, fn file ->
-              KgEdu.Courses.File.delete_file(file, authorize?: false)
-            end)
-
-          {:error, _} ->
-            :ok
-        end
-
-        # Delete related videos
-        KgEdu.Courses.Video.list_videos(
-          authorize?: false,
-          query: [filter: [knowledge_resource_id: resource_id]]
-        )
-        |> case do
-          {:ok, videos} ->
-            Enum.each(videos, fn video ->
-              KgEdu.Courses.Video.delete_video(video, authorize?: false)
-            end)
-
-          {:error, _} ->
-            :ok
-        end
-
-        # Delete related homeworks
-        KgEdu.Knowledge.Homework.list_homeworks(
-          authorize?: false,
-          query: [filter: [knowledge_resource_id: resource_id]]
-        )
-        |> case do
-          {:ok, homeworks} ->
-            Enum.each(homeworks, fn homework ->
-              KgEdu.Knowledge.Homework.delete_homework(homework, authorize?: false)
-            end)
-
-          {:error, _} ->
-            :ok
-        end
-
-        # Delete related questions
-        KgEdu.Knowledge.Question.list_questions(
-          authorize?: false,
-          query: [filter: [knowledge_resource_id: resource_id]]
-        )
-        |> case do
-          {:ok, questions} ->
-            Enum.each(questions, fn question ->
-              KgEdu.Knowledge.Question.delstroy_question(question, authorize?: false)
-            end)
-
-          {:error, _} ->
-            :ok
-        end
-
-        changeset
-      end
+      # Note: Database CASCADE handles deletion of child resources automatically
+      # No manual cascading needed - relies on postgres references with on_delete: :delete
     end
 
     action :bulk_destroy_knowledges do
@@ -313,7 +175,7 @@ defmodule KgEdu.Knowledge.Resource do
     end
 
     action :delete_all_knowledges_by_course do
-      description "Delete all knowledge resources for a course using raw SQL"
+      description "Delete all knowledge resources for a course. Only deletes top-level subjects to avoid stale record errors, relying on database CASCADE to delete children."
 
       argument :course_id, :uuid do
         allow_nil? false
@@ -322,33 +184,39 @@ defmodule KgEdu.Knowledge.Resource do
 
       run fn input, context ->
         course_id = input.arguments.course_id
+        tenant = context.tenant
 
-        # Read all knowledge resources in tenant and filter manually
-        case __MODULE__ |> Ash.read(tenant: context.tenant) do
-          {:ok, resources} ->
-            target_resources =
-              resources
-              |> Enum.filter(&(&1.course_id == course_id))
+        # Only delete top-level subjects (knowledge_type == :subject)
+        # The database CASCADE will handle deleting all units, cells, and related records
+        query =
+          __MODULE__
+          |> Ash.Query.filter(
+            course_id == ^course_id and
+            knowledge_type == :subject
+          )
 
-            # Destroy the filtered resources one by one
-            case Enum.map(target_resources, fn resource ->
-                   KgEdu.Knowledge.Resource.delete_knowledge_resource(resource,
-                     tenant: context.tenant,
-                     authorize?: false
-                   )
-                 end) do
-              results ->
-                case Enum.find(results, fn
-                       {:error, _} -> true
-                       _ -> false
-                     end) do
-                  nil -> :ok
-                  {:error, reason} -> {:error, reason}
-                end
-            end
+        case Ash.bulk_destroy(
+               query,
+               :destroy,
+               %{},
+               return_errors?: true,
+               # Use stream strategy to delete one by one in transaction
+               # This avoids issues with concurrent deletions
+               strategy: [:stream, :atomic],
+               tenant: tenant,
+               authorize?: false
+             ) do
+          %Ash.BulkResult{status: :success} ->
+            :ok
 
-          {:error, reason} ->
-            {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
+          %Ash.BulkResult{status: :partial_success, errors: [_ | _] = errors} ->
+            {:error, "Partial deletion completed with #{length(errors)} errors"}
+
+          %Ash.BulkResult{status: :error, errors: errors} ->
+            {:error, "Failed to delete knowledge resources: #{inspect(errors)}"}
+
+          result ->
+            {:error, "Unexpected result: #{inspect(result)}"}
         end
       end
     end
@@ -546,7 +414,7 @@ defmodule KgEdu.Knowledge.Resource do
     end
 
     read :get_full_hierarchy do
-      description "Get the full hierarchy for a course (subjects with units and cells, supporting nested cells up to level 7)"
+      description "Get the full hierarchy for a course (subjects with units and cells, supporting nested cells up to unlimited depth)"
       argument :course_id, :uuid, allow_nil?: false
 
       filter expr(
@@ -559,13 +427,19 @@ defmodule KgEdu.Knowledge.Resource do
         |> Ash.Query.load(
           # Load units under subjects
           child_units: [
-            # Load cells under units (level 3)
-            :child_cells
+            # Load cells under units (level 3) with their nested children (level 4+)
+            child_cells: [
+              :nested_child_cells
+            ]
           ],
-          # Load direct cells under subjects (no unit, level 3)
-          direct_cells: [],
-          # Load all cells under subjects (for backward compatibility)
-          subject_cells: []
+          # Load direct cells under subjects (no unit, level 3) with their nested children
+          direct_cells: [
+            :nested_child_cells
+          ],
+          # Load all cells under subjects (for backward compatibility) with nested children
+          subject_cells: [
+            :nested_child_cells
+          ]
         )
         |> Ash.Query.sort(subject: :asc, name: :asc)
       end
@@ -573,7 +447,7 @@ defmodule KgEdu.Knowledge.Resource do
 
     # Action that returns fully nested hierarchy (processed server-side)
     read :get_full_hierarchy_nested do
-      description "Get the full hierarchy with cells automatically nested (up to level 7). This action builds nested structure server-side."
+      description "Get the full hierarchy with cells automatically nested (unlimited depth). This action builds nested structure server-side."
       argument :course_id, :uuid, allow_nil?: false
 
       filter expr(
@@ -586,13 +460,19 @@ defmodule KgEdu.Knowledge.Resource do
         |> Ash.Query.load(
           # Load units under subjects
           child_units: [
-            # Load cells under units (level 3)
-            :child_cells
+            # Load cells under units (level 3) with their nested children (level 4+)
+            child_cells: [
+              :nested_child_cells
+            ]
           ],
-          # Load direct cells under subjects (no unit, level 3)
-          direct_cells: [],
-          # Load all cells under subjects (for backward compatibility)
-          subject_cells: []
+          # Load direct cells under subjects (no unit, level 3) with their nested children
+          direct_cells: [
+            :nested_child_cells
+          ],
+          # Load all cells under subjects (for backward compatibility) with nested children
+          subject_cells: [
+            :nested_child_cells
+          ]
         )
         |> Ash.Query.sort(subject: :asc, name: :asc)
       end
@@ -1481,75 +1361,192 @@ defmodule KgEdu.Knowledge.Resource do
     subject_name = resource_attrs.subject || "General"
     unit_name = resource_attrs.unit
     knowledge_name = resource_attrs.name
+    knowledge_type = resource_attrs.knowledge_type
 
     # Skip if knowledge name is missing
     if is_nil(knowledge_name) or knowledge_name == "" do
       {:ok, acc}
     else
-      # Process or create subject if needed
-      case create_or_get_subject(subject_name, course_id, acc) do
-        {:ok, subject_id, new_acc} ->
-          case create_or_get_unit(unit_name, course_id, subject_id, new_acc) do
-            {:ok, unit_id, new_acc} ->
-              # Check if resource already exists
-              case get_by_name_and_course(
-                     %{
-                       name: knowledge_name,
-                       knowledge_type: resource_attrs.knowledge_type,
-                       course_id: course_id
-                     },
-                     tenant: acc.tenant,
-                     authorize?: false
-                   ) do
-                {:ok, _existing} ->
-                  # Resource already exists, skip it
-                  final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+      # Process based on knowledge type
+      case knowledge_type do
+        :subject ->
+          # For subjects, create or get the subject
+          case create_or_get_subject(subject_name, course_id, acc) do
+            {:ok, _subject_id, new_acc} ->
+              # Subject already handled, just count it
+              final_acc = %{new_acc | created: new_acc.created + 1}
+              {:ok, final_acc}
+
+            {:error, reason} ->
+              Logger.error("Failed to create subject '#{subject_name}': #{inspect(reason)}")
+              final_acc = %{acc | skipped: acc.skipped + 1}
+              {:ok, final_acc}
+          end
+
+        :knowledge_unit ->
+          # For units, create or get parent subject first, then create unit
+          parent_subject_name = Map.get(resource_attrs, :parent_subject_name, subject_name)
+
+          case create_or_get_subject(parent_subject_name, course_id, acc) do
+            {:ok, subject_id, new_acc} ->
+              case create_or_get_unit(knowledge_name, course_id, subject_id, new_acc) do
+                {:ok, _unit_id, final_acc} ->
+                  final_acc = %{final_acc | created: final_acc.created + 1}
                   {:ok, final_acc}
 
-                {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
-                  # Resource doesn't exist, create it with proper parent relationships
-                  resource_with_parents = %{
-                    resource_attrs
-                    | parent_subject_id: subject_id,
-                      parent_unit_id: unit_id
-                  }
-
-                  case create_resource_record(resource_with_parents, acc.tenant,
-                         authorize?: false
-                       ) do
-                    {:ok, _resource} ->
-                      final_acc = %{new_acc | created: new_acc.created + 1}
-                      {:ok, final_acc}
-
-                    {:error, reason} ->
-                      # Error creating resource, but continue processing others
-                      Logger.error(
-                        "Failed to create knowledge resource '#{knowledge_name}': #{inspect(reason)}"
-                      )
-
-                      final_acc = %{new_acc | skipped: new_acc.skipped + 1}
-                      {:ok, final_acc}
-                  end
-
                 {:error, reason} ->
-                  # Error checking existing resource, skip it
-                  Logger.error("Error checking existing knowledge resource: #{inspect(reason)}")
+                  Logger.error("Failed to create unit '#{knowledge_name}': #{inspect(reason)}")
                   final_acc = %{new_acc | skipped: new_acc.skipped + 1}
                   {:ok, final_acc}
               end
 
             {:error, reason} ->
-              # Error creating unit, skip this resource
-              Logger.error("Failed to create unit: #{inspect(reason)}")
-              final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+              Logger.error("Failed to create parent subject for unit '#{knowledge_name}': #{inspect(reason)}")
+              final_acc = %{acc | skipped: acc.skipped + 1}
               {:ok, final_acc}
           end
 
-        {:error, reason} ->
-          # Error creating subject, skip this resource
-          Logger.error("Failed to create subject: #{inspect(reason)}")
-          final_acc = %{acc | skipped: acc.skipped + 1}
-          {:ok, final_acc}
+        :knowledge_cell ->
+          # For cells, handle different parent types
+          {parent_subject_id, parent_unit_id, parent_cell_id, new_acc} = cond do
+            # Has parent cell (nested cell, depth 3+)
+            Map.has_key?(resource_attrs, :parent_cell_name) ->
+              parent_cell_name = resource_attrs.parent_cell_name
+
+              # First ensure parent subject/unit exist
+              case create_or_get_subject(subject_name, course_id, acc) do
+                {:ok, subject_id, acc1} ->
+                  acc2 = if unit_name && unit_name != "" do
+                    case create_or_get_unit(unit_name, course_id, subject_id, acc1) do
+                      {:ok, _unit_id, acc} -> acc
+                      {:error, _} -> acc1
+                    end
+                  else
+                    acc1
+                  end
+
+                  # Find parent cell by name
+                  case get_by_name_and_course(%{
+                    name: parent_cell_name,
+                    knowledge_type: :knowledge_cell,
+                    course_id: course_id
+                  }, tenant: acc2.tenant, authorize?: false) do
+                    {:ok, parent_cell} ->
+                      {nil, nil, parent_cell.id, acc2}
+
+                    {:error, _} ->
+                      Logger.warning("Parent cell '#{parent_cell_name}' not found for '#{knowledge_name}', creating without parent")
+                      {nil, nil, nil, acc2}
+                  end
+
+                {:error, _} ->
+                  {nil, nil, nil, acc}
+              end
+
+            # Has parent unit
+            Map.has_key?(resource_attrs, :parent_unit_name) ->
+              parent_unit_name = resource_attrs.parent_unit_name
+
+              case create_or_get_subject(subject_name, course_id, acc) do
+                {:ok, subject_id, acc1} ->
+                  # Create or get the parent unit with correct subject_id
+                  case create_or_get_unit(parent_unit_name, course_id, subject_id, acc1) do
+                    {:ok, unit_id, acc2} ->
+                      {nil, unit_id, nil, acc2}
+
+                    {:error, _} ->
+                      Logger.warning("Parent unit '#{parent_unit_name}' not found for '#{knowledge_name}', creating without parent unit")
+                      # Fallback: create cell directly under subject
+                      {subject_id, nil, nil, acc1}
+                  end
+
+                {:error, _} ->
+                  {nil, nil, nil, acc}
+              end
+
+            # Has parent subject (direct child of subject)
+            Map.has_key?(resource_attrs, :parent_subject_name) ->
+              parent_subject_name = resource_attrs.parent_subject_name
+
+              case create_or_get_subject(parent_subject_name, course_id, acc) do
+                {:ok, subject_id, new_acc} ->
+                  {subject_id, nil, nil, new_acc}
+
+                {:error, _} ->
+                  {nil, nil, nil, acc}
+              end
+
+            # No parent info specified, infer from context
+            true ->
+              if unit_name && unit_name != "" do
+                # Assume it's under a unit
+                case create_or_get_subject(subject_name, course_id, acc) do
+                  {:ok, subject_id, acc1} ->
+                    case create_or_get_unit(unit_name, course_id, subject_id, acc1) do
+                      {:ok, unit_id, acc2} ->
+                        {nil, unit_id, nil, acc2}
+
+                      {:error, _} ->
+                        {subject_id, nil, nil, acc1}
+                    end
+
+                  {:error, _} ->
+                    {nil, nil, nil, acc}
+                end
+              else
+                # Assume it's directly under subject
+                case create_or_get_subject(subject_name, course_id, acc) do
+                  {:ok, subject_id, new_acc} ->
+                    {subject_id, nil, nil, new_acc}
+
+                  {:error, _} ->
+                    {nil, nil, nil, acc}
+                end
+              end
+          end
+
+          # Check if resource already exists
+          case get_by_name_and_course(%{
+            name: knowledge_name,
+            knowledge_type: :knowledge_cell,
+            course_id: course_id
+          }, tenant: new_acc.tenant, authorize?: false) do
+            {:ok, _existing} ->
+              # Resource already exists, skip it
+              final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+              {:ok, final_acc}
+
+            {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+              # Create the resource with resolved parent IDs
+              resource_attrs = %{
+                name: knowledge_name,
+                subject: subject_name,
+                unit: unit_name || "",
+                knowledge_type: :knowledge_cell,
+                course_id: course_id,
+                description: "",
+                importance_level: :normal,
+                parent_subject_id: parent_subject_id,
+                parent_unit_id: parent_unit_id,
+                parent_knowledge_resource_id: parent_cell_id
+              }
+
+              case create_resource_record(resource_attrs, new_acc.tenant, authorize?: false) do
+                {:ok, _resource} ->
+                  final_acc = %{new_acc | created: new_acc.created + 1}
+                  {:ok, final_acc}
+
+                {:error, reason} ->
+                  Logger.error("Failed to create knowledge cell '#{knowledge_name}': #{inspect(reason)}")
+                  final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+                  {:ok, final_acc}
+              end
+
+            {:error, reason} ->
+              Logger.error("Error checking existing knowledge resource: #{inspect(reason)}")
+              final_acc = %{new_acc | skipped: new_acc.skipped + 1}
+              {:ok, final_acc}
+          end
       end
     end
   end

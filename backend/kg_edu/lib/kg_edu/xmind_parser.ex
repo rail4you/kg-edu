@@ -7,7 +7,10 @@ defmodule KgEdu.XmindParser do
   it to knowledge resources following the pattern:
   - First level topics -> Subjects
   - Second level topics -> Knowledge Units
-  - Third level topics -> Knowledge Cells
+  - Third level and beyond -> Knowledge Cells (supports unlimited nesting)
+
+  The parser maintains parent-child relationships for all levels, allowing
+  for deeply nested knowledge structures.
   """
 
   require Logger
@@ -91,14 +94,11 @@ defmodule KgEdu.XmindParser do
           {:error, "No root topic found in content.json"}
 
         root_topic ->
-          # Extract the main topics (children of root)
-          main_topics = get_children_from_topic(root_topic)
-
-          knowledge_data =
-            main_topics
-            |> Enum.map(&extract_json_topic_hierarchy/1)
-            |> List.flatten()
-
+          # Start hierarchy extraction from the root topic itself
+          # The recursive function will handle all children
+          Logger.info("Starting extraction from root topic: #{extract_json_title(root_topic)}")
+          knowledge_data = extract_json_topic_hierarchy(root_topic)
+          Logger.info("Extraction completed successfully with #{length(knowledge_data)} items")
           {:ok, knowledge_data}
       end
     rescue
@@ -116,14 +116,10 @@ defmodule KgEdu.XmindParser do
       # Parse XML and extract the hierarchy
       xml = SweetXml.parse(content_xml)
 
-      # Extract the main topic structure - look for the main topics directly under sheet
-      # This gets the first-level topics (subjects)
-      main_topics = SweetXml.xpath(xml, ~x"//sheet/topic"l)
+      # Extract the root topic - there should be only one main topic per sheet
+      main_topic = SweetXml.xpath(xml, ~x"/xmap-content/sheet/topic")
 
-      knowledge_data =
-        main_topics
-        |> Enum.map(&extract_topic_hierarchy/1)
-        |> List.flatten()
+      knowledge_data = extract_topic_hierarchy(main_topic)
 
       {:ok, knowledge_data}
     rescue
@@ -133,198 +129,97 @@ defmodule KgEdu.XmindParser do
     end
   end
 
-  # Extract hierarchy from a topic and its children
+  # Extract hierarchy from a topic and its children recursively
+  # Supports unlimited nesting depth
   defp extract_topic_hierarchy(topic) do
+    extract_topic_hierarchy_recursive(topic, 0, nil, nil)
+  end
+
+  # Recursive function to extract hierarchy at any depth
+  defp extract_topic_hierarchy_recursive(topic, depth, parent_subject, parent_unit) do
     topic_title = extract_title(topic)
     children = extract_children(topic)
 
-    Logger.info("Extracting topic hierarchy for: #{topic_title}")
-    Logger.info("Found #{length(children)} children")
+    Logger.info("Extracting topic at depth #{depth}: #{topic_title}")
 
-    case children do
-      [] ->
-        Logger.info("No children found, creating knowledge cell")
-        [%{
-          title: topic_title,
-          level: :knowledge_cell,
-          subject: nil,
-          unit: nil
-        }]
+    # Determine the knowledge type based on depth and context
+    knowledge_type = determine_knowledge_type_by_depth(depth, topic_title, length(children) > 0)
 
-      _ ->
-        Logger.info("Children found, creating subject and child resources")
-        parent_resource = %{
-          title: topic_title,
-          level: :subject,
-          subject: topic_title,
-          unit: nil
-        }
+    # Skip root node (depth 0)
+    if depth == 0 do
+      Logger.info("Skipping root node: #{topic_title}")
+      # Process children with adjusted depth and NO parent (since root won't be imported)
+      Enum.flat_map(children, fn child ->
+        # For root's children, depth becomes 1 (Subject level) and parent is nil
+        extract_topic_hierarchy_recursive(child, depth + 1, nil, nil)
+      end)
+    else
+      Logger.info("Parent subject: #{inspect(parent_subject)}, Parent unit: #{inspect(parent_unit)}")
 
-        # Process its children
-        child_resources = children
-        |> Enum.map(&extract_child_hierarchy(&1, topic_title))
-        |> List.flatten()
+      # Create the current resource with proper parent tracking
+      current_resource = %{
+        title: topic_title,
+        level: knowledge_type,
+        depth: depth,
+        parent_title: parent_subject,
+        parent_unit_title: parent_unit
+      }
 
-        Logger.info("Created #{length(child_resources)} child resources")
+      # Add subject/unit context for easier relationship building
+      current_resource = case depth do
+        1 ->
+          # Level 1: Subject
+          Map.put(current_resource, :subject, topic_title)
+          |> Map.put(:unit, nil)
 
-        [parent_resource | child_resources]
+        2 ->
+          # Level 2: Knowledge Unit
+          Map.put(current_resource, :subject, parent_subject)
+          |> Map.put(:unit, topic_title)
+
+        _ ->
+          # Level 3+: Knowledge Cell
+          Map.put(current_resource, :subject, parent_subject)
+          |> Map.put(:unit, parent_unit)
+      end
+
+      # Process children recursively
+      case children do
+        [] ->
+          # Leaf node - just return the current resource
+          [current_resource]
+
+        _ ->
+          # Has children - process them recursively
+          child_resources = Enum.flat_map(children, fn child ->
+            # Determine what to pass as parent context to children
+            {child_parent_subject, child_parent_unit} = case depth do
+              1 -> {topic_title, nil}  # Subject's children
+              2 -> {parent_subject, topic_title}  # Unit's children
+              _ -> {parent_subject, parent_unit}  # Cell's children (deeper nesting)
+            end
+
+            extract_topic_hierarchy_recursive(child, depth + 1, child_parent_subject, child_parent_unit)
+          end)
+
+          Logger.info("Created #{length(child_resources)} child resources for #{topic_title}")
+
+          [current_resource | child_resources]
+      end
     end
   end
 
-  # Determine the knowledge level of a topic based on its title pattern
-  defp determine_topic_level(title) do
-    cond do
-      # Main subjects typically have numbers like "1.", "2.", "3." at the beginning
-      Regex.match?(~r/^\d+\./, title) ->
-        :subject
-
-      # Units might have nested numbers like "2.1", "3.1", etc.
-      Regex.match?(~r/^\d+\.\d+/, title) ->
-        :knowledge_unit
-
-      # Otherwise, try to determine based on context
-      true ->
-        # For now, assume it's a knowledge unit if we can't determine clearly
-        # This will be refined based on parent context
-        :knowledge_unit
+  # Determine knowledge type based on depth and context
+  # XMind hierarchy: Root(skip) -> Subject -> Unit -> Cell(3+)
+  defp determine_knowledge_type_by_depth(depth, _title, _has_children) do
+    case depth do
+      0 -> :root  # Root node - skip
+      1 -> :subject
+      2 -> :knowledge_unit
+      _ -> :knowledge_cell  # depth 3 and beyond are all knowledge cells
     end
   end
 
-  # Extract hierarchy from child topics (second level = units, third level = knowledge cells)
-  defp extract_child_hierarchy(child_topic, parent_title) do
-    child_title = extract_title(child_topic)
-    child_children = extract_children(child_topic)
-
-    Logger.info("Processing child topic: #{child_title} (parent: #{parent_title})")
-    Logger.info("Child has #{length(child_children)} grand-children")
-
-    case child_children do
-      [] ->
-        Logger.info("No grand-children, treating as knowledge cell")
-        [%{
-          title: child_title,
-          level: :knowledge_cell,
-          subject: parent_title,
-          unit: nil
-        }]
-
-      _ ->
-        Logger.info("Has grand-children, treating as knowledge unit")
-        # Create the unit resource
-        unit_resource = %{
-          title: child_title,
-          level: :knowledge_unit,
-          subject: parent_title,
-          unit: child_title
-        }
-
-        # Process its children as knowledge cells
-        cell_resources = child_children
-        |> Enum.map(&extract_grandchild_as_cell(&1, parent_title, child_title))
-        |> List.flatten()
-
-        Logger.info("Created #{length(cell_resources)} cell resources for unit #{child_title}")
-
-        [unit_resource | cell_resources]
-    end
-  end
-
-  # Extract grandchild topics as knowledge cells (third level and beyond)
-  defp extract_grandchild_as_cell(grandchild_topic, subject_title, unit_title) do
-    grandchild_title = extract_title(grandchild_topic)
-    grandchild_children = extract_children(grandchild_topic)
-
-    case grandchild_children do
-      [] ->
-        # This is a knowledge cell
-        [%{
-          title: grandchild_title,
-          level: :knowledge_cell,
-          subject: subject_title,
-          unit: unit_title
-        }]
-
-      _ ->
-        # This grandchild has children, treat it as a knowledge cell too
-        # and process all its descendants as knowledge cells
-        cell_resource = %{
-          title: grandchild_title,
-          level: :knowledge_cell,
-          subject: subject_title,
-          unit: unit_title
-        }
-
-        # Process its children recursively as knowledge cells
-        descendant_cells = grandchild_children
-        |> Enum.map(&extract_grandchild_as_cell(&1, subject_title, unit_title))
-        |> List.flatten()
-
-        [cell_resource | descendant_cells]
-    end
-  end
-
-  # Extract hierarchy from grandchild topics (third level)
-  defp extract_grandchild_hierarchy(grandchild_topic, subject_title, unit_title) do
-    grandchild_title = extract_title(grandchild_topic)
-    grandchild_children = extract_children(grandchild_topic)
-
-    case grandchild_children do
-      [] ->
-        # This is a knowledge cell (third level)
-        [%{
-          title: grandchild_title,
-          level: :knowledge_cell,
-          subject: subject_title,
-          unit: unit_title
-        }]
-
-      _ ->
-        # If there are deeper levels, treat them all as knowledge cells
-        # with the same subject and unit
-        all_leaf_nodes = extract_all_leaf_nodes(grandchild_topic)
-
-        Enum.map(all_leaf_nodes, fn leaf_title ->
-          %{
-            title: leaf_title,
-            level: :knowledge_cell,
-            subject: subject_title,
-            unit: unit_title
-          }
-        end)
-    end
-  end
-
-  # Determine the knowledge level based on context
-  defp determine_knowledge_level(title, parent_title) do
-    # If we have a parent title but no children, this could be:
-    # - A knowledge unit (second level) if it will have children
-    # - A knowledge cell (third level) if it's a leaf node
-
-    # For now, we'll treat second level as knowledge units
-    # and they'll be processed as parents if they have children
-    [%{
-      title: title,
-      level: :knowledge_unit,
-      subject: parent_title,
-      unit: title
-    }]
-  end
-
-  # Extract all leaf nodes from a topic (recursively)
-  defp extract_all_leaf_nodes(topic) do
-    title = extract_title(topic)
-    children = extract_children(topic)
-
-    case children do
-      [] ->
-        [title]
-
-      _ ->
-        children
-        |> Enum.map(&extract_all_leaf_nodes/1)
-        |> List.flatten()
-    end
-  end
 
   # Extract the title from a topic element
   defp extract_title(topic) do
@@ -370,122 +265,101 @@ defmodule KgEdu.XmindParser do
 
   defp extract_json_title(_), do: ""
 
-  # Extract hierarchy from a JSON topic and its children
+  # Extract hierarchy from a JSON topic and its children recursively
+  # Supports unlimited nesting depth
   defp extract_json_topic_hierarchy(topic) do
+    extract_json_topic_hierarchy_recursive(topic, 0, nil, nil)
+  end
+
+  # Recursive function to extract JSON hierarchy at any depth
+  defp extract_json_topic_hierarchy_recursive(topic, depth, parent_subject, parent_unit) do
     topic_title = extract_json_title(topic)
     children = get_children_from_topic(topic)
 
-    Logger.info("Extracting JSON topic hierarchy for: #{topic_title}")
-    Logger.info("Found #{length(children)} children")
+    Logger.info("Extracting JSON topic at depth #{depth}: #{topic_title}")
 
-    case children do
-      [] ->
-        Logger.info("No children found, creating knowledge cell")
-        [%{
-          title: topic_title,
-          level: :knowledge_cell,
-          subject: nil,
-          unit: nil
-        }]
+    # Determine the knowledge type based on depth and context
+    knowledge_type = determine_knowledge_type_by_depth(depth, topic_title, length(children) > 0)
 
-      _ ->
-        Logger.info("Children found, creating subject and child resources")
-        parent_resource = %{
-          title: topic_title,
-          level: :subject,
-          subject: topic_title,
-          unit: nil
-        }
+    # Skip root node (depth 0)
+    if depth == 0 do
+      Logger.info("Skipping root node: #{topic_title}")
+      # Process children with adjusted depth and NO parent (since root won't be imported)
+      Enum.flat_map(children, fn child ->
+        # For root's children, depth becomes 1 (Subject level) and parent is nil
+        extract_json_topic_hierarchy_recursive(child, depth + 1, nil, nil)
+      end)
+    else
+      Logger.info("Parent subject: #{inspect(parent_subject)}, Parent unit: #{inspect(parent_unit)}")
 
-        # Process its children
-        child_resources = children
-        |> Enum.map(&extract_json_child_hierarchy(&1, topic_title))
-        |> List.flatten()
+      # Create the current resource with proper parent tracking
+      current_resource = %{
+        title: topic_title,
+        level: knowledge_type,
+        depth: depth,
+        parent_title: parent_subject,
+        parent_unit_title: parent_unit
+      }
 
-        Logger.info("Created #{length(child_resources)} child resources")
+      # Add subject/unit context for easier relationship building
+      current_resource = case depth do
+        1 ->
+          # Level 1: Subject
+          Map.put(current_resource, :subject, topic_title)
+          |> Map.put(:unit, nil)
 
-        [parent_resource | child_resources]
-    end
-  end
+        2 ->
+          # Level 2: Knowledge Unit
+          Map.put(current_resource, :subject, parent_subject)
+          |> Map.put(:unit, topic_title)
 
-  # Extract hierarchy from child topics in JSON format (second level = units, third level = knowledge cells)
-  defp extract_json_child_hierarchy(child_topic, parent_title) do
-    child_title = extract_json_title(child_topic)
-    child_children = get_children_from_topic(child_topic)
+        _ ->
+          # Level 3+: Knowledge Cell
+          Map.put(current_resource, :subject, parent_subject)
+          |> Map.put(:unit, parent_unit)
+      end
 
-    Logger.info("Processing JSON child topic: #{child_title} (parent: #{parent_title})")
-    Logger.info("Child has #{length(child_children)} grand-children")
+      # Process children recursively
+      case children do
+        [] ->
+          # Leaf node - just return the current resource
+          [current_resource]
 
-    case child_children do
-      [] ->
-        Logger.info("No grand-children, treating as knowledge cell")
-        [%{
-          title: child_title,
-          level: :knowledge_cell,
-          subject: parent_title,
-          unit: nil
-        }]
+        _ ->
+          # Has children - process them recursively
+          child_resources = Enum.flat_map(children, fn child ->
+            # Determine what to pass as parent context to children
+            {child_parent_subject, child_parent_unit} = case depth do
+              1 -> {topic_title, nil}  # Subject's children
+              2 -> {parent_subject, topic_title}  # Unit's children
+              _ -> {parent_subject, parent_unit}  # Cell's children (deeper nesting)
+            end
 
-      _ ->
-        Logger.info("Has grand-children, treating as knowledge unit")
-        # Create the unit resource
-        unit_resource = %{
-          title: child_title,
-          level: :knowledge_unit,
-          subject: parent_title,
-          unit: child_title
-        }
+            extract_json_topic_hierarchy_recursive(child, depth + 1, child_parent_subject, child_parent_unit)
+          end)
 
-        # Process its children as knowledge cells
-        cell_resources = child_children
-        |> Enum.map(&extract_json_grandchild_as_cell(&1, parent_title, child_title))
-        |> List.flatten()
+          Logger.info("Created #{length(child_resources)} child resources for #{topic_title}")
 
-        Logger.info("Created #{length(cell_resources)} cell resources for unit #{child_title}")
-
-        [unit_resource | cell_resources]
-    end
-  end
-
-  # Extract grandchild topics as knowledge cells in JSON format (third level and beyond)
-  defp extract_json_grandchild_as_cell(grandchild_topic, subject_title, unit_title) do
-    grandchild_title = extract_json_title(grandchild_topic)
-    grandchild_children = get_children_from_topic(grandchild_topic)
-
-    case grandchild_children do
-      [] ->
-        # This is a knowledge cell
-        [%{
-          title: grandchild_title,
-          level: :knowledge_cell,
-          subject: subject_title,
-          unit: unit_title
-        }]
-
-      _ ->
-        # This grandchild has children, treat it as a knowledge cell too
-        # and process all its descendants as knowledge cells
-        cell_resource = %{
-          title: grandchild_title,
-          level: :knowledge_cell,
-          subject: subject_title,
-          unit: unit_title
-        }
-
-        # Process its children recursively as knowledge cells
-        descendant_cells = grandchild_children
-        |> Enum.map(&extract_json_grandchild_as_cell(&1, subject_title, unit_title))
-        |> List.flatten()
-
-        [cell_resource | descendant_cells]
+          [current_resource | child_resources]
+      end
     end
   end
 
   @doc """
   Convert parsed XMind data to knowledge resource format for import.
+
+  This function creates knowledge resources with parent references by name.
+  The actual database IDs will be resolved during the import process.
+
+  XMind hierarchy mapping:
+  - XMind Depth 0 (root): SKIPPED
+  - XMind Depth 1: Subjects (no parents)
+  - XMind Depth 2: Knowledge Units (parent_subject_name points to subject)
+  - XMind Depth 3+: Knowledge Cells (parent_unit_name or parent_cell_name)
   """
   def convert_to_knowledge_resources(xmind_data, course_id) do
-    knowledge_resources =
+    # Create resources with parent references by name (not IDs)
+    resources_with_parent_names =
       xmind_data
       |> Enum.map(fn item ->
         knowledge_type = case item.level do
@@ -495,7 +369,7 @@ defmodule KgEdu.XmindParser do
           _ -> :knowledge_cell
         end
 
-        %{
+        base_attrs = %{
           name: item.title,
           subject: item.subject || "",
           unit: item.unit || "",
@@ -503,12 +377,110 @@ defmodule KgEdu.XmindParser do
           course_id: course_id,
           description: "",
           importance_level: :normal,
-          parent_subject_id: nil,
-          parent_unit_id: nil
+          depth: item.depth
         }
+
+        # Add parent references based on depth
+        # Note: item.depth is XMind depth (0=skip, 1=subject, 2=unit, 3+=cell)
+        case item.depth do
+          1 ->
+            # Subject level - no parents
+            base_attrs
+
+          2 ->
+            # Knowledge Unit level - parent subject
+            Map.put(base_attrs, :parent_subject_name, item.parent_title)
+
+          3 ->
+            # Knowledge Cell (depth 3)
+            if item.unit && item.unit != "" do
+              # This cell is under a unit
+              Map.put(base_attrs, :parent_unit_name, item.unit)
+            else
+              # This cell is directly under a subject
+              parent_subject = item.subject || ""
+              Map.put(base_attrs, :parent_subject_name, parent_subject)
+            end
+
+          _ when is_integer(item.depth) and item.depth > 3 ->
+            # Knowledge Cell (depth 4+) - nested cells
+            # Find the parent cell name using the same logic as during parsing
+            parent_cell_name = find_parent_cell_name(xmind_data, item)
+            if parent_cell_name do
+              Map.put(base_attrs, :parent_cell_name, parent_cell_name)
+            else
+              # Fallback: if no parent cell found, try to use parent_unit or parent_subject
+              if item.unit && item.unit != "" do
+                Map.put(base_attrs, :parent_unit_name, item.unit)
+              else
+                parent_subject = item.subject || ""
+                Map.put(base_attrs, :parent_subject_name, parent_subject)
+              end
+            end
+
+          _ ->
+            # Default case (shouldn't happen)
+            base_attrs
+        end
       end)
 
-    {:ok, knowledge_resources}
+    {:ok, resources_with_parent_names}
+  end
+
+  # Find the parent cell name for a nested cell (depth 3+)
+  # This traverses the XMind data to find the immediate parent cell
+  defp find_parent_cell_name(xmind_data, item) do
+    # Build a map to track positions
+    indexed_data = xmind_data |> Enum.with_index()
+
+    # Find the current item's index
+    current_index = Enum.find_value(indexed_data, fn {data, idx} ->
+      if data == item, do: idx
+    end)
+
+    if is_nil(current_index) do
+      nil
+    else
+      # Look backwards from current position to find the most recent cell
+      # that could be the parent (any depth less than current, not necessarily depth-1)
+      parent_cell = indexed_data
+      |> Enum.take(current_index)
+      |> Enum.reverse()
+      |> Enum.find(fn {candidate, _idx} ->
+        # For nested cells, parent should be:
+        # 1. A knowledge cell (not subject or unit)
+        # 2. Same subject context
+        # 3. Depth less than current (closest to current is best)
+        candidate.level == :knowledge_cell &&
+        candidate.subject == item.subject &&
+        candidate.depth < item.depth &&
+        candidate.title != item.title  # Not self
+      end)
+
+      case parent_cell do
+        nil ->
+          # If no cell parent found, for depth 3 cells, the parent might be the unit
+          if item.depth == 3 do
+            # Find the parent unit
+            indexed_data
+            |> Enum.take(current_index)
+            |> Enum.reverse()
+            |> Enum.find(fn {candidate, _idx} ->
+              candidate.level == :knowledge_unit &&
+              candidate.subject == item.subject &&
+              candidate.depth == item.depth - 1
+            end)
+            |> case do
+              nil -> nil
+              {unit, _idx} -> unit.title
+            end
+          else
+            nil
+          end
+
+        {cell, _idx} -> cell.title
+      end
+    end
   end
 
   @doc """

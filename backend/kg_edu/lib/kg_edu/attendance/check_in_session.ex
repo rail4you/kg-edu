@@ -9,6 +9,8 @@ defmodule KgEdu.Attendance.CheckInSession do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
+  import Ash.Query
+
   typescript do
     type_name "CheckInSession"
   end
@@ -115,6 +117,8 @@ defmodule KgEdu.Attendance.CheckInSession do
         allow_nil? false
       end
 
+      get? true
+
       filter expr(token == ^arg(:token))
     end
 
@@ -159,4 +163,75 @@ defmodule KgEdu.Attendance.CheckInSession do
     :crypto.strong_rand_bytes(16)
     |> Base.url_encode64(padding: false)
   end
+
+  def get_by_token(args, opts) do
+    tenant = Keyword.get(opts, :tenant)
+    token = Map.get(args, :token)
+
+    if tenant do
+      # Tenant context is provided, use the normal Ash action
+      __MODULE__
+      |> Ash.Query.new()
+      |> Ash.Query.set_tenant(tenant)
+      |> filter(token == ^token)
+      |> Ash.read(authorize?: false)
+      |> case do
+        {:ok, [session]} -> {:ok, session}
+        {:ok, []} -> {:error, :not_found}
+        {:ok, _sessions} -> {:error, :multiple_found}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      # No tenant context - this shouldn't happen with the new frontend implementation
+      # but we'll handle it gracefully by querying across all tenant schemas
+      tenant_schemas = KgEdu.Repo.all_tenants()
+
+      # Build a UNION ALL query to search across all tenant schemas
+      union_queries =
+        tenant_schemas
+        |> Enum.map(fn schema ->
+          "SELECT id, status, description, started_at, title, token, ended_at, created_by_id, '#{schema}' as tenant_schema "
+          <> "FROM #{schema}.check_in_sessions "
+          <> "WHERE token = $1"
+        end)
+        |> Enum.join(" UNION ALL ")
+
+      case KgEdu.Repo.query(union_queries, [token]) do
+        {:ok, %{rows: rows, num_rows: num_rows}} when num_rows > 0 ->
+          if num_rows == 1 do
+            [row] = rows
+            # Build the session record from the row
+            [id, status, description, started_at, title, token, ended_at, created_by_id, tenant_schema] = row
+
+            session = %{
+              __struct__: __MODULE__,
+              id: id,
+              status: status,
+              description: description,
+              started_at: started_at,
+              title: title,
+              token: token,
+              ended_at: ended_at,
+              created_by_id: created_by_id,
+              __metadata__: %{tenant_schema: tenant_schema}
+            }
+
+            {:ok, session}
+          else
+            {:error, :multiple_found}
+          end
+
+        {:ok, %{num_rows: 0}} ->
+          {:error, :not_found}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  @doc """
+  Wrapper for get_by_token with single argument (for code interface compatibility).
+  """
+  def get_by_token(args), do: get_by_token(args, [])
 end

@@ -31,6 +31,7 @@ defmodule KgEdu.Courses.Video do
 
     references do
       reference :chapter, on_delete: :delete
+      reference :knowledge_resource, on_delete: :delete
     end
   end
 
@@ -56,6 +57,7 @@ defmodule KgEdu.Courses.Video do
       rpc_action :get_videos_by_chapter, :by_chapter
       rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
       rpc_action :get_videos_by_course_ids, :by_course_ids
+      rpc_action :extract_video_duration, :extract_duration_from_oss
     end
   end
 
@@ -75,6 +77,7 @@ defmodule KgEdu.Courses.Video do
     define :link_video_to_chapter, action: :link_video_to_chapter
     define :unlink_video_from_chapter, action: :unlink_video_from_chapter
     define :log_video_view_activity, action: :log_video_view
+    define :extract_video_duration, action: :extract_duration_from_oss
   end
 
   actions do
@@ -166,12 +169,31 @@ defmodule KgEdu.Courses.Video do
 
                         title = Ash.Changeset.get_argument(changeset, :title) || Path.basename(original_filename, Path.extname(original_filename))
 
+                        # Try to extract duration from OSS video info API
+                        duration = case Req.get("#{playback_url}?x-oss-process=video/info", receive_timeout: 10_000) do
+                          {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
+                            case Jason.decode(body) do
+                              {:ok, %{"Video" => video_info}} ->
+                                case get_in(video_info, ["Streams", "Audio", "Duration"]) do
+                                  nil -> nil
+                                  d when is_number(d) -> d / 1000.0 |> round()  # Convert ms to seconds and round
+                                  d when is_binary(d) -> case Float.parse(d) do
+                                    {val, _} -> val / 1000.0 |> round()
+                                    :error -> nil
+                                  end
+                                  _ -> nil
+                                end
+                              _ -> nil
+                            end
+                          _ -> nil
+                        end
+
                         changeset
                         |> Ash.Changeset.change_attribute(:title, title)
                         |> Ash.Changeset.change_attribute(:playback_id, playback_url)
                         |> Ash.Changeset.change_attribute(:asset_id, playback_url)
                         |> Ash.Changeset.change_attribute(:thumbnail, thumbnail_url)
-                        |> Ash.Changeset.change_attribute(:duration, 10.00) # Will be updated later if needed
+                        |> Ash.Changeset.change_attribute(:duration, duration || 10) # Use extracted duration (rounded) or fallback to 10
 
                       {:error, _reason} ->
                         Ash.Changeset.add_error(changeset, "Failed to get video file size")
@@ -194,6 +216,53 @@ defmodule KgEdu.Courses.Video do
     create :create do
       description "Create a new video"
       accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
+
+      # Extract duration from OSS if not provided
+      change fn changeset, _context ->
+        # Only extract if duration is not already set
+        case Ash.Changeset.get_argument(changeset, :duration) do
+          nil ->
+            # Get asset_id to check if this is an OSS URL
+            asset_id = Ash.Changeset.get_argument(changeset, :asset_id) || Ash.Changeset.get_argument(changeset, :playback_id)
+
+            if asset_id && String.contains?(asset_id, ["aliyuncs.com", "oss-"]) do
+              # Try to extract duration from OSS video info API
+              case Req.get("#{asset_id}?x-oss-process=video/info", receive_timeout: 10_000) do
+                {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
+                  case Jason.decode(body) do
+                    {:ok, %{"Video" => video_info}} ->
+                      duration = case get_in(video_info, ["Streams", "Audio", "Duration"]) do
+                        nil -> nil
+                        d when is_number(d) -> d / 1000.0 |> round()  # Convert ms to seconds and round
+                        d when is_binary(d) -> case Float.parse(d) do
+                          {val, _} -> val / 1000.0 |> round()
+                          :error -> nil
+                        end
+                        _ -> nil
+                      end
+
+                      if duration do
+                        Ash.Changeset.change_attribute(changeset, :duration, duration)
+                      else
+                        changeset
+                      end
+
+                    _ ->
+                      changeset
+                  end
+
+                _ ->
+                  changeset
+              end
+            else
+              changeset
+            end
+
+          _ ->
+            # Duration already provided, don't extract
+            changeset
+        end
+      end
 
       # validate fn changeset, _context ->
       #   chapter_id = Ash.Changeset.get_attribute(changeset, :chapter_id)
@@ -264,6 +333,48 @@ defmodule KgEdu.Courses.Video do
       require_atomic? false
 
       change set_attribute(:chapter_id, nil)
+    end
+
+    action :extract_duration_from_oss do
+      description "Extract video duration from OSS video URL using OSS video info API"
+
+      run fn input, context ->
+        video = input.context
+        asset_id = Ash.Resource.get_attribute(video, :asset_id)
+
+        # Build video info URL using OSS processing
+        info_url = asset_id <> "?x-oss-process=video/info"
+
+        case Req.get(info_url, receive_timeout: 10_000) do
+          {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
+            case Jason.decode(body) do
+              {:ok, %{"Video" => video_info}} ->
+                duration = get_in(video_info, ["Streams", "Audio", "Duration"])
+                duration_float = case duration do
+                  nil -> nil
+                  d when is_number(d) -> d / 1000.0 |> round()  # Convert ms to seconds and round
+                  d when is_binary(d) -> case Float.parse(d) do
+                    {val, _} -> val / 1000.0 |> round()
+                    :error -> nil
+                  end
+                  _ -> nil
+                end
+
+                if duration_float do
+                  Ash.Changeset.for_update(video, :update_video, %{duration: duration_float})
+                  |> Ash.update(action: :update_video)
+                else
+                  {:ok, video}
+                end
+
+              _ ->
+                {:ok, video}
+            end
+
+          _ ->
+            {:ok, video}
+        end
+      end
     end
 
     action :log_video_view do

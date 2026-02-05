@@ -111,7 +111,7 @@ defmodule KgEdu.Attendance.CheckInRecord do
         description "ID of the user checking in"
       end
 
-      argument :session_token, :string do
+      argument :token, :string do
         allow_nil? false
         description "Token of the session to check into"
       end
@@ -127,19 +127,20 @@ defmodule KgEdu.Attendance.CheckInRecord do
         description "Additional metadata"
       end
 
-      change fn changeset, _context ->
+      change fn changeset, context ->
         # Get the session token from arguments
-        session_token = Ash.Changeset.get_argument(changeset, :session_token)
+        session_token = Ash.Changeset.get_argument(changeset, :token)
 
-        # Look up the session by token
-        case KgEdu.Attendance.CheckInSession.by_token(session_token) do
+        # Look up the session by token within the current tenant context
+        # Tenant is now always provided from the request
+        case KgEdu.Attendance.CheckInSession.get_by_token(%{token: session_token}, tenant: context.tenant) do
           {:ok, session} ->
             # Check if session is active
-            if session.status == :active do
+            if Map.get(session, :status) == :active do
               changeset
               |> Ash.Changeset.manage_relationship(
                 :check_in_session,
-                %{id: session.id},
+                %{id: Map.get(session, :id)},
                 on_lookup: :relate,
                 on_match: :error
               )

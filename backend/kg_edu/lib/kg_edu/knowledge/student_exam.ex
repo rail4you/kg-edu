@@ -8,6 +8,7 @@ defmodule KgEdu.Knowledge.StudentExam do
 
   require Logger
   import Ash.Query
+  import Ash.Changeset
 
   typescript do
     type_name "StudentExam"
@@ -38,12 +39,24 @@ defmodule KgEdu.Knowledge.StudentExam do
     define :get_student_exams_by_student, action: :by_student
     define :get_student_exam_for_student, action: :for_student
     define :start_exam, action: :start_exam
+    define :continue_or_start_exam, action: :continue_or_start_exam
+    define :get_in_progress_exam, action: :get_in_progress_exam
     define :submit_exam, action: :submit_exam
     define :grade_exam, action: :grade_exam
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read, :update, :destroy]
+
+    update :submit_status do
+      description "Update student exam status to submitted"
+      accept [:status, :submitted_at]
+    end
+
+    update :grade_status do
+      description "Update student exam score and passed status"
+      accept [:score, :passed, :status]
+    end
 
     read :by_id do
       description "Get a student exam by ID"
@@ -73,30 +86,30 @@ defmodule KgEdu.Knowledge.StudentExam do
     end
 
     create :start_exam do
-      description "Start an exam for a student"
+      description "Start an exam for a student."
 
       accept [:exam_id, :student_id]
 
       change fn changeset, context ->
-        exam_id = changeset.arguments[:exam_id]
-        student_id = changeset.arguments[:student_id]
+        exam_id = Ash.Changeset.get_attribute(changeset, :exam_id)
         tenant = context.tenant
 
-        # Get the exam to set initial values
+        # Load the exam to verify it exists
         case Ash.get(KgEdu.Knowledge.Exam, exam_id, tenant: tenant) do
-          {:ok, exam} ->
+          {:ok, _exam} ->
             changeset
             |> Ash.Changeset.change_attribute(:status, :in_progress)
             |> Ash.Changeset.change_attribute(:score, 0)
             |> Ash.Changeset.change_attribute(:started_at, DateTime.utc_now())
             |> Ash.Changeset.after_action(fn _changeset, student_exam ->
               # Create empty answers for all exercises in the exam
-              query = filter(KgEdu.Knowledge.ExamExercise, exam_id: exam_id)
+              query = Ash.Query.filter(KgEdu.Knowledge.ExamExercise, exam_id == ^exam_id)
               query = if tenant, do: Ash.Query.set_context(query, %{tenant: tenant}), else: query
 
               case Ash.read(
                      query,
-                     load: [:exercise]
+                     load: [:exercise],
+                     tenant: tenant
                    ) do
                 {:ok, exam_exercises} ->
                   Enum.each(exam_exercises, fn exam_exercise ->
@@ -113,24 +126,179 @@ defmodule KgEdu.Knowledge.StudentExam do
                   end)
 
                   {:ok, student_exam}
+
+                {:error, reason} ->
+                  {:error, "Failed to load exam exercises: #{inspect(reason)}"}
               end
             end)
 
           {:error, reason} ->
-            Ash.Changeset.add_error(changeset, :exam, "Failed to load exam: #{inspect(reason)}")
+            Ash.Changeset.add_error(changeset, :exam_id, "Failed to load exam: #{inspect(reason)}")
         end
       end
     end
 
-    update :submit_exam do
-      description "Submit a completed exam"
+    action :continue_or_start_exam do
+      description "Continue an in-progress exam or start a new one. Returns the student exam ID on success."
 
-      accept []
+      argument :exam_id, :uuid do
+        allow_nil? false
+        description "ID of the exam to start or continue"
+      end
 
-      change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_attribute(:status, :submitted)
-        |> Ash.Changeset.change_attribute(:submitted_at, DateTime.utc_now())
+      argument :student_id, :uuid do
+        allow_nil? false
+        description "ID of the student"
+      end
+
+      run fn input, context ->
+        exam_id = input.arguments.exam_id
+        student_id = input.arguments.student_id
+        tenant = context.tenant
+
+        # Check if student has an in-progress exam for this specific exam
+        existing_exam_query =
+          Ash.Query.filter(
+            KgEdu.Knowledge.StudentExam,
+            student_id == ^student_id and exam_id == ^exam_id and status == :in_progress
+          )
+
+        existing_exam_query =
+          if tenant, do: Ash.Query.set_context(existing_exam_query, %{tenant: tenant}), else: existing_exam_query
+
+        case Ash.read_one(existing_exam_query, tenant: tenant) do
+          {:ok, existing_student_exam} when not is_nil(existing_student_exam) ->
+            # Student has an in-progress exam for this exam
+            Logger.info("Found existing in-progress exam #{existing_student_exam.id}")
+            :ok
+
+          {:ok, nil} ->
+            # No in-progress exam for this exam, start a new one
+            Logger.info("No in-progress exam found, starting new exam")
+
+            case KgEdu.Knowledge.StudentExam.start_exam(
+                   %{exam_id: exam_id, student_id: student_id},
+                   tenant: tenant
+                 ) do
+              {:ok, _new_student_exam} ->
+                :ok
+
+              {:error, reason} ->
+                {:error, "Failed to start exam: #{inspect(reason)}"}
+            end
+
+          {:error, reason} ->
+            {:error, "Failed to check for existing exam: #{inspect(reason)}"}
+        end
+      end
+    end
+
+    read :get_in_progress_exam do
+      description "Get the student's in-progress exam with all answers"
+      get? true
+
+      argument :student_id, :uuid do
+        allow_nil? false
+        description "ID of the student"
+      end
+
+      filter expr(student_id == ^arg(:student_id) and status == :in_progress)
+
+      prepare fn query, _context ->
+        query
+        |> Ash.Query.load(:exam)
+        |> Ash.Query.load(student_exam_answers: [:exam_exercise, :exercise])
+      end
+    end
+
+    action :submit_exam do
+      description "Submit a completed exam with all answers at once"
+
+      argument :student_exam_id, :uuid do
+        allow_nil? false
+        description "ID of the student exam to submit"
+      end
+
+      argument :answers, :map do
+        allow_nil? false
+        description "Map of student_exam_answer_id to answer value"
+      end
+
+      run fn input, context ->
+        student_exam_id = input.arguments.student_exam_id
+        answers_map = input.arguments.answers
+        tenant = context.tenant
+
+        Logger.info("submit_exam called with student_exam_id: #{student_exam_id}")
+        Logger.info("Answers count: #{map_size(answers_map)}")
+
+        # Get the student exam to verify it exists and is in progress
+        case Ash.get(KgEdu.Knowledge.StudentExam, student_exam_id, tenant: tenant) do
+          {:ok, student_exam} ->
+            # Verify exam is in progress
+            if student_exam.status != :in_progress do
+              {:error, "Exam is not in progress, current status: #{student_exam.status}"}
+            else
+              # Update all answers
+              answers_result =
+                Enum.reduce_while(answers_map, [], fn {answer_id, answer_value}, acc ->
+                  Logger.info("Updating answer #{answer_id} with value: #{answer_value}")
+
+                  case Ash.get(KgEdu.Knowledge.StudentExamAnswer, answer_id, tenant: tenant) do
+                    {:ok, answer_record} ->
+                      # Verify answer belongs to this student exam
+                      if answer_record.student_exam_id != student_exam_id do
+                        {:halt,
+                         {:error,
+                          "Answer #{answer_id} does not belong to student exam #{student_exam_id}"}}
+                      else
+                        # Update the answer using the update_answer action
+                        answer_record
+                        |> Ash.Changeset.for_update(:update_answer, %{
+                          answer: answer_value,
+                          answered_at: DateTime.utc_now()
+                        })
+                        |> Ash.update(tenant: tenant)
+                        |> case do
+                          {:ok, updated} -> {:cont, [updated | acc]}
+                          {:error, reason} -> {:halt, {:error, reason}}
+                        end
+                      end
+
+                    {:error, reason} ->
+                      {:halt, {:error, reason}}
+                  end
+                end)
+
+              case answers_result do
+                {:error, reason} ->
+                  {:error, "Failed to update some answers: #{inspect(reason)}"}
+
+                _updated_answers ->
+                  Logger.info("All answers updated successfully, submitting exam")
+
+                  # Update student exam status to submitted using submit_status action
+                  student_exam
+                  |> Ash.Changeset.for_update(:submit_status, %{
+                    status: :submitted,
+                    submitted_at: DateTime.utc_now()
+                  })
+                  |> Ash.update(tenant: tenant)
+                  |> case do
+                    {:ok, _updated_exam} ->
+                      Logger.info("Exam submitted successfully")
+                      :ok
+
+                    {:error, reason} ->
+                      Logger.error("Failed to submit exam: #{inspect(reason)}")
+                      {:error, "Failed to submit exam: #{inspect(reason)}"}
+                  end
+              end
+            end
+
+          {:error, reason} ->
+            {:error, "Failed to load student exam: #{inspect(reason)}"}
+        end
       end
     end
 
@@ -142,17 +310,17 @@ defmodule KgEdu.Knowledge.StudentExam do
         description "ID of the student exam to grade"
       end
 
-      run fn input, _context ->
+      run fn input, context ->
         student_exam_id = input.arguments.student_exam_id
 
         # Calculate total score from all answers
-        query = filter(KgEdu.Knowledge.StudentExamAnswer, student_exam_id: student_exam_id)
+        query = Ash.Query.filter(KgEdu.Knowledge.StudentExamAnswer, student_exam_id == ^student_exam_id)
 
         # Get tenant from context
-        tenant = input.context.tenant
-        query = if tenant, do: Ash.Query.set_context(query, %{tenant: tenant}), else: query
+        tenant = context.tenant
+        query = Ash.Query.set_context(query, %{tenant: tenant})
 
-        case Ash.read(query) do
+        case Ash.read(query, tenant: tenant) do
           {:ok, answers} ->
             total_score = Enum.reduce(answers, 0, fn ans, acc -> acc + ans.points_earned end)
 
@@ -164,19 +332,16 @@ defmodule KgEdu.Knowledge.StudentExam do
               {:ok, student_exam} ->
                 passing_score = student_exam.exam.passing_score
 
-                update_attrs = %{
+                # Update student exam with score and status using grade_status action
+                student_exam
+                |> Ash.Changeset.for_update(:grade_status, %{
                   score: total_score || 0,
                   passed: (total_score || 0) >= passing_score,
                   status: :graded
-                }
-
-                case Ash.update(
-                       KgEdu.Knowledge.StudentExam,
-                       student_exam,
-                       update_attrs,
-                       tenant: tenant
-                     ) do
-                  {:ok, updated_exam} -> {:ok, updated_exam}
+                })
+                |> Ash.update(tenant: tenant)
+                |> case do
+                  {:ok, _updated_exam} -> :ok
                   {:error, reason} -> {:error, reason}
                 end
 
@@ -199,6 +364,18 @@ defmodule KgEdu.Knowledge.StudentExam do
 
   attributes do
     uuid_primary_key :id
+
+    attribute :exam_id, :uuid do
+      allow_nil? false
+      description "Foreign key reference to the exam"
+      public? true
+    end
+
+    attribute :student_id, :uuid do
+      allow_nil? false
+      description "Foreign key reference to the student"
+      public? true
+    end
 
     attribute :status, :atom do
       allow_nil? false

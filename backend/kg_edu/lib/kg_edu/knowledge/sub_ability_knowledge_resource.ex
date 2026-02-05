@@ -14,6 +14,10 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
     repo KgEdu.Repo
 
     identity_index_names unique_sub_ability_knowledge_resource: "sub_ability_knowledge_unique"
+
+    references do
+      reference :knowledge_resource, on_delete: :delete
+    end
   end
 
   multitenancy do

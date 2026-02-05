@@ -12,6 +12,10 @@ defmodule KgEdu.Knowledge.Question do
   postgres do
     table "knowledge_questions"
     repo KgEdu.Repo
+
+    references do
+      reference :knowledge_resource, on_delete: :delete
+    end
   end
 
   multitenancy do
@@ -176,7 +180,7 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Update Actions ============
     update :update_question do
       description "Update a question"
-      accept [:title, :description, :position, :tags, :question_level, :course_id]
+      accept [:title, :description, :position, :tags, :question_level, :course_id, :knowledge_resource_id]
     end
 
     # ============ Link/Unlink Actions ============

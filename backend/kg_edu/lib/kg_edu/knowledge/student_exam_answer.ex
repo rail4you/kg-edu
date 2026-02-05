@@ -35,12 +35,52 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
     define :get_student_exam_answer, action: :by_id
     define :list_student_exam_answers, action: :read
     define :get_answers_by_student_exam, action: :by_student_exam
-    define :submit_answer, action: :submit_answer
     define :grade_answer, action: :grade_answer
   end
 
   actions do
-    defaults [:read, :create, :update, :destroy]
+    defaults [:read, :update, :destroy]
+
+    update :update_answer do
+      description "Update answer for a student exam answer"
+      accept [:answer, :answered_at]
+      require_atomic? false
+    end
+
+    create :create do
+      accept [
+        :answer,
+        :points_earned,
+        :graded,
+        :feedback,
+        :answered_at,
+        :graded_at
+      ]
+      primary? true
+
+      argument :student_exam_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :exam_exercise_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :exercise_id, :uuid do
+        allow_nil? false
+      end
+
+      change fn changeset, _context ->
+        student_exam_id = Ash.Changeset.get_argument(changeset, :student_exam_id)
+        exam_exercise_id = Ash.Changeset.get_argument(changeset, :exam_exercise_id)
+        exercise_id = Ash.Changeset.get_argument(changeset, :exercise_id)
+
+        changeset
+        |> Ash.Changeset.change_attribute(:student_exam_id, student_exam_id)
+        |> Ash.Changeset.change_attribute(:exam_exercise_id, exam_exercise_id)
+        |> Ash.Changeset.change_attribute(:exercise_id, exercise_id)
+      end
+    end
 
     read :by_id do
       description "Get a student exam answer by ID"
@@ -55,17 +95,16 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
       filter expr(student_exam_id == ^arg(:student_exam_id))
     end
 
-    update :submit_answer do
-      description "Submit an answer for an exercise"
+    read :get_exam_questions do
+      description "Get all questions for a student exam with exercise details"
+      argument :student_exam_id, :uuid, allow_nil?: false
 
-      accept [:answer]
+      filter expr(student_exam_id == ^arg(:student_exam_id))
 
-      change fn changeset, _context ->
-        answer = changeset.arguments[:answer]
-
-        changeset
-        |> Ash.Changeset.change_attribute(:answer, answer)
-        |> Ash.Changeset.change_attribute(:answered_at, DateTime.utc_now())
+      prepare fn query, _context ->
+        query
+        |> Ash.Query.load(:exam_exercise)
+        |> Ash.Query.load(:exercise)
       end
     end
 
@@ -126,15 +165,11 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
                 update_attrs
               end
 
-            case Ash.update(
-                   KgEdu.Knowledge.StudentExamAnswer,
-                   answer_record,
-                   update_attrs,
-                   tenant: tenant
-                 ) do
-              {:ok, updated} -> {:ok, updated}
-              {:error, reason} -> {:error, reason}
-            end
+            Ash.update(
+              answer_record,
+              update_attrs,
+              tenant: tenant
+            )
 
           {:error, reason} ->
             {:error, reason}

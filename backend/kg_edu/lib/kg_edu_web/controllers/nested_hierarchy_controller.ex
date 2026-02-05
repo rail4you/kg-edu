@@ -93,7 +93,7 @@ defmodule KgEduWeb.NestedHierarchyController do
         serialized
       end
 
-    # Check for nested child cells (custom field)
+    # Check for nested child cells (custom field) - this handles level 4+ cells
     serialized =
       case Map.get(resource, :nestedChildCells) do
         nil -> serialized
@@ -104,9 +104,72 @@ defmodule KgEduWeb.NestedHierarchyController do
     serialized
   end
 
-  defp serialize_resource(map) when is_map(map) do
-    # Already a map, just return it (with camelCase keys if needed)
-    map
+  defp serialize_resource(resource) when is_map(resource) do
+    # Handle maps that may have been processed by KnowledgeNestedHierarchy
+    # Extract basic attributes
+    serialized = %{
+      id: Map.get(resource, :id),
+      name: Map.get(resource, :name),
+      knowledgeType: Map.get(resource, :knowledge_type),
+      subject: Map.get(resource, :subject),
+      unit: Map.get(resource, :unit),
+      importanceLevel: Map.get(resource, :importance_level),
+      description: Map.get(resource, :description),
+      tag: Map.get(resource, :tag),
+      dimension: Map.get(resource, :dimension),
+      insertedAt: Map.get(resource, :inserted_at),
+      updatedAt: Map.get(resource, :updated_at),
+      courseId: Map.get(resource, :course_id),
+      chapterId: Map.get(resource, :chapter_id),
+      parentSubjectId: Map.get(resource, :parent_subject_id),
+      parentUnitId: Map.get(resource, :parent_unit_id),
+      parentKnowledgeResourceId: Map.get(resource, :parent_knowledge_resource_id)
+    }
+
+    # Recursively serialize relationships
+    serialized =
+      case Map.get(resource, :child_units) do
+        nil when is_nil(resource.child_units) -> serialized
+        units when is_list(units) ->
+          Map.put(serialized, :childUnits, serialize_resources(units))
+        _ -> serialized
+      end
+
+    serialized =
+      case Map.get(resource, :child_cells) do
+        nil when is_nil(resource.child_cells) -> serialized
+        cells when is_list(cells) ->
+          Map.put(serialized, :childCells, serialize_resources(cells))
+        _ -> serialized
+      end
+
+    serialized =
+      case Map.get(resource, :direct_cells) do
+        nil when is_nil(resource.direct_cells) -> serialized
+        cells when is_list(cells) ->
+          Map.put(serialized, :directCells, serialize_resources(cells))
+        _ -> serialized
+      end
+
+    serialized =
+      case Map.get(resource, :subject_cells) do
+        nil when is_nil(resource.subject_cells) -> serialized
+        cells when is_list(cells) ->
+          Map.put(serialized, :subjectCells, serialize_resources(cells))
+        _ -> serialized
+      end
+
+    # Check for nested child cells (custom field) - this handles level 4+ cells
+    serialized =
+      case Map.get(resource, :nestedChildCells) do
+        nil -> serialized
+        nested when is_list(nested) ->
+          Map.put(serialized, :nestedChildCells, serialize_resources(nested))
+      end
+
+    # Remove nil values
+    Enum.reject(serialized, fn {_k, v} -> is_nil(v) end)
+    |> Map.new()
   end
 
   # Resolve tenant ID to schema name

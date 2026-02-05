@@ -57,9 +57,16 @@ code_interface do
     read :read do
       primary? true
 
+      pagination do
+        required?(false)
+        offset?(true)
+        keyset?(true)
+        countable(true)
+      end
+
       prepare fn query, context ->
-            # Teachers see only their courses, students see only enrolled courses
-            # Only users see published courses
+        # Teachers see only their courses, students see only enrolled courses
+        # Only users see published courses
         Logger.info("COURSE LIST: context is #{inspect(context)}")
         Logger.info("COURSE LIST: actor is #{inspect(context.actor)}")
 
@@ -238,18 +245,24 @@ code_interface do
     end
 
     read :my_courses do
-      description "Get courses created by the current teacher (only primary teacher courses, not assigned courses)"
+      description "Get courses for the current user (teachers get their created courses, students/users get their enrolled courses)"
 
       prepare fn query, context ->
         case context.actor do
           %{role: :teacher, id: teacher_id} ->
-            # Only return courses where the teacher is the primary teacher (creator)
+            # Teachers get courses where they are the primary teacher (creator)
             query
             |> Ash.Query.filter(teacher_id == ^teacher_id)
             |> Ash.Query.load(:subject_category)
 
+          %{role: :user, id: user_id} ->
+            # Regular users (students) get courses they are enrolled in
+            query
+            |> Ash.Query.filter(course_enrollments.member_id == ^user_id)
+            |> Ash.Query.load(:subject_category)
+
           _ ->
-            # Non-teacher roles get no results
+            # Other roles (super_admin, admin) get no results
             Ash.Query.filter(query, false)
         end
       end

@@ -9,6 +9,11 @@ defmodule KgEdu.Knowledge.QuestionConnection do
   postgres do
     table "knowledge_question_connections"
     repo KgEdu.Repo
+
+    references do
+      reference :source_question, on_delete: :delete
+      reference :target_question, on_delete: :delete
+    end
   end
 
   multitenancy do

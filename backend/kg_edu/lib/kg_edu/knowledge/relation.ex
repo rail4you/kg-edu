@@ -16,6 +16,11 @@ defmodule KgEdu.Knowledge.Relation do
   postgres do
     table "knowledge_relations"
     repo KgEdu.Repo
+
+    references do
+      reference :source_knowledge, on_delete: :delete
+      reference :target_knowledge, on_delete: :delete
+    end
   end
 
   multitenancy do

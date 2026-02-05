@@ -12,9 +12,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     references do
       reference :chapter, on_delete: :delete
-      # reference :exercises, on_delete: :delete
-      # reference :chapter, on_delete: :delete
-      # reference :chapter, on_delete: :delete
+      reference :knowledge_resource, on_delete: :delete
     end
   end
 

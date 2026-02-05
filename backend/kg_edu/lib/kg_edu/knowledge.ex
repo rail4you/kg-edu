@@ -180,6 +180,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_student_exams_by_student, :by_student
       rpc_action :get_student_exam_for_student, :for_student
       rpc_action :start_exam, :start_exam
+      rpc_action :continue_or_start_exam, :continue_or_start_exam
+      rpc_action :get_in_progress_exam, :get_in_progress_exam
       rpc_action :submit_exam, :submit_exam
       rpc_action :grade_exam, :grade_exam
     end
@@ -188,8 +190,27 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_student_exam_answers, :read
       rpc_action :get_student_exam_answer, :by_id
       rpc_action :get_answers_by_student_exam, :by_student_exam
-      rpc_action :submit_answer, :submit_answer
       rpc_action :grade_answer, :grade_answer
+    end
+
+    # Recommendation System Resources
+    resource KgEdu.Knowledge.StudentKnowledgeMastery do
+      rpc_action :list_masteries, :read
+      rpc_action :get_mastery, :by_id
+      rpc_action :get_student_mastery_for_knowledge, :by_student_and_knowledge
+      rpc_action :get_all_student_masteries, :by_student
+      rpc_action :get_weak_knowledge_points, :get_weak_points
+      rpc_action :recalculate_mastery, :recalculate_mastery
+    end
+
+    resource KgEdu.Knowledge.LearningRecommendation do
+      rpc_action :list_recommendations, :read
+      rpc_action :get_recommendation, :by_id
+      rpc_action :get_student_recommendations, :by_student
+      rpc_action :generate_recommendations, :generate_for_student
+      rpc_action :mark_as_viewed, :mark_viewed
+      rpc_action :mark_as_completed, :mark_completed
+      rpc_action :dismiss_recommendation, :dismiss
     end
   end
 
@@ -212,5 +233,7 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.ExamExercise
     resource KgEdu.Knowledge.StudentExam
     resource KgEdu.Knowledge.StudentExamAnswer
+    resource KgEdu.Knowledge.StudentKnowledgeMastery
+    resource KgEdu.Knowledge.LearningRecommendation
   end
 end

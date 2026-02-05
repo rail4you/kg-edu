@@ -14,6 +14,10 @@ defmodule KgEdu.Knowledge.UserCase do
   postgres do
     table "user_cases"
     repo KgEdu.Repo
+
+    references do
+      reference :knowledge_resource, on_delete: :delete
+    end
   end
 
   multitenancy do

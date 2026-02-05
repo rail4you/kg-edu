@@ -56,22 +56,56 @@ defmodule KgEdu.KnowledgeNestedHierarchy do
 
   # Build nested cells for a unit
   defp build_unit_nested_cells(unit) do
-    all_cells = get_cells_from_unit(unit)
+    # Get level 3 cells (direct children of unit)
+    level_3_cells = get_cells_from_unit(unit)
 
-    # Build nested hierarchy based on parent_knowledge_resource_id
+    # Process each level 3 cell to include its nested children (level 4+)
     nested_cells =
-      if Enum.all?(all_cells, fn c -> is_nil(c.parent_knowledge_resource_id) end) do
-        # If no parent_knowledge_resource_id set, auto-nest by creation order
-        Resource.auto_nest_cells_by_order(all_cells, level_3_count: 2)
-      else
-        # Use existing parent_knowledge_resource_id relationships
-        Resource.build_nested_cell_hierarchy(all_cells)
-      end
+      Enum.map(level_3_cells, fn cell ->
+        # Get nested child cells (level 4+) if they exist
+        nested_children = get_nested_child_cells(cell)
+
+        # If there are nested children, recursively process them
+        if length(nested_children) > 0 do
+          # Build the nested structure for this cell
+          cell
+          |> Map.put(:nestedChildCells, build_nested_cell_children(nested_children))
+          |> Map.delete(:nested_child_cells)
+        else
+          # No nested children, return as is
+          cell
+        end
+      end)
 
     # Return unit with nested cells
     unit
     |> Map.put(:child_cells, nested_cells)
     |> Map.delete(:child_cells__records__)
+  end
+
+  # Recursively build nested cell children
+  defp build_nested_cell_children(cells) when is_list(cells) do
+    Enum.map(cells, fn cell ->
+      # Get nested children of this cell
+      nested_children = get_nested_child_cells(cell)
+
+      if length(nested_children) > 0 do
+        cell
+        |> Map.put(:nestedChildCells, build_nested_cell_children(nested_children))
+        |> Map.delete(:nested_child_cells)
+      else
+        cell
+      end
+    end)
+  end
+
+  # Get nested child cells from a cell
+  defp get_nested_child_cells(cell) do
+    case Map.get(cell, :nested_child_cells) do
+      %{__records__: records} when is_list(records) -> records
+      list when is_list(list) -> list
+      _ -> []
+    end
   end
 
   # Extract cells from unit structure

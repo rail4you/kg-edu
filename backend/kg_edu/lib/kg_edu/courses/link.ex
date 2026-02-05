@@ -9,6 +9,10 @@ defmodule KgEdu.Courses.Link do
   postgres do
     table "links"
     repo KgEdu.Repo
+
+    references do
+      reference :knowledge_resource, on_delete: :delete
+    end
   end
 
   multitenancy do
