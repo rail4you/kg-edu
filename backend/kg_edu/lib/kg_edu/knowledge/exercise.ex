@@ -9,11 +9,6 @@ defmodule KgEdu.Knowledge.Exercise do
   require Logger
   require Ash.Query
 
-  typescript do
-    type_name "Exercise"
-  end
-
-
   postgres do
     table "exercises"
     repo KgEdu.Repo
@@ -23,12 +18,12 @@ defmodule KgEdu.Knowledge.Exercise do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "exercise"
+  end
+
+  typescript do
+    type_name "Exercise"
   end
 
   code_interface do
@@ -50,7 +45,6 @@ defmodule KgEdu.Knowledge.Exercise do
 
   actions do
     defaults [:read, :destroy]
-
 
     read :by_id do
       description "Get an exercise by ID"
@@ -87,13 +81,37 @@ defmodule KgEdu.Knowledge.Exercise do
 
     create :create do
       description "Create a new exercise"
-      accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :course_id, :ai_type]
+
+      accept [
+        :title,
+        :question_content,
+        :answer,
+        :question_type,
+        :options,
+        :knowledge_resource_id,
+        :course_id,
+        :ai_type,
+        :difficulty
+      ]
+
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
     update :update_exercise do
       description "Update an exercise"
-      accept [:title, :question_content, :answer, :question_type, :options, :knowledge_resource_id, :course_id,:ai_type]
+
+      accept [
+        :title,
+        :question_content,
+        :answer,
+        :question_type,
+        :options,
+        :knowledge_resource_id,
+        :course_id,
+        :ai_type,
+        :difficulty
+      ]
+
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
@@ -106,7 +124,9 @@ defmodule KgEdu.Knowledge.Exercise do
         description "The knowledge resource ID to link to"
       end
 
-      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource,
+               type: :append_and_remove
+             )
     end
 
     update :unlink_exercise_from_knowledge do
@@ -118,6 +138,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
     action :generate_ai_exercise do
       description "Generate AI exercises based on course, knowledge, chapter, and exercise type using bulk create"
+
       argument :course_id, :uuid do
         allow_nil? false
         description "Course ID to generate exercises for"
@@ -156,21 +177,29 @@ defmodule KgEdu.Knowledge.Exercise do
         Logger.info("Looking for course with ID: #{course_id}")
 
         # Get course by ID using Ash.get which is designed for primary key lookup
-        case Ash.get(KgEdu.Courses.Course, course_id, tenant: context.tenant, actor: context.actor) do
+        case Ash.get(KgEdu.Courses.Course, course_id,
+               tenant: context.tenant,
+               actor: context.actor
+             ) do
           {:ok, course} ->
             # Generate multiple exercises
             case KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise.generate_multiple_exercises(
-                   course.title, knowledge_name, chapter_name, exercise_type, number
+                   course.title,
+                   knowledge_name,
+                   chapter_name,
+                   exercise_type,
+                   number
                  ) do
               {:ok, exercises_data} ->
                 # Prepare exercise data for bulk create
-                exercises_with_metadata = Enum.map(exercises_data, fn exercise_data ->
-                  Map.merge(exercise_data, %{
-                    course_id: course.id,
-                    question_type: exercise_type,
-                    ai_type: :ai_generated
-                  })
-                end)
+                exercises_with_metadata =
+                  Enum.map(exercises_data, fn exercise_data ->
+                    Map.merge(exercise_data, %{
+                      course_id: course.id,
+                      question_type: exercise_type,
+                      ai_type: :ai_generated
+                    })
+                  end)
 
                 # Use Ash bulk create to store exercises
                 case Ash.bulk_create(
@@ -183,9 +212,10 @@ defmodule KgEdu.Knowledge.Exercise do
                      ) do
                   # %{created: created_exercises, errors: []} ->
                   #   {:ok, created_exercises}
-                   %Ash.BulkResult{status: :success, records: records} ->
+                  %Ash.BulkResult{status: :success, records: records} ->
                     :ok
-                    # {:ok, records}
+
+                  # {:ok, records}
 
                   # %{created: created_exercises, errors: [_ | _] = errors} ->
                   #   # Partial success - return created exercises and log errors
@@ -254,6 +284,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
       run fn input, context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+
         case KgEdu.Knowledge.Exercise.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                input.arguments.attributes,
@@ -286,7 +317,10 @@ defmodule KgEdu.Knowledge.Exercise do
       end
 
       run fn input, context ->
-        exercise_id = input.arguments[:exercise_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        exercise_id =
+          input.arguments[:exercise_id] || input.arguments[:id] ||
+            Ash.Changeset.get_attribute(input.context, :id)
+
         user_id = input.arguments[:user_id]
         answer = input.arguments[:answer]
         metadata = input.arguments[:metadata] || %{}
@@ -309,10 +343,15 @@ defmodule KgEdu.Knowledge.Exercise do
     policy always() do
       authorize_if always()
     end
+
     # policy action_type([:read, :create, :update]) do
     #   description "All authenticated users can read exercises"
     #   authorize_if actor_present()
     # end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -342,9 +381,11 @@ defmodule KgEdu.Knowledge.Exercise do
       public? true
     end
 
-    attribute :options, :map do
+    attribute :options, KgEdu.Types.JsonMap do
       allow_nil? true
+
       description "Options for multiple choice questions. Stored as map with A, B, C, D keys and selected values."
+
       public? true
     end
 
@@ -353,6 +394,13 @@ defmodule KgEdu.Knowledge.Exercise do
       constraints one_of: [:ai_generated]
       public? true
       description "Type of AI generation for this exercise"
+    end
+
+    attribute :difficulty, :integer do
+      allow_nil? true
+      constraints min: 1, max: 3
+      public? true
+      description "Difficulty level: 1 (easy), 2 (medium), 3 (hard)"
     end
 
     timestamps()
@@ -373,5 +421,4 @@ defmodule KgEdu.Knowledge.Exercise do
       public? true
     end
   end
-
-  end
+end

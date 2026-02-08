@@ -65,6 +65,7 @@ defmodule KgEdu.Accounts.User do
     define :sign_out, action: :sign_out
     define :get_current_user, action: :get_current_user
     define :change_password, action: :change_password
+    define :change_password_direct, action: :change_password_direct
     define :request_password_reset, action: :request_password_reset_token
     define :reset_password, action: :reset_password_with_token
     define :create_user, action: :create_user
@@ -332,6 +333,73 @@ defmodule KgEdu.Accounts.User do
                 strategy_name: :password, password_argument: :current_password}
 
       change {AshAuthentication.Strategy.Password.HashPasswordChange, strategy_name: :password}
+    end
+
+    action :change_password_direct do
+      description "Change password using actor_id and tenant from context"
+      returns :map
+
+      argument :new_password, :string do
+        description "The new password to set"
+        allow_nil? false
+        constraints min_length: 8
+        sensitive? true
+      end
+
+      argument :password_confirmation, :string do
+        description "Password confirmation"
+        allow_nil? false
+        sensitive? true
+      end
+
+      run fn input, context ->
+        # Actor is already the User struct we want to update
+        user = context.actor
+        tenant = context.tenant
+
+        # Build changeset for password update using internal action
+        changeset =
+          user
+          |> Ash.Changeset.for_update(:internal_change_password_direct, %{
+            new_password: input.arguments.new_password,
+            password_confirmation: input.arguments.password_confirmation
+          })
+
+        # Update with tenant context
+        case Ash.update(changeset, tenant: tenant) do
+          {:ok, updated_user} ->
+            {:ok, updated_user}
+          {:error, error} ->
+            {:error, error}
+        end
+      end
+    end
+
+    update :internal_change_password_direct do
+      description "Internal action for actual password change"
+      require_atomic? false
+      accept []
+
+      argument :new_password, :string do
+        description "The new password to set"
+        allow_nil? false
+        constraints min_length: 8
+        sensitive? true
+      end
+
+      argument :password_confirmation, :string do
+        description "Password confirmation"
+        allow_nil? false
+        sensitive? true
+      end
+
+      validate confirm(:new_password, :password_confirmation)
+
+      change fn changeset, _context ->
+        new_password = Ash.Changeset.get_argument(changeset, :new_password)
+        hashed = Bcrypt.hash_pwd_salt(new_password)
+        Ash.Changeset.force_change_attribute(changeset, :hashed_password, hashed)
+      end
     end
 
     read :sign_in_with_password do

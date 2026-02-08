@@ -1,0 +1,6 @@
+{
+  "elixirLS.dialyzerEnabled": false,
+  "elixirLS.mixEnv": "dev",
+  "elixirLS.projectDir": "backend/kg_edu",
+  "elixirLS.fetchDeps": false
+}
