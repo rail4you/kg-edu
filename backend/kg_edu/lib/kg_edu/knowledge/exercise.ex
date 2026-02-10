@@ -381,7 +381,7 @@ defmodule KgEdu.Knowledge.Exercise do
       public? true
     end
 
-    attribute :options, KgEdu.Types.JsonMap do
+    attribute :options, :map do
       allow_nil? true
 
       description "Options for multiple choice questions. Stored as map with A, B, C, D keys and selected values."

@@ -487,6 +487,8 @@ defmodule KgEdu.Knowledge.Resource do
         :description,
         :tag,
         :dimension,
+        :category,
+        :teaching_goal,
         :course_id,
         :chapter_id,
         :subject,
@@ -551,7 +553,7 @@ defmodule KgEdu.Knowledge.Resource do
 
     # ============ Update Actions ============
     update :update_knowledge_resource do
-      accept [:name, :importance_level, :description, :tag, :dimension, :parent_knowledge_resource_id]
+      accept [:name, :importance_level, :description, :tag, :dimension, :category, :teaching_goal, :parent_knowledge_resource_id]
     end
 
     update :add_tag do
@@ -1153,6 +1155,18 @@ defmodule KgEdu.Knowledge.Resource do
       allow_nil? true
       public? true
       description "Cognitive dimension or category of the knowledge resource"
+    end
+
+    attribute :category, :string do
+      allow_nil? true
+      public? true
+      description "Category classification of the knowledge resource"
+    end
+
+    attribute :teaching_goal, :string do
+      allow_nil? true
+      public? true
+      description "Teaching goal or objective for this knowledge resource"
     end
 
     timestamps()

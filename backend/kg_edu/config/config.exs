@@ -46,7 +46,10 @@ config :ash_typescript,
   zod_import_path: "zod",
   zod_schema_suffix: "ZodSchema",
   phoenix_import_path: "phoenix",
-  require_tenant_parameters: true
+  require_tenant_parameters: true,
+  type_mapping_overrides: [
+    {KgEdu.Types.JsonMap, "Record<string, any>"}
+  ]
 
 config :cinder, default_theme: "modern"
 # config :ash_oban, pro?: false
