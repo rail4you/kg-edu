@@ -26,8 +26,6 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_course_learning_stats_by_student, :get_course_learning_stats_by_student
       rpc_action :add_tag_to_knowledge, :add_tag
       rpc_action :remove_tag_from_knowledge, :remove_tag
-      # rpc_action :get_resource_learning_stats, :student_learning_stats
-      # rpc_action :get_resource, :get_resource
     end
 
     resource KgEdu.Knowledge.Relation do
@@ -58,7 +56,6 @@ defmodule KgEdu.Knowledge do
       rpc_action :unlink_exercise_from_knowledge, :unlink_exercise_from_knowledge
       rpc_action :import_exercises_from_excel, :import_exercises_from_excel
       rpc_action :export_exercise_template, :export_exercise_template
-      # rpc_action :get_exercise_completion_stats, :get_exercise_completion_stats
     end
 
     resource KgEdu.Knowledge.Question do
@@ -92,17 +89,12 @@ defmodule KgEdu.Knowledge do
       rpc_action :list_homeworks, :read
       rpc_action :create_homework, :create
       rpc_action :destroy_homework, :destroy
-      rpc_action :update_homework, :update_homework
       rpc_action :get_homework, :by_id
-      # rpc_action :list_homeworks_by_course, :by_course
-      # rpc_action :list_homeworks_by_chapter, :by_chapter
-      # rpc_action :list_homeworks_by_knowledge_resource, :by_knowledge_resource
-      # rpc_action :list_homeworks_by_creator, :by_creator
+      rpc_action :update_homework, :update_homework
       rpc_action :link_homework_to_knowledge, :link_homework_to_knowledge
       rpc_action :unlink_homework_from_knowledge, :unlink_homework_from_knowledge
       rpc_action :import_homework_from_xlsx, :import_homework_from_xlsx
       rpc_action :export_homework_template, :export_homework_template
-      # rpc_action :get_homework_completion_stats, :get_homework_completion_stats
     end
 
     resource KgEdu.Knowledge.KnowledgePointCognitive do
@@ -112,7 +104,6 @@ defmodule KgEdu.Knowledge do
       rpc_action :update_knowledge_point_cognitive, :update
       rpc_action :get_knowledge_point_cognitive, :by_id
       rpc_action :get_cognitives_by_knowledge_point, :by_knowledge_point
-      rpc_action :get_cognitives_by_knowledge_point_and_level, :by_knowledge_point_and_level
 
       rpc_action :get_knowledge_point_cognitive_by_knowledge_cid_and_level,
                  :get_knowledge_point_cognitive_by_knowledge_cid_and_level
@@ -183,7 +174,6 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_student_exam, :by_id
       rpc_action :get_student_exams_by_exam, :by_exam
       rpc_action :get_student_exams_by_student, :by_student
-      rpc_action :get_student_exam_for_student, :for_student
       rpc_action :start_exam, :start_exam
       rpc_action :continue_or_start_exam, :continue_or_start_exam
       rpc_action :get_in_progress_exam, :get_in_progress_exam
@@ -217,6 +207,40 @@ defmodule KgEdu.Knowledge do
       rpc_action :mark_as_completed, :mark_completed
       rpc_action :dismiss_recommendation, :dismiss
     end
+
+    # Experiment Resources
+    resource KgEdu.Knowledge.Experiment do
+      rpc_action :list_experiments, :read
+      rpc_action :create_experiment, :create
+      rpc_action :update_experiment, :update
+      rpc_action :destroy_experiment, :destroy
+      rpc_action :get_experiment, :read
+      rpc_action :get_experiments_by_course, :by_course
+      rpc_action :get_experiments_by_chapter, :by_chapter
+      rpc_action :get_experiments_by_creator, :by_creator
+      rpc_action :get_published_experiments, :published
+      rpc_action :add_knowledge_resource_to_experiment, :add_knowledge_resource
+      rpc_action :remove_knowledge_resource_from_experiment, :remove_knowledge_resource
+      rpc_action :add_ability_to_experiment, :add_ability
+      rpc_action :remove_ability_from_experiment, :remove_ability
+      rpc_action :update_experiment_guide_file, :update_guide_file
+    end
+
+    resource KgEdu.Knowledge.ExperimentKnowledgeResource do
+      rpc_action :list_experiment_knowledge_resources, :read
+      rpc_action :create_experiment_knowledge_resource, :create
+      rpc_action :destroy_experiment_knowledge_resource, :destroy
+      rpc_action :get_experiment_knowledge_resource, :read
+      rpc_action :get_by_experiment_and_resource, :by_experiment_and_resource
+    end
+
+    resource KgEdu.Knowledge.ExperimentAbility do
+      rpc_action :list_experiment_abilities, :read
+      rpc_action :create_experiment_ability, :create
+      rpc_action :destroy_experiment_ability, :destroy
+      rpc_action :get_experiment_ability, :read
+      rpc_action :get_abilities_by_experiment, :by_experiment
+    end
   end
 
   resources do
@@ -238,5 +262,8 @@ defmodule KgEdu.Knowledge do
     resource KgEdu.Knowledge.StudentExamAnswer
     resource KgEdu.Knowledge.StudentKnowledgeMastery
     resource KgEdu.Knowledge.LearningRecommendation
+    resource KgEdu.Knowledge.Experiment
+    resource KgEdu.Knowledge.ExperimentKnowledgeResource
+    resource KgEdu.Knowledge.ExperimentAbility
   end
 end

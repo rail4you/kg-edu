@@ -931,6 +931,12 @@ defmodule KgEdu.Courses.Course do
       destination_attribute :course_id
       description "Main abilities for this course"
     end
+
+    has_many :experiments, KgEdu.Knowledge.Experiment do
+      public? true
+      destination_attribute :course_id
+      description "Experiments for this course"
+    end
   end
 
   aggregates do
