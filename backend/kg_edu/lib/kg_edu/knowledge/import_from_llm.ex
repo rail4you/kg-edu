@@ -45,7 +45,12 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
     model = config[:model] || "openrouter:z-ai/glm-4.5"
 
     Logger.info("Sending text to LLM for analysis")
-    ReqLLM.put_key(:openrouter_api_key, "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")
+
+    ReqLLM.put_key(
+      :openrouter_api_key,
+      "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"
+    )
+
     case ReqLLM.generate_text(model, prompt) do
       {:ok, response} ->
         case parse_llm_response(response) do
@@ -171,18 +176,20 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
       true ->
         # Validate each knowledge resource
-        resource_errors = Enum.with_index(data.knowledge_resources)
-        |> Enum.map(fn {resource, index} ->
-          validate_knowledge_resource(resource, index)
-        end)
-        |> Enum.reject(&(&1 == :ok))
+        resource_errors =
+          Enum.with_index(data.knowledge_resources)
+          |> Enum.map(fn {resource, index} ->
+            validate_knowledge_resource(resource, index)
+          end)
+          |> Enum.reject(&(&1 == :ok))
 
         # Validate each relation
-        relation_errors = Enum.with_index(data.relations)
-        |> Enum.map(fn {relation, index} ->
-          validate_relation(relation, index)
-        end)
-        |> Enum.reject(&(&1 == :ok))
+        relation_errors =
+          Enum.with_index(data.relations)
+          |> Enum.map(fn {relation, index} ->
+            validate_relation(relation, index)
+          end)
+          |> Enum.reject(&(&1 == :ok))
 
         errors = resource_errors ++ relation_errors
 
@@ -200,7 +207,8 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
         {:error, "knowledge_resources[#{index}].name is required"}
 
       resource.type not in ["subject", "knowledge_unit", "knowledge_cell"] ->
-        {:error, "knowledge_resources[#{index}].type must be one of: subject, knowledge_unit, knowledge_cell"}
+        {:error,
+         "knowledge_resources[#{index}].type must be one of: subject, knowledge_unit, knowledge_cell"}
 
       not is_binary(resource.subject) or resource.subject == "" ->
         {:error, "knowledge_resources[#{index}].subject is required"}
@@ -209,9 +217,10 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
         {:error, "knowledge_resources[#{index}].unit is required for knowledge_unit type"}
 
       resource.type == "knowledge_cell" and
-          (not is_binary(resource.unit) or resource.unit == "") and
+        (not is_binary(resource.unit) or resource.unit == "") and
           (resource.subject == nil or resource.subject == "") ->
-        {:error, "knowledge_resources[#{index}].unit or valid subject reference is required for knowledge_cell type"}
+        {:error,
+         "knowledge_resources[#{index}].unit or valid subject reference is required for knowledge_cell type"}
 
       true ->
         :ok
@@ -287,7 +296,11 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
   end
 
   defp find_existing_resource(name, course_id) do
-    case Resource.get_by_name_and_course(%{name: name, knowledge_type: :knowledge_cell, course_id: course_id}) do
+    case Resource.get_by_name_and_course(%{
+           name: name,
+           knowledge_type: :knowledge_cell,
+           course_id: course_id
+         }) do
       {:ok, resource} -> {:ok, resource}
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} -> {:error, :not_found}
       {:error, reason} -> {:error, reason}
@@ -298,12 +311,13 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
     knowledge_type = parse_knowledge_type(resource_data.type)
 
     # Handle missing unit field for knowledge_cell by creating a default unit
-    {unit, needs_default_unit} = case {knowledge_type, resource_data.unit} do
-      {:knowledge_cell, nil} -> {"默认单元", true}
-      {:knowledge_cell, ""} -> {"默认单元", true}
-      {_, unit} when is_binary(unit) -> {unit, false}
-      _ -> {"", false}
-    end
+    {unit, needs_default_unit} =
+      case {knowledge_type, resource_data.unit} do
+        {:knowledge_cell, nil} -> {"默认单元", true}
+        {:knowledge_cell, ""} -> {"默认单元", true}
+        {_, unit} when is_binary(unit) -> {unit, false}
+        _ -> {"", false}
+      end
 
     attrs = %{
       name: resource_data.name,
@@ -313,43 +327,47 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
       importance_level: parse_importance_level(resource_data.importance_level),
       knowledge_type: knowledge_type,
       course_id: course_id,
-      parent_subject_id: nil,  # Will be set later if needed
-      parent_unit_id: nil      # Will be set later if needed
+      # Will be set later if needed
+      parent_subject_id: nil,
+      # Will be set later if needed
+      parent_unit_id: nil
     }
 
     # Set parent relationships based on type
-    attrs = case knowledge_type do
-      :knowledge_unit ->
-        case find_or_create_parent_subject(resource_data.subject, course_id, opts) do
-          {:ok, subject_id} -> Map.put(attrs, :parent_subject_id, subject_id)
-          _ -> attrs
-        end
-
-      :knowledge_cell ->
-        # Ensure parent subject exists
-        attrs = case find_or_create_parent_subject(resource_data.subject, course_id, opts) do
-          {:ok, subject_id} -> Map.put(attrs, :parent_subject_id, subject_id)
-          _ -> attrs
-        end
-
-        # Handle parent unit
-        if needs_default_unit do
-          # Create default unit if needed
-          case find_or_create_default_unit(resource_data.subject, course_id, opts) do
-            {:ok, unit_id} -> Map.put(attrs, :parent_unit_id, unit_id)
+    attrs =
+      case knowledge_type do
+        :knowledge_unit ->
+          case find_or_create_parent_subject(resource_data.subject, course_id, opts) do
+            {:ok, subject_id} -> Map.put(attrs, :parent_subject_id, subject_id)
             _ -> attrs
           end
-        else
-          # Find existing unit
-          case find_parent_unit(unit, course_id) do
-            {:ok, unit_id} -> Map.put(attrs, :parent_unit_id, unit_id)
-            _ -> attrs
-          end
-        end
 
-      _ ->
-        attrs
-    end
+        :knowledge_cell ->
+          # Ensure parent subject exists
+          attrs =
+            case find_or_create_parent_subject(resource_data.subject, course_id, opts) do
+              {:ok, subject_id} -> Map.put(attrs, :parent_subject_id, subject_id)
+              _ -> attrs
+            end
+
+          # Handle parent unit
+          if needs_default_unit do
+            # Create default unit if needed
+            case find_or_create_default_unit(resource_data.subject, course_id, opts) do
+              {:ok, unit_id} -> Map.put(attrs, :parent_unit_id, unit_id)
+              _ -> attrs
+            end
+          else
+            # Find existing unit
+            case find_parent_unit(unit, course_id) do
+              {:ok, unit_id} -> Map.put(attrs, :parent_unit_id, unit_id)
+              _ -> attrs
+            end
+          end
+
+        _ ->
+          attrs
+      end
 
     case Resource.create_knowledge_resource(attrs, opts) do
       {:ok, resource} ->
@@ -374,16 +392,16 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
   defp find_parent_subject(subject_name, course_id) do
     case Resource.list_knowledges(
-      authorize?: false,
-      query: [
-        filter: [
-          name: subject_name,
-          knowledge_type: :subject,
-          course_id: course_id
-        ],
-        limit: 1
-      ]
-    ) do
+           authorize?: false,
+           query: [
+             filter: [
+               name: subject_name,
+               knowledge_type: :subject,
+               course_id: course_id
+             ],
+             limit: 1
+           ]
+         ) do
       {:ok, [subject]} -> {:ok, subject.id}
       {:ok, []} -> {:error, :not_found}
       {:error, reason} -> {:error, reason}
@@ -465,16 +483,16 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
   defp find_parent_unit(unit_name, course_id) do
     case Resource.list_knowledges(
-      authorize?: false,
-      query: [
-        filter: [
-          name: unit_name,
-          knowledge_type: :knowledge_unit,
-          course_id: course_id
-        ],
-        limit: 1
-      ]
-    ) do
+           authorize?: false,
+           query: [
+             filter: [
+               name: unit_name,
+               knowledge_type: :knowledge_unit,
+               course_id: course_id
+             ],
+             limit: 1
+           ]
+         ) do
       {:ok, [unit]} -> {:ok, unit.id}
       {:ok, []} -> {:error, :not_found}
       {:error, reason} -> {:error, reason}
@@ -495,10 +513,11 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
   defp create_single_relation(relation_data, resource_map, opts) do
     # Find source and target resources
-    with {:ok, source_resource} <- find_resource_in_map(relation_data.source_knowledge, resource_map),
-         {:ok, target_resource} <- find_resource_in_map(relation_data.target_knowledge, resource_map),
+    with {:ok, source_resource} <-
+           find_resource_in_map(relation_data.source_knowledge, resource_map),
+         {:ok, target_resource} <-
+           find_resource_in_map(relation_data.target_knowledge, resource_map),
          {:ok, relation_type} <- create_or_get_relation_type(relation_data.relation_type) do
-
       # Check if relation already exists
       case find_existing_relation(source_resource.id, target_resource.id, relation_type.id) do
         {:ok, []} ->
@@ -511,7 +530,10 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
           case Relation.create_relation_import(relation_attrs, opts) do
             {:ok, relation} ->
-              Logger.info("Created relation: #{source_resource.name} -> #{target_resource.name} (#{relation_type.name})")
+              Logger.info(
+                "Created relation: #{source_resource.name} -> #{target_resource.name} (#{relation_type.name})"
+              )
+
               {:ok, relation}
 
             {:error, reason} ->
@@ -546,17 +568,23 @@ defmodule KgEdu.Knowledge.ImportFromLLM do
 
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
         # Create new relation type using upsert_relation_type action
-        case RelationType.upsert_relation_type(%{
-          name: relation_type_name,
-          display_name: String.capitalize(relation_type_name) |> String.replace("_", " "),
-          description: "从文本导入的关系类型: #{relation_type_name}"
-        }, authorize?: false) do
+        case RelationType.upsert_relation_type(
+               %{
+                 name: relation_type_name,
+                 display_name: String.capitalize(relation_type_name) |> String.replace("_", " "),
+                 description: "从文本导入的关系类型: #{relation_type_name}"
+               },
+               authorize?: false
+             ) do
           {:ok, relation_type} ->
             Logger.info("Created relation type: #{relation_type_name}")
             {:ok, relation_type}
 
           {:error, reason} ->
-            Logger.error("Failed to create relation type '#{relation_type_name}': #{inspect(reason)}")
+            Logger.error(
+              "Failed to create relation type '#{relation_type_name}': #{inspect(reason)}"
+            )
+
             {:error, reason}
         end
 

@@ -1,11 +1,11 @@
 defmodule KgEdu.ExcelImportTest do
   use ExUnit.Case, async: true
-  
+
   alias KgEdu.ExcelImport
   alias KgEdu.Test.ExcelTestHelper
 
   @moduletag :capture_log
-  
+
   describe "import_from_excel/2" do
     test "imports excel file with valid base64 data and attributes" do
       # Create test data
@@ -17,13 +17,13 @@ defmodule KgEdu.ExcelImportTest do
         ["Charlie", "35"],
         ["Diana", "28"]
       ]
-      
+
       base64_content = ExcelTestHelper.create_test_excel_base64(test_data)
-      
+
       # Note: This test uses CSV format, but demonstrates the expected behavior
       # Real implementation would work with actual Excel files
       result = ExcelImport.import_from_excel(base64_content, ["name", "age"])
-      
+
       # The result will be an error with CSV format, but the structure is correct
       # In production with real Excel files, this would succeed
       assert match?({:error, _}, result)
@@ -31,14 +31,15 @@ defmodule KgEdu.ExcelImportTest do
 
     test "handles empty excel file" do
       base64_content = Base.encode64("")
-      
+
       assert {:error, _reason} = ExcelImport.import_from_excel(base64_content, ["name", "age"])
     end
 
     test "handles invalid base64 data" do
       invalid_base64 = "invalid_base64_string"
-      
-      assert {:error, "Invalid base64 data"} = ExcelImport.import_from_excel(invalid_base64, ["name", "age"])
+
+      assert {:error, "Invalid base64 data"} =
+               ExcelImport.import_from_excel(invalid_base64, ["name", "age"])
     end
 
     test "handles excel file with fewer columns than attributes" do
@@ -49,11 +50,13 @@ defmodule KgEdu.ExcelImportTest do
       Alice
       Bob
       """
-      
+
       base64_content = Base.encode64(csv_content)
-      
+
       # Would return maps with nil for missing columns
-      assert {:ok, result} = ExcelImport.import_from_excel(base64_content, ["name", "age", "city"])
+      assert {:ok, result} =
+               ExcelImport.import_from_excel(base64_content, ["name", "age", "city"])
+
       assert length(result) == 2
       assert Enum.at(result, 0) == %{name: "Alice", age: nil, city: nil}
     end
@@ -66,9 +69,9 @@ defmodule KgEdu.ExcelImportTest do
       Alice,25,NYC,USA
       Bob,30,LA,USA
       """
-      
+
       base64_content = Base.encode64(csv_content)
-      
+
       # Should only map to requested attributes
       assert {:ok, result} = ExcelImport.import_from_excel(base64_content, ["name", "age"])
       assert length(result) == 2
@@ -83,9 +86,9 @@ defmodule KgEdu.ExcelImportTest do
       ,30
       Charlie,35
       """
-      
+
       base64_content = Base.encode64(csv_content)
-      
+
       assert {:ok, result} = ExcelImport.import_from_excel(base64_content, ["name", "age"])
       assert Enum.at(result, 0) == %{name: "Alice", age: nil}
       assert Enum.at(result, 1) == %{name: nil, age: 30}
@@ -99,9 +102,9 @@ defmodule KgEdu.ExcelImportTest do
       # For now, we'll test the structure
       file_path = "nonexistent.xlsx"
       attributes = ["name", "age"]
-      
+
       result = ExcelImport.parse_excel_file(file_path, attributes)
-      
+
       # Should return error for nonexistent file
       assert {:error, _reason} = result
     end
@@ -115,10 +118,12 @@ defmodule KgEdu.ExcelImportTest do
       Alice,25,100
       Bob,30,95
       """
-      
+
       base64_content = Base.encode64(csv_content)
-      
-      assert {:ok, result} = ExcelImport.import_from_excel(base64_content, ["name", "age", "score"])
+
+      assert {:ok, result} =
+               ExcelImport.import_from_excel(base64_content, ["name", "age", "score"])
+
       assert Enum.at(result, 0) == %{name: "Alice", age: 25, score: 100}
       assert is_integer(Enum.at(result, 0).age)
       assert is_integer(Enum.at(result, 0).score)
@@ -131,10 +136,12 @@ defmodule KgEdu.ExcelImportTest do
       Alice,5.5,120.5
       Bob,6.0,180.0
       """
-      
+
       base64_content = Base.encode64(csv_content)
-      
-      assert {:ok, result} = ExcelImport.import_from_excel(base64_content, ["name", "height", "weight"])
+
+      assert {:ok, result} =
+               ExcelImport.import_from_excel(base64_content, ["name", "height", "weight"])
+
       assert Enum.at(result, 0) == %{name: "Alice", height: 5.5, weight: 120.5}
       assert is_float(Enum.at(result, 0).height)
       assert is_float(Enum.at(result, 0).weight)

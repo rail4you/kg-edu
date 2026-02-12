@@ -46,11 +46,25 @@ defmodule KgEdu.KnowledgeHierarchyHelper do
           end)
 
         # Group by detected level
-        level_3_cells = Enum.filter(cells_with_levels, fn {_, level} -> level == 3 end) |> Enum.map(fn {cell, _} -> cell end)
-        level_4_cells = Enum.filter(cells_with_levels, fn {_, level} -> level == 4 end) |> Enum.map(fn {cell, _} -> cell end)
-        level_5_cells = Enum.filter(cells_with_levels, fn {_, level} -> level == 5 end) |> Enum.map(fn {cell, _} -> cell end)
-        level_6_cells = Enum.filter(cells_with_levels, fn {_, level} -> level == 6 end) |> Enum.map(fn {cell, _} -> cell end)
-        level_7_cells = Enum.filter(cells_with_levels, fn {_, level} -> level == 7 end) |> Enum.map(fn {cell, _} -> cell end)
+        level_3_cells =
+          Enum.filter(cells_with_levels, fn {_, level} -> level == 3 end)
+          |> Enum.map(fn {cell, _} -> cell end)
+
+        level_4_cells =
+          Enum.filter(cells_with_levels, fn {_, level} -> level == 4 end)
+          |> Enum.map(fn {cell, _} -> cell end)
+
+        level_5_cells =
+          Enum.filter(cells_with_levels, fn {_, level} -> level == 5 end)
+          |> Enum.map(fn {cell, _} -> cell end)
+
+        level_6_cells =
+          Enum.filter(cells_with_levels, fn {_, level} -> level == 6 end)
+          |> Enum.map(fn {cell, _} -> cell end)
+
+        level_7_cells =
+          Enum.filter(cells_with_levels, fn {_, level} -> level == 7 end)
+          |> Enum.map(fn {cell, _} -> cell end)
 
         # If no level detected, use simple ordering (first 2 are level 3, rest are nested)
         {level_3_cells, nested_cells} =
@@ -125,9 +139,10 @@ defmodule KgEdu.KnowledgeHierarchyHelper do
       # If level detected, find parent by level
       cell_level && cell_level > 3 ->
         # Find potential parent with level = cell_level - 1
-        parent_cell = Enum.find(all_cells, fn c ->
-          extract_level_from_name(c.name) == cell_level - 1
-        end)
+        parent_cell =
+          Enum.find(all_cells, fn c ->
+            extract_level_from_name(c.name) == cell_level - 1
+          end)
 
         if parent_cell, do: parent_cell.id, else: find_previous_cell(all_cells, cell_index)
 
@@ -152,5 +167,6 @@ defmodule KgEdu.KnowledgeHierarchyHelper do
   defp find_previous_cell(cells, index) when index > 0 do
     Enum.at(cells, index - 1).id
   end
+
   defp find_previous_cell(_, _), do: nil
 end

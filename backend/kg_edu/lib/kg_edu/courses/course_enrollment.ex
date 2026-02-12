@@ -7,13 +7,10 @@ defmodule KgEdu.Courses.CourseEnrollment do
     extensions: [AshJsonApi.Resource, AshTypescript.Resource, AshTypescript.Rpc]
 
   require Ash.Query
+
   postgres do
     table "course_enrollments"
     repo KgEdu.Repo
-  end
-
-  multitenancy do
-    strategy :context
   end
 
   json_api do
@@ -52,7 +49,6 @@ defmodule KgEdu.Courses.CourseEnrollment do
       primary? true
     end
 
-
     action :bulk_enroll do
       description "Enroll multiple students in a course"
 
@@ -72,7 +68,10 @@ defmodule KgEdu.Courses.CourseEnrollment do
             %{member_id: member_id, course_id: input.arguments.course_id}
           end)
 
-        case Ash.bulk_create(input, __MODULE__, :create, return_records?: true, tenant: context.tenant) do
+        case Ash.bulk_create(input, __MODULE__, :create,
+               return_records?: true,
+               tenant: context.tenant
+             ) do
           %Ash.BulkResult{records: records, errors: []} ->
             :ok
 
@@ -137,22 +136,25 @@ defmodule KgEdu.Courses.CourseEnrollment do
           {:ok, enrollments} ->
             target_enrollments =
               enrollments
-              |> Enum.filter(&(&1.course_id == input.arguments.course_id and
-                               input.arguments.member_ids |> Enum.member?(&1.member_id)))
+              |> Enum.filter(
+                &(&1.course_id == input.arguments.course_id and
+                    input.arguments.member_ids |> Enum.member?(&1.member_id))
+              )
 
             # Destroy the filtered enrollments one by one
             case Enum.map(target_enrollments, fn enrollment ->
-              Ash.destroy(enrollment, tenant: context.tenant)
-            end) do
+                   Ash.destroy(enrollment, tenant: context.tenant)
+                 end) do
               results ->
                 case Enum.find(results, fn
-                  {:error, _} -> true
-                  _ -> false
-                end) do
+                       {:error, _} -> true
+                       _ -> false
+                     end) do
                   nil -> :ok
                   {:error, reason} -> {:error, reason}
                 end
             end
+
           {:error, reason} ->
             {:error, reason}
         end
@@ -183,6 +185,10 @@ defmodule KgEdu.Courses.CourseEnrollment do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

@@ -20,10 +20,6 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   typescript do
     type_name "SubAbilityKnowledgeResource"
   end
@@ -45,6 +41,7 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
 
     read :by_sub_ability do
       description "Get all join records for a specific sub-ability"
+
       argument :sub_ability_id, :uuid do
         allow_nil? false
       end
@@ -54,6 +51,7 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
 
     read :by_knowledge_resource do
       description "Get all join records for a specific knowledge resource"
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
       end
@@ -66,6 +64,10 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

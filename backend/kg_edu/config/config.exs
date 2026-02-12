@@ -124,7 +124,16 @@ config :ash, :missed_notifications, :ignore
 config :kg_edu,
   ecto_repos: [KgEdu.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [KgEdu.Accounts, KgEdu.Courses, KgEdu.Knowledge, KgEdu.AI, KgEdu.Utils, KgEdu.Activity, KgEdu.Email, KgEdu.Attendance]
+  ash_domains: [
+    KgEdu.Accounts,
+    KgEdu.Courses,
+    KgEdu.Knowledge,
+    KgEdu.AI,
+    KgEdu.Utils,
+    KgEdu.Activity,
+    KgEdu.Email,
+    KgEdu.Attendance
+  ]
 
 # Configures the endpoint
 config :kg_edu, KgEduWeb.Endpoint,
@@ -191,8 +200,7 @@ config :kg_edu, :reqllm,
   model: "openrouter:z-ai/glm-4.5"
 
 # Email API endpoint configuration
-config :kg_edu, :email_api,
-  endpoint: "http://localhost:5000/agent/email"
+config :kg_edu, :email_api, endpoint: "http://localhost:5000/agent/email"
 
 # Waffle configuration for file uploads
 # config :waffle,

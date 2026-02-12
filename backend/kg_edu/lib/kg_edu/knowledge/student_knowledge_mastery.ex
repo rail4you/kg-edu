@@ -13,10 +13,6 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
   require Ash.Query
   require Logger
 
-  typescript do
-    type_name "StudentKnowledgeMastery"
-  end
-
   postgres do
     table "student_knowledge_masteries"
     repo KgEdu.Repo
@@ -27,12 +23,12 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "student_knowledge_mastery"
+  end
+
+  typescript do
+    type_name "StudentKnowledgeMastery"
   end
 
   code_interface do
@@ -61,7 +57,11 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
       get? true
       argument :student_id, :uuid, allow_nil?: false
       argument :knowledge_resource_id, :uuid, allow_nil?: false
-      filter expr(student_id == ^arg(:student_id) and knowledge_resource_id == ^arg(:knowledge_resource_id))
+
+      filter expr(
+               student_id == ^arg(:student_id) and
+                 knowledge_resource_id == ^arg(:knowledge_resource_id)
+             )
     end
 
     read :by_student do
@@ -81,9 +81,9 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
       argument :course_id, :uuid, allow_nil?: true
 
       filter expr(
-        student_id == ^arg(:student_id) and
-        mastery_level < ^arg(:threshold)
-      )
+               student_id == ^arg(:student_id) and
+                 mastery_level < ^arg(:threshold)
+             )
 
       prepare fn query, _context ->
         course_id = Ash.Query.get_argument(query, :course_id)
@@ -104,15 +104,35 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
 
     create :create do
       description "Create a new mastery record"
-      accept [:student_id, :knowledge_resource_id, :mastery_level, :correct_count, :wrong_count, :practice_count]
+
+      accept [
+        :student_id,
+        :knowledge_resource_id,
+        :mastery_level,
+        :correct_count,
+        :wrong_count,
+        :practice_count
+      ]
 
       change fn changeset, _context ->
         # Set initial values
         changeset
-        |> Ash.Changeset.change_attribute(:mastery_level, Ash.Changeset.get_attribute(changeset, :mastery_level) || 0.0)
-        |> Ash.Changeset.change_attribute(:correct_count, Ash.Changeset.get_attribute(changeset, :correct_count) || 0)
-        |> Ash.Changeset.change_attribute(:wrong_count, Ash.Changeset.get_attribute(changeset, :wrong_count) || 0)
-        |> Ash.Changeset.change_attribute(:practice_count, Ash.Changeset.get_attribute(changeset, :practice_count) || 0)
+        |> Ash.Changeset.change_attribute(
+          :mastery_level,
+          Ash.Changeset.get_attribute(changeset, :mastery_level) || 0.0
+        )
+        |> Ash.Changeset.change_attribute(
+          :correct_count,
+          Ash.Changeset.get_attribute(changeset, :correct_count) || 0
+        )
+        |> Ash.Changeset.change_attribute(
+          :wrong_count,
+          Ash.Changeset.get_attribute(changeset, :wrong_count) || 0
+        )
+        |> Ash.Changeset.change_attribute(
+          :practice_count,
+          Ash.Changeset.get_attribute(changeset, :practice_count) || 0
+        )
         |> Ash.Changeset.change_attribute(:last_practiced_at, DateTime.utc_now())
       end
     end
@@ -129,6 +149,7 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
 
     action :update_from_exam do
       description "Update mastery based on exam performance"
+
       argument :student_id, :uuid do
         allow_nil? false
         description "Student ID"
@@ -154,13 +175,14 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
         accuracy = if total > 0, do: correct / total, else: 0.0
 
         # Get or create mastery record
-        case KgEdu.Knowledge.StudentKnowledgeMastery.get_student_mastery_for_knowledge(%{
-               student_id: student_id,
-               knowledge_resource_id: knowledge_resource_id
-             },
-             tenant: context.tenant,
-             authorize?: false
-           ) do
+        case KgEdu.Knowledge.StudentKnowledgeMastery.get_student_mastery_for_knowledge(
+               %{
+                 student_id: student_id,
+                 knowledge_resource_id: knowledge_resource_id
+               },
+               tenant: context.tenant,
+               authorize?: false
+             ) do
           {:ok, mastery} ->
             # Update existing record with weighted average
             old_mastery = mastery.mastery_level || 0.0
@@ -207,6 +229,7 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
 
     action :update_from_exercise do
       description "Update mastery based on exercise practice (single question)"
+
       argument :student_id, :uuid do
         allow_nil? false
       end
@@ -226,13 +249,14 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
         is_correct = input.arguments.is_correct
 
         # Get or create mastery record
-        case KgEdu.Knowledge.StudentKnowledgeMastery.get_student_mastery_for_knowledge(%{
-               student_id: student_id,
-               knowledge_resource_id: knowledge_resource_id
-             },
-             tenant: context.tenant,
-             authorize?: false
-           ) do
+        case KgEdu.Knowledge.StudentKnowledgeMastery.get_student_mastery_for_knowledge(
+               %{
+                 student_id: student_id,
+                 knowledge_resource_id: knowledge_resource_id
+               },
+               tenant: context.tenant,
+               authorize?: false
+             ) do
           {:ok, mastery} ->
             # Calculate new mastery level with small incremental updates
             correct_increment = if is_correct, do: 1, else: 0
@@ -242,11 +266,12 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
             new_wrong = mastery.wrong_count + wrong_increment
             total_attempts = new_correct + new_wrong
 
-            new_mastery = if total_attempts > 0 do
-              new_correct / total_attempts
-            else
-              mastery.mastery_level
-            end
+            new_mastery =
+              if total_attempts > 0 do
+                new_correct / total_attempts
+              else
+                mastery.mastery_level
+              end
 
             update_attrs = %{
               mastery_level: Float.round(new_mastery, 3),
@@ -291,6 +316,7 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
 
     action :recalculate_mastery do
       description "Recalculate mastery level from scratch based on all exercise and exam data"
+
       argument :student_id, :uuid do
         allow_nil? false
       end
@@ -322,20 +348,22 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
         total_correct = Enum.sum(exercise_attempts.correct ++ exam_results.correct)
         total_attempts = Enum.sum(exercise_attempts.total ++ exam_results.total)
 
-        new_mastery = if total_attempts > 0 do
-          total_correct / total_attempts
-        else
-          0.0
-        end
+        new_mastery =
+          if total_attempts > 0 do
+            total_correct / total_attempts
+          else
+            0.0
+          end
 
         # Get or create mastery record
-        case KgEdu.Knowledge.StudentKnowledgeMastery.get_student_mastery_for_knowledge(%{
-               student_id: student_id,
-               knowledge_resource_id: knowledge_resource_id
-             },
-             tenant: tenant,
-             authorize?: false
-           ) do
+        case KgEdu.Knowledge.StudentKnowledgeMastery.get_student_mastery_for_knowledge(
+               %{
+                 student_id: student_id,
+                 knowledge_resource_id: knowledge_resource_id
+               },
+               tenant: tenant,
+               authorize?: false
+             ) do
           {:ok, mastery} ->
             Ash.update(
               KgEdu.Knowledge.StudentKnowledgeMastery,
@@ -378,6 +406,10 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

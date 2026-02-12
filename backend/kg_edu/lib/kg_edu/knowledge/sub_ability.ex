@@ -16,10 +16,6 @@ defmodule KgEdu.Knowledge.SubAbility do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "sub_ability"
   end
@@ -53,6 +49,7 @@ defmodule KgEdu.Knowledge.SubAbility do
 
     read :by_main_ability do
       description "Get all sub-abilities for a specific main ability"
+
       argument :main_ability_id, :uuid do
         allow_nil? false
       end
@@ -62,6 +59,7 @@ defmodule KgEdu.Knowledge.SubAbility do
 
     read :by_name do
       description "Get a sub-ability by name within a main ability"
+
       argument :name, :string do
         allow_nil? false
       end
@@ -91,6 +89,10 @@ defmodule KgEdu.Knowledge.SubAbility do
     policy action_type(:destroy) do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

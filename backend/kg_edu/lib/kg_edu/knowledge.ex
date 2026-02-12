@@ -1,5 +1,7 @@
 defmodule KgEdu.Knowledge do
-  use Ash.Domain, otp_app: :kg_edu, extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc, AshAi]
+  use Ash.Domain,
+    otp_app: :kg_edu,
+    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc, AshAi]
 
   admin do
     show? true
@@ -111,7 +113,10 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_knowledge_point_cognitive, :by_id
       rpc_action :get_cognitives_by_knowledge_point, :by_knowledge_point
       rpc_action :get_cognitives_by_knowledge_point_and_level, :by_knowledge_point_and_level
-      rpc_action :get_knowledge_point_cognitive_by_knowledge_cid_and_level, :get_knowledge_point_cognitive_by_knowledge_cid_and_level
+
+      rpc_action :get_knowledge_point_cognitive_by_knowledge_cid_and_level,
+                 :get_knowledge_point_cognitive_by_knowledge_cid_and_level
+
       rpc_action :get_cognitives_by_level, :by_level
       rpc_action :get_cognitives_by_course, :by_course
     end
@@ -213,8 +218,6 @@ defmodule KgEdu.Knowledge do
       rpc_action :dismiss_recommendation, :dismiss
     end
   end
-
-
 
   resources do
     resource KgEdu.Knowledge.Resource

@@ -25,12 +25,14 @@ defmodule KgEdu.ExcelImport do
       {:ok, [%{name: "Alice", age: 25}, %{name: "Bob", age: 30}]}
   """
   require Logger
+
   def import_file_from_excel(excel_file, attributes) do
     excel_file_data = File.read!(excel_file) |> Base.encode64()
     import_from_excel(excel_file_data, attributes)
   end
 
-  def import_from_excel(excel_file, attributes) when is_binary(excel_file) and is_list(attributes) do
+  def import_from_excel(excel_file, attributes)
+      when is_binary(excel_file) and is_list(attributes) do
     with {:ok, binary_data} <- Base.decode64(excel_file),
          {:ok, temp_path} <- create_temp_file(binary_data),
          {:ok, result} <- parse_excel_file(temp_path, attributes) do
@@ -58,7 +60,8 @@ defmodule KgEdu.ExcelImport do
       iex> ExcelImport.import_from_excel_file("path/to/file.xlsx", ["name", "age"])
       {:ok, [%{name: "Alice", age: 25}, %{name: "Bob", age: 30}]}
   """
-  def import_from_excel_file(file_path, attributes) when is_binary(file_path) and is_list(attributes) do
+  def import_from_excel_file(file_path, attributes)
+      when is_binary(file_path) and is_list(attributes) do
     parse_excel_file(file_path, attributes)
   end
 
@@ -106,14 +109,18 @@ defmodule KgEdu.ExcelImport do
           filtered_rows = data_rows
 
           # Map each valid row to attributes
-          result = Enum.map(filtered_rows, fn row ->
-            map_row_to_attributes(row, attributes)
-          end)
+          result =
+            Enum.map(filtered_rows, fn row ->
+              map_row_to_attributes(row, attributes)
+            end)
 
           # Filter out results that are nil (from invalid rows)
           result = Enum.filter(result, &(&1 != nil))
 
-          Logger.info("processed #{length(result)} valid rows from #{length(data_rows)} data rows")
+          Logger.info(
+            "processed #{length(result)} valid rows from #{length(data_rows)} data rows"
+          )
+
           {:ok, result}
         rescue
           e ->
@@ -155,18 +162,22 @@ defmodule KgEdu.ExcelImport do
       relevant_columns = Enum.take(row, length(attributes))
 
       # Pad with nil values if row has fewer columns than attributes
-      padded_columns = case length(relevant_columns) < length(attributes) do
-        true ->
-          relevant_columns ++ List.duplicate(nil, length(attributes) - length(relevant_columns))
-        false ->
-          relevant_columns
-      end
+      padded_columns =
+        case length(relevant_columns) < length(attributes) do
+          true ->
+            relevant_columns ++ List.duplicate(nil, length(attributes) - length(relevant_columns))
+
+          false ->
+            relevant_columns
+        end
 
       # Create map by zipping attributes with values
-      result = attributes
-               |> Enum.zip(padded_columns)
-               |> Enum.into(%{})
-               |> clean_values()
+      result =
+        attributes
+        |> Enum.zip(padded_columns)
+        |> Enum.into(%{})
+        |> clean_values()
+
       result
       # Validate that we have at least the required fields (member_id, name, password)
       # if has_required_basic_fields?(result) do
@@ -187,20 +198,23 @@ defmodule KgEdu.ExcelImport do
   # Generic validation that works for different data types
   defp has_required_basic_fields?(map) do
     # For exercises: title or question_content
-    exercise_fields = not is_nil(map[:title]) and map[:title] != "" or
-                     not is_nil(map[:question_content]) and map[:question_content] != ""
+    exercise_fields =
+      (not is_nil(map[:title]) and map[:title] != "") or
+        (not is_nil(map[:question_content]) and map[:question_content] != "")
 
     # For homeworks: title or content
-    homework_fields = not is_nil(map[:title]) and map[:title] != "" or
-                     not is_nil(map[:content]) and map[:content] != ""
+    homework_fields =
+      (not is_nil(map[:title]) and map[:title] != "") or
+        (not is_nil(map[:content]) and map[:content] != "")
 
     # For questions: title
     question_fields = not is_nil(map[:title]) and map[:title] != ""
 
     # For users: member_id, name, password (legacy)
-    user_fields = not is_nil(map[:member_id]) and map[:member_id] != "" and
-                  not is_nil(map[:name]) and map[:name] != "" and
-                  not is_nil(map[:password]) and map[:password] != ""
+    user_fields =
+      not is_nil(map[:member_id]) and map[:member_id] != "" and
+        not is_nil(map[:name]) and map[:name] != "" and
+        not is_nil(map[:password]) and map[:password] != ""
 
     # Accept any valid data type
     exercise_fields or homework_fields or question_fields or user_fields
@@ -215,26 +229,40 @@ defmodule KgEdu.ExcelImport do
   defp clean_values(map) do
     map
     |> Enum.map(fn {key, value} ->
-      cleaned_value = case value do
-        "" -> nil
-        nil -> nil
-        value when is_binary(value) ->
-          # Clean Unicode escape sequences first
-          cleaned_text = clean_text(value)
+      cleaned_value =
+        case value do
+          "" ->
+            nil
 
-          # Try to convert to number if possible
-          case Integer.parse(cleaned_text) do
-            {int_val, ""} -> int_val
-            {int_val, _remainder} -> int_val  # Accept partial parsing (e.g., "1234566`" -> 1234566)
-            :error ->
-              case Float.parse(cleaned_text) do
-                {float_val, ""} -> float_val
-                {float_val, _remainder} -> float_val  # Accept partial parsing
-                :error -> cleaned_text
-              end
-          end
-        value -> value
-      end
+          nil ->
+            nil
+
+          value when is_binary(value) ->
+            # Clean Unicode escape sequences first
+            cleaned_text = clean_text(value)
+
+            # Try to convert to number if possible
+            case Integer.parse(cleaned_text) do
+              {int_val, ""} ->
+                int_val
+
+              # Accept partial parsing (e.g., "1234566`" -> 1234566)
+              {int_val, _remainder} ->
+                int_val
+
+              :error ->
+                case Float.parse(cleaned_text) do
+                  {float_val, ""} -> float_val
+                  # Accept partial parsing
+                  {float_val, _remainder} -> float_val
+                  :error -> cleaned_text
+                end
+            end
+
+          value ->
+            value
+        end
+
       {key, cleaned_value}
     end)
     |> Enum.into(%{})
@@ -264,6 +292,7 @@ defmodule KgEdu.ExcelImport do
   """
   defp create_temp_file(binary_data) do
     temp_path = get_temp_path()
+
     case File.write(temp_path, binary_data) do
       :ok -> {:ok, temp_path}
       {:error, reason} -> {:error, "Failed to create temporary file: #{reason}"}

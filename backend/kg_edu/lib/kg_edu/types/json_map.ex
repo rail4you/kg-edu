@@ -53,5 +53,4 @@ defmodule KgEdu.Types.JsonMap do
   def dump_to_native(_value, _constraints) do
     {:error, "Cannot dump non-map value"}
   end
-
 end

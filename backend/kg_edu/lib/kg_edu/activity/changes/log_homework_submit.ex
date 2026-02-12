@@ -10,10 +10,10 @@ defmodule KgEdu.Activity.Changes.LogHomeworkSubmit do
     user_id = get_user_id(changeset, context, opts)
     homework_id = get_homework_id(changeset, opts)
     answer = get_answer(changeset, opts)
-    
+
     if user_id && homework_id && answer do
       metadata = Map.get(opts, :metadata, %{})
-      
+
       # Log the activity asynchronously to avoid blocking the main action
       Task.start(fn ->
         KgEdu.Activity.ActivityLog.log_homework_submit(%{
@@ -24,7 +24,7 @@ defmodule KgEdu.Activity.Changes.LogHomeworkSubmit do
         })
       end)
     end
-    
+
     changeset
   end
 
@@ -34,15 +34,19 @@ defmodule KgEdu.Activity.Changes.LogHomeworkSubmit do
       nil ->
         # Try to get from context
         case Map.get(context, :user) do
-          %{id: user_id} -> user_id
-          _ -> 
+          %{id: user_id} ->
+            user_id
+
+          _ ->
             # Try to get from actor
             case Map.get(context, :actor) do
               %{id: user_id} -> user_id
               _ -> nil
             end
         end
-      user_id -> user_id
+
+      user_id ->
+        user_id
     end
   end
 
@@ -51,9 +55,11 @@ defmodule KgEdu.Activity.Changes.LogHomeworkSubmit do
     case Keyword.get(opts, :homework_id) do
       nil ->
         # Try to get from changeset data or attributes
-        Ash.Changeset.get_attribute(changeset, :id) || 
-        Ash.Changeset.get_attribute(changeset, :homework_id)
-      homework_id -> homework_id
+        Ash.Changeset.get_attribute(changeset, :id) ||
+          Ash.Changeset.get_attribute(changeset, :homework_id)
+
+      homework_id ->
+        homework_id
     end
   end
 
@@ -63,8 +69,10 @@ defmodule KgEdu.Activity.Changes.LogHomeworkSubmit do
       nil ->
         # Try to get from changeset arguments or attributes
         Ash.Changeset.get_argument(changeset, :answer) ||
-        Ash.Changeset.get_attribute(changeset, :answer)
-      answer -> answer
+          Ash.Changeset.get_attribute(changeset, :answer)
+
+      answer ->
+        answer
     end
   end
 end

@@ -7,7 +7,7 @@ defmodule KgEdu.Email.EmailSender do
   require Logger
 
   @email_api_endpoint Application.compile_env(:kg_edu, :email_api)[:endpoint] ||
-                       "http://localhost:5000/agent/email"
+                        "http://localhost:5000/agent/email"
 
   @doc """
   Send an email message using the receiver's email config.
@@ -33,18 +33,21 @@ defmodule KgEdu.Email.EmailSender do
     # Get sender and receiver user details
     with {:ok, sender} <- get_user(sender_user_id, tenant),
          {:ok, receiver} <- get_user(receiver_user_id, tenant) do
-
       # Try to get email config from receiver first, then sender
       email_config_result =
         case get_receiver_email_config(receiver_user_id, tenant) do
-          {:ok, config} -> {:ok, :receiver, config}
+          {:ok, config} ->
+            {:ok, :receiver, config}
+
           {:error, :no_email_config} ->
             # Receiver has no config, try sender's config
             case get_sender_email_config(sender_user_id, tenant) do
               {:ok, config} -> {:ok, :sender, config}
               error -> error
             end
-          error -> error
+
+          error ->
+            error
         end
 
       case email_config_result do
@@ -61,7 +64,9 @@ defmodule KgEdu.Email.EmailSender do
           auth_email = email_config.email_address
           auth_password = email_config.api_key
 
-          Logger.info("[EMAIL_SENDER] Using #{config_source}'s email config for SMTP authentication")
+          Logger.info(
+            "[EMAIL_SENDER] Using #{config_source}'s email config for SMTP authentication"
+          )
 
           # Create display name showing who the email is from
           display_name = "#{sender_name} <#{sender_email}>"
@@ -80,7 +85,10 @@ defmodule KgEdu.Email.EmailSender do
           )
 
         {:error, reason} ->
-          Logger.error("Failed to get email config for both sender and receiver: #{inspect(reason)}")
+          Logger.error(
+            "Failed to get email config for both sender and receiver: #{inspect(reason)}"
+          )
+
           {:error, reason}
       end
     else
@@ -186,7 +194,7 @@ defmodule KgEdu.Email.EmailSender do
   defp get_receiver_email_config(receiver_user_id, tenant) do
     # Read all email configs in tenant and filter manually
     case KgEdu.Email.EmailConfig
-    |> Ash.read(tenant: tenant, authorize?: false) do
+         |> Ash.read(tenant: tenant, authorize?: false) do
       {:ok, configs} ->
         case Enum.find(configs, fn config -> config.user_id == receiver_user_id end) do
           nil -> {:error, :no_email_config}
@@ -202,7 +210,7 @@ defmodule KgEdu.Email.EmailSender do
   defp get_sender_email_config(sender_user_id, tenant) do
     # Read all email configs in tenant and filter manually
     case KgEdu.Email.EmailConfig
-    |> Ash.read(tenant: tenant, authorize?: false) do
+         |> Ash.read(tenant: tenant, authorize?: false) do
       {:ok, configs} ->
         case Enum.find(configs, fn config -> config.user_id == sender_user_id end) do
           nil -> {:error, :no_email_config}

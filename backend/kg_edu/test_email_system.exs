@@ -34,12 +34,16 @@ defmodule EmailTest do
       {:ok, []} ->
         IO.puts("\n→ Creating email config for receiver...")
 
-        case EmailConfig.create_email_config(%{
-          user_id: receiver.id,
-          email_address: "619126989@qq.com",
-          sender_name: receiver.name,
-          api_key: "uzrnvmdhsozcbajj"
-        }, tenant: tenant, authorize?: false) do
+        case EmailConfig.create_email_config(
+               %{
+                 user_id: receiver.id,
+                 email_address: "619126989@qq.com",
+                 sender_name: receiver.name,
+                 api_key: "uzrnvmdhsozcbajj"
+               },
+               tenant: tenant,
+               authorize?: false
+             ) do
           {:ok, email_config} ->
             IO.puts("✓ Email config created: #{email_config.id}")
             IO.puts("  - Email: #{email_config.email_address}")
@@ -63,12 +67,17 @@ defmodule EmailTest do
     # Step 3: Send an email
     IO.puts("\n→ Sending email message...")
 
-    case EmailMessage.send_email(%{
-      sender_user_id: sender.id,
-      receiver_user_id: receiver.id,
-      subject: "Test Email from Ash Framework",
-      body: "Hello! This is a test email sent via the KgEdu email system using the real email API.\n\nBest regards,\n#{sender.name}"
-    }, tenant: tenant, authorize?: false) do
+    case EmailMessage.send_email(
+           %{
+             sender_user_id: sender.id,
+             receiver_user_id: receiver.id,
+             subject: "Test Email from Ash Framework",
+             body:
+               "Hello! This is a test email sent via the KgEdu email system using the real email API.\n\nBest regards,\n#{sender.name}"
+           },
+           tenant: tenant,
+           authorize?: false
+         ) do
       {:ok, email_message} ->
         IO.puts("✓ Email message created: #{email_message.id}")
         IO.puts("  - Subject: #{email_message.subject}")
@@ -83,10 +92,12 @@ defmodule EmailTest do
         case EmailMessage.get_email_message(email_message.id, tenant: tenant, authorize?: false) do
           {:ok, updated_message} ->
             IO.puts("\n  Final status: #{updated_message.status}")
+
             if updated_message.status == :sent do
               IO.puts("  ✓ Email was successfully sent via API!")
             else
               IO.puts("  ! Email status: #{updated_message.status}")
+
               if updated_message.error_message do
                 IO.puts("  ! Error: #{updated_message.error_message}")
               end
@@ -104,7 +115,10 @@ defmodule EmailTest do
     # Step 4: List sent and received messages
     IO.puts("\n→ Listing sent messages...")
 
-    case EmailMessage.list_sent_messages(%{sender_user_id: sender.id}, tenant: tenant, authorize?: false) do
+    case EmailMessage.list_sent_messages(%{sender_user_id: sender.id},
+           tenant: tenant,
+           authorize?: false
+         ) do
       {:ok, sent_messages} ->
         IO.puts("✓ Sender has sent #{length(sent_messages)} message(s)")
 
@@ -114,7 +128,10 @@ defmodule EmailTest do
 
     IO.puts("\n→ Listing received messages...")
 
-    case EmailMessage.list_received_messages(%{receiver_user_id: receiver.id}, tenant: tenant, authorize?: false) do
+    case EmailMessage.list_received_messages(%{receiver_user_id: receiver.id},
+           tenant: tenant,
+           authorize?: false
+         ) do
       {:ok, received_messages} ->
         IO.puts("✓ Receiver has #{length(received_messages)} message(s)")
 
@@ -132,12 +149,16 @@ defmodule EmailTest do
         {:ok, user}
 
       {:error, :not_found} ->
-        User.create_user(%{
-          email: email,
-          name: name,
-          member_id: String.replace(email, "@", "_"),
-          password: "Password123!"
-        }, tenant: tenant, authorize?: false)
+        User.create_user(
+          %{
+            email: email,
+            name: name,
+            member_id: String.replace(email, "@", "_"),
+            password: "Password123!"
+          },
+          tenant: tenant,
+          authorize?: false
+        )
 
       {:error, reason} ->
         {:error, reason}

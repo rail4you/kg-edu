@@ -5,7 +5,9 @@ defmodule KgEdu.Knowledge.Homework do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
+
   require Logger
+
   postgres do
     table "homeworks"
     repo KgEdu.Repo
@@ -14,10 +16,6 @@ defmodule KgEdu.Knowledge.Homework do
       reference :chapter, on_delete: :delete
       reference :knowledge_resource, on_delete: :delete
     end
-  end
-
-  multitenancy do
-    strategy :context
   end
 
   json_api do
@@ -151,7 +149,9 @@ defmodule KgEdu.Knowledge.Homework do
         knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
 
         if course_id && knowledge_resource_id do
-          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id, tenant: context.tenant) do
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id,
+                 tenant: context.tenant
+               ) do
             {:ok, resource} ->
               if resource.course_id == course_id do
                 :ok
@@ -259,8 +259,8 @@ defmodule KgEdu.Knowledge.Homework do
 
         case KgEdu.Knowledge.Homework.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
-              #  input.arguments.attributes,
-              ["title", "content", "score", "answer"],
+               #  input.arguments.attributes,
+               ["title", "content", "score", "answer"],
                input.arguments.course_id,
                context.tenant
              ) do
@@ -301,7 +301,10 @@ defmodule KgEdu.Knowledge.Homework do
       end
 
       run fn input, context ->
-        homework_id = input.arguments[:homework_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        homework_id =
+          input.arguments[:homework_id] || input.arguments[:id] ||
+            Ash.Changeset.get_attribute(input.context, :id)
+
         user_id = input.arguments[:user_id]
         answer = input.arguments[:answer]
         metadata = input.arguments[:metadata] || %{}
@@ -324,6 +327,10 @@ defmodule KgEdu.Knowledge.Homework do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -364,7 +371,6 @@ defmodule KgEdu.Knowledge.Homework do
       allow_nil? false
       description "The course this homework belongs to"
     end
-
 
     belongs_to :chapter, KgEdu.Courses.Chapter do
       public? true

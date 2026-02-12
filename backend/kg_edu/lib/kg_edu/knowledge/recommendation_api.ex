@@ -21,11 +21,14 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
     limit = Keyword.get(opts, :limit, 20)
     force_refresh = Keyword.get(opts, :force_refresh, false)
 
-    Logger.info("Getting recommendations for student #{student_id}, force_refresh: #{force_refresh}")
+    Logger.info(
+      "Getting recommendations for student #{student_id}, force_refresh: #{force_refresh}"
+    )
 
     # Check if we need to generate new recommendations
     if force_refresh or should_refresh_recommendations?(student_id, tenant) do
       Logger.info("Refreshing recommendations for student #{student_id}")
+
       KgEdu.Knowledge.RecommendationEngine.generate_comprehensive_recommendations(
         student_id,
         course_id,
@@ -160,6 +163,7 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
           {:ok, _completed} ->
             # After completing, trigger recommendation refresh
             student_id = recommendation.student_id
+
             KgEdu.Knowledge.RecommendationEngine.generate_comprehensive_recommendations(
               student_id,
               nil,
@@ -271,15 +275,16 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
 
       {:error, :not_found} ->
         # No mastery record exists yet
-        {:ok, %{
-          knowledge_resource_id: knowledge_resource_id,
-          mastery_level: 0.0,
-          mastery_percent: 0.0,
-          correct_count: 0,
-          wrong_count: 0,
-          practice_count: 0,
-          status: :not_started
-        }}
+        {:ok,
+         %{
+           knowledge_resource_id: knowledge_resource_id,
+           mastery_level: 0.0,
+           mastery_percent: 0.0,
+           correct_count: 0,
+           wrong_count: 0,
+           practice_count: 0,
+           status: :not_started
+         }}
 
       {:error, reason} ->
         {:error, reason}
@@ -304,6 +309,7 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
         else
           # Check if recommendations are older than 24 hours
           oldest = List.last(recommendations)
+
           if oldest do
             hours_ago = DateTime.diff(DateTime.utc_now(), oldest.inserted_at) / 3600
             hours_ago > 24
@@ -318,20 +324,23 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
   end
 
   defp enrich_recommendation(recommendation, tenant) do
-    knowledge_resource = case recommendation.knowledge_resource do
-      %Ash.NotLoaded{} ->
-        case Ash.get(KgEdu.Knowledge.Resource, recommendation.knowledge_resource_id,
-               tenant: tenant, authorize?: false) do
-          {:ok, resource} -> resource
-          _ -> nil
-        end
+    knowledge_resource =
+      case recommendation.knowledge_resource do
+        %Ash.NotLoaded{} ->
+          case Ash.get(KgEdu.Knowledge.Resource, recommendation.knowledge_resource_id,
+                 tenant: tenant,
+                 authorize?: false
+               ) do
+            {:ok, resource} -> resource
+            _ -> nil
+          end
 
-      nil ->
-        nil
+        nil ->
+          nil
 
-      resource ->
-        resource
-    end
+        resource ->
+          resource
+      end
 
     %{
       id: recommendation.id,
@@ -345,7 +354,8 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
       knowledge_resource: %{
         id: recommendation.knowledge_resource_id,
         name: if(knowledge_resource, do: knowledge_resource.name, else: "Unknown"),
-        importance_level: if(knowledge_resource, do: knowledge_resource.importance_level, else: "normal"),
+        importance_level:
+          if(knowledge_resource, do: knowledge_resource.importance_level, else: "normal"),
         description: if(knowledge_resource, do: knowledge_resource.description, else: nil)
       },
       metadata: recommendation.metadata || %{}

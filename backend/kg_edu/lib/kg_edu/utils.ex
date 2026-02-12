@@ -7,17 +7,6 @@ defmodule KgEdu.Utils do
     show? true
   end
 
-  typescript_rpc do
-    resource KgEdu.Utils.FileTemplate do
-      rpc_action :list_file_templates, :read
-      rpc_action :create_file_template, :create
-      rpc_action :update_file_template, :update
-      rpc_action :destroy_file_template, :destroy
-      rpc_action :get_file_template, :get
-      rpc_action :get_file_template_by_section, :by_section
-    end
-  end
-
   json_api do
     routes do
       base_route "/file-templates", KgEdu.Utils.FileTemplate do
@@ -27,6 +16,17 @@ defmodule KgEdu.Utils do
         patch :update, route: "/:id"
         delete :destroy, route: "/:id"
       end
+    end
+  end
+
+  typescript_rpc do
+    resource KgEdu.Utils.FileTemplate do
+      rpc_action :list_file_templates, :read
+      rpc_action :create_file_template, :create
+      rpc_action :update_file_template, :update
+      rpc_action :destroy_file_template, :destroy
+      rpc_action :get_file_template, :get
+      rpc_action :get_file_template_by_section, :by_section
     end
   end
 

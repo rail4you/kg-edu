@@ -22,7 +22,7 @@ defmodule KgEdu.Repo.Migrations.AddCodeToCourseID do
 
     # For now, we'll keep it nullable. The application layer will enforce the constraint
     # You can add a separate migration later to clean up data and make it NOT NULL
-    
+
     create unique_index(:books, [:course_id], name: "books_unique_course_book_index")
   end
 

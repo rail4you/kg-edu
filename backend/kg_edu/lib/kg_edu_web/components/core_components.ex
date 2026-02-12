@@ -479,29 +479,40 @@ defmodule KgEduWeb.CoreComponents do
     ~H"""
     <div class="mt-2 p-3 bg-gray-50 rounded-md">
       <%= if String.starts_with?(@entry.client_type, "image/") do %>
-        <img 
-          src={@entry.preview} 
-          alt={@entry.client_name} 
-          class="max-w-full h-auto rounded-md shadow-sm max-h-48 object-contain" />
+        <img
+          src={@entry.preview}
+          alt={@entry.client_name}
+          class="max-w-full h-auto rounded-md shadow-sm max-h-48 object-contain"
+        />
       <% else %>
         <%= if String.starts_with?(@entry.client_type, "video/") do %>
           <div class="flex items-center space-x-2">
             <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
             </svg>
             <div>
-              <p class="text-sm font-medium text-gray-900"><%= @entry.client_name %></p>
-              <p class="text-xs text-gray-500"><%= format_file_size(@entry.client_size) %></p>
+              <p class="text-sm font-medium text-gray-900">{@entry.client_name}</p>
+              <p class="text-xs text-gray-500">{format_file_size(@entry.client_size)}</p>
             </div>
           </div>
         <% else %>
           <div class="flex items-center space-x-2">
             <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             <div>
-              <p class="text-sm font-medium text-gray-900"><%= @entry.client_name %></p>
-              <p class="text-xs text-gray-500"><%= format_file_size(@entry.client_size) %></p>
+              <p class="text-sm font-medium text-gray-900">{@entry.client_name}</p>
+              <p class="text-xs text-gray-500">{format_file_size(@entry.client_size)}</p>
             </div>
           </div>
         <% end %>
@@ -512,6 +523,9 @@ defmodule KgEduWeb.CoreComponents do
 
   defp format_file_size(size) when size < 1024, do: "#{size} B"
   defp format_file_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)} KB"
-  defp format_file_size(size) when size < 1024 * 1024 * 1024, do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
+  defp format_file_size(size) when size < 1024 * 1024 * 1024,
+    do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
   defp format_file_size(size), do: "#{Float.round(size / (1024 * 1024 * 1024), 1)} GB"
 end

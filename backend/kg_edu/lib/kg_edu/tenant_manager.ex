@@ -13,6 +13,7 @@ defmodule KgEdu.TenantManager do
     case Organization |> Ash.get(tenant_id) do
       {:ok, organization} ->
         {:ok, organization.schema_name}
+
       {:error, _} ->
         {:error, :tenant_not_found}
     end
@@ -53,6 +54,7 @@ defmodule KgEdu.TenantManager do
           User
           |> Ash.Query.load(:class)
           |> Ash.read(tenant: schema_name)
+
         {:error, reason} ->
           {:error, reason}
       end
@@ -74,6 +76,7 @@ defmodule KgEdu.TenantManager do
     case Organization |> Ash.get(tenant_id) do
       {:ok, organization} ->
         {:ok, organization.schema_name}
+
       {:error, _} ->
         {:error, :tenant_not_found}
     end

@@ -16,10 +16,6 @@ defmodule KgEdu.Knowledge.QuestionConnection do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "knowledge_question_connection"
   end
@@ -155,6 +151,10 @@ defmodule KgEdu.Knowledge.QuestionConnection do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

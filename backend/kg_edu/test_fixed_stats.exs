@@ -15,9 +15,12 @@ case KgEdu.Knowledge.Resource.get_course_learning_stats_by_student(
      ) do
   {:ok, stats} ->
     IO.puts("✅ Success with nil tenant! Found stats for #{length(stats)} students")
+
     if length(stats) > 0 do
       Enum.each(stats, fn stat ->
-        IO.puts("Student #{stat.student_id}: Overall #{Float.round(stat.overall.completion_ratio * 100, 1)}% completion")
+        IO.puts(
+          "Student #{stat.student_id}: Overall #{Float.round(stat.overall.completion_ratio * 100, 1)}% completion"
+        )
       end)
     end
 
@@ -36,9 +39,12 @@ case KgEdu.Knowledge.Resource.get_course_learning_stats_by_student(
      ) do
   {:ok, stats} ->
     IO.puts("✅ Success with 'public' tenant! Found stats for #{length(stats)} students")
+
     if length(stats) > 0 do
       Enum.each(stats, fn stat ->
-        IO.puts("Student #{stat.student_id}: Overall #{Float.round(stat.overall.completion_ratio * 100, 1)}% completion")
+        IO.puts(
+          "Student #{stat.student_id}: Overall #{Float.round(stat.overall.completion_ratio * 100, 1)}% completion"
+        )
       end)
     end
 
@@ -52,6 +58,7 @@ IO.puts("\n3. Trying to find available courses:")
 case KgEdu.Knowledge.Resource.list_knowledges(tenant: nil, authorize?: false, actor: nil) do
   {:ok, resources} ->
     IO.puts("Found #{length(resources)} knowledge resources total")
+
     if length(resources) > 0 do
       course_ids = resources |> Enum.map(& &1.course_id) |> Enum.uniq() |> Enum.reject(&is_nil/1)
       IO.puts("Available course IDs: #{inspect(course_ids)}")
@@ -69,13 +76,27 @@ case KgEdu.Knowledge.Resource.list_knowledges(tenant: nil, authorize?: false, ac
              ) do
           {:ok, stats} ->
             IO.puts("✅ Success with found course! Stats for #{length(stats)} students")
+
             if length(stats) > 0 do
               Enum.each(stats, fn stat ->
                 IO.puts("  Student #{stat.student_id}:")
-                IO.puts("    Videos: #{stat.videos.completed}/#{stat.videos.total} (#{Float.round(stat.videos.completion_ratio * 100, 1)}%)")
-                IO.puts("    Files: #{stat.files.completed}/#{stat.files.total} (#{Float.round(stat.files.completion_ratio * 100, 1)}%)")
-                IO.puts("    Exercises: #{stat.exercises.completed}/#{stat.exercises.total} (#{Float.round(stat.exercises.completion_ratio * 100, 1)}%)")
-                IO.puts("    Homework: #{stat.homeworks.completed}/#{stat.homeworks.total} (#{Float.round(stat.homeworks.completion_ratio * 100, 1)}%)")
+
+                IO.puts(
+                  "    Videos: #{stat.videos.completed}/#{stat.videos.total} (#{Float.round(stat.videos.completion_ratio * 100, 1)}%)"
+                )
+
+                IO.puts(
+                  "    Files: #{stat.files.completed}/#{stat.files.total} (#{Float.round(stat.files.completion_ratio * 100, 1)}%)"
+                )
+
+                IO.puts(
+                  "    Exercises: #{stat.exercises.completed}/#{stat.exercises.total} (#{Float.round(stat.exercises.completion_ratio * 100, 1)}%)"
+                )
+
+                IO.puts(
+                  "    Homework: #{stat.homeworks.completed}/#{stat.homeworks.total} (#{Float.round(stat.homeworks.completion_ratio * 100, 1)}%)"
+                )
+
                 IO.puts("    Overall: #{Float.round(stat.overall.completion_ratio * 100, 1)}%")
               end)
             end

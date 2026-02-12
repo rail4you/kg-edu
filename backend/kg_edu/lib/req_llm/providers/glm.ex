@@ -57,7 +57,9 @@ defmodule ReqLLM.Providers.GLM do
   @impl ReqLLM.Provider
   def attach(%Req.Request{} = request, model_input, user_opts \\ []) do
     %ReqLLM.Model{} = model = ReqLLM.Model.from!(model_input)
-    if model.provider != provider_id(), do: raise ReqLLM.Error.Invalid.Provider, provider: model.provider
+
+    if model.provider != provider_id(),
+      do: raise(ReqLLM.Error.Invalid.Provider, provider: model.provider)
 
     {:ok, api_key} = ReqLLM.Keys.get(model.provider, user_opts)
 

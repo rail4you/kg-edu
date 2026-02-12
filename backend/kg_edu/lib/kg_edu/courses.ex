@@ -7,6 +7,40 @@ defmodule KgEdu.Courses do
     show? true
   end
 
+  json_api do
+    routes do
+      # Course endpoints
+      base_route "/courses", KgEdu.Courses.Course do
+        get :read, route: "/"
+        index :by_teacher, route: "/teacher/:teacher_id"
+        index :by_student, route: "/student/:student_id"
+        post :create, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
+
+      # Chapter endpoints
+      base_route "/chapters", KgEdu.Courses.Chapter do
+        get :read, route: "/"
+        index :by_course, route: "/course/:course_id"
+        index :root_chapters, route: "/course/:course_id/root"
+        index :subchapters, route: "/parent/:parent_chapter_id"
+        post :create, route: "/"
+        patch :update, route: "/:id"
+        delete :destroy, route: "/:id"
+      end
+
+      # Course enrollment endpoints
+      base_route "/course-enrollments", KgEdu.Courses.CourseEnrollment do
+        get :read, route: "/"
+        index :by_course, route: "/course/:course_id"
+        index :by_student, route: "/student/:student_id"
+        post :create, route: "/"
+        delete :destroy, route: "/:id"
+      end
+    end
+  end
+
   typescript_rpc do
     resource KgEdu.Courses.Course do
       rpc_action :list_courses, :read
@@ -122,40 +156,6 @@ defmodule KgEdu.Courses do
       rpc_action :list_assignments_by_course, :by_course
       rpc_action :assign_course_to_teacher, :create
       rpc_action :remove_course_from_teacher, :remove_course_from_teacher
-    end
-  end
-
-  json_api do
-    routes do
-      # Course endpoints
-      base_route "/courses", KgEdu.Courses.Course do
-        get :read, route: "/"
-        index :by_teacher, route: "/teacher/:teacher_id"
-        index :by_student, route: "/student/:student_id"
-        post :create, route: "/"
-        patch :update, route: "/:id"
-        delete :destroy, route: "/:id"
-      end
-
-      # Chapter endpoints
-      base_route "/chapters", KgEdu.Courses.Chapter do
-        get :read, route: "/"
-        index :by_course, route: "/course/:course_id"
-        index :root_chapters, route: "/course/:course_id/root"
-        index :subchapters, route: "/parent/:parent_chapter_id"
-        post :create, route: "/"
-        patch :update, route: "/:id"
-        delete :destroy, route: "/:id"
-      end
-
-      # Course enrollment endpoints
-      base_route "/course-enrollments", KgEdu.Courses.CourseEnrollment do
-        get :read, route: "/"
-        index :by_course, route: "/course/:course_id"
-        index :by_student, route: "/student/:student_id"
-        post :create, route: "/"
-        delete :destroy, route: "/:id"
-      end
     end
   end
 

@@ -1,41 +1,42 @@
 defmodule KgEduWeb.Plugs.LoadActor do
-    import Plug.Conn
-    require Ash.Query
+  import Plug.Conn
+  require Ash.Query
 
-    def init(opts), do: opts
+  def init(opts), do: opts
 
-    def call(conn, _opts) do
-      with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-           {:ok, tenant} <- verify_token(token) do
+  def call(conn, _opts) do
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+         {:ok, tenant} <- verify_token(token) do
+      conn
+      # |> assign(:actor, user)
+      |> assign(:tenant, tenant)
+
+      # |> assign(:current_user, user)
+    else
+      _ ->
         conn
-        # |> assign(:actor, user)
-        |> assign(:tenant, tenant)
-        # |> assign(:current_user, user)
-      else
-        _ ->
-          conn
-          |> assign(:tenant, nil)
-      end
-    end
-
-    defp verify_token(token) do
-      # Use AshAuthentication.Jwt to verify the token
-      case AshAuthentication.Jwt.peek(token) do
-        {:ok, %{"sub" => subject, "tenant" => tenant}} ->
-          # Load the user from the subject (usually user_id)
-          # user = KgEdu.Accounts.User
-          # |> Ash.get(subject)
-
-          case tenant do
-            nil -> {:error, :tenant_not_found}
-            _ -> {:ok, tenant}
-          end
-
-        {:error, _} = error ->
-          error
-      end
+        |> assign(:tenant, nil)
     end
   end
+
+  defp verify_token(token) do
+    # Use AshAuthentication.Jwt to verify the token
+    case AshAuthentication.Jwt.peek(token) do
+      {:ok, %{"sub" => subject, "tenant" => tenant}} ->
+        # Load the user from the subject (usually user_id)
+        # user = KgEdu.Accounts.User
+        # |> Ash.get(subject)
+
+        case tenant do
+          nil -> {:error, :tenant_not_found}
+          _ -> {:ok, tenant}
+        end
+
+      {:error, _} = error ->
+        error
+    end
+  end
+end
 
 defmodule KgEduWeb.Router do
   use KgEduWeb, :router
@@ -43,8 +44,6 @@ defmodule KgEduWeb.Router do
   use AshAuthentication.Phoenix.Router
 
   import AshAuthentication.Plug.Helpers
-
-
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -71,7 +70,6 @@ defmodule KgEduWeb.Router do
     plug :set_actor, :user
     plug KgEduWeb.Plugs.LoadActor
   end
-
 
   scope "/api", KgEduWeb do
     pipe_through :api

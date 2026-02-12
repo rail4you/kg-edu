@@ -13,10 +13,6 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
   require Ash.Query
   require Logger
 
-  typescript do
-    type_name "LearningRecommendation"
-  end
-
   postgres do
     table "learning_recommendations"
     repo KgEdu.Repo
@@ -27,12 +23,12 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "learning_recommendation"
+  end
+
+  typescript do
+    type_name "LearningRecommendation"
   end
 
   code_interface do
@@ -80,6 +76,7 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
 
     create :create do
       description "Create a new recommendation"
+
       accept [
         :student_id,
         :knowledge_resource_id,
@@ -94,6 +91,7 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
 
     action :generate_for_student do
       description "Generate personalized recommendations for a student based on their weaknesses and learning goals"
+
       argument :student_id, :uuid do
         allow_nil? false
         description "Student to generate recommendations for"
@@ -116,7 +114,9 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
         limit = input.arguments.limit
         tenant = context.tenant
 
-        Logger.info("Generating recommendations for student #{student_id} in course #{course_id || "all"}")
+        Logger.info(
+          "Generating recommendations for student #{student_id} in course #{course_id || "all"}"
+        )
 
         # Step 1: Get weak knowledge points
         weak_points_result =
@@ -144,7 +144,10 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
               end)
               |> Enum.map(fn {:ok, rec} -> rec end)
 
-            Logger.info("Generated #{length(recommendations)} recommendations for student #{student_id}")
+            Logger.info(
+              "Generated #{length(recommendations)} recommendations for student #{student_id}"
+            )
+
             {:ok, recommendations}
 
           {:ok, []} ->
@@ -201,20 +204,26 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_primary_key :id
 
     attribute :recommendation_type, :atom do
       allow_nil? false
+
       constraints one_of: [
-        :weak_knowledge_review,
-        :prerequisite_learning,
-        :related_practice,
-        :video_learning,
-        :reading_material,
-        :homework_practice,
-        :exam_review
-      ]
+                    :weak_knowledge_review,
+                    :prerequisite_learning,
+                    :related_practice,
+                    :video_learning,
+                    :reading_material,
+                    :homework_practice,
+                    :exam_review
+                  ]
+
       description "Type of recommendation"
       public? true
     end
@@ -286,10 +295,11 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
   # ============ Helper Functions ============
 
   defp generate_recommendation_for_weakness(mastery, student_id, tenant) do
-    knowledge_resource = case mastery.knowledge_resource do
-      %Ash.NotLoaded{} -> nil
-      resource -> resource
-    end
+    knowledge_resource =
+      case mastery.knowledge_resource do
+        %Ash.NotLoaded{} -> nil
+        resource -> resource
+      end
 
     if knowledge_resource do
       # Determine recommendation type based on available resources
@@ -398,6 +408,7 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
       true -> 2
     end
   end
+
   defp calculate_priority(_), do: 5
 
   defp generate_reason(mastery, knowledge_resource) do
@@ -405,22 +416,24 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
 
     base_msg = "Your mastery level for '#{knowledge_resource.name}' is #{mastery_percent}%."
 
-    detail_msg = cond do
-      mastery.mastery_level < 0.3 ->
-        " This is a critical weak point that needs immediate attention."
+    detail_msg =
+      cond do
+        mastery.mastery_level < 0.3 ->
+          " This is a critical weak point that needs immediate attention."
 
-      mastery.mastery_level < 0.6 ->
-        " Regular practice is recommended to strengthen your understanding."
+        mastery.mastery_level < 0.6 ->
+          " Regular practice is recommended to strengthen your understanding."
 
-      true ->
-        " A quick review will help you master this topic."
-    end
+        true ->
+          " A quick review will help you master this topic."
+      end
 
-    importance_msg = case knowledge_resource.importance_level do
-      "hard" -> " This is marked as a hard topic."
-      "important" -> " This is an important topic."
-      _ -> ""
-    end
+    importance_msg =
+      case knowledge_resource.importance_level do
+        "hard" -> " This is marked as a hard topic."
+        "important" -> " This is an important topic."
+        _ -> ""
+      end
 
     base_msg <> detail_msg <> importance_msg
   end

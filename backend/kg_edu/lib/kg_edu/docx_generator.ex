@@ -18,10 +18,12 @@ defmodule KgEdu.DocxGenerator do
       {:ok, zip_binary} ->
         # Write to file
         output_path = Path.absname(filename)
+
         case File.write(output_path, zip_binary) do
           :ok -> {:ok, output_path}
           {:error, reason} -> {:error, reason}
         end
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -29,13 +31,15 @@ defmodule KgEdu.DocxGenerator do
 
   defp create_zip_in_memory(files) do
     # Use Erlang's zip module to create in memory
-    charlist_files = Enum.map(files, fn {path, content} ->
-      {String.to_charlist(path), content}
-    end)
+    charlist_files =
+      Enum.map(files, fn {path, content} ->
+        {String.to_charlist(path), content}
+      end)
 
     case :zip.create("memory", charlist_files, [:memory]) do
       {:ok, {"memory", zip_binary}} ->
         {:ok, zip_binary}
+
       {:error, reason} ->
         {:error, reason}
     end

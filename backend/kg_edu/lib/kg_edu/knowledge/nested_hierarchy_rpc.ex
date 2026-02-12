@@ -14,9 +14,9 @@ defmodule KgEdu.Knowledge.NestedHierarchyRpc do
 
     # Use the helper module to get nested hierarchy
     case KgEdu.KnowledgeNestedHierarchy.get(%{
-      course_id: course_id,
-      tenant: tenant
-    }) do
+           course_id: course_id,
+           tenant: tenant
+         }) do
       {:ok, nested_hierarchy} ->
         {:ok, nested_hierarchy}
 

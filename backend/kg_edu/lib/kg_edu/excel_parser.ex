@@ -46,8 +46,8 @@ defmodule KgEdu.ExcelParser do
   Parse Excel file and extract data from both sheets.
   """
   def parse_excel_file(file_path, index) do
-    with {:ok, sheet_data} <- parse_sheet(file_path,  index) do
-        #  {:ok, sheet2_data} <- parse_sheet(file_path,  1) do
+    with {:ok, sheet_data} <- parse_sheet(file_path, index) do
+      #  {:ok, sheet2_data} <- parse_sheet(file_path,  1) do
       {:ok, %{sheet: sheet_data}}
     else
       {:error, reason} -> {:error, reason}
@@ -60,6 +60,7 @@ defmodule KgEdu.ExcelParser do
   def parse_sheet(file_path, sheet_name) do
     try do
       IO.inspect("Parsing sheet #{sheet_name} from file #{file_path}")
+
       case Xlsxir.multi_extract(file_path, sheet_name) do
         {:ok, table_id} ->
           # Get all rows

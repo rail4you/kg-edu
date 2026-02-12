@@ -18,6 +18,7 @@ defmodule OpmlUsageExample do
 
     # Step 2: Parse OPML content
     IO.puts("2. Parsing OPML content...")
+
     case KgEdu.OpmlParser.parse_from_text(opml_content) do
       {:ok, knowledge_data} ->
         IO.puts("   ✓ Parsed successfully - #{length(knowledge_data)} knowledge items found")

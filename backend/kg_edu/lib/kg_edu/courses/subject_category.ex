@@ -11,10 +11,6 @@ defmodule KgEdu.Courses.SubjectCategory do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "subject_category"
   end
@@ -56,6 +52,10 @@ defmodule KgEdu.Courses.SubjectCategory do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

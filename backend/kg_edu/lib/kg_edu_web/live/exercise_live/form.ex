@@ -6,138 +6,150 @@ defmodule KgEduWeb.ExerciseLive.Form do
     ~H"""
     <Layouts.app flash={@flash}>
       <div data-theme="green" class="rounded-lg p-4">
-      <.header>
-        {@page_title}
-        <:subtitle>Use this form to manage exercise records in your database.</:subtitle>
-      </.header>
+        <.header>
+          {@page_title}
+          <:subtitle>Use this form to manage exercise records in your database.</:subtitle>
+        </.header>
 
-      <.form for={@form} id="exercise-form" phx-change="validate" phx-submit="save">
-        <fieldset>
-          <legend class="sr-only">Exercise Details</legend>
-          <.input
-            field={@form[:course_id]}
-            type="select"
-            label="Course"
-            options={@course_list}
-            required
-          />
-          <.input
-            field={@form[:title]}
-            type="text"
-            label="Title"
-            placeholder="Enter exercise title"
-            required
-          />
+        <.form for={@form} id="exercise-form" phx-change="validate" phx-submit="save">
+          <fieldset>
+            <legend class="sr-only">Exercise Details</legend>
+            <.input
+              field={@form[:course_id]}
+              type="select"
+              label="Course"
+              options={@course_list}
+              required
+            />
+            <.input
+              field={@form[:title]}
+              type="text"
+              label="Title"
+              placeholder="Enter exercise title"
+              required
+            />
 
-          <.input
-            field={@form[:question_content]}
-            type="textarea"
-            label="Question Content"
-            placeholder="Enter the question content"
-            required
-          />
+            <.input
+              field={@form[:question_content]}
+              type="textarea"
+              label="Question Content"
+              placeholder="Enter the question content"
+              required
+            />
 
-          <.input
-            field={@form[:answer]}
-            type="textarea"
-            label="Answer"
-            placeholder="Enter the answer"
-            required
-          />
+            <.input
+              field={@form[:answer]}
+              type="textarea"
+              label="Answer"
+              placeholder="Enter the answer"
+              required
+            />
 
-          <.input
-            field={@form[:question_type]}
-            type="select"
-            label="Question Type"
-            options={[
-              {:multiple_choice, "multiple_choice"},
-              {:fill_in_blank, "fill_in_blank"},
-              {:essay, "essay"}
-            ]}
-            prompt="Select question type"
-            required
-          />
+            <.input
+              field={@form[:question_type]}
+              type="select"
+              label="Question Type"
+              options={[
+                {:multiple_choice, "multiple_choice"},
+                {:fill_in_blank, "fill_in_blank"},
+                {:essay, "essay"}
+              ]}
+              prompt="Select question type"
+              required
+            />
 
-          <div :if={@form[:question_type].value == :multiple_choice} class="space-y-4">
-            <h3 class="text-lg font-medium">Multiple Choice Options</h3>
+            <div :if={@form[:question_type].value == :multiple_choice} class="space-y-4">
+              <h3 class="text-lg font-medium">Multiple Choice Options</h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Option A</label>
-                <input
-                  type="text"
-                  name="exercise[options][A]"
-                  value={Phoenix.HTML.Form.input_value(@form, :options) && Phoenix.HTML.Form.input_value(@form, :options)["A"]}
-                  placeholder="Enter option A"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Option A</label>
+                  <input
+                    type="text"
+                    name="exercise[options][A]"
+                    value={
+                      Phoenix.HTML.Form.input_value(@form, :options) &&
+                        Phoenix.HTML.Form.input_value(@form, :options)["A"]
+                    }
+                    placeholder="Enter option A"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Option B</label>
+                  <input
+                    type="text"
+                    name="exercise[options][B]"
+                    value={
+                      Phoenix.HTML.Form.input_value(@form, :options) &&
+                        Phoenix.HTML.Form.input_value(@form, :options)["B"]
+                    }
+                    placeholder="Enter option B"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Option C</label>
+                  <input
+                    type="text"
+                    name="exercise[options][C]"
+                    value={
+                      Phoenix.HTML.Form.input_value(@form, :options) &&
+                        Phoenix.HTML.Form.input_value(@form, :options)["C"]
+                    }
+                    placeholder="Enter option C"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Option D</label>
+                  <input
+                    type="text"
+                    name="exercise[options][D]"
+                    value={
+                      Phoenix.HTML.Form.input_value(@form, :options) &&
+                        Phoenix.HTML.Form.input_value(@form, :options)["D"]
+                    }
+                    placeholder="Enter option D"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700">Option B</label>
-                <input
-                  type="text"
-                  name="exercise[options][B]"
-                  value={Phoenix.HTML.Form.input_value(@form, :options) && Phoenix.HTML.Form.input_value(@form, :options)["B"]}
-                  placeholder="Enter option B"
+                <label class="block text-sm font-medium text-gray-700">Correct Answer(s)</label>
+                <select
+                  name="exercise[options][selected][]"
+                  multiple={true}
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Option C</label>
-                <input
-                  type="text"
-                  name="exercise[options][C]"
-                  value={Phoenix.HTML.Form.input_value(@form, :options) && Phoenix.HTML.Form.input_value(@form, :options)["C"]}
-                  placeholder="Enter option C"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Option D</label>
-                <input
-                  type="text"
-                  name="exercise[options][D]"
-                  value={Phoenix.HTML.Form.input_value(@form, :options) && Phoenix.HTML.Form.input_value(@form, :options)["D"]}
-                  placeholder="Enter option D"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
+                >
+                  <option value="">Select correct answer(s)</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">
+                  Select one or more correct answers. Hold Ctrl/Cmd to select multiple.
+                </p>
               </div>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Correct Answer(s)</label>
-              <select
-                name="exercise[options][selected][]"
-                multiple={true}
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              >
-                <option value="">Select correct answer(s)</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-              </select>
-              <p class="mt-1 text-sm text-gray-500">
-                Select one or more correct answers. Hold Ctrl/Cmd to select multiple.
-              </p>
-            </div>
-          </div>
-
-          <.input
-            field={@form[:knowledge_resource_id]}
-            type="select"
-            label="Knowledge Resource ID"
-            placeholder="Enter associated knowledge resource ID"
-            options={@knowledge_ids}
-            required
-          />
-        </fieldset>
-        <.button phx-disable-with="Saving..." variant="primary">Save Exercise</.button>
-        <.button navigate={return_path(@return_to, @exercise)}>Cancel</.button>
-      </.form>
+            <.input
+              field={@form[:knowledge_resource_id]}
+              type="select"
+              label="Knowledge Resource ID"
+              placeholder="Enter associated knowledge resource ID"
+              options={@knowledge_ids}
+              required
+            />
+          </fieldset>
+          <.button phx-disable-with="Saving..." variant="primary">Save Exercise</.button>
+          <.button navigate={return_path(@return_to, @exercise)}>Cancel</.button>
+        </.form>
       </div>
     </Layouts.app>
     """
@@ -153,8 +165,14 @@ defmodule KgEduWeb.ExerciseLive.Form do
 
     action = if is_nil(exercise), do: "New", else: "Edit"
     page_title = action <> " " <> "Exercise"
-    knowledge_ids = KgEdu.Knowledge.Resource.list_knowledge_resources!() |> Enum.map(& {&1.name, &1.id})
-    course_list = KgEdu.Courses.Course.list_courses!(actor: socket.assigns.current_user) |> Enum.map(&{&1.title, &1.id})
+
+    knowledge_ids =
+      KgEdu.Knowledge.Resource.list_knowledge_resources!() |> Enum.map(&{&1.name, &1.id})
+
+    course_list =
+      KgEdu.Courses.Course.list_courses!(actor: socket.assigns.current_user)
+      |> Enum.map(&{&1.title, &1.id})
+
     {:ok,
      socket
      |> assign(:return_to, return_to(params["return_to"]))

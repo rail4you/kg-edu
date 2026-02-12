@@ -42,16 +42,19 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
     sorted_recommendations = sort_and_prioritize(recommendations, weak_points, behavior_patterns)
     final_recommendations = Enum.take(sorted_recommendations, limit)
 
-    Logger.info("Generated #{length(final_recommendations)} recommendations for student #{student_id}")
+    Logger.info(
+      "Generated #{length(final_recommendations)} recommendations for student #{student_id}"
+    )
 
-    {:ok, %{
-      recommendations: final_recommendations,
-      analysis: %{
-        weak_points: weak_points,
-        behavior_patterns: behavior_patterns,
-        related_knowledge: length(related_knowledge)
-      }
-    }}
+    {:ok,
+     %{
+       recommendations: final_recommendations,
+       analysis: %{
+         weak_points: weak_points,
+         behavior_patterns: behavior_patterns,
+         related_knowledge: length(related_knowledge)
+       }
+     }}
   end
 
   @doc """
@@ -71,7 +74,9 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
       {:ok, weak_masteries} ->
         # Group by mastery level ranges
         critical = Enum.filter(weak_masteries, fn m -> m.mastery_level < 0.3 end)
-        needs_review = Enum.filter(weak_masteries, fn m -> m.mastery_level >= 0.3 and m.mastery_level < 0.6 end)
+
+        needs_review =
+          Enum.filter(weak_masteries, fn m -> m.mastery_level >= 0.3 and m.mastery_level < 0.6 end)
 
         %{
           critical: critical,
@@ -104,7 +109,8 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
           all_logs
           |> Enum.filter(&(&1.user_id == student_id))
           |> Enum.sort_by(& &1.inserted_at, {:desc, NaiveDateTime})
-          |> Enum.take(100) # Last 100 activities
+          # Last 100 activities
+          |> Enum.take(100)
 
         # Analyze patterns
         %{
@@ -116,6 +122,7 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
 
       {:error, reason} ->
         Logger.error("Failed to analyze behavior: #{inspect(reason)}")
+
         %{
           preferred_learning_type: :unknown,
           active_hours: [],
@@ -131,7 +138,9 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   def get_related_knowledge(_student_id, course_id, tenant) do
     # Get knowledge resources that have relationships
     case course_id do
-      nil -> []
+      nil ->
+        []
+
       _course_id ->
         case KgEdu.Knowledge.Resource.get_knowledge_resources_by_course(
                course_id: course_id,
@@ -146,7 +155,8 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
               has_relations?(resource)
             end)
 
-          _ -> []
+          _ ->
+            []
         end
     end
   end
@@ -155,7 +165,9 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   实时更新推荐（当学生学习后动态调整推荐列表）
   """
   def update_recommendations_after_activity(student_id, activity_type, resource_id, tenant) do
-    Logger.info("Updating recommendations after activity: #{activity_type} for student #{student_id}")
+    Logger.info(
+      "Updating recommendations after activity: #{activity_type} for student #{student_id}"
+    )
 
     # If student completed a learning activity, recalculate mastery and update recommendations
     case activity_type do
@@ -228,12 +240,16 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
       related_knowledge
       |> Enum.flat_map(fn resource ->
         case resource.incoming_relations do
-          %Ash.NotLoaded{} -> []
+          %Ash.NotLoaded{} ->
+            []
+
           relations when is_list(relations) ->
             Enum.filter(relations, fn relation ->
               relation.relation_type == "prerequisite"
             end)
-          _ -> []
+
+          _ ->
+            []
         end
       end)
       |> Enum.take(3)
@@ -257,7 +273,12 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   end
 
   # Add behavior-based recommendations
-  defp add_behavior_based_recommendations(recommendations, _behavior_patterns, _student_id, _tenant) do
+  defp add_behavior_based_recommendations(
+         recommendations,
+         _behavior_patterns,
+         _student_id,
+         _tenant
+       ) do
     # Based on preferred learning type, recommend resources that match
     recommendations
   end
@@ -285,10 +306,11 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
 
   # Create a weakness-based recommendation
   defp create_weakness_recommendation(mastery, severity, student_id, tenant) do
-    knowledge_resource = case mastery.knowledge_resource do
-      %Ash.NotLoaded{} -> nil
-      resource -> resource
-    end
+    knowledge_resource =
+      case mastery.knowledge_resource do
+        %Ash.NotLoaded{} -> nil
+        resource -> resource
+      end
 
     if knowledge_resource do
       recommendation_type = determine_best_resource_type(knowledge_resource, tenant)
@@ -330,7 +352,8 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
            authorize?: false
          ) do
       {:ok, prerequisite_resource} ->
-        reason = "Before learning '#{relation.target_knowledge.name}', you should first master '#{prerequisite_resource.name}'"
+        reason =
+          "Before learning '#{relation.target_knowledge.name}', you should first master '#{prerequisite_resource.name}'"
 
         create_attrs = %{
           student_id: student_id,
@@ -389,34 +412,38 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
 
     base_msg = "Your mastery of '#{knowledge_resource.name}' is #{mastery_percent}%."
 
-    severity_msg = case severity do
-      :critical -> " This is a critical weak point that requires immediate attention."
-      :review -> " Regular review is recommended to strengthen your understanding."
-    end
+    severity_msg =
+      case severity do
+        :critical -> " This is a critical weak point that requires immediate attention."
+        :review -> " Regular review is recommended to strengthen your understanding."
+      end
 
-    practice_msg = if mastery.practice_count < 3 do
-      " You've only practiced #{mastery.practice_count} times. More practice will help."
-    else
-      ""
-    end
+    practice_msg =
+      if mastery.practice_count < 3 do
+        " You've only practiced #{mastery.practice_count} times. More practice will help."
+      else
+        ""
+      end
 
     base_msg <> severity_msg <> practice_msg
   end
 
   defp has_relations?(resource) do
-    has_outgoing = case resource.outgoing_relations do
-      %Ash.NotLoaded{} -> false
-      nil -> false
-      relations when is_list(relations) -> length(relations) > 0
-      _ -> false
-    end
+    has_outgoing =
+      case resource.outgoing_relations do
+        %Ash.NotLoaded{} -> false
+        nil -> false
+        relations when is_list(relations) -> length(relations) > 0
+        _ -> false
+      end
 
-    has_incoming = case resource.incoming_relations do
-      %Ash.NotLoaded{} -> false
-      nil -> false
-      relations when is_list(relations) -> length(relations) > 0
-      _ -> false
-    end
+    has_incoming =
+      case resource.incoming_relations do
+        %Ash.NotLoaded{} -> false
+        nil -> false
+        relations when is_list(relations) -> length(relations) > 0
+        _ -> false
+      end
 
     has_outgoing or has_incoming
   end
@@ -425,17 +452,18 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   defp determine_preferred_learning_type(logs) do
     type_counts =
       logs
-    |> Enum.reduce(%{}, fn log, acc ->
-      type = case log.action_type do
-        :video_view -> :video
-        :file_view -> :reading
-        :exercise_submit -> :practice
-        :homework_submit -> :homework
-        _ -> :other
-      end
+      |> Enum.reduce(%{}, fn log, acc ->
+        type =
+          case log.action_type do
+            :video_view -> :video
+            :file_view -> :reading
+            :exercise_submit -> :practice
+            :homework_submit -> :homework
+            _ -> :other
+          end
 
-      Map.update(acc, type, 1, &(&1 + 1))
-    end)
+        Map.update(acc, type, 1, &(&1 + 1))
+      end)
 
     case Enum.max_by(type_counts, fn {_k, v} -> v end, fn -> nil end) do
       {type, _count} -> type
@@ -473,9 +501,11 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
         |> Enum.map(fn {_date, day_logs} -> length(day_logs) end)
 
       avg = Enum.sum(daily_counts) / length(daily_counts)
-      variance = Enum.reduce(daily_counts, 0, fn count, acc ->
-        acc + :math.pow(count - avg, 2)
-      end) / length(daily_counts)
+
+      variance =
+        Enum.reduce(daily_counts, 0, fn count, acc ->
+          acc + :math.pow(count - avg, 2)
+        end) / length(daily_counts)
 
       # Lower variance = higher consistency
       consistency = 1.0 - min(variance / 100.0, 1.0)

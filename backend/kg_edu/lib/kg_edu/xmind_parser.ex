@@ -154,7 +154,9 @@ defmodule KgEdu.XmindParser do
         extract_topic_hierarchy_recursive(child, depth + 1, nil, nil)
       end)
     else
-      Logger.info("Parent subject: #{inspect(parent_subject)}, Parent unit: #{inspect(parent_unit)}")
+      Logger.info(
+        "Parent subject: #{inspect(parent_subject)}, Parent unit: #{inspect(parent_unit)}"
+      )
 
       # Create the current resource with proper parent tracking
       current_resource = %{
@@ -166,22 +168,23 @@ defmodule KgEdu.XmindParser do
       }
 
       # Add subject/unit context for easier relationship building
-      current_resource = case depth do
-        1 ->
-          # Level 1: Subject
-          Map.put(current_resource, :subject, topic_title)
-          |> Map.put(:unit, nil)
+      current_resource =
+        case depth do
+          1 ->
+            # Level 1: Subject
+            Map.put(current_resource, :subject, topic_title)
+            |> Map.put(:unit, nil)
 
-        2 ->
-          # Level 2: Knowledge Unit
-          Map.put(current_resource, :subject, parent_subject)
-          |> Map.put(:unit, topic_title)
+          2 ->
+            # Level 2: Knowledge Unit
+            Map.put(current_resource, :subject, parent_subject)
+            |> Map.put(:unit, topic_title)
 
-        _ ->
-          # Level 3+: Knowledge Cell
-          Map.put(current_resource, :subject, parent_subject)
-          |> Map.put(:unit, parent_unit)
-      end
+          _ ->
+            # Level 3+: Knowledge Cell
+            Map.put(current_resource, :subject, parent_subject)
+            |> Map.put(:unit, parent_unit)
+        end
 
       # Process children recursively
       case children do
@@ -191,16 +194,26 @@ defmodule KgEdu.XmindParser do
 
         _ ->
           # Has children - process them recursively
-          child_resources = Enum.flat_map(children, fn child ->
-            # Determine what to pass as parent context to children
-            {child_parent_subject, child_parent_unit} = case depth do
-              1 -> {topic_title, nil}  # Subject's children
-              2 -> {parent_subject, topic_title}  # Unit's children
-              _ -> {parent_subject, parent_unit}  # Cell's children (deeper nesting)
-            end
+          child_resources =
+            Enum.flat_map(children, fn child ->
+              # Determine what to pass as parent context to children
+              {child_parent_subject, child_parent_unit} =
+                case depth do
+                  # Subject's children
+                  1 -> {topic_title, nil}
+                  # Unit's children
+                  2 -> {parent_subject, topic_title}
+                  # Cell's children (deeper nesting)
+                  _ -> {parent_subject, parent_unit}
+                end
 
-            extract_topic_hierarchy_recursive(child, depth + 1, child_parent_subject, child_parent_unit)
-          end)
+              extract_topic_hierarchy_recursive(
+                child,
+                depth + 1,
+                child_parent_subject,
+                child_parent_unit
+              )
+            end)
 
           Logger.info("Created #{length(child_resources)} child resources for #{topic_title}")
 
@@ -213,13 +226,14 @@ defmodule KgEdu.XmindParser do
   # XMind hierarchy: Root(skip) -> Subject -> Unit -> Cell(3+)
   defp determine_knowledge_type_by_depth(depth, _title, _has_children) do
     case depth do
-      0 -> :root  # Root node - skip
+      # Root node - skip
+      0 -> :root
       1 -> :subject
       2 -> :knowledge_unit
-      _ -> :knowledge_cell  # depth 3 and beyond are all knowledge cells
+      # depth 3 and beyond are all knowledge cells
+      _ -> :knowledge_cell
     end
   end
-
 
   # Extract the title from a topic element
   defp extract_title(topic) do
@@ -290,7 +304,9 @@ defmodule KgEdu.XmindParser do
         extract_json_topic_hierarchy_recursive(child, depth + 1, nil, nil)
       end)
     else
-      Logger.info("Parent subject: #{inspect(parent_subject)}, Parent unit: #{inspect(parent_unit)}")
+      Logger.info(
+        "Parent subject: #{inspect(parent_subject)}, Parent unit: #{inspect(parent_unit)}"
+      )
 
       # Create the current resource with proper parent tracking
       current_resource = %{
@@ -302,22 +318,23 @@ defmodule KgEdu.XmindParser do
       }
 
       # Add subject/unit context for easier relationship building
-      current_resource = case depth do
-        1 ->
-          # Level 1: Subject
-          Map.put(current_resource, :subject, topic_title)
-          |> Map.put(:unit, nil)
+      current_resource =
+        case depth do
+          1 ->
+            # Level 1: Subject
+            Map.put(current_resource, :subject, topic_title)
+            |> Map.put(:unit, nil)
 
-        2 ->
-          # Level 2: Knowledge Unit
-          Map.put(current_resource, :subject, parent_subject)
-          |> Map.put(:unit, topic_title)
+          2 ->
+            # Level 2: Knowledge Unit
+            Map.put(current_resource, :subject, parent_subject)
+            |> Map.put(:unit, topic_title)
 
-        _ ->
-          # Level 3+: Knowledge Cell
-          Map.put(current_resource, :subject, parent_subject)
-          |> Map.put(:unit, parent_unit)
-      end
+          _ ->
+            # Level 3+: Knowledge Cell
+            Map.put(current_resource, :subject, parent_subject)
+            |> Map.put(:unit, parent_unit)
+        end
 
       # Process children recursively
       case children do
@@ -327,16 +344,26 @@ defmodule KgEdu.XmindParser do
 
         _ ->
           # Has children - process them recursively
-          child_resources = Enum.flat_map(children, fn child ->
-            # Determine what to pass as parent context to children
-            {child_parent_subject, child_parent_unit} = case depth do
-              1 -> {topic_title, nil}  # Subject's children
-              2 -> {parent_subject, topic_title}  # Unit's children
-              _ -> {parent_subject, parent_unit}  # Cell's children (deeper nesting)
-            end
+          child_resources =
+            Enum.flat_map(children, fn child ->
+              # Determine what to pass as parent context to children
+              {child_parent_subject, child_parent_unit} =
+                case depth do
+                  # Subject's children
+                  1 -> {topic_title, nil}
+                  # Unit's children
+                  2 -> {parent_subject, topic_title}
+                  # Cell's children (deeper nesting)
+                  _ -> {parent_subject, parent_unit}
+                end
 
-            extract_json_topic_hierarchy_recursive(child, depth + 1, child_parent_subject, child_parent_unit)
-          end)
+              extract_json_topic_hierarchy_recursive(
+                child,
+                depth + 1,
+                child_parent_subject,
+                child_parent_unit
+              )
+            end)
 
           Logger.info("Created #{length(child_resources)} child resources for #{topic_title}")
 
@@ -362,12 +389,13 @@ defmodule KgEdu.XmindParser do
     resources_with_parent_names =
       xmind_data
       |> Enum.map(fn item ->
-        knowledge_type = case item.level do
-          :subject -> :subject
-          :knowledge_unit -> :knowledge_unit
-          :knowledge_cell -> :knowledge_cell
-          _ -> :knowledge_cell
-        end
+        knowledge_type =
+          case item.level do
+            :subject -> :subject
+            :knowledge_unit -> :knowledge_unit
+            :knowledge_cell -> :knowledge_cell
+            _ -> :knowledge_cell
+          end
 
         base_attrs = %{
           name: item.title,
@@ -406,6 +434,7 @@ defmodule KgEdu.XmindParser do
             # Knowledge Cell (depth 4+) - nested cells
             # Find the parent cell name using the same logic as during parsing
             parent_cell_name = find_parent_cell_name(xmind_data, item)
+
             if parent_cell_name do
               Map.put(base_attrs, :parent_cell_name, parent_cell_name)
             else
@@ -434,28 +463,31 @@ defmodule KgEdu.XmindParser do
     indexed_data = xmind_data |> Enum.with_index()
 
     # Find the current item's index
-    current_index = Enum.find_value(indexed_data, fn {data, idx} ->
-      if data == item, do: idx
-    end)
+    current_index =
+      Enum.find_value(indexed_data, fn {data, idx} ->
+        if data == item, do: idx
+      end)
 
     if is_nil(current_index) do
       nil
     else
       # Look backwards from current position to find the most recent cell
       # that could be the parent (any depth less than current, not necessarily depth-1)
-      parent_cell = indexed_data
-      |> Enum.take(current_index)
-      |> Enum.reverse()
-      |> Enum.find(fn {candidate, _idx} ->
-        # For nested cells, parent should be:
-        # 1. A knowledge cell (not subject or unit)
-        # 2. Same subject context
-        # 3. Depth less than current (closest to current is best)
-        candidate.level == :knowledge_cell &&
-        candidate.subject == item.subject &&
-        candidate.depth < item.depth &&
-        candidate.title != item.title  # Not self
-      end)
+      parent_cell =
+        indexed_data
+        |> Enum.take(current_index)
+        |> Enum.reverse()
+        |> Enum.find(fn {candidate, _idx} ->
+          # For nested cells, parent should be:
+          # 1. A knowledge cell (not subject or unit)
+          # 2. Same subject context
+          # 3. Depth less than current (closest to current is best)
+          # Not self
+          candidate.level == :knowledge_cell &&
+            candidate.subject == item.subject &&
+            candidate.depth < item.depth &&
+            candidate.title != item.title
+        end)
 
       case parent_cell do
         nil ->
@@ -467,8 +499,8 @@ defmodule KgEdu.XmindParser do
             |> Enum.reverse()
             |> Enum.find(fn {candidate, _idx} ->
               candidate.level == :knowledge_unit &&
-              candidate.subject == item.subject &&
-              candidate.depth == item.depth - 1
+                candidate.subject == item.subject &&
+                candidate.depth == item.depth - 1
             end)
             |> case do
               nil -> nil
@@ -478,7 +510,8 @@ defmodule KgEdu.XmindParser do
             nil
           end
 
-        {cell, _idx} -> cell.title
+        {cell, _idx} ->
+          cell.title
       end
     end
   end
@@ -516,10 +549,11 @@ defmodule KgEdu.XmindParser do
 
           :knowledge_cell ->
             # Cells have parent subject and possibly parent unit
-            updated_resource = case Map.get(subjects_by_name, resource.subject) do
-              nil -> resource
-              subject -> %{resource | parent_subject_id: subject.id}
-            end
+            updated_resource =
+              case Map.get(subjects_by_name, resource.subject) do
+                nil -> resource
+                subject -> %{resource | parent_subject_id: subject.id}
+              end
 
             # If there's a unit with that name under the same subject, use it as parent
             case Map.get(units_by_name, resource.unit) do

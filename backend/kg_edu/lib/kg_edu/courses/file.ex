@@ -5,12 +5,17 @@ defmodule KgEdu.Courses.File do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshTypescript.Resource]
+
   import Logger
 
-  typescript do
-    type_name "File"
-  end
+  postgres do
+    table "files"
+    repo KgEdu.Repo
 
+    references do
+      reference :knowledge_resource, on_delete: :delete
+    end
+  end
 
   # File storage helper function
   defp store_file(base64_string) do
@@ -58,17 +63,8 @@ defmodule KgEdu.Courses.File do
     end
   end
 
-  postgres do
-    table "files"
-    repo KgEdu.Repo
-
-    references do
-      reference :knowledge_resource, on_delete: :delete
-    end
-  end
-
-  multitenancy do
-    strategy :context
+  typescript do
+    type_name "File"
   end
 
   code_interface do
@@ -92,9 +88,20 @@ defmodule KgEdu.Courses.File do
 
   actions do
     defaults [:read, :update, :destroy]
+
     create :create do
       description "Create a new file record"
-      accept [:filename, :path, :size, :file_type, :purpose, :course_id, :knowledge_resource_id, :created_by_id]
+
+      accept [
+        :filename,
+        :path,
+        :size,
+        :file_type,
+        :purpose,
+        :course_id,
+        :knowledge_resource_id,
+        :created_by_id
+      ]
 
       change set_attribute(:created_by_id, actor(:id))
     end
@@ -124,6 +131,7 @@ defmodule KgEdu.Courses.File do
                   size: file.size,
                   binary_data: binary_data
                 }
+
                 {:ok, file_result}
 
               {:error, reason} ->
@@ -174,6 +182,7 @@ defmodule KgEdu.Courses.File do
                   {:ok, stat} ->
                     Logger.info("Stored file at #{file_url} with size #{stat.size}")
                     file_url = KgEduWeb.CourseFileUploader.url({file_url, course_id})
+
                     changeset
                     |> Ash.Changeset.change_attribute(:filename, original_filename)
                     |> Ash.Changeset.change_attribute(:path, file_url)
@@ -228,6 +237,7 @@ defmodule KgEdu.Courses.File do
       change manage_relationship(:knowledge_resource_id, :knowledge_resource,
                type: :append_and_remove
              )
+
       change set_attribute(:created_by_id, actor(:id))
 
       change fn changeset, _context ->
@@ -345,7 +355,9 @@ defmodule KgEdu.Courses.File do
         description "The knowledge resource ID to link to"
       end
 
-      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource,
+               type: :append_and_remove
+             )
     end
 
     update :unlink_file_from_knowledge do
@@ -370,7 +382,10 @@ defmodule KgEdu.Courses.File do
       end
 
       run fn input, context ->
-        file_id = input.arguments[:file_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        file_id =
+          input.arguments[:file_id] || input.arguments[:id] ||
+            Ash.Changeset.get_attribute(input.context, :id)
+
         user_id = input.arguments[:user_id]
         metadata = input.arguments[:metadata] || %{}
 
@@ -414,6 +429,10 @@ defmodule KgEdu.Courses.File do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

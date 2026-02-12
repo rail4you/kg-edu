@@ -1,5 +1,6 @@
 # Test HTTP request to email API
 url = 'http://localhost:5000/agent/email'
+
 payload = %{
   senderEmail: "619126989@qq.com",
   senderPassword: "uzrnvmdhsozcbajj",
@@ -19,17 +20,18 @@ IO.puts("URL: #{url}")
 IO.puts("Payload: #{json_payload}")
 
 # Test with :httpc
-result = :httpc.request(
-  :post,
-  {
-    url,
-    [{'Content-Type', 'application/json'}],
-    'application/json',
-    json_payload |> to_charlist()
-  },
-  [],
-  body_format: :binary
-)
+result =
+  :httpc.request(
+    :post,
+    {
+      url,
+      [{'Content-Type', 'application/json'}],
+      'application/json',
+      json_payload |> to_charlist()
+    },
+    [],
+    body_format: :binary
+  )
 
 IO.puts("\nResult:")
 IO.puts(inspect(result, pretty: true))
@@ -44,6 +46,7 @@ case result do
       {:ok, decoded} ->
         IO.puts("\nDecoded:")
         IO.puts(inspect(decoded, pretty: true))
+
       {:error, json_error} ->
         IO.puts("\nJSON decode error: #{inspect(json_error)}")
     end

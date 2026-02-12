@@ -12,14 +12,22 @@ defmodule KgEduWeb.ChatController do
 
   defp stream_claude_response(conn, message, ai_command_id \\ nil) do
     # ReqLLM.put_key(:openai_api_key, "sk-3e910c05b96a49f9aa0ea064bef50ceb")
-    ReqLLM.put_key(:openrouter_api_key, "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")
+    ReqLLM.put_key(
+      :openrouter_api_key,
+      "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"
+    )
+
     context = build_context_from_ai_command(ai_command_id)
 
     # Build messages with context
     messages =
       case context do
-        nil -> [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
-        _ -> context.messages ++ [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
+        nil ->
+          [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
+
+        _ ->
+          context.messages ++
+            [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
       end
 
     llm_context = ReqLLM.Context.new(messages)
@@ -57,7 +65,13 @@ defmodule KgEduWeb.ChatController do
       # Add system message if present
       messages =
         if command.system do
-          messages ++ [%ReqLLM.Message{role: :system, content: [ReqLLM.Message.ContentPart.text(command.system)]}]
+          messages ++
+            [
+              %ReqLLM.Message{
+                role: :system,
+                content: [ReqLLM.Message.ContentPart.text(command.system)]
+              }
+            ]
         else
           messages
         end
@@ -65,7 +79,13 @@ defmodule KgEduWeb.ChatController do
       # Add user message if present
       messages =
         if command.user do
-          messages ++ [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(command.user)]}]
+          messages ++
+            [
+              %ReqLLM.Message{
+                role: :user,
+                content: [ReqLLM.Message.ContentPart.text(command.user)]
+              }
+            ]
         else
           messages
         end
@@ -73,7 +93,13 @@ defmodule KgEduWeb.ChatController do
       # Add assistant message if present
       messages =
         if command.assistant do
-          messages ++ [%ReqLLM.Message{role: :assistant, content: [ReqLLM.Message.ContentPart.text(command.assistant)]}]
+          messages ++
+            [
+              %ReqLLM.Message{
+                role: :assistant,
+                content: [ReqLLM.Message.ContentPart.text(command.assistant)]
+              }
+            ]
         else
           messages
         end
@@ -89,6 +115,7 @@ defmodule KgEduWeb.ChatController do
               ReqLLM.Message.ContentPart.text("Using this context, please respond to my message.")
             ]
           }
+
           messages ++ [context_message]
         else
           messages

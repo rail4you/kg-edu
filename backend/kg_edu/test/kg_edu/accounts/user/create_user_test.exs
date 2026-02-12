@@ -22,7 +22,8 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
       assert user.email == "test@example.com"
       assert user.role == :user
       assert user.hashed_password != nil
-      assert user.hashed_password != "password123"  # Should be hashed
+      # Should be hashed
+      assert user.hashed_password != "password123"
     end
 
     test "creates user with minimal parameters" do
@@ -36,7 +37,8 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
       assert user.member_id == "minimal_user"
       assert user.name == nil
       assert user.email == nil
-      assert user.role == :user  # Default role
+      # Default role
+      assert user.role == :user
       assert user.hashed_password != nil
     end
 
@@ -87,7 +89,8 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
     test "returns error for short password" do
       params = %{
         member_id: "test_user",
-        password: "123"  # Too short
+        # Too short
+        password: "123"
       }
 
       assert {:error, _reason} = Accounts.create_user(params)

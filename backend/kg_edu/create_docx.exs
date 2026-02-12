@@ -51,14 +51,16 @@ files = [
   {"word/_rels/document.xml.rels", File.read!("word/_rels/document.xml.rels")}
 ]
 
-charlist_files = Enum.map(files, fn {path, content} ->
-  {String.to_charlist(path), String.to_charlist(content)}
-end)
+charlist_files =
+  Enum.map(files, fn {path, content} ->
+    {String.to_charlist(path), String.to_charlist(content)}
+  end)
 
 case :zip.create(String.to_charlist(filename), charlist_files) do
   {:ok, _zip_name} ->
     IO.puts("Successfully created #{filename}")
     :ok
+
   {:error, reason} ->
     IO.puts("Error creating ZIP: #{inspect(reason)}")
     :error

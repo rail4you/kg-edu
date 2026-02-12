@@ -48,7 +48,6 @@ defmodule KgEdu.Courses.FileExample do
     })
   end
 
-
   defp generate_files_for_resource_type(_) do
     # Generate generic content for unknown types
     create_example_file(%{

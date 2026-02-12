@@ -6,57 +6,57 @@ defmodule KgEduWeb.ExerciseLive.Index do
     ~H"""
     <Layouts.app flash={@flash}>
       <div data-theme="green" class="rounded-lg p-4">
-      <.header>
-        Listing Exercises
-        <:actions>
-          <.button variant="primary" navigate={~p"/exercises/new"}>
-            <.icon name="hero-plus" /> New Exercise
-          </.button>
-        </:actions>
-      </.header>
+        <.header>
+          Listing Exercises
+          <:actions>
+            <.button variant="primary" navigate={~p"/exercises/new"}>
+              <.icon name="hero-plus" /> New Exercise
+            </.button>
+          </:actions>
+        </.header>
 
-      <.table
-        id="exercises"
-        rows={@streams.exercises}
-        row_click={fn {_id, exercise} -> JS.navigate(~p"/exercises/#{exercise}") end}
-      >
-        <:col :let={{_id, exercise}} label="Id">{exercise.id}</:col>
+        <.table
+          id="exercises"
+          rows={@streams.exercises}
+          row_click={fn {_id, exercise} -> JS.navigate(~p"/exercises/#{exercise}") end}
+        >
+          <:col :let={{_id, exercise}} label="Id">{exercise.id}</:col>
 
-        <:col :let={{_id, exercise}} label="Title">{exercise.title}</:col>
+          <:col :let={{_id, exercise}} label="Title">{exercise.title}</:col>
 
-        <:col :let={{_id, exercise}} label="Question content">{exercise.question_content}</:col>
+          <:col :let={{_id, exercise}} label="Question content">{exercise.question_content}</:col>
 
-        <:col :let={{_id, exercise}} label="Answer">{exercise.answer}</:col>
+          <:col :let={{_id, exercise}} label="Answer">{exercise.answer}</:col>
 
-        <:col :let={{_id, exercise}} label="Question type">{exercise.question_type}</:col>
+          <:col :let={{_id, exercise}} label="Question type">{exercise.question_type}</:col>
 
-        <:col :let={{_id, exercise}} label="Options">{exercise.options}</:col>
+          <:col :let={{_id, exercise}} label="Options">{exercise.options}</:col>
 
-        <:col :let={{_id, exercise}} label="Knowledge resource">
-          {exercise.knowledge_resource_id}
-        </:col>
+          <:col :let={{_id, exercise}} label="Knowledge resource">
+            {exercise.knowledge_resource_id}
+          </:col>
 
-        <:col :let={{_id, exercise}} label="Course">{exercise.course_id}</:col>
+          <:col :let={{_id, exercise}} label="Course">{exercise.course_id}</:col>
 
-        <:col :let={{_id, exercise}} label="Created by">{exercise.created_by_id}</:col>
+          <:col :let={{_id, exercise}} label="Created by">{exercise.created_by_id}</:col>
 
-        <:action :let={{_id, exercise}}>
-          <div class="sr-only">
-            <.link navigate={~p"/exercises/#{exercise}"}>Show</.link>
-          </div>
+          <:action :let={{_id, exercise}}>
+            <div class="sr-only">
+              <.link navigate={~p"/exercises/#{exercise}"}>Show</.link>
+            </div>
 
-          <.link navigate={~p"/exercises/#{exercise}/edit"}>Edit</.link>
-        </:action>
+            <.link navigate={~p"/exercises/#{exercise}/edit"}>Edit</.link>
+          </:action>
 
-        <:action :let={{id, exercise}}>
-          <.link
-            phx-click={JS.push("delete", value: %{id: exercise.id}) |> hide("##{id}")}
-            data-confirm="Are you sure?"
-          >
-            Delete
-          </.link>
-        </:action>
-      </.table>
+          <:action :let={{id, exercise}}>
+            <.link
+              phx-click={JS.push("delete", value: %{id: exercise.id}) |> hide("##{id}")}
+              data-confirm="Are you sure?"
+            >
+              Delete
+            </.link>
+          </:action>
+        </.table>
       </div>
     </Layouts.app>
     """

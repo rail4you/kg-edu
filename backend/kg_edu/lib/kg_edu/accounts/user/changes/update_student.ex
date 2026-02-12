@@ -13,16 +13,16 @@ defmodule KgEdu.Accounts.User.Changes.UpdateStudent do
 
   defp hash_password_if_provided(changeset) do
     password = Ash.Changeset.get_argument(changeset, :password)
-    
+
     case password do
       nil ->
         # No password provided, don't change it
         changeset
-        
+
       "" ->
         # Empty password, don't change it
         changeset
-        
+
       password ->
         # New password provided, hash it
         hashed = Bcrypt.hash_pwd_salt(password)

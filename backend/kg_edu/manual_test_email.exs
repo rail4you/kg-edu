@@ -5,7 +5,10 @@ IO.puts("\n=== Manual EmailSender Test ===\n")
 email_message_id = "cd8fcdc3-6b8f-49b6-ad0c-23f8bb3c2b44"
 tenant = "org_2af44c7b_081a_497a_9858_365fa90ad5d7"
 
-case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant, authorize?: false) do
+case KgEdu.Email.EmailMessage.get_email_message(email_message_id,
+       tenant: tenant,
+       authorize?: false
+     ) do
   {:ok, email_msg} ->
     IO.puts("Found email message:")
     IO.puts("  Subject: #{email_msg.subject}")
@@ -32,6 +35,7 @@ case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant
           {:ok, updated} ->
             IO.puts("✓ Message updated to sent")
             IO.puts("  Sent at: #{updated.sent_at}")
+
           {:error, error} ->
             IO.puts("✗ Failed to update message:")
             IO.puts(inspect(error, pretty: true))
@@ -49,6 +53,7 @@ case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant
           {:ok, updated} ->
             IO.puts("✓ Message updated to failed")
             IO.puts("  Error: #{updated.error_message}")
+
           {:error, error} ->
             IO.puts("✗ Failed to update message:")
             IO.puts(inspect(error, pretty: true))

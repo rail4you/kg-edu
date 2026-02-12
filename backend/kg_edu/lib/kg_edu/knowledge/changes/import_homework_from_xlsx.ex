@@ -61,33 +61,41 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
       homework_map = Map.delete(homework_map, "tags")
 
       # Ensure score is treated as a number if present
-      homework_map = case Map.get(homework_map, "score") do
-        score when is_binary(score) ->
-          case Float.parse(score) do
-            {float_val, ""} -> Map.put(homework_map, "score", float_val)
-            _ -> homework_map
-          end
-        _ -> homework_map
-      end
+      homework_map =
+        case Map.get(homework_map, "score") do
+          score when is_binary(score) ->
+            case Float.parse(score) do
+              {float_val, ""} -> Map.put(homework_map, "score", float_val)
+              _ -> homework_map
+            end
+
+          _ ->
+            homework_map
+        end
 
       # Transform description field to content field
-      homework_map = case Map.get(homework_map, "description") do
-        nil -> homework_map
-        description ->
-          homework_map
-          |> Map.delete("description")
-          |> Map.put("content", description)
-      end
+      homework_map =
+        case Map.get(homework_map, "description") do
+          nil ->
+            homework_map
+
+          description ->
+            homework_map
+            |> Map.delete("description")
+            |> Map.put("content", description)
+        end
 
       # Transform remaining values to strings, except score
       original_score = Map.get(homework_map, "score")
 
       homework_map =
         homework_map
-        |> Map.delete("score")  # Remove score temporarily
+        # Remove score temporarily
+        |> Map.delete("score")
         |> MapTransformer.transform_values_to_string()
         |> Map.put("course_id", course_id)
-        |> then(fn map ->  # Add back score if it existed
+        # Add back score if it existed
+        |> then(fn map ->
           case original_score do
             nil -> map
             score -> Map.put(map, "score", score)

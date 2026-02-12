@@ -9,10 +9,10 @@ defmodule KgEdu.Activity.Changes.LogVideoView do
   def change(changeset, opts, context) do
     user_id = get_user_id(changeset, context, opts)
     video_id = get_video_id(changeset, opts)
-    
+
     if user_id && video_id do
       metadata = Map.get(opts, :metadata, %{})
-      
+
       # Log the activity asynchronously to avoid blocking the main action
       Task.start(fn ->
         KgEdu.Activity.ActivityLog.log_video_view(%{
@@ -22,7 +22,7 @@ defmodule KgEdu.Activity.Changes.LogVideoView do
         })
       end)
     end
-    
+
     changeset
   end
 
@@ -32,15 +32,19 @@ defmodule KgEdu.Activity.Changes.LogVideoView do
       nil ->
         # Try to get from context
         case Map.get(context, :user) do
-          %{id: user_id} -> user_id
-          _ -> 
+          %{id: user_id} ->
+            user_id
+
+          _ ->
             # Try to get from actor
             case Map.get(context, :actor) do
               %{id: user_id} -> user_id
               _ -> nil
             end
         end
-      user_id -> user_id
+
+      user_id ->
+        user_id
     end
   end
 
@@ -49,9 +53,11 @@ defmodule KgEdu.Activity.Changes.LogVideoView do
     case Keyword.get(opts, :video_id) do
       nil ->
         # Try to get from changeset data or attributes
-        Ash.Changeset.get_attribute(changeset, :id) || 
-        Ash.Changeset.get_attribute(changeset, :video_id)
-      video_id -> video_id
+        Ash.Changeset.get_attribute(changeset, :id) ||
+          Ash.Changeset.get_attribute(changeset, :video_id)
+
+      video_id ->
+        video_id
     end
   end
 end

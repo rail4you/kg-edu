@@ -11,21 +11,17 @@ defmodule KgEdu.Attendance.CheckInSession do
 
   import Ash.Query
 
-  typescript do
-    type_name "CheckInSession"
-  end
-
   postgres do
     table "check_in_sessions"
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "check_in_session"
+  end
+
+  typescript do
+    type_name "CheckInSession"
   end
 
   code_interface do
@@ -35,6 +31,74 @@ defmodule KgEdu.Attendance.CheckInSession do
     define :get_by_token, action: :by_token
     define :get_session, action: :by_id
     define :list_sessions, action: :read
+  end
+
+  actions do
+    defaults [:read, :update, :destroy]
+
+    read :by_id do
+      description "Get a check-in session by ID"
+      get? true
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id))
+    end
+
+    read :active_sessions do
+      description "Get all active check-in sessions"
+      filter expr(status == :active)
+    end
+
+    read :by_token do
+      description "Get a check-in session by its token"
+
+      argument :token, :string do
+        allow_nil? false
+      end
+
+      get? true
+
+      filter expr(token == ^arg(:token))
+    end
+
+    create :create do
+      description "Create a new check-in session"
+      accept [:title, :description]
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+        description "ID of the user creating the session"
+      end
+
+      change fn changeset, _context ->
+        # Generate a unique token for this session
+        token = generate_unique_token()
+        Ash.Changeset.change_attribute(changeset, :token, token)
+      end
+
+      change manage_relationship(:created_by_id, :created_by, type: :append)
+    end
+
+    update :close do
+      description "Close an active check-in session"
+      accept []
+      require_atomic? false
+
+      change fn changeset, _context ->
+        changeset
+        |> Ash.Changeset.change_attribute(:status, :closed)
+        |> Ash.Changeset.change_attribute(:ended_at, DateTime.utc_now())
+      end
+    end
+  end
+
+  policies do
+    policy always() do
+      authorize_if always()
+    end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -96,69 +160,6 @@ defmodule KgEdu.Attendance.CheckInSession do
     end
   end
 
-  actions do
-    defaults [:read, :update, :destroy]
-
-    read :by_id do
-      description "Get a check-in session by ID"
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
-    end
-
-    read :active_sessions do
-      description "Get all active check-in sessions"
-      filter expr(status == :active)
-    end
-
-    read :by_token do
-      description "Get a check-in session by its token"
-      argument :token, :string do
-        allow_nil? false
-      end
-
-      get? true
-
-      filter expr(token == ^arg(:token))
-    end
-
-    create :create do
-      description "Create a new check-in session"
-      accept [:title, :description]
-
-      argument :created_by_id, :uuid do
-        allow_nil? false
-        description "ID of the user creating the session"
-      end
-
-      change fn changeset, _context ->
-        # Generate a unique token for this session
-        token = generate_unique_token()
-        Ash.Changeset.change_attribute(changeset, :token, token)
-      end
-
-      change manage_relationship(:created_by_id, :created_by, type: :append)
-    end
-
-    update :close do
-      description "Close an active check-in session"
-      accept []
-      require_atomic? false
-
-      change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_attribute(:status, :closed)
-        |> Ash.Changeset.change_attribute(:ended_at, DateTime.utc_now())
-      end
-    end
-  end
-
-  policies do
-    policy always() do
-      authorize_if always()
-    end
-  end
-
   defp generate_unique_token do
     :crypto.strong_rand_bytes(16)
     |> Base.url_encode64(padding: false)
@@ -190,9 +191,9 @@ defmodule KgEdu.Attendance.CheckInSession do
       union_queries =
         tenant_schemas
         |> Enum.map(fn schema ->
-          "SELECT id, status, description, started_at, title, token, ended_at, created_by_id, '#{schema}' as tenant_schema "
-          <> "FROM #{schema}.check_in_sessions "
-          <> "WHERE token = $1"
+          "SELECT id, status, description, started_at, title, token, ended_at, created_by_id, '#{schema}' as tenant_schema " <>
+            "FROM #{schema}.check_in_sessions " <>
+            "WHERE token = $1"
         end)
         |> Enum.join(" UNION ALL ")
 
@@ -201,7 +202,17 @@ defmodule KgEdu.Attendance.CheckInSession do
           if num_rows == 1 do
             [row] = rows
             # Build the session record from the row
-            [id, status, description, started_at, title, token, ended_at, created_by_id, tenant_schema] = row
+            [
+              id,
+              status,
+              description,
+              started_at,
+              title,
+              token,
+              ended_at,
+              created_by_id,
+              tenant_schema
+            ] = row
 
             session = %{
               __struct__: __MODULE__,

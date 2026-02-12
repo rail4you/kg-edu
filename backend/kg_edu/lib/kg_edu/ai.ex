@@ -1,5 +1,6 @@
 defmodule KgEdu.AI do
-  use Ash.Domain, otp_app: :kg_edu, extensions: [AshPhoenix,  AshTypescript.Rpc]
+  use Ash.Domain, otp_app: :kg_edu, extensions: [AshPhoenix, AshTypescript.Rpc]
+
   typescript_rpc do
     resource KgEdu.AI.Command do
       rpc_action :create_command, :create
@@ -9,6 +10,7 @@ defmodule KgEdu.AI do
       rpc_action :delete_command, :destroy
     end
   end
+
   resources do
     resource KgEdu.AI.Command do
       define :create_command, action: :create

@@ -1,5 +1,4 @@
 defmodule KgEdu.KnowledgeExample do
-
   # ============================================
   # EXAMPLE 1: Creating a Three-Tier Knowledge Hierarchy
   # ============================================
@@ -121,6 +120,7 @@ defmodule KgEdu.KnowledgeExample do
         course_id: @course_id,
         importance_level: :important
       })
+
     {:ok, angles} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Angles and Triangles",

@@ -10,22 +10,27 @@ defmodule KgEduWeb.NestedHierarchyController do
     tenant_param = conn.params["tenant"] || conn.assigns[:tenant]
 
     # Resolve tenant to schema name if it's an organization ID
-    tenant = case tenant_param do
-      nil -> "org_default"
-      tenant_id ->
-        # Try to resolve organization ID to schema name
-        case resolve_tenant_schema(tenant_id) do
-          {:ok, schema_name} -> schema_name
-          _ ->
-            # If resolution fails, assume it's already a schema name
-            tenant_param
-        end
-    end
+    tenant =
+      case tenant_param do
+        nil ->
+          "org_default"
+
+        tenant_id ->
+          # Try to resolve organization ID to schema name
+          case resolve_tenant_schema(tenant_id) do
+            {:ok, schema_name} ->
+              schema_name
+
+            _ ->
+              # If resolution fails, assume it's already a schema name
+              tenant_param
+          end
+      end
 
     case KgEdu.KnowledgeNestedHierarchy.get(%{
-      course_id: course_id,
-      tenant: tenant
-    }) do
+           course_id: course_id,
+           tenant: tenant
+         }) do
       {:ok, nested_hierarchy} ->
         # Serialize Ash Resources to maps before JSON encoding
         json(conn, %{success: true, data: serialize_resources(nested_hierarchy)})
@@ -48,6 +53,7 @@ defmodule KgEduWeb.NestedHierarchyController do
     serialized = %{
       id: resource.id,
       name: resource.name,
+      enName: resource.en_name,
       knowledgeType: resource.knowledge_type,
       subject: resource.subject,
       unit: resource.unit,
@@ -98,7 +104,9 @@ defmodule KgEduWeb.NestedHierarchyController do
     # Check for nested child cells (custom field) - this handles level 4+ cells
     serialized =
       case Map.get(resource, :nestedChildCells) do
-        nil -> serialized
+        nil ->
+          serialized
+
         nested when is_list(nested) ->
           Map.put(serialized, :nestedChildCells, serialize_resources(nested))
       end
@@ -112,6 +120,7 @@ defmodule KgEduWeb.NestedHierarchyController do
     serialized = %{
       id: Map.get(resource, :id),
       name: Map.get(resource, :name),
+      enName: Map.get(resource, :en_name),
       knowledgeType: Map.get(resource, :knowledge_type),
       subject: Map.get(resource, :subject),
       unit: Map.get(resource, :unit),
@@ -133,40 +142,58 @@ defmodule KgEduWeb.NestedHierarchyController do
     # Recursively serialize relationships
     serialized =
       case Map.get(resource, :child_units) do
-        nil when is_nil(resource.child_units) -> serialized
+        nil when is_nil(resource.child_units) ->
+          serialized
+
         units when is_list(units) ->
           Map.put(serialized, :childUnits, serialize_resources(units))
-        _ -> serialized
+
+        _ ->
+          serialized
       end
 
     serialized =
       case Map.get(resource, :child_cells) do
-        nil when is_nil(resource.child_cells) -> serialized
+        nil when is_nil(resource.child_cells) ->
+          serialized
+
         cells when is_list(cells) ->
           Map.put(serialized, :childCells, serialize_resources(cells))
-        _ -> serialized
+
+        _ ->
+          serialized
       end
 
     serialized =
       case Map.get(resource, :direct_cells) do
-        nil when is_nil(resource.direct_cells) -> serialized
+        nil when is_nil(resource.direct_cells) ->
+          serialized
+
         cells when is_list(cells) ->
           Map.put(serialized, :directCells, serialize_resources(cells))
-        _ -> serialized
+
+        _ ->
+          serialized
       end
 
     serialized =
       case Map.get(resource, :subject_cells) do
-        nil when is_nil(resource.subject_cells) -> serialized
+        nil when is_nil(resource.subject_cells) ->
+          serialized
+
         cells when is_list(cells) ->
           Map.put(serialized, :subjectCells, serialize_resources(cells))
-        _ -> serialized
+
+        _ ->
+          serialized
       end
 
     # Check for nested child cells (custom field) - this handles level 4+ cells
     serialized =
       case Map.get(resource, :nestedChildCells) do
-        nil -> serialized
+        nil ->
+          serialized
+
         nested when is_list(nested) ->
           Map.put(serialized, :nestedChildCells, serialize_resources(nested))
       end

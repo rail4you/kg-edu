@@ -63,9 +63,11 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, user_data} ->
         Logger.info("Successfully parsed Excel file, got #{length(user_data)} user records")
+
         if length(user_data) > 0 do
           Logger.info("Sample user data: #{inspect(hd(user_data))}")
         end
+
         create_users_from_data(user_data, tenant_schema)
 
       {:error, reason} ->
@@ -87,6 +89,7 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     case Enum.split_with(results, &match?({:ok, _}, &1)) do
       {successful, []} ->
         users = Enum.map(successful, fn {:ok, user} -> user end)
+        # Return users with their action type (:created or :updated)
         {:ok, users}
 
       {successful, failed} ->
@@ -96,12 +99,12 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
           users = Enum.map(successful, fn {:ok, user} -> user end)
 
           Logger.warning(
-            "Partial import successful: #{length(successful)} users created, #{length(failed)} failed. Errors: #{inspect(error_messages)}"
+            "Partial import successful: #{length(successful)} users processed, #{length(failed)} failed. Errors: #{inspect(error_messages)}"
           )
 
           {:ok, users}
         else
-          {:error, "Failed to create any users: #{inspect(error_messages)}"}
+          {:error, "Failed to process any users: #{inspect(error_messages)}"}
         end
     end
   end
@@ -134,81 +137,99 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     errors = []
 
     # Validate password length
-    errors = case user_map[:password] do
-      password when is_binary(password) and byte_size(password) >= 8 ->
-        errors
-      password when is_binary(password) ->
-        ["Password must be at least 8 characters long" | errors]
-      _ ->
-        ["Password is required" | errors]
-    end
+    errors =
+      case user_map[:password] do
+        password when is_binary(password) and byte_size(password) >= 8 ->
+          errors
+
+        password when is_binary(password) ->
+          ["Password must be at least 8 characters long" | errors]
+
+        _ ->
+          ["Password is required" | errors]
+      end
 
     # Validate and normalize role
-    {role, errors} = case user_map[:role] do
-      role when role in ["super_admin", :super_admin, "超级管理员"] ->
-        {:super_admin, errors}
-      role when role in ["admin", :admin, "管理员"] ->
-        {:admin, errors}
-      role when role in ["teacher", :teacher, "教师", "老师"] ->
-        {:teacher, errors}
-      role when role in ["user", :user, "用户", "学生"] ->
-        {:user, errors}
-      nil ->
-        {:user, errors}
-      _ ->
-        {nil, ["Invalid role: #{user_map[:role]}" | errors]}
-    end
+    {role, errors} =
+      case user_map[:role] do
+        role when role in ["super_admin", :super_admin, "超级管理员"] ->
+          {:super_admin, errors}
+
+        role when role in ["admin", :admin, "管理员"] ->
+          {:admin, errors}
+
+        role when role in ["teacher", :teacher, "教师", "老师"] ->
+          {:teacher, errors}
+
+        role when role in ["user", :user, "用户", "学生"] ->
+          {:user, errors}
+
+        nil ->
+          {:user, errors}
+
+        _ ->
+          {nil, ["Invalid role: #{user_map[:role]}" | errors]}
+      end
 
     # Validate email format
-    errors = case user_map[:email] do
-      email when is_binary(email) ->
-        if String.contains?(email, "@") do
+    errors =
+      case user_map[:email] do
+        email when is_binary(email) ->
+          if String.contains?(email, "@") do
+            errors
+          else
+            ["Invalid email format: #{email}" | errors]
+          end
+
+        _ ->
+          # Email is optional
           errors
-        else
-          ["Invalid email format: #{email}" | errors]
-        end
-      _ ->
-        errors  # Email is optional
-    end
+      end
 
     # Check for super admin role with tenant context
-    errors = if role == :super_admin and not is_nil(tenant_schema) do
-      ["Super admin users cannot be created in specific tenants" | errors]
-    else
-      errors
-    end
+    errors =
+      if role == :super_admin and not is_nil(tenant_schema) do
+        ["Super admin users cannot be created in specific tenants" | errors]
+      else
+        errors
+      end
 
     # Handle class assignment for user role only
-    {class_id, class_name, errors} = if role == :user and not is_nil(user_map[:class]) and user_map[:class] != "" do
-      case find_or_create_class(user_map[:class], tenant_schema, user_map) do
-        {:ok, class_id} ->
-          {class_id, user_map[:class], errors}
-        {:error, reason} ->
-          {nil, nil, ["Failed to assign class: #{reason}" | errors]}
+    {class_id, class_name, errors} =
+      if role == :user and not is_nil(user_map[:class]) and user_map[:class] != "" do
+        case find_or_create_class(user_map[:class], tenant_schema, user_map) do
+          {:ok, class_id} ->
+            {class_id, user_map[:class], errors}
+
+          {:error, reason} ->
+            {nil, nil, ["Failed to assign class: #{reason}" | errors]}
+        end
+      else
+        {nil, nil, errors}
       end
-    else
-      {nil, nil, errors}
-    end
 
     if errors == [] do
       # Start with the user_map
-      processed_map = user_map
+      processed_map =
+        user_map
         |> Map.put(:role, role)
 
       # Only add class fields for user role, remove :class key for all roles
-      processed_map = processed_map
+      processed_map =
+        processed_map
         |> Map.delete(:class)
 
-      processed_map = if role == :user do
-        processed_map
-        |> Map.put(:class_name, class_name)
-        |> Map.put(:class_id, class_id)
-      else
-        # Remove class-related fields for non-user roles
-        processed_map
-        |> Map.delete(:class_name)
-        |> Map.delete(:class_id)
-      end
+      processed_map =
+        if role == :user do
+          processed_map
+          |> Map.put(:class_name, class_name)
+          |> Map.put(:class_id, class_id)
+        else
+          # Remove class-related fields for non-user roles
+          processed_map
+          |> Map.delete(:class_name)
+          |> Map.delete(:class_id)
+        end
 
       {:ok, processed_map}
     else
@@ -225,52 +246,64 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     major = Map.get(user_map, :major)
 
     # Try to find existing class by name first
-    find_result = try do
-      # Read all classes and filter manually (simpler approach)
-      case Ash.read(KgEdu.Accounts.Class, tenant: tenant_schema) do
-        {:ok, classes} ->
-          # Find matching class by name (and college/major if provided)
-          matching_class = Enum.find(classes, fn class ->
-            name_match = class.name == class_name
+    find_result =
+      try do
+        # Read all classes and filter manually (simpler approach)
+        case Ash.read(KgEdu.Accounts.Class, tenant: tenant_schema) do
+          {:ok, classes} ->
+            # Find matching class by name (and college/major if provided)
+            matching_class =
+              Enum.find(classes, fn class ->
+                name_match = class.name == class_name
 
-            # Handle nil values properly in comparisons
-            college_match = case {college, class.college} do
-              {nil, _} -> true  # No college filter specified, match all
-              {"", _} -> true  # Empty college filter, match all
-              {_user_college, nil} -> false  # User has college but class doesn't
-              {user_college, class_college} -> user_college == class_college  # Both have values, compare
+                # Handle nil values properly in comparisons
+                college_match =
+                  case {college, class.college} do
+                    # No college filter specified, match all
+                    {nil, _} -> true
+                    # Empty college filter, match all
+                    {"", _} -> true
+                    # User has college but class doesn't
+                    {_user_college, nil} -> false
+                    # Both have values, compare
+                    {user_college, class_college} -> user_college == class_college
+                  end
+
+                major_match =
+                  case {major, class.major} do
+                    # No major filter specified, match all
+                    {nil, _} -> true
+                    # Empty major filter, match all
+                    {"", _} -> true
+                    # User has major but class doesn't
+                    {_user_major, nil} -> false
+                    # Both have values, compare
+                    {user_major, class_major} -> user_major == class_major
+                  end
+
+                name_match and college_match and major_match
+              end)
+
+            case matching_class do
+              nil ->
+                Logger.info("Class not found, creating new class")
+                create_new_class(class_name, tenant_schema, college, major)
+
+              class ->
+                Logger.info("Found existing class: #{class.id}")
+                {:ok, class.id}
             end
 
-            major_match = case {major, class.major} do
-              {nil, _} -> true  # No major filter specified, match all
-              {"", _} -> true  # Empty major filter, match all
-              {_user_major, nil} -> false  # User has major but class doesn't
-              {user_major, class_major} -> user_major == class_major  # Both have values, compare
-            end
-
-            name_match and college_match and major_match
-          end)
-
-          case matching_class do
-            nil ->
-              Logger.info("Class not found, creating new class")
-              create_new_class(class_name, tenant_schema, college, major)
-
-            class ->
-              Logger.info("Found existing class: #{class.id}")
-              {:ok, class.id}
-          end
-
-        {:error, reason} ->
-          Logger.error("Error reading classes: #{inspect(reason)}")
-          {:error, "Failed to read classes: #{inspect(reason)}"}
+          {:error, reason} ->
+            Logger.error("Error reading classes: #{inspect(reason)}")
+            {:error, "Failed to read classes: #{inspect(reason)}"}
+        end
+      rescue
+        e ->
+          Logger.error("Exception while finding class: #{Exception.message(e)}")
+          Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+          {:error, Exception.message(e)}
       end
-    rescue
-      e ->
-        Logger.error("Exception while finding class: #{Exception.message(e)}")
-        Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
-        {:error, Exception.message(e)}
-    end
 
     find_result
   end
@@ -336,7 +369,10 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
 
             user ->
               # User exists, update the user
-              Logger.info("User #{member_id} exists (ID: #{user.id}), updating user and class association")
+              Logger.info(
+                "User #{member_id} exists (ID: #{user.id}), updating user and class association"
+              )
+
               update_existing_user(user, user_map, tenant_schema)
           end
 
@@ -355,14 +391,15 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
   # Create a new user
   defp create_new_user(user_map, tenant_schema) do
     try do
-      create_result = KgEdu.Accounts.User
-                    |> Ash.Changeset.for_create(:create_user, user_map)
-                    |> Ash.create(tenant: tenant_schema)
+      create_result =
+        KgEdu.Accounts.User
+        |> Ash.Changeset.for_create(:create_user, user_map)
+        |> Ash.create(tenant: tenant_schema)
 
       case create_result do
         {:ok, user} ->
           Logger.info("Successfully created user: #{user_map[:member_id]}")
-          {:ok, user}
+          {:ok, Map.put(user, :_action, :created)}
 
         {:error, reason} ->
           Logger.error("Failed to create user #{user_map[:member_id]}: #{inspect(reason)}")
@@ -370,7 +407,10 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
       end
     rescue
       e ->
-        Logger.error("Failed to create user #{user_map[:member_id]} in tenant context: #{Exception.message(e)}")
+        Logger.error(
+          "Failed to create user #{user_map[:member_id]} in tenant context: #{Exception.message(e)}"
+        )
+
         Logger.error("User data that failed: #{inspect(user_map)}")
         Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
         {:error, "Failed to create user in tenant context: #{Exception.message(e)}"}
@@ -381,18 +421,20 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
   defp update_existing_user(user, user_map, tenant_schema) do
     try do
       # Prepare update attributes (exclude password and member_id from update)
-      update_attrs = user_map
+      update_attrs =
+        user_map
         |> Map.drop([:password, :member_id])
 
       # Update user using the update action
-      update_result = user
-                    |> Ash.Changeset.for_update(:update, update_attrs)
-                    |> Ash.update(tenant: tenant_schema)
+      update_result =
+        user
+        |> Ash.Changeset.for_update(:update, update_attrs)
+        |> Ash.update(tenant: tenant_schema)
 
       case update_result do
         {:ok, updated_user} ->
           Logger.info("Successfully updated user: #{user_map[:member_id]}")
-          {:ok, updated_user}
+          {:ok, Map.put(updated_user, :_action, :updated)}
 
         {:error, reason} ->
           Logger.error("Failed to update user #{user_map[:member_id]}: #{inspect(reason)}")

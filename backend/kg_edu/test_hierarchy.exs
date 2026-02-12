@@ -9,17 +9,19 @@ case KgEdu.XmindParser.parse_content_json(json_content) do
     IO.puts("─────────────────────────────────────")
 
     # Group by subject
-    by_subject = Enum.group_by(data, fn item ->
-      if item.depth == 1, do: item.title, else: item.subject
-    end)
+    by_subject =
+      Enum.group_by(data, fn item ->
+        if item.depth == 1, do: item.title, else: item.subject
+      end)
 
     # Display hierarchy
     Enum.each(by_subject, fn {subject_name, items} ->
       IO.puts("\n📚 主题: #{subject_name}")
 
-      subject_units = Enum.group_by(items, fn item ->
-        if item.depth == 2, do: item.title, else: item.unit
-      end)
+      subject_units =
+        Enum.group_by(items, fn item ->
+          if item.depth == 2, do: item.title, else: item.unit
+        end)
 
       Enum.each(subject_units, fn
         {nil, [subject]} when subject.depth == 1 ->

@@ -18,10 +18,6 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "knowledge_point_cognitive"
   end
@@ -41,7 +37,10 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
     # Knowledge point specific queries
     define :get_cognitives_by_knowledge_point, action: :by_knowledge_point
     define :get_cognitives_by_knowledge_point_and_level, action: :by_knowledge_point_and_level
-    define :get_knowledge_point_cognitive_by_knowledge_cid_and_level, action: :get_knowledge_point_cognitive_by_knowledge_cid_and_level
+
+    define :get_knowledge_point_cognitive_by_knowledge_cid_and_level,
+      action: :get_knowledge_point_cognitive_by_knowledge_cid_and_level
+
     define :get_cognitives_by_level, action: :by_level
     define :get_cognitives_by_course, action: :by_course
 
@@ -53,6 +52,7 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
 
     create :create do
       primary? true
+
       accept [
         :cognitive_level,
         :title,
@@ -68,6 +68,7 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
 
     update :update do
       primary? true
+
       accept [
         :cognitive_level,
         :title,
@@ -93,6 +94,7 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
       description "Get all cognitive resources for a specific knowledge point"
       argument :knowledge_resource_id, :uuid, allow_nil?: false
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, cognitive_level: :asc, title: :asc)
       end
@@ -102,10 +104,11 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
       description "Get all cognitive resources for a knowledge point at a specific level"
       argument :knowledge_resource_id, :uuid, allow_nil?: false
       argument :cognitive_level, :atom, allow_nil?: false
+
       filter expr(
-        knowledge_resource_id == ^arg(:knowledge_resource_id) and
-        cognitive_level == ^arg(:cognitive_level)
-      )
+               knowledge_resource_id == ^arg(:knowledge_resource_id) and
+                 cognitive_level == ^arg(:cognitive_level)
+             )
     end
 
     read :get_knowledge_point_cognitive_by_knowledge_cid_and_level do
@@ -113,16 +116,18 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
       get? true
       argument :knowledge_resource_id, :uuid, allow_nil?: false
       argument :cognitive_level, :atom, allow_nil?: false
+
       filter expr(
-        knowledge_resource_id == ^arg(:knowledge_resource_id) and
-        cognitive_level == ^arg(:cognitive_level)
-      )
+               knowledge_resource_id == ^arg(:knowledge_resource_id) and
+                 cognitive_level == ^arg(:cognitive_level)
+             )
     end
 
     read :by_level do
       description "Get all cognitive resources at a specific level"
       argument :cognitive_level, :atom, allow_nil?: false
       filter expr(cognitive_level == ^arg(:cognitive_level))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, title: :asc)
       end
@@ -132,6 +137,7 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
       description "Get all cognitive resources for knowledge points in a course"
       argument :course_id, :uuid, allow_nil?: false
       filter expr(knowledge_resource.course_id == ^arg(:course_id))
+
       prepare fn query, _context ->
         Ash.Query.load(query, :knowledge_resource)
         |> Ash.Query.sort(cognitive_level: :asc, title: :asc)
@@ -149,6 +155,10 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -224,7 +234,6 @@ defmodule KgEdu.Knowledge.KnowledgePointCognitive do
       description "User who created this cognitive resource"
     end
   end
-
 
   # ============ Calculations ============
   calculations do

@@ -63,6 +63,7 @@ defmodule KgEdu.Accounts.User.Changes.CreateUser do
     case KgEdu.Accounts.Organization |> Ash.get(tenant_id) do
       {:ok, organization} ->
         Ash.Changeset.set_tenant(changeset, organization.schema_name)
+
       {:error, _} ->
         # If organization doesn't exist, continue without setting tenant
         changeset

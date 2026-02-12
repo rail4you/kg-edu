@@ -66,6 +66,7 @@ defmodule KgEdu.AshMigrationManager do
       case run_ash_tenant_migrations(tenant_schema) do
         :ok ->
           :ok
+
         {:error, reason} ->
           {:error, reason}
       end
@@ -81,12 +82,13 @@ defmodule KgEdu.AshMigrationManager do
   def run_all_tenant_migrations do
     tenants = KgEdu.Repo.all_tenants()
 
-    results = Enum.map(tenants, fn tenant_schema ->
-      case run_tenant_migrations(tenant_schema) do
-        :ok -> {tenant_schema, :success}
-        {:error, reason} -> {tenant_schema, {:failed, reason}}
-      end
-    end)
+    results =
+      Enum.map(tenants, fn tenant_schema ->
+        case run_tenant_migrations(tenant_schema) do
+          :ok -> {tenant_schema, :success}
+          {:error, reason} -> {tenant_schema, {:failed, reason}}
+        end
+      end)
 
     failed = Enum.filter(results, fn {_, result} -> result != :success end)
 
@@ -142,8 +144,8 @@ defmodule KgEdu.AshMigrationManager do
     migrations_path = main_migrations_path()
 
     case Ecto.Migrator.with_repo(Repo, fn repo ->
-      Ecto.Migrator.run(repo, migrations_path, :up, all: true)
-    end) do
+           Ecto.Migrator.run(repo, migrations_path, :up, all: true)
+         end) do
       {:ok, _, _} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -153,8 +155,8 @@ defmodule KgEdu.AshMigrationManager do
     migrations_path = tenant_migrations_path()
 
     case Ecto.Migrator.with_repo(Repo, fn repo ->
-      Ecto.Migrator.run(repo, migrations_path, :up, all: true, prefix: tenant_schema)
-    end) do
+           Ecto.Migrator.run(repo, migrations_path, :up, all: true, prefix: tenant_schema)
+         end) do
       {:ok, _, _} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -214,7 +216,9 @@ defmodule KgEdu.AshMigrationManager do
           {:ok, _} -> :ok
           {:error, reason} -> {:error, reason}
         end
-      {:error, reason} -> {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -254,11 +258,15 @@ defmodule KgEdu.AshMigrationManager do
     case create_organization_with_migrations(name, attrs) do
       {:ok, %{organization: org}} = result ->
         case check_tenant_health(org) do
-          :ok -> result
+          :ok ->
+            result
+
           {:error, health_error} ->
             {:error, %{result | health_check: {:failed, health_error}}}
         end
-      error -> error
+
+      error ->
+        error
     end
   end
 end

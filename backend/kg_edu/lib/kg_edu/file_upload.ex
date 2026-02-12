@@ -25,7 +25,7 @@ defmodule KgEdu.FileUpload do
     # Create a temporary Plug.Upload struct
     upload = %Waffle.File{
       path: path,
-      file_name: Path.basename(path),
+      file_name: Path.basename(path)
     }
 
     case store({upload, scope}) do

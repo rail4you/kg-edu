@@ -13,10 +13,6 @@ defmodule KgEdu.Email.EmailMessage do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "email_message"
   end
@@ -51,6 +47,7 @@ defmodule KgEdu.Email.EmailMessage do
       description "Get all email messages sent by a user"
       argument :sender_user_id, :uuid, allow_nil?: false
       filter expr(sender_user_id == ^arg(:sender_user_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
       end
@@ -60,6 +57,7 @@ defmodule KgEdu.Email.EmailMessage do
       description "Get all email messages received by a user"
       argument :receiver_user_id, :uuid, allow_nil?: false
       filter expr(receiver_user_id == ^arg(:receiver_user_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
       end
@@ -68,10 +66,12 @@ defmodule KgEdu.Email.EmailMessage do
     create :create do
       description "Create a new email message (doesn't send it)"
       accept [:subject, :body, :parent_message_id]
+
       argument :sender_user_id, :uuid do
         allow_nil? false
         description "The user ID sending the email"
       end
+
       argument :receiver_user_id, :uuid do
         allow_nil? false
         description "The user ID receiving the email"
@@ -99,10 +99,12 @@ defmodule KgEdu.Email.EmailMessage do
     create :send_email do
       description "Create and send an email message"
       accept [:subject, :body, :parent_message_id]
+
       argument :sender_user_id, :uuid do
         allow_nil? false
         description "The user ID sending the email"
       end
+
       argument :receiver_user_id, :uuid do
         allow_nil? false
         description "The user ID receiving the email"
@@ -119,7 +121,10 @@ defmodule KgEdu.Email.EmailMessage do
 
           case KgEdu.Email.EmailSender.send_email(email_message, tenant: context.tenant) do
             {:ok, :sent} ->
-              Logger.info("[EMAIL AFTER_ACTION] EmailSender returned :sent, updating message status")
+              Logger.info(
+                "[EMAIL AFTER_ACTION] EmailSender returned :sent, updating message status"
+              )
+
               # Update status to sent
               case email_message
                    |> Ash.Changeset.for_update(:mark_as_sent)
@@ -127,13 +132,20 @@ defmodule KgEdu.Email.EmailMessage do
                 {:ok, updated_message} ->
                   Logger.info("[EMAIL AFTER_ACTION] Successfully updated message to sent")
                   {:ok, updated_message}
+
                 {:error, update_error} ->
-                  Logger.error("[EMAIL AFTER_ACTION] Failed to update message to sent: #{inspect(update_error)}")
+                  Logger.error(
+                    "[EMAIL AFTER_ACTION] Failed to update message to sent: #{inspect(update_error)}"
+                  )
+
                   {:ok, email_message}
               end
 
             {:error, reason} ->
-              Logger.error("[EMAIL AFTER_ACTION] EmailSender failed: #{inspect(reason)}, updating message to failed")
+              Logger.error(
+                "[EMAIL AFTER_ACTION] EmailSender failed: #{inspect(reason)}, updating message to failed"
+              )
+
               # Update status to failed
               case email_message
                    |> Ash.Changeset.for_update(:mark_as_failed, %{error_message: inspect(reason)})
@@ -141,8 +153,12 @@ defmodule KgEdu.Email.EmailMessage do
                 {:ok, updated_message} ->
                   Logger.info("[EMAIL AFTER_ACTION] Successfully updated message to failed")
                   {:ok, updated_message}
+
                 {:error, update_error} ->
-                  Logger.error("[EMAIL AFTER_ACTION] Failed to update message to failed: #{inspect(update_error)}")
+                  Logger.error(
+                    "[EMAIL AFTER_ACTION] Failed to update message to failed: #{inspect(update_error)}"
+                  )
+
                   {:ok, email_message}
               end
           end
@@ -153,10 +169,12 @@ defmodule KgEdu.Email.EmailMessage do
     create :reply_email do
       description "Reply to an existing email message"
       accept [:subject, :body]
+
       argument :parent_message_id, :uuid do
         allow_nil? false
         description "The ID of the parent email message being replied to"
       end
+
       argument :sender_user_id, :uuid do
         allow_nil? false
         description "The user ID sending the reply"
@@ -208,36 +226,58 @@ defmodule KgEdu.Email.EmailMessage do
       # After creating the reply, send the email
       change fn changeset, context ->
         Ash.Changeset.after_action(changeset, fn _changeset, email_message ->
-          Logger.info("[REPLY EMAIL AFTER_ACTION] Starting reply send for message: #{email_message.id}")
+          Logger.info(
+            "[REPLY EMAIL AFTER_ACTION] Starting reply send for message: #{email_message.id}"
+          )
 
           case KgEdu.Email.EmailSender.send_email(email_message, tenant: context.tenant) do
             {:ok, :sent} ->
               Logger.info("[REPLY EMAIL AFTER_ACTION] Reply sent successfully")
+
               case email_message
                    |> Ash.Changeset.for_update(:mark_as_sent)
                    |> Ash.update(actor: context.actor, authorize?: false, tenant: context.tenant) do
                 {:ok, updated_message} ->
                   {:ok, updated_message}
+
                 {:error, update_error} ->
-                  Logger.error("[REPLY EMAIL AFTER_ACTION] Failed to mark as sent: #{inspect(update_error)}")
+                  Logger.error(
+                    "[REPLY EMAIL AFTER_ACTION] Failed to mark as sent: #{inspect(update_error)}"
+                  )
+
                   {:ok, email_message}
               end
 
             {:error, reason} ->
               Logger.error("[REPLY EMAIL AFTER_ACTION] Failed to send reply: #{inspect(reason)}")
+
               case email_message
                    |> Ash.Changeset.for_update(:mark_as_failed, %{error_message: inspect(reason)})
                    |> Ash.update(actor: context.actor, authorize?: false, tenant: context.tenant) do
                 {:ok, updated_message} ->
                   {:ok, updated_message}
+
                 {:error, update_error} ->
-                  Logger.error("[REPLY EMAIL AFTER_ACTION] Failed to mark as failed: #{inspect(update_error)}")
+                  Logger.error(
+                    "[REPLY EMAIL AFTER_ACTION] Failed to mark as failed: #{inspect(update_error)}"
+                  )
+
                   {:ok, email_message}
               end
           end
         end)
       end
     end
+  end
+
+  policies do
+    policy always() do
+      authorize_if always()
+    end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -320,12 +360,6 @@ defmodule KgEdu.Email.EmailMessage do
       destination_attribute :parent_message_id
       source_attribute :id
       description "Sub-messages (replies) to this email"
-    end
-  end
-
-  policies do
-    policy always() do
-      authorize_if always()
     end
   end
 end

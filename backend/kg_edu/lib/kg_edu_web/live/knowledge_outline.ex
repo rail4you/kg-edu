@@ -17,20 +17,20 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
               <%= if item.level > 0 do %>
                 <span class="tree-line">├─ </span>
               <% end %>
-              <span><%= item.name %></span>
+              <span>{item.name}</span>
             </div>
           </:col>
           <:col :let={item} label="Description">
-            <%= item.description %>
+            {item.description}
           </:col>
           <:col :let={item} label="Relation">
             <%= if item.relation_type do %>
-              <span class="relation-badge"><%= item.relation_type %></span>
+              <span class="relation-badge">{item.relation_type}</span>
             <% end %>
           </:col>
           <:col :let={item} label="Knowledge Actions">
-            <.button 
-              phx-click="edit-knowledge" 
+            <.button
+              phx-click="edit-knowledge"
               phx-value-id={item.id}
               variant="secondary"
               size="sm"
@@ -43,18 +43,34 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
               <div class="dropdown dropdown-left">
                 <label tabindex="0" class="btn btn-sm btn-secondary">
                   Actions
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ml-1" viewBox="0 0 16 16">
-                    <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="ml-1"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
                   </svg>
                 </label>
                 <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
                   <li>
-                    <a phx-click="show-update-relation-modal" phx-value-source={item.parent_id} phx-value-target={item.id} phx-value-current-relation={item.relation_type}>
+                    <a
+                      phx-click="show-update-relation-modal"
+                      phx-value-source={item.parent_id}
+                      phx-value-target={item.id}
+                      phx-value-current-relation={item.relation_type}
+                    >
                       Update Relation
                     </a>
                   </li>
                   <li>
-                    <a phx-click="remove-relation" phx-value-source={item.parent_id} phx-value-target={item.id}>
+                    <a
+                      phx-click="remove-relation"
+                      phx-value-source={item.parent_id}
+                      phx-value-target={item.id}
+                    >
                       Remove Relation
                     </a>
                   </li>
@@ -66,8 +82,14 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
 
         <div class="creation-forms mt-6">
           <h3 class="text-lg font-semibold mb-4">Create New Knowledge</h3>
-          
-          <.form for={@new_knowledge_form} id="new-knowledge-form" phx-change="validate" phx-submit="create-knowledge" phx-target={@myself}>
+
+          <.form
+            for={@new_knowledge_form}
+            id="new-knowledge-form"
+            phx-change="validate"
+            phx-submit="create-knowledge"
+            phx-target={@myself}
+          >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <.input field={@new_knowledge_form[:name]} type="text" label="Name" required />
               <.input field={@new_knowledge_form[:description]} type="text" label="Description" />
@@ -79,71 +101,86 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
           <hr class="my-6" />
 
           <h3 class="text-lg font-semibold mb-4">Create Relation</h3>
-          
-          <.form for={@new_relation_form} id="new-relation-form" phx-change="validate-relation" phx-submit="create-relation" phx-target={@myself}>
+
+          <.form
+            for={@new_relation_form}
+            id="new-relation-form"
+            phx-change="validate-relation"
+            phx-submit="create-relation"
+            phx-target={@myself}
+          >
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <.input 
-                field={@new_relation_form[:source_knowledge_id]} 
-                type="select" 
-                label="From" 
-                options={@knowledge_options} 
-                required 
+              <.input
+                field={@new_relation_form[:source_knowledge_id]}
+                type="select"
+                label="From"
+                options={@knowledge_options}
+                required
               />
-              <.input 
-                field={@new_relation_form[:relation_type]} 
-                type="select" 
-                label="Relation Type" 
-                options={relation_type_options()} 
-                required 
+              <.input
+                field={@new_relation_form[:relation_type]}
+                type="select"
+                label="Relation Type"
+                options={relation_type_options()}
+                required
               />
-              <.input 
-                field={@new_relation_form[:target_knowledge_id]} 
-                type="select" 
-                label="To" 
-                options={@knowledge_options} 
-                required 
+              <.input
+                field={@new_relation_form[:target_knowledge_id]}
+                type="select"
+                label="To"
+                options={@knowledge_options}
+                required
               />
             </div>
             <.button type="submit" variant="primary" class="mt-4">Create Relation</.button>
           </.form>
         </div>
       </div>
-
-      <!-- Update Relation Modal -->
+      
+    <!-- Update Relation Modal -->
       <%= if @show_update_modal do %>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="update-relation-modal">
+        <div
+          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          id="update-relation-modal"
+        >
           <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
             <h3 class="text-lg font-semibold mb-4">Update Relation</h3>
-            
-            <.form for={@update_relation_form} id="modal-update-relation-form" phx-change="validate-update-relation" phx-submit="update-relation" phx-target={@myself}>
+
+            <.form
+              for={@update_relation_form}
+              id="modal-update-relation-form"
+              phx-change="validate-update-relation"
+              phx-submit="update-relation"
+              phx-target={@myself}
+            >
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <.input 
-                  field={@update_relation_form[:source_knowledge_id]} 
-                  type="select" 
-                  label="Source Knowledge" 
-                  options={@knowledge_options} 
-                  required 
+                <.input
+                  field={@update_relation_form[:source_knowledge_id]}
+                  type="select"
+                  label="Source Knowledge"
+                  options={@knowledge_options}
+                  required
                 />
-                <.input 
-                  field={@update_relation_form[:target_knowledge_id]} 
-                  type="select" 
-                  label="Target Knowledge" 
-                  options={@knowledge_options} 
-                  required 
+                <.input
+                  field={@update_relation_form[:target_knowledge_id]}
+                  type="select"
+                  label="Target Knowledge"
+                  options={@knowledge_options}
+                  required
                 />
-                <.input 
-                  field={@update_relation_form[:relation_type_id]} 
-                  type="select" 
-                  label="Relation Type" 
-                  options={relation_type_id_options()} 
-                  required 
+                <.input
+                  field={@update_relation_form[:relation_type_id]}
+                  type="select"
+                  label="Relation Type"
+                  options={relation_type_id_options()}
+                  required
                 />
               </div>
-              
+
               <div class="flex justify-end space-x-2 mt-6">
-                <.button 
-                  type="button" 
-                  phx-click="hide-update-relation-modal" 
+                <.button
+                  type="button"
+                  phx-click="hide-update-relation-modal"
                   variant="secondary"
                 >
                   Cancel
@@ -165,7 +202,7 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
     knowledge_items = build_knowledge_outline(assigns.course_id, assigns.current_user)
     knowledge_options = get_knowledge_options(assigns.course_id, assigns.current_user)
 
-    socket = 
+    socket =
       socket
       |> assign(:course_id, assigns.course_id)
       |> assign(:current_user, assigns.current_user)
@@ -190,8 +227,11 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
   def handle_event("create-knowledge", %{"knowledge" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.new_knowledge_form, params: params) do
       {:ok, knowledge} ->
-        knowledge_items = build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
-        knowledge_options = get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
+        knowledge_items =
+          build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
+
+        knowledge_options =
+          get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
 
         socket =
           socket
@@ -215,8 +255,11 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
   def handle_event("create-relation", %{"relation" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.new_relation_form, params: params) do
       {:ok, _relation} ->
-        knowledge_items = build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
-        knowledge_options = get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
+        knowledge_items =
+          build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
+
+        knowledge_options =
+          get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
 
         socket =
           socket
@@ -246,8 +289,11 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
                actor: socket.assigns.current_user
              ) do
           :ok ->
-            knowledge_items = build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
-            knowledge_options = get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
+            knowledge_items =
+              build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
+
+            knowledge_options =
+              get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
 
             socket =
               socket
@@ -266,7 +312,11 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
     end
   end
 
-  def handle_event("show-update-relation-modal", %{"source" => source_id, "target" => target_id}, socket) do
+  def handle_event(
+        "show-update-relation-modal",
+        %{"source" => source_id, "target" => target_id},
+        socket
+      ) do
     # Find the existing relation to get current values
     case KgEdu.Knowledge.Relation.list_knowledge_relations(
            actor: socket.assigns.current_user,
@@ -274,20 +324,21 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
          ) do
       [relation | _] ->
         # Create form with the existing relation
-        form = AshPhoenix.Form.for_update(relation, :update_knowledge_relation,
-          as: "relation",
-          actor: socket.assigns.current_user
-        )
-        
+        form =
+          AshPhoenix.Form.for_update(relation, :update_knowledge_relation,
+            as: "relation",
+            actor: socket.assigns.current_user
+          )
+
         socket =
           socket
           |> assign(:show_update_modal, true)
           |> assign(:update_source_id, source_id)
           |> assign(:update_target_id, target_id)
           |> assign(:update_relation_form, to_form(form))
-        
+
         {:noreply, socket}
-        
+
       [] ->
         {:noreply, put_flash(socket, :error, "Relation not found")}
     end
@@ -300,7 +351,7 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
       |> assign(:update_source_id, nil)
       |> assign(:update_target_id, nil)
       |> assign_update_relation_form()
-    
+
     {:noreply, socket}
   end
 
@@ -312,8 +363,11 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
   def handle_event("update-relation", %{"relation" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.update_relation_form, params: params) do
       {:ok, _relation} ->
-        knowledge_items = build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
-        knowledge_options = get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
+        knowledge_items =
+          build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
+
+        knowledge_options =
+          get_knowledge_options(socket.assigns.course_id, socket.assigns.current_user)
 
         socket =
           socket
@@ -334,17 +388,18 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
 
   defp build_knowledge_outline(course_id, actor) do
     # Get all knowledge resources for the course
-    knowledge_resources = KgEdu.Knowledge.Resource.get_knowledge_resources_by_course(
-      course_id,
-      actor: actor
-    )
+    knowledge_resources =
+      KgEdu.Knowledge.Resource.get_knowledge_resources_by_course(
+        course_id,
+        actor: actor
+      )
 
     # Build a map of child relationships
     relations = KgEdu.Knowledge.Relation.list_knowledge_relations(actor: actor)
-    
-    parent_map = 
+
+    parent_map =
       relations
-      |> Enum.filter(fn rel -> 
+      |> Enum.filter(fn rel ->
         # Only consider certain relation types for hierarchy
         rel.relation_type in [:pre, :post, :depends_on]
       end)
@@ -355,9 +410,11 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
       |> Enum.into(%{})
 
     # Build outline items with hierarchy
-    root_items = knowledge_resources -- Enum.filter(knowledge_resources, fn item ->
-      Enum.any?(parent_map, fn {_parent, children} -> item.id in children end)
-    end)
+    root_items =
+      knowledge_resources --
+        Enum.filter(knowledge_resources, fn item ->
+          Enum.any?(parent_map, fn {_parent, children} -> item.id in children end)
+        end)
 
     build_outline_items(root_items, parent_map, knowledge_resources, 0)
   end
@@ -366,7 +423,7 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
     Enum.flat_map(items, fn item ->
       children_ids = Map.get(parent_map, item.id, [])
       children = Enum.filter(all_knowledge, fn child -> child.id in children_ids end)
-      
+
       current_item = %{
         id: item.id,
         name: item.name,
@@ -397,7 +454,9 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
           [relation | _] -> relation.relation_type
           _ -> nil
         end
-      nil -> nil
+
+      nil ->
+        nil
     end
   end
 
@@ -448,6 +507,7 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
         Enum.map(relation_types, fn type ->
           {type.name, type.id}
         end)
+
       {:error, _} ->
         []
     end

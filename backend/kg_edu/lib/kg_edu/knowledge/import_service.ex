@@ -10,11 +10,11 @@ defmodule KgEdu.Knowledge.ImportService do
 
   @doc """
   Import both knowledge resources and relations from an Excel file in a single transaction.
-  
+
   ## Parameters
   - excel_data: Base64 encoded Excel file content
   - course_id: UUID of the course to import into
-  
+
   ## Returns
   {:ok, result} on success, {:error, reason} on failure
   """
@@ -35,13 +35,16 @@ defmodule KgEdu.Knowledge.ImportService do
         # Then import relations
         case Relation.import_relations_from_excel(%{excel_data: excel_data, course_id: course_id}) do
           {:ok, relation_result} ->
-            {:ok, %{
-              resources: resource_result,
-              relations: relation_result
-            }}
+            {:ok,
+             %{
+               resources: resource_result,
+               relations: relation_result
+             }}
+
           {:error, reason} ->
             {:error, "Failed to import relations: #{reason}"}
         end
+
       {:error, reason} ->
         {:error, "Failed to import knowledge resources: #{reason}"}
     end
@@ -51,14 +54,20 @@ defmodule KgEdu.Knowledge.ImportService do
   Import only knowledge resources (without relations).
   """
   def import_knowledge_resources_only(input, _context) do
-    Resource.import_knowledge_from_excel(%{excel_data: input.excel_data, course_id: input.course_id})
+    Resource.import_knowledge_from_excel(%{
+      excel_data: input.excel_data,
+      course_id: input.course_id
+    })
   end
 
   @doc """
   Import only relations (assumes knowledge resources already exist).
   """
   def import_relations_only(input, _context) do
-    Relation.import_relations_from_excel(%{excel_data: input.excel_data, course_id: input.course_id})
+    Relation.import_relations_from_excel(%{
+      excel_data: input.excel_data,
+      course_id: input.course_id
+    })
   end
 
   @doc """
@@ -73,13 +82,13 @@ defmodule KgEdu.Knowledge.ImportService do
           sheet1_rows: length(sheet1_data),
           sheet2_rows: length(sheet2_data)
         }
-        
+
         if validation_result.sheet1_valid and validation_result.sheet2_valid do
           {:ok, validation_result}
         else
           {:error, validation_result}
         end
-      
+
       {:error, reason} ->
         {:error, %{parse_error: reason}}
     end

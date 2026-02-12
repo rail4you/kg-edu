@@ -37,13 +37,15 @@ defmodule VerifyImport do
           items
           |> Enum.take(3)
           |> Enum.each(fn item ->
-            type_info = case item.knowledge_type do
-              :subject -> "🏛️ Subject"
-              :knowledge_unit -> "📋 Unit"
-              :knowledge_cell -> "📝 Knowledge cell"
-            end
+            type_info =
+              case item.knowledge_type do
+                :subject -> "🏛️ Subject"
+                :knowledge_unit -> "📋 Unit"
+                :knowledge_cell -> "📝 Knowledge cell"
+              end
 
             IO.puts("     #{type_info} #{item.name}")
+
             if item.unit do
               IO.puts("        Unit: #{item.unit}")
             end
@@ -52,6 +54,7 @@ defmodule VerifyImport do
           if length(items) > 3 do
             IO.puts("     ... and #{length(items) - 3} more items")
           end
+
           IO.puts("")
         end)
 
@@ -67,14 +70,22 @@ defmodule VerifyImport do
     case KgEdu.Knowledge.Resource.list_knowledges([course_id: @course_id], tenant: @tenant) do
       {:ok, resources} ->
         # Count subjects (top-level with children)
-        subjects = Enum.filter(resources, fn resource ->
-          length(resource.child_units) > 0 or length(resource.direct_cells) > 0
-        end)
+        subjects =
+          Enum.filter(resources, fn resource ->
+            length(resource.child_units) > 0 or length(resource.direct_cells) > 0
+          end)
 
         IO.puts("📊 Import Statistics:")
         IO.puts("   Total Subjects: #{length(subjects)}")
-        IO.puts("   Total Units: #{Enum.count(resources, &(&1.knowledge_type == :knowledge_unit))}")
-        IO.puts("   Total Knowledge Cells: #{Enum.count(resources, &(&1.knowledge_type == :knowledge_cell))}")
+
+        IO.puts(
+          "   Total Units: #{Enum.count(resources, &(&1.knowledge_type == :knowledge_unit))}"
+        )
+
+        IO.puts(
+          "   Total Knowledge Cells: #{Enum.count(resources, &(&1.knowledge_type == :knowledge_cell))}"
+        )
+
         IO.puts("   Total Knowledge Resources: #{length(resources)}")
         IO.puts("")
 
@@ -85,13 +96,16 @@ defmodule VerifyImport do
 
           # Show units under this subject
           units = subject.child_units
+
           if length(units) > 0 do
             IO.puts("   Units (#{length(units)}):")
+
             units
             |> Enum.take(2)
             |> Enum.each(fn unit ->
               IO.puts("     📋 #{unit.name}")
             end)
+
             if length(units) > 2 do
               IO.puts("     ... and #{length(units) - 2} more units")
             end
@@ -99,17 +113,21 @@ defmodule VerifyImport do
 
           # Show direct cells under this subject
           direct_cells = subject.direct_cells
+
           if length(direct_cells) > 0 do
             IO.puts("   Direct Knowledge Cells (#{length(direct_cells)}):")
+
             direct_cells
             |> Enum.take(2)
             |> Enum.each(fn cell ->
               IO.puts("     📝 #{cell.name}")
             end)
+
             if length(direct_cells) > 2 do
               IO.puts("     ... and #{length(direct_cells) - 2} more cells")
             end
           end
+
           IO.puts("")
         end)
 

@@ -9,11 +9,12 @@ defmodule KgEdu.OpmlParser do
   def parse_from_text(opml_text) when is_binary(opml_text) do
     try do
       # Check if the text is base64 encoded
-      xml_content = if is_base64?(opml_text) do
-        Base.decode64!(opml_text)
-      else
-        opml_text
-      end
+      xml_content =
+        if is_base64?(opml_text) do
+          Base.decode64!(opml_text)
+        else
+          opml_text
+        end
 
       # Parse the XML
       parsed_xml = SweetXml.parse(xml_content)
@@ -66,45 +67,59 @@ defmodule KgEdu.OpmlParser do
       # Has children - this is a subject or unit
       length(children) > 0 ->
         # If we have more than 1 level of nesting, this is a unit or subject
-        has_grandchildren = Enum.any?(children, fn child ->
-          SweetXml.xpath(child, ~x"./outline"l) != []
-        end)
+        has_grandchildren =
+          Enum.any?(children, fn child ->
+            SweetXml.xpath(child, ~x"./outline"l) != []
+          end)
 
         if has_grandchildren do
           # This is a subject - create it and process children with this as subject
-          child_items = children
-                        |> Enum.flat_map(&process_outline_with_children(&1, _head, knowledge_title, nil))
+          child_items =
+            children
+            |> Enum.flat_map(&process_outline_with_children(&1, _head, knowledge_title, nil))
 
-          [%{
-            title: knowledge_title,
-            description: description,
-            subject: knowledge_title,
-            unit: nil,
-            type: determine_type(outline_xml)
-          } | child_items]
+          [
+            %{
+              title: knowledge_title,
+              description: description,
+              subject: knowledge_title,
+              unit: nil,
+              type: determine_type(outline_xml)
+            }
+            | child_items
+          ]
         else
           # This is a unit - create it and process children with this as unit
-          child_items = children
-                        |> Enum.flat_map(&process_outline_with_children(&1, _head, current_subject, knowledge_title))
+          child_items =
+            children
+            |> Enum.flat_map(
+              &process_outline_with_children(&1, _head, current_subject, knowledge_title)
+            )
 
-          [%{
-            title: knowledge_title,
-            description: description,
-            subject: current_subject || "General",
-            unit: knowledge_title,
-            type: determine_type(outline_xml)
-          } | child_items]
+          [
+            %{
+              title: knowledge_title,
+              description: description,
+              subject: current_subject || "General",
+              unit: knowledge_title,
+              type: determine_type(outline_xml)
+            }
+            | child_items
+          ]
         end
 
       # No children - this is a knowledge cell
       true ->
-        [%{
-          title: knowledge_title,
-          description: description,
-          subject: current_subject || "General",
-          unit: current_unit,  # Knowledge cells belong to a unit if there is one
-          type: determine_type(outline_xml)
-        }]
+        [
+          %{
+            title: knowledge_title,
+            description: description,
+            subject: current_subject || "General",
+            # Knowledge cells belong to a unit if there is one
+            unit: current_unit,
+            type: determine_type(outline_xml)
+          }
+        ]
     end
   end
 
@@ -138,6 +153,7 @@ defmodule KgEdu.OpmlParser do
       # Third level or deeper - this is a knowledge cell
       true ->
         ancestors = get_ancestors(outline_xml)
+
         case ancestors do
           [unit_parent, subject_parent | _] ->
             subject_name = get_outline_name(subject_parent)
@@ -157,8 +173,11 @@ defmodule KgEdu.OpmlParser do
   defp is_top_level?(outline_xml) do
     # Check if this is a direct child of <body>
     parent = SweetXml.xpath(outline_xml, ~x"./.."o)
+
     case parent do
-      nil -> true
+      nil ->
+        true
+
       parent ->
         parent_name = SweetXml.xpath(parent, ~x"name()"s)
         parent_name == "body"
@@ -173,9 +192,12 @@ defmodule KgEdu.OpmlParser do
 
   defp get_parent_outline(outline_xml) do
     case SweetXml.xpath(outline_xml, ~x"./.."o) do
-      nil -> nil
+      nil ->
+        nil
+
       parent ->
         parent_name = SweetXml.xpath(parent, ~x"name()"s)
+
         if parent_name == "outline" do
           parent
         else
@@ -251,6 +273,7 @@ defmodule KgEdu.OpmlParser do
     case Base.decode64(text) do
       {:ok, decoded} ->
         String.starts_with?(decoded, "<?xml") or String.starts_with?(decoded, "<opml")
+
       {:error, _} ->
         false
     end

@@ -9,7 +9,7 @@ defmodule KgEdu.Application do
   def start(_type, _args) do
     # Setup ReqLLM configuration
     KgEdu.ReqLLMSetup.setup()
-    
+
     children = [
       KgEduWeb.Telemetry,
       KgEdu.Repo,

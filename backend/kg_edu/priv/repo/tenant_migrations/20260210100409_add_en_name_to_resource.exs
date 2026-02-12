@@ -1,4 +1,4 @@
-defmodule KgEdu.Repo.Migrations.AddAiTypeToExercises do
+defmodule KgEdu.Repo.TenantMigrations.AddEnNameToResource do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -8,14 +8,14 @@ defmodule KgEdu.Repo.Migrations.AddAiTypeToExercises do
   use Ecto.Migration
 
   def up do
-    alter table(:exercises) do
-      add :ai_type, :text
+    alter table(:knowledge_resources, prefix: prefix()) do
+      add :en_name, :text
     end
   end
 
   def down do
-    alter table(:exercises) do
-      remove :ai_type
+    alter table(:knowledge_resources, prefix: prefix()) do
+      remove :en_name
     end
   end
 end

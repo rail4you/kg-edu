@@ -9,10 +9,6 @@ defmodule KgEdu.Knowledge.Exam do
   require Logger
   import Ash.Query
 
-  typescript do
-    type_name "Exam"
-  end
-
   postgres do
     table "exams"
     repo KgEdu.Repo
@@ -23,12 +19,12 @@ defmodule KgEdu.Knowledge.Exam do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "exam"
+  end
+
+  typescript do
+    type_name "Exam"
   end
 
   code_interface do
@@ -281,7 +277,7 @@ defmodule KgEdu.Knowledge.Exam do
         exercise_id = changeset.arguments[:exercise_id]
 
         # Find and delete the ExamExercise join record using Ash.Query
-        query = filter(KgEdu.Knowledge.ExamExercise, exam_id: exam_id, exercise_id: exercise_id)
+        query = filter KgEdu.Knowledge.ExamExercise, exam_id: exam_id, exercise_id: exercise_id
 
         # Get tenant from context
         tenant = context.tenant
@@ -337,15 +333,8 @@ defmodule KgEdu.Knowledge.Exam do
     end
   end
 
-  aggregates do
-    count :exercises_count, :exam_exercises do
-      public? true
-    end
-
-    sum :total_score, :exam_exercises, :points do
-      public? true
-      description "Total score of the exam (sum of all exercise points)"
-    end
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -416,6 +405,17 @@ defmodule KgEdu.Knowledge.Exam do
     has_many :student_exams, KgEdu.Knowledge.StudentExam do
       public? true
       description "Student exam records for this exam"
+    end
+  end
+
+  aggregates do
+    count :exercises_count, :exam_exercises do
+      public? true
+    end
+
+    sum :total_score, :exam_exercises, :points do
+      public? true
+      description "Total score of the exam (sum of all exercise points)"
     end
   end
 end

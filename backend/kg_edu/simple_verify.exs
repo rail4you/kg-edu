@@ -37,17 +37,20 @@ defmodule SimpleVerify do
           items
           |> Enum.take(2)
           |> Enum.each(fn item ->
-            type_icon = case item.knowledge_type do
-              :subject -> "🏛️"
-              :knowledge_unit -> "📋"
-              :knowledge_cell -> "📝"
-            end
+            type_icon =
+              case item.knowledge_type do
+                :subject -> "🏛️"
+                :knowledge_unit -> "📋"
+                :knowledge_cell -> "📝"
+              end
+
             IO.puts("     #{type_icon} #{item.name}")
           end)
 
           if length(items) > 2 do
             IO.puts("     ... and #{length(items) - 2} more")
           end
+
           IO.puts("")
         end)
 

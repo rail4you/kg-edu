@@ -25,6 +25,7 @@ defmodule KgEdu.MigrationManager do
         case run_tenant_migrations(organization) do
           :ok ->
             {:ok, %{organization: organization, migrations: :completed}}
+
           {:error, reason} ->
             # If migrations fail, we might want to rollback the organization creation
             {:error, %{organization: organization, migrations: {:failed, reason}}}
@@ -60,9 +61,11 @@ defmodule KgEdu.MigrationManager do
         case migrate_tenant(tenant_schema) do
           :ok ->
             :ok
+
           {:error, reason} ->
             {:error, reason}
         end
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -74,13 +77,15 @@ defmodule KgEdu.MigrationManager do
   def run_all_tenant_migrations do
     tenants = Repo.all_tenants()
 
-    results = Enum.map(tenants, fn tenant_schema ->
-      {tenant_schema, migrate_tenant(tenant_schema)}
-    end)
+    results =
+      Enum.map(tenants, fn tenant_schema ->
+        {tenant_schema, migrate_tenant(tenant_schema)}
+      end)
 
-    failed_migrations = Enum.filter(results, fn {_tenant, result} ->
-      result != :ok
-    end)
+    failed_migrations =
+      Enum.filter(results, fn {_tenant, result} ->
+        result != :ok
+      end)
 
     if Enum.empty?(failed_migrations) do
       :ok
@@ -97,6 +102,7 @@ defmodule KgEdu.MigrationManager do
     case Ecto.Migrator.with_repo(Repo, &Ecto.Migrator.run(&1, :up, all: true)) do
       {:ok, version, migrations} ->
         {:ok, %{version: version, migrations: migrations}}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -137,15 +143,16 @@ defmodule KgEdu.MigrationManager do
     migrations_path = tenant_migrations_path()
 
     case Ecto.Migrator.with_repo(Repo, fn repo ->
-      # Create a temporary repo configuration with the tenant schema
-      tenant_config = Keyword.put(repo.config(), :schema, tenant_schema)
+           # Create a temporary repo configuration with the tenant schema
+           tenant_config = Keyword.put(repo.config(), :schema, tenant_schema)
 
-      # This is a simplified approach - in practice you might need
-      # to use AshPostgres.Migration utilities for proper tenant migrations
-      Ecto.Migrator.run(repo, migrations_path, :up, all: true, prefix: tenant_schema)
-    end) do
+           # This is a simplified approach - in practice you might need
+           # to use AshPostgres.Migration utilities for proper tenant migrations
+           Ecto.Migrator.run(repo, migrations_path, :up, all: true, prefix: tenant_schema)
+         end) do
       {:ok, version, migrations} ->
         :ok
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -194,7 +201,9 @@ defmodule KgEdu.MigrationManager do
     case Repo.query(query) do
       {:ok, %{rows: rows}} ->
         Enum.map(rows, fn [schema_name] -> schema_name end)
-      {:error, _} -> []
+
+      {:error, _} ->
+        []
     end
   end
 
@@ -221,8 +230,8 @@ defmodule KgEdu.MigrationManager do
     migrations_path = tenant_migrations_path()
 
     case Ecto.Migrator.with_repo(Repo, fn repo ->
-      Ecto.Migrator.run(repo, migrations_path, :up, to: version, prefix: tenant_schema)
-    end) do
+           Ecto.Migrator.run(repo, migrations_path, :up, to: version, prefix: tenant_schema)
+         end) do
       {:ok, _, _} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -235,8 +244,8 @@ defmodule KgEdu.MigrationManager do
     migrations_path = tenant_migrations_path()
 
     case Ecto.Migrator.with_repo(Repo, fn repo ->
-      Ecto.Migrator.run(repo, migrations_path, :down, step: step, prefix: tenant_schema)
-    end) do
+           Ecto.Migrator.run(repo, migrations_path, :down, step: step, prefix: tenant_schema)
+         end) do
       {:ok, _, _} -> :ok
       {:error, reason} -> {:error, reason}
     end

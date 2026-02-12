@@ -6,12 +6,12 @@ defmodule KgEdu.Knowledge.ExerciseOptions do
   defstruct [:a, :b, :c, :d, :selected]
 
   @type t :: %__MODULE__{
-    a: String.t() | nil,
-    b: String.t() | nil,
-    c: String.t() | nil,
-    d: String.t() | nil,
-    selected: list(String.t()) | String.t() | nil
-  }
+          a: String.t() | nil,
+          b: String.t() | nil,
+          c: String.t() | nil,
+          d: String.t() | nil,
+          selected: list(String.t()) | String.t() | nil
+        }
 
   @doc """
   Creates a new ExerciseOptions struct.
@@ -61,23 +61,30 @@ defmodule KgEdu.Knowledge.ExerciseOptions do
   end
 
   defp has_enough_options?(options) do
-    filled_options = [options.a, options.b, options.c, options.d]
-                    |> Enum.filter(&(&1 != nil))
+    filled_options =
+      [options.a, options.b, options.c, options.d]
+      |> Enum.filter(&(&1 != nil))
+
     length(filled_options) >= 2
   end
 
   defp valid_selection?(options) do
     case options.selected do
-      nil -> true
+      nil ->
+        true
+
       selected when is_list(selected) ->
         Enum.all?(selected, fn selection ->
-          selection in ["A", "B", "C", "D"] and 
-          Map.get(options, String.downcase(selection)) != nil
+          selection in ["A", "B", "C", "D"] and
+            Map.get(options, String.downcase(selection)) != nil
         end)
+
       selected when is_binary(selected) ->
-        selected in ["A", "B", "C", "D"] and 
-        Map.get(options, String.downcase(selected)) != nil
-      _ -> false
+        selected in ["A", "B", "C", "D"] and
+          Map.get(options, String.downcase(selected)) != nil
+
+      _ ->
+        false
     end
   end
 end

@@ -95,64 +95,71 @@ defmodule KgEduWeb.FileUploadController do
       true ->
         # Read file content and convert to base64
         case File.read(file_upload.path) do
-        {:ok, file_content} ->
-          base64_data = Base.encode64(file_content)
+          {:ok, file_content} ->
+            base64_data = Base.encode64(file_content)
 
-          # Import using the knowledge resource action
-          actor = Map.get(conn.assigns, :current_user)
-          tenant = conn.assigns[:ash_tenant] || conn.assigns[:tenant]
+            # Import using the knowledge resource action
+            actor = Map.get(conn.assigns, :current_user)
+            tenant = conn.assigns[:ash_tenant] || conn.assigns[:tenant]
 
-          case KgEdu.Knowledge.Resource.import_knowledge_from_xmind(
-                 %{
-                   xmind_data: base64_data,
-                   course_id: course_id
-                 },
-                 actor: actor,
-                 tenant: tenant
-               ) do
-            :ok ->
-              json(conn, %{
-                success: true,
-                message: "XMind file imported successfully"
-              })
+            case KgEdu.Knowledge.Resource.import_knowledge_from_xmind(
+                   %{
+                     xmind_data: base64_data,
+                     course_id: course_id
+                   },
+                   actor: actor,
+                   tenant: tenant
+                 ) do
+              :ok ->
+                json(conn, %{
+                  success: true,
+                  message: "XMind file imported successfully"
+                })
 
-            {:error, reason} ->
-              # Handle Ash errors properly
-              error_messages = case reason do
-                ash_error when is_map(ash_error) ->
-                  # Extract error messages from Ash error with :errors field
-                  case Map.get(ash_error, :errors) do
-                    nil -> [inspect(ash_error)]
-                    errors when is_list(errors) ->
-                      Enum.map(errors, fn
-                        %{error: message} when is_binary(message) -> message
-                        %{message: message} when is_binary(message) -> message
-                        other -> inspect(other)
-                      end)
-                    _ -> [inspect(ash_error)]
+              {:error, reason} ->
+                # Handle Ash errors properly
+                error_messages =
+                  case reason do
+                    ash_error when is_map(ash_error) ->
+                      # Extract error messages from Ash error with :errors field
+                      case Map.get(ash_error, :errors) do
+                        nil ->
+                          [inspect(ash_error)]
+
+                        errors when is_list(errors) ->
+                          Enum.map(errors, fn
+                            %{error: message} when is_binary(message) -> message
+                            %{message: message} when is_binary(message) -> message
+                            other -> inspect(other)
+                          end)
+
+                        _ ->
+                          [inspect(ash_error)]
+                      end
+
+                    string when is_binary(string) ->
+                      [string]
+
+                    other ->
+                      [inspect(other)]
                   end
-                string when is_binary(string) ->
-                  [string]
-                other ->
-                  [inspect(other)]
-              end
 
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{
-                success: false,
-                errors: error_messages
-              })
-          end
+                conn
+                |> put_status(:unprocessable_entity)
+                |> json(%{
+                  success: false,
+                  errors: error_messages
+                })
+            end
 
-        {:error, _reason} ->
-          conn
-          |> put_status(:internal_server_error)
-          |> json(%{
-            success: false,
-            errors: ["Failed to read uploaded file"]
-          })
-      end
+          {:error, _reason} ->
+            conn
+            |> put_status(:internal_server_error)
+            |> json(%{
+              success: false,
+              errors: ["Failed to read uploaded file"]
+            })
+        end
     end
   end
 

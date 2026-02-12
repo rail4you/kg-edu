@@ -15,10 +15,6 @@ defmodule KgEdu.Courses.Link do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "link"
   end
@@ -40,6 +36,7 @@ defmodule KgEdu.Courses.Link do
 
   actions do
     defaults [:destroy]
+
     read :read do
       primary? true
     end
@@ -91,6 +88,10 @@ defmodule KgEdu.Courses.Link do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_primary_key :id do
       public? true
@@ -136,6 +137,5 @@ defmodule KgEdu.Courses.Link do
       allow_nil? true
       description "The knowledge resource this link belongs to"
     end
-
   end
 end

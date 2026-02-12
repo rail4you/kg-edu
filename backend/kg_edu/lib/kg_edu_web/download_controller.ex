@@ -7,7 +7,9 @@ defmodule KgEduWeb.DownloadController do
     case File.read(file_path) do
       {:ok, content} ->
         conn
-        |> put_resp_content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        |> put_resp_content_type(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         |> put_resp_header("content-disposition", "attachment; filename=\"template.xlsx\"")
         |> send_resp(200, content)
 

@@ -49,6 +49,7 @@ case System.cmd("zip", ["-r", "../#{filename}", "."], cd: temp_dir) do
   {output, 0} ->
     IO.puts("Successfully created #{filename}")
     IO.puts("Output: #{output}")
+
   {output, exit_code} ->
     IO.puts("Error creating ZIP (exit code #{exit_code}): #{output}")
 end

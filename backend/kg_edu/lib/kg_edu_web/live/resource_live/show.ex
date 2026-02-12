@@ -21,16 +21,16 @@ defmodule KgEduWeb.ResourceLive.Show do
         </.header>
 
         <.list>
-        <:item title="Id">{@resource.id}</:item>
+          <:item title="Id">{@resource.id}</:item>
 
-        <:item title="Name">{@resource.name}</:item>
+          <:item title="Name">{@resource.name}</:item>
 
-        <:item title="Description">{@resource.description}</:item>
+          <:item title="Description">{@resource.description}</:item>
 
-        <:item title="Course">{@resource.course_id}</:item>
+          <:item title="Course">{@resource.course_id}</:item>
 
-        <:item title="Created by">{@resource.created_by_id}</:item>
-      </.list>
+          <:item title="Created by">{@resource.created_by_id}</:item>
+        </.list>
       </div>
     </Layouts.app>
     """

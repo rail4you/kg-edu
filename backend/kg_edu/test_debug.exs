@@ -9,12 +9,13 @@ try do
       IO.puts("Total items: #{length(data)}\n")
 
       Enum.each(data, fn item ->
-        type = case item.level do
-          :subject -> '[SUBJECT]'
-          :knowledge_unit -> '[UNIT]'
-          :knowledge_cell -> '[CELL]'
-          _ -> '[?]'
-        end
+        type =
+          case item.level do
+            :subject -> '[SUBJECT]'
+            :knowledge_unit -> '[UNIT]'
+            :knowledge_cell -> '[CELL]'
+            _ -> '[?]'
+          end
 
         indent = String.duplicate("  ", item.depth)
         IO.puts("#{indent}#{type} Depth #{item.depth}: #{item.title}")
@@ -30,6 +31,7 @@ rescue
   e ->
     IO.puts("✗ Exception: #{inspect(e)}")
     IO.puts("Stacktrace:")
+
     Enum.each(:erlang.get_stacktrace(), fn entry ->
       IO.puts("  #{inspect(entry)}")
     end)

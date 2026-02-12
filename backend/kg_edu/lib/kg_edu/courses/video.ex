@@ -35,14 +35,6 @@ defmodule KgEdu.Courses.Video do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
-  typescript do
-    type_name "Video"
-  end
-
   json_api do
     type "video"
   end
@@ -59,6 +51,10 @@ defmodule KgEdu.Courses.Video do
       rpc_action :get_videos_by_course_ids, :by_course_ids
       rpc_action :extract_video_duration, :extract_duration_from_oss
     end
+  end
+
+  typescript do
+    type_name "Video"
   end
 
   code_interface do
@@ -85,11 +81,13 @@ defmodule KgEdu.Courses.Video do
 
     read :by_chapter do
       description "Get all videos for a specific chapter"
+
       argument :chapter_id, :uuid do
         allow_nil? false
       end
 
       filter expr(chapter_id == ^arg(:chapter_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, title: :asc)
       end
@@ -97,11 +95,13 @@ defmodule KgEdu.Courses.Video do
 
     read :by_knowledge_resource do
       description "Get all videos for a specific knowledge resource"
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
       end
 
       filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, title: :asc)
       end
@@ -109,12 +109,14 @@ defmodule KgEdu.Courses.Video do
 
     read :by_course_ids do
       description "Get all videos for specific courses"
+
       argument :course_ids, {:array, :uuid} do
         allow_nil? false
         description "List of course IDs to get videos for"
       end
 
       filter expr(chapter.course_id in ^arg(:course_ids))
+
       prepare fn query, _context ->
         query
         |> Ash.Query.load(:chapter)
@@ -160,47 +162,70 @@ defmodule KgEdu.Courses.Video do
                     # Get video file size
                     case File.stat(temp_path) do
                       {:ok, stat} ->
-
                         playback_url = KgEduWeb.CourseVideoUploader.url({file_url, course_id})
                         # Generate thumbnail URL using OSS image processing
-                        thumbnail_url = "#{playback_url}?x-oss-process=video/snapshot,t_7000,f_jpg,w_800,h_600,m_fast"
+                        thumbnail_url =
+                          "#{playback_url}?x-oss-process=video/snapshot,t_7000,f_jpg,w_800,h_600,m_fast"
 
                         # Get the full URL for playback_id
 
-                        title = Ash.Changeset.get_argument(changeset, :title) || Path.basename(original_filename, Path.extname(original_filename))
+                        title =
+                          Ash.Changeset.get_argument(changeset, :title) ||
+                            Path.basename(original_filename, Path.extname(original_filename))
 
                         # Try to extract duration from OSS video info API
-                        duration = case Req.get("#{playback_url}?x-oss-process=video/info", receive_timeout: 10_000) do
-                          {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
-                            case Jason.decode(body) do
-                              {:ok, %{"Video" => video_info}} ->
-                                case get_in(video_info, ["Streams", "Audio", "Duration"]) do
-                                  nil -> nil
-                                  d when is_number(d) -> d / 1000.0 |> round()  # Convert ms to seconds and round
-                                  d when is_binary(d) -> case Float.parse(d) do
-                                    {val, _} -> val / 1000.0 |> round()
-                                    :error -> nil
+                        duration =
+                          case Req.get("#{playback_url}?x-oss-process=video/info",
+                                 receive_timeout: 10_000
+                               ) do
+                            {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
+                              case Jason.decode(body) do
+                                {:ok, %{"Video" => video_info}} ->
+                                  case get_in(video_info, ["Streams", "Audio", "Duration"]) do
+                                    nil ->
+                                      nil
+
+                                    # Convert ms to seconds and round
+                                    d when is_number(d) ->
+                                      (d / 1000.0) |> round()
+
+                                    d when is_binary(d) ->
+                                      case Float.parse(d) do
+                                        {val, _} -> (val / 1000.0) |> round()
+                                        :error -> nil
+                                      end
+
+                                    _ ->
+                                      nil
                                   end
-                                  _ -> nil
-                                end
-                              _ -> nil
-                            end
-                          _ -> nil
-                        end
+
+                                _ ->
+                                  nil
+                              end
+
+                            _ ->
+                              nil
+                          end
 
                         changeset
                         |> Ash.Changeset.change_attribute(:title, title)
                         |> Ash.Changeset.change_attribute(:playback_id, playback_url)
                         |> Ash.Changeset.change_attribute(:asset_id, playback_url)
                         |> Ash.Changeset.change_attribute(:thumbnail, thumbnail_url)
-                        |> Ash.Changeset.change_attribute(:duration, duration || 10) # Use extracted duration (rounded) or fallback to 10
+
+                        # Use extracted duration (rounded) or fallback to 10
+
+                        |> Ash.Changeset.change_attribute(:duration, duration || 10)
 
                       {:error, _reason} ->
                         Ash.Changeset.add_error(changeset, "Failed to get video file size")
                     end
 
                   {:error, reason} ->
-                    Ash.Changeset.add_error(changeset, "Failed to store video: #{inspect(reason)}")
+                    Ash.Changeset.add_error(
+                      changeset,
+                      "Failed to store video: #{inspect(reason)}"
+                    )
                 end
 
               {:error, reason} ->
@@ -215,7 +240,17 @@ defmodule KgEdu.Courses.Video do
 
     create :create do
       description "Create a new video"
-      accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
+
+      accept [
+        :title,
+        :asset_id,
+        :playback_id,
+        :duration,
+        :thumbnail,
+        :upload_id,
+        :chapter_id,
+        :knowledge_resource_id
+      ]
 
       # Extract duration from OSS if not provided
       change fn changeset, _context ->
@@ -223,7 +258,9 @@ defmodule KgEdu.Courses.Video do
         case Ash.Changeset.get_argument(changeset, :duration) do
           nil ->
             # Get asset_id to check if this is an OSS URL
-            asset_id = Ash.Changeset.get_argument(changeset, :asset_id) || Ash.Changeset.get_argument(changeset, :playback_id)
+            asset_id =
+              Ash.Changeset.get_argument(changeset, :asset_id) ||
+                Ash.Changeset.get_argument(changeset, :playback_id)
 
             if asset_id && String.contains?(asset_id, ["aliyuncs.com", "oss-"]) do
               # Try to extract duration from OSS video info API
@@ -231,15 +268,24 @@ defmodule KgEdu.Courses.Video do
                 {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
                   case Jason.decode(body) do
                     {:ok, %{"Video" => video_info}} ->
-                      duration = case get_in(video_info, ["Streams", "Audio", "Duration"]) do
-                        nil -> nil
-                        d when is_number(d) -> d / 1000.0 |> round()  # Convert ms to seconds and round
-                        d when is_binary(d) -> case Float.parse(d) do
-                          {val, _} -> val / 1000.0 |> round()
-                          :error -> nil
+                      duration =
+                        case get_in(video_info, ["Streams", "Audio", "Duration"]) do
+                          nil ->
+                            nil
+
+                          # Convert ms to seconds and round
+                          d when is_number(d) ->
+                            (d / 1000.0) |> round()
+
+                          d when is_binary(d) ->
+                            case Float.parse(d) do
+                              {val, _} -> (val / 1000.0) |> round()
+                              :error -> nil
+                            end
+
+                          _ ->
+                            nil
                         end
-                        _ -> nil
-                      end
 
                       if duration do
                         Ash.Changeset.change_attribute(changeset, :duration, duration)
@@ -280,7 +326,18 @@ defmodule KgEdu.Courses.Video do
 
     update :update_video do
       description "Update a video"
-      accept [:title, :asset_id, :playback_id, :duration, :thumbnail, :upload_id, :chapter_id, :knowledge_resource_id]
+
+      accept [
+        :title,
+        :asset_id,
+        :playback_id,
+        :duration,
+        :thumbnail,
+        :upload_id,
+        :chapter_id,
+        :knowledge_resource_id
+      ]
+
       require_atomic? false
 
       # validate fn changeset, _context ->
@@ -306,7 +363,9 @@ defmodule KgEdu.Courses.Video do
         description "The knowledge resource ID to link to"
       end
 
-      change manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+      change manage_relationship(:knowledge_resource_id, :knowledge_resource,
+               type: :append_and_remove
+             )
     end
 
     update :unlink_video_from_knowledge do
@@ -350,15 +409,25 @@ defmodule KgEdu.Courses.Video do
             case Jason.decode(body) do
               {:ok, %{"Video" => video_info}} ->
                 duration = get_in(video_info, ["Streams", "Audio", "Duration"])
-                duration_float = case duration do
-                  nil -> nil
-                  d when is_number(d) -> d / 1000.0 |> round()  # Convert ms to seconds and round
-                  d when is_binary(d) -> case Float.parse(d) do
-                    {val, _} -> val / 1000.0 |> round()
-                    :error -> nil
+
+                duration_float =
+                  case duration do
+                    nil ->
+                      nil
+
+                    # Convert ms to seconds and round
+                    d when is_number(d) ->
+                      (d / 1000.0) |> round()
+
+                    d when is_binary(d) ->
+                      case Float.parse(d) do
+                        {val, _} -> (val / 1000.0) |> round()
+                        :error -> nil
+                      end
+
+                    _ ->
+                      nil
                   end
-                  _ -> nil
-                end
 
                 if duration_float do
                   Ash.Changeset.for_update(video, :update_video, %{duration: duration_float})
@@ -392,7 +461,10 @@ defmodule KgEdu.Courses.Video do
       end
 
       run fn input, context ->
-        video_id = input.arguments[:video_id] || input.arguments[:id] || Ash.Changeset.get_attribute(input.context, :id)
+        video_id =
+          input.arguments[:video_id] || input.arguments[:id] ||
+            Ash.Changeset.get_attribute(input.context, :id)
+
         user_id = input.arguments[:user_id]
         metadata = input.arguments[:metadata] || %{}
 
@@ -413,6 +485,10 @@ defmodule KgEdu.Courses.Video do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -471,7 +547,6 @@ defmodule KgEdu.Courses.Video do
       allow_nil? true
       description "The chapter this video belongs to"
     end
-
 
     belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
       public? true

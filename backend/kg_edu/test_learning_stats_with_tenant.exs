@@ -7,7 +7,8 @@ defmodule LearningStatsTest do
 
     # 设置测试数据
     course_id = "15cbf640-c16b-46b9-a029-70a56f4f20f9"
-    tenant = :org_default  # 默认租户
+    # 默认租户
+    tenant = :org_default
 
     IO.puts("\n1. 测试获取课程学习统计...")
 
@@ -24,13 +25,30 @@ defmodule LearningStatsTest do
 
         # 显示统计信息
         IO.puts("\n📊 学习统计摘要:")
+
         Enum.each(stats, fn stat ->
           IO.puts("学生 #{stat.student_id}:")
-          IO.puts("  视频: #{stat.videos.completed}/#{stat.videos.total} (#{Float.round(stat.videos.completion_ratio * 100, 1)}%)")
-          IO.puts("  文件: #{stat.files.completed}/#{stat.files.total} (#{Float.round(stat.files.completion_ratio * 100, 1)}%)")
-          IO.puts("  习题: #{stat.exercises.completed}/#{stat.exercises.total} (#{Float.round(stat.exercises.completion_ratio * 100, 1)}%)")
-          IO.puts("  作业: #{stat.homeworks.completed}/#{stat.homeworks.total} (#{Float.round(stat.homeworks.completion_ratio * 100, 1)}%)")
-          IO.puts("  总体: #{stat.overall.total_completed}/#{stat.overall.total_resources} (#{Float.round(stat.overall.completion_ratio * 100, 1)}%)")
+
+          IO.puts(
+            "  视频: #{stat.videos.completed}/#{stat.videos.total} (#{Float.round(stat.videos.completion_ratio * 100, 1)}%)"
+          )
+
+          IO.puts(
+            "  文件: #{stat.files.completed}/#{stat.files.total} (#{Float.round(stat.files.completion_ratio * 100, 1)}%)"
+          )
+
+          IO.puts(
+            "  习题: #{stat.exercises.completed}/#{stat.exercises.total} (#{Float.round(stat.exercises.completion_ratio * 100, 1)}%)"
+          )
+
+          IO.puts(
+            "  作业: #{stat.homeworks.completed}/#{stat.homeworks.total} (#{Float.round(stat.homeworks.completion_ratio * 100, 1)}%)"
+          )
+
+          IO.puts(
+            "  总体: #{stat.overall.total_completed}/#{stat.overall.total_resources} (#{Float.round(stat.overall.completion_ratio * 100, 1)}%)"
+          )
+
           IO.puts("")
         end)
 
@@ -41,9 +59,11 @@ defmodule LearningStatsTest do
         case reason do
           %Ash.Error.Invalid{errors: errors} ->
             IO.puts("验证错误详情:")
+
             Enum.each(errors, fn error ->
               IO.puts("  - #{inspect(error)}")
             end)
+
           _ ->
             IO.puts("其他错误类型")
         end

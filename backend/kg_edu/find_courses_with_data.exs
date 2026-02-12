@@ -11,7 +11,8 @@ case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false,
 
     if length(resources) > 0 do
       # Group by course_id to find courses with data
-      course_groups = resources
+      course_groups =
+        resources
         |> Enum.group_by(& &1.course_id)
         |> Enum.reject(fn {course_id, _resources} -> is_nil(course_id) end)
 
@@ -38,10 +39,23 @@ case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false,
               |> Enum.take(3)
               |> Enum.each(fn stat ->
                 IO.puts("\nStudent #{stat.student_id}:")
-                IO.puts("  Videos: #{stat.videos.completed}/#{stat.videos.total} (#{Float.round(stat.videos.completion_ratio * 100, 1)}%)")
-                IO.puts("  Files: #{stat.files.completed}/#{stat.files.total} (#{Float.round(stat.files.completion_ratio * 100, 1)}%)")
-                IO.puts("  Exercises: #{stat.exercises.completed}/#{stat.exercises.total} (#{Float.round(stat.exercises.completion_ratio * 100, 1)}%)")
-                IO.puts("  Homework: #{stat.homeworks.completed}/#{stat.homeworks.total} (#{Float.round(stat.homeworks.completion_ratio * 100, 1)}%)")
+
+                IO.puts(
+                  "  Videos: #{stat.videos.completed}/#{stat.videos.total} (#{Float.round(stat.videos.completion_ratio * 100, 1)}%)"
+                )
+
+                IO.puts(
+                  "  Files: #{stat.files.completed}/#{stat.files.total} (#{Float.round(stat.files.completion_ratio * 100, 1)}%)"
+                )
+
+                IO.puts(
+                  "  Exercises: #{stat.exercises.completed}/#{stat.exercises.total} (#{Float.round(stat.exercises.completion_ratio * 100, 1)}%)"
+                )
+
+                IO.puts(
+                  "  Homework: #{stat.homeworks.completed}/#{stat.homeworks.total} (#{Float.round(stat.homeworks.completion_ratio * 100, 1)}%)"
+                )
+
                 IO.puts("  Overall: #{Float.round(stat.overall.completion_ratio * 100, 1)}%")
               end)
             else
@@ -61,7 +75,11 @@ case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false,
         test_resources = Enum.take(resources, 3)
 
         # Find a user ID from activity logs to test with
-        case KgEdu.Activity.ActivityLog.list_activity_logs(tenant: tenant, authorize?: false, actor: nil) do
+        case KgEdu.Activity.ActivityLog.list_activity_logs(
+               tenant: tenant,
+               authorize?: false,
+               actor: nil
+             ) do
           {:ok, logs} when length(logs) > 0 ->
             test_user_id = hd(logs).user_id
             IO.puts("Testing with user_id: #{test_user_id}")
@@ -80,7 +98,10 @@ case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false,
                   IO.puts("  Files: #{stats.files.completed}/#{stats.files.total}")
                   IO.puts("  Exercises: #{stats.exercises.completed}/#{stats.exercises.total}")
                   IO.puts("  Homework: #{stats.homeworks.completed}/#{stats.homeworks.total}")
-                  IO.puts("  Overall completion: #{Float.round(stats.overall.completion_ratio * 100, 1)}%")
+
+                  IO.puts(
+                    "  Overall completion: #{Float.round(stats.overall.completion_ratio * 100, 1)}%"
+                  )
 
                 {:error, reason} ->
                   IO.puts("❌ Error calculating individual stats: #{inspect(reason)}")
@@ -94,7 +115,6 @@ case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false,
             IO.puts("❌ Error getting activity logs: #{inspect(reason)}")
         end
       end
-
     else
       IO.puts("ℹ️  No knowledge resources found")
     end

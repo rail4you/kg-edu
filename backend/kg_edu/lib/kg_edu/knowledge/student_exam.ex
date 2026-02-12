@@ -10,10 +10,6 @@ defmodule KgEdu.Knowledge.StudentExam do
   import Ash.Query
   import Ash.Changeset
 
-  typescript do
-    type_name "StudentExam"
-  end
-
   postgres do
     table "student_exams"
     repo KgEdu.Repo
@@ -24,12 +20,12 @@ defmodule KgEdu.Knowledge.StudentExam do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "student_exam"
+  end
+
+  typescript do
+    type_name "StudentExam"
   end
 
   code_interface do
@@ -56,6 +52,7 @@ defmodule KgEdu.Knowledge.StudentExam do
     update :grade_status do
       description "Update student exam score and passed status"
       accept [:score, :passed, :status]
+      require_atomic? false
     end
 
     read :by_id do
@@ -112,20 +109,30 @@ defmodule KgEdu.Knowledge.StudentExam do
                      tenant: tenant
                    ) do
                 {:ok, exam_exercises} ->
-                  Enum.each(exam_exercises, fn exam_exercise ->
-                    Ash.create(
-                      KgEdu.Knowledge.StudentExamAnswer,
-                      %{
-                        student_exam_id: student_exam.id,
-                        exam_exercise_id: exam_exercise.id,
-                        exercise_id: exam_exercise.exercise_id,
-                        points_earned: 0
-                      },
-                      tenant: tenant
-                    )
-                  end)
+                  results =
+                    Enum.reduce_while(exam_exercises, [], fn exam_exercise, acc ->
+                      case Ash.create(
+                             KgEdu.Knowledge.StudentExamAnswer,
+                             %{
+                               student_exam_id: student_exam.id,
+                               exam_exercise_id: exam_exercise.id,
+                               exercise_id: exam_exercise.exercise_id,
+                               points_earned: 0
+                             },
+                             tenant: tenant
+                           ) do
+                        {:ok, _answer} -> {:cont, acc}
+                        {:error, reason} -> {:halt, {:error, reason}}
+                      end
+                    end)
 
-                  {:ok, student_exam}
+                  case results do
+                    {:error, _reason} ->
+                      {:error, "Failed to create some exam answers"}
+
+                    _ ->
+                      {:ok, student_exam}
+                  end
 
                 {:error, reason} ->
                   {:error, "Failed to load exam exercises: #{inspect(reason)}"}
@@ -133,13 +140,17 @@ defmodule KgEdu.Knowledge.StudentExam do
             end)
 
           {:error, reason} ->
-            Ash.Changeset.add_error(changeset, :exam_id, "Failed to load exam: #{inspect(reason)}")
+            Ash.Changeset.add_error(
+              changeset,
+              :exam_id,
+              "Failed to load exam: #{inspect(reason)}"
+            )
         end
       end
     end
 
     action :continue_or_start_exam do
-      description "Continue an in-progress exam or start a new one. Returns the student exam ID on success."
+      description "Continue an in-progress exam or start a new one. Returns the student exam record on success."
 
       argument :exam_id, :uuid do
         allow_nil? false
@@ -150,6 +161,8 @@ defmodule KgEdu.Knowledge.StudentExam do
         allow_nil? false
         description "ID of the student"
       end
+
+      returns :struct
 
       run fn input, context ->
         exam_id = input.arguments.exam_id
@@ -164,13 +177,26 @@ defmodule KgEdu.Knowledge.StudentExam do
           )
 
         existing_exam_query =
-          if tenant, do: Ash.Query.set_context(existing_exam_query, %{tenant: tenant}), else: existing_exam_query
+          if tenant,
+            do: Ash.Query.set_context(existing_exam_query, %{tenant: tenant}),
+            else: existing_exam_query
 
         case Ash.read_one(existing_exam_query, tenant: tenant) do
           {:ok, existing_student_exam} when not is_nil(existing_student_exam) ->
             # Student has an in-progress exam for this exam
-            Logger.info("Found existing in-progress exam #{existing_student_exam.id}")
-            :ok
+            # Check if answers exist, create them if not
+            case ensure_exam_answers(existing_student_exam, exam_id, tenant) do
+              :ok ->
+                {:ok, %{
+                  id: existing_student_exam.id,
+                  exam_id: existing_student_exam.exam_id,
+                  student_id: existing_student_exam.student_id,
+                  status: existing_student_exam.status,
+                  started_at: existing_student_exam.started_at
+                }}
+              {:error, reason} ->
+                {:error, "Failed to ensure exam answers: #{inspect(reason)}"}
+            end
 
           {:ok, nil} ->
             # No in-progress exam for this exam, start a new one
@@ -180,8 +206,15 @@ defmodule KgEdu.Knowledge.StudentExam do
                    %{exam_id: exam_id, student_id: student_id},
                    tenant: tenant
                  ) do
-              {:ok, _new_student_exam} ->
-                :ok
+              {:ok, new_student_exam} ->
+                # Return just the essential fields as a map
+                {:ok, %{
+                  id: new_student_exam.id,
+                  exam_id: new_student_exam.exam_id,
+                  student_id: new_student_exam.student_id,
+                  status: new_student_exam.status,
+                  started_at: new_student_exam.started_at
+                }}
 
               {:error, reason} ->
                 {:error, "Failed to start exam: #{inspect(reason)}"}
@@ -195,19 +228,36 @@ defmodule KgEdu.Knowledge.StudentExam do
 
     read :get_in_progress_exam do
       description "Get the student's in-progress exam with all answers"
-      get? true
 
       argument :student_id, :uuid do
         allow_nil? false
         description "ID of the student"
       end
 
-      filter expr(student_id == ^arg(:student_id) and status == :in_progress)
+      argument :exam_id, :uuid do
+        allow_nil? true
 
+        description "Optional exam ID to filter by. If not provided and multiple exams exist, the first one is returned."
+      end
+
+      # Use prepare to handle optional exam_id filter and load relationships
       prepare fn query, _context ->
+        student_id = Ash.Query.get_argument(query, :student_id)
+        exam_id = Ash.Query.get_argument(query, :exam_id)
+
         query
+        |> Ash.Query.filter(student_id == ^student_id and status == :in_progress)
         |> Ash.Query.load(:exam)
         |> Ash.Query.load(student_exam_answers: [:exam_exercise, :exercise])
+        |> then(fn q ->
+          # Only filter by exam_id if it's provided (not nil)
+          if exam_id do
+            Ash.Query.filter(q, exam_id == ^exam_id)
+          else
+            q
+          end
+        end)
+        |> Ash.Query.limit(1)
       end
     end
 
@@ -313,40 +363,82 @@ defmodule KgEdu.Knowledge.StudentExam do
       run fn input, context ->
         student_exam_id = input.arguments.student_exam_id
 
-        # Calculate total score from all answers
-        query = Ash.Query.filter(KgEdu.Knowledge.StudentExamAnswer, student_exam_id == ^student_exam_id)
-
         # Get tenant from context
         tenant = context.tenant
+
+        # Get all answers for this student exam with exercise details
+        query =
+          Ash.Query.filter(KgEdu.Knowledge.StudentExamAnswer, student_exam_id == ^student_exam_id)
+
+        query = Ash.Query.load(query, [:exam_exercise, :exercise])
         query = Ash.Query.set_context(query, %{tenant: tenant})
 
         case Ash.read(query, tenant: tenant) do
           {:ok, answers} ->
-            total_score = Enum.reduce(answers, 0, fn ans, acc -> acc + ans.points_earned end)
+            # Check if all answers are graded
+            ungraded_answers =
+              answers
+              |> Enum.filter(fn ans -> !ans.graded end)
+              |> Enum.map(fn ans ->
+                %{
+                  answer_id: ans.id,
+                  exercise_title: ans.exercise.title,
+                  exercise_order: ans.exam_exercise.order
+                }
+              end)
 
-            # Update student exam with total score and passed status
-            case Ash.get(KgEdu.Knowledge.StudentExam, student_exam_id,
-                   load: [:exam],
-                   tenant: tenant
-                 ) do
-              {:ok, student_exam} ->
-                passing_score = student_exam.exam.passing_score
+            if length(ungraded_answers) > 0 do
+              # Build error message with ungraded questions info
+              ungraded_info =
+                ungraded_answers
+                |> Enum.sort_by(fn ans -> ans.exercise_order end)
+                |> Enum.map(fn ans ->
+                  "第#{ans.exercise_order}题: #{ans.exercise_title}"
+                end)
+                |> Enum.join(", ")
 
-                # Update student exam with score and status using grade_status action
-                student_exam
-                |> Ash.Changeset.for_update(:grade_status, %{
-                  score: total_score || 0,
-                  passed: (total_score || 0) >= passing_score,
-                  status: :graded
-                })
-                |> Ash.update(tenant: tenant)
-                |> case do
-                  {:ok, _updated_exam} -> :ok
-                  {:error, reason} -> {:error, reason}
-                end
+              {:error, "还有题目未批改，请先完成以下题目的批改: #{ungraded_info}"}
+            else
+              # All answers are graded, calculate total score
+              total_score = Enum.reduce(answers, 0, fn ans, acc -> acc + ans.points_earned end)
 
-              {:error, reason} ->
-                {:error, reason}
+              # Update student exam with total score and passed status
+              case Ash.get(KgEdu.Knowledge.StudentExam, student_exam_id,
+                     load: [:exam],
+                     tenant: tenant
+                   ) do
+                {:ok, student_exam} ->
+                  passing_score = student_exam.exam.passing_score
+
+                  Logger.info(
+                    "Grading exam #{student_exam_id}, total score: #{total_score}, passing score: #{passing_score}"
+                  )
+
+                  # Update student exam with score and status using grade_status action
+                  student_exam
+                  |> Ash.Changeset.for_update(:grade_status, %{
+                    score: total_score || 0,
+                    passed: (total_score || 0) >= passing_score,
+                    status: :graded
+                  })
+                  |> Ash.update(tenant: tenant)
+                  |> case do
+                    {:ok, updated_exam} ->
+                      Logger.info(
+                        "Successfully graded exam #{student_exam_id}, new status: #{updated_exam.status}"
+                      )
+
+                      :ok
+
+                    {:error, reason} ->
+                      Logger.error("Failed to update exam grade: #{inspect(reason)}")
+                      {:error, reason}
+                  end
+
+                {:error, reason} ->
+                  Logger.error("Failed to get student exam for grading: #{inspect(reason)}")
+                  {:error, reason}
+              end
             end
 
           {:error, reason} ->
@@ -360,6 +452,10 @@ defmodule KgEdu.Knowledge.StudentExam do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -430,6 +526,69 @@ defmodule KgEdu.Knowledge.StudentExam do
     has_many :student_exam_answers, KgEdu.Knowledge.StudentExamAnswer do
       public? true
       description "Student's answers for each exercise in the exam"
+    end
+  end
+
+  # Helper function to ensure exam answers exist for a student exam
+  defp ensure_exam_answers(student_exam, exam_id, tenant) do
+    # Check if answers already exist
+    answer_query =
+      Ash.Query.filter(KgEdu.Knowledge.StudentExamAnswer, student_exam_id == ^student_exam.id)
+
+    answer_query =
+      if tenant,
+        do: Ash.Query.set_context(answer_query, %{tenant: tenant}),
+        else: answer_query
+
+    case Ash.read(answer_query, tenant: tenant) do
+      {:ok, existing_answers} when length(existing_answers) > 0 ->
+        # Answers already exist
+        :ok
+
+      {:ok, []} ->
+        # No answers exist, create them
+        create_exam_answers(student_exam.id, exam_id, tenant)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # Helper function to create exam answers for all exercises
+  defp create_exam_answers(student_exam_id, exam_id, tenant) do
+    query = Ash.Query.filter(KgEdu.Knowledge.ExamExercise, exam_id == ^exam_id)
+    query = if tenant, do: Ash.Query.set_context(query, %{tenant: tenant}), else: query
+
+    case Ash.read(query, load: [:exercise], tenant: tenant) do
+      {:ok, exam_exercises} when length(exam_exercises) > 0 ->
+        results =
+          Enum.reduce_while(exam_exercises, [], fn exam_exercise, acc ->
+            case Ash.create(
+                   KgEdu.Knowledge.StudentExamAnswer,
+                   %{
+                     student_exam_id: student_exam_id,
+                     exam_exercise_id: exam_exercise.id,
+                     exercise_id: exam_exercise.exercise_id,
+                     points_earned: 0
+                   },
+                   tenant: tenant
+                 ) do
+              {:ok, _answer} -> {:cont, acc}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+          end)
+
+        case results do
+          {:error, _reason} -> {:error, "Failed to create some exam answers"}
+          _ -> :ok
+        end
+
+      {:ok, []} ->
+        # No exercises found for this exam
+        :ok
+
+      {:error, reason} ->
+        {:error, "Failed to load exam exercises: #{inspect(reason)}"}
     end
   end
 end

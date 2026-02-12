@@ -14,6 +14,7 @@ defmodule XMindTest do
 
         # Test converting to knowledge resources
         course_id = "00000000-0000-0000-0000-000000000000"
+
         case KgEdu.XmindParser.convert_to_knowledge_resources(xmind_data, course_id) do
           {:ok, knowledge_resources} ->
             IO.puts("✓ Successfully converted to knowledge resources")

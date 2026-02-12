@@ -11,12 +11,13 @@ case KgEdu.XmindParser.parse_content_json(json_content) do
     IO.puts("Total items: #{length(data)}\n")
 
     Enum.each(data, fn item ->
-      type = case item.level do
-        :subject -> '[SUBJECT]'
-        :knowledge_unit -> '[UNIT]'
-        :knowledge_cell -> '[CELL]'
-        _ -> '[?]'
-      end
+      type =
+        case item.level do
+          :subject -> '[SUBJECT]'
+          :knowledge_unit -> '[UNIT]'
+          :knowledge_cell -> '[CELL]'
+          _ -> '[?]'
+        end
 
       indent = String.duplicate("  ", item.depth)
       IO.puts("#{indent}#{type} Depth #{item.depth}: #{item.title}")

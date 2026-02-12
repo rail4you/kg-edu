@@ -9,7 +9,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
   describe "generate_ai_exercise/1" do
     setup do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Physics 101",
@@ -140,7 +140,10 @@ defmodule KgEdu.Knowledge.ExerciseTest do
       end
     end
 
-    test "validates exercise_type constraint", %{course: course, knowledge_resource: knowledge_resource} do
+    test "validates exercise_type constraint", %{
+      course: course,
+      knowledge_resource: knowledge_resource
+    } do
       params = %{
         course_name: course.title,
         knowledge_name: knowledge_resource.name,
@@ -159,7 +162,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
   describe "get_recent_ai_exercises/1" do
     setup do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Mathematics 101",
@@ -198,7 +201,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
 
     test "returns only AI-generated exercises", %{ai_exercise: ai_exercise} do
       exercises = Exercise.get_recent_ai_exercises(%{})
-      
+
       assert length(exercises) == 1
       assert hd(exercises).id == ai_exercise.id
       assert hd(exercises).ai_type == :ai_generated
@@ -206,7 +209,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
 
     test "returns exercises sorted by most recent", %{ai_exercise: ai_exercise} do
       exercises = Exercise.get_recent_ai_exercises(%{})
-      
+
       assert length(exercises) >= 1
       # Verify sorting by inserted_at (most recent first)
       if length(exercises) > 1 do
@@ -218,7 +221,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
 
     test "filters by course_id when provided", %{course: course, ai_exercise: ai_exercise} do
       exercises = Exercise.get_recent_ai_exercises(%{course_id: course.id})
-      
+
       assert length(exercises) == 1
       assert hd(exercises).id == ai_exercise.id
       assert hd(exercises).course_id == course.id
@@ -226,7 +229,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
 
     test "limits results when limit is provided", %{ai_exercise: ai_exercise} do
       exercises = Exercise.get_recent_ai_exercises(%{limit: 1})
-      
+
       assert length(exercises) <= 1
     end
   end
@@ -234,7 +237,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
   describe "exercise creation with ai_type" do
     setup do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Chemistry 101",
@@ -256,7 +259,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
       }
 
       {:ok, exercise} = Exercise.create_exercise(params)
-      
+
       assert exercise.title == "AI Generated Chemistry Question"
       assert exercise.ai_type == :ai_generated
       assert exercise.course_id == course.id
@@ -273,7 +276,7 @@ defmodule KgEdu.Knowledge.ExerciseTest do
       }
 
       {:ok, exercise} = Exercise.create_exercise(params)
-      
+
       assert exercise.title == "Regular Chemistry Question"
       assert exercise.ai_type == nil
       assert exercise.course_id == course.id

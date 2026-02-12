@@ -29,9 +29,10 @@ defmodule SimpleDocx do
     }
 
     # Create ZIP
-    charlist_files = Enum.map(files, fn {path, content} ->
-      {String.to_charlist(path), String.to_charlist(content)}
-    end)
+    charlist_files =
+      Enum.map(files, fn {path, content} ->
+        {String.to_charlist(path), String.to_charlist(content)}
+      end)
 
     case :zip.create(String.to_charlist(filename), charlist_files) do
       {:ok, filename} -> {:ok, List.to_string(filename)}

@@ -9,12 +9,13 @@ case KgEdu.XmindParser.parse_from_base64(base64) do
     IO.puts("Total items: #{length(data)}\n")
 
     Enum.each(data, fn item ->
-      type = case item.level do
-        :subject -> '[SUBJECT]'
-        :knowledge_unit -> '[UNIT]'
-        :knowledge_cell -> '[CELL]'
-        _ -> '[?]'
-      end
+      type =
+        case item.level do
+          :subject -> '[SUBJECT]'
+          :knowledge_unit -> '[UNIT]'
+          :knowledge_cell -> '[CELL]'
+          _ -> '[?]'
+        end
 
       indent = String.duplicate("  ", item.depth)
       IO.puts("#{indent}#{type} Depth #{item.depth}: #{item.title}")

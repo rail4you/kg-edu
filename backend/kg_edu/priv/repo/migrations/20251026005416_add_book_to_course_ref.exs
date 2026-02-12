@@ -12,7 +12,7 @@ defmodule KgEdu.Repo.Migrations.AddCode do
     try do
       execute("ALTER TABLE books ADD COLUMN IF NOT EXISTS course_id UUID")
     rescue
-      Postgrex.Error -> 
+      Postgrex.Error ->
         # Column might already exist, ignore error
         :ok
     end

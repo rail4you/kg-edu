@@ -4,7 +4,7 @@ defmodule KgEdu.Repo do
 
   @impl true
   def all_tenants do
-    for org <-Ash.read!(KgEdu.Accounts.Organization) do
+    for org <- Ash.read!(KgEdu.Accounts.Organization) do
       org.schema_name
       # org.schema
     end

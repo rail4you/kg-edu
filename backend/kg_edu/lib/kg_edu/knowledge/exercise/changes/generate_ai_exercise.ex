@@ -6,7 +6,8 @@ defmodule JsonCleanerAdvanced do
     # 匹配 ```json 或 ``` 开始，到 ``` 结束之间的内容
     case Regex.run(~r/```(?:json)?\s*\n?(.*?)\n?```/s, raw_string, capture: :all_but_first) do
       [json_content] -> String.trim(json_content)
-      nil -> String.trim(raw_string)  # 如果没有代码块标记，返回原字符串
+      # 如果没有代码块标记，返回原字符串
+      nil -> String.trim(raw_string)
     end
   end
 
@@ -16,7 +17,6 @@ defmodule JsonCleanerAdvanced do
     |> Jason.decode(opts)
   end
 end
-
 
 defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   @moduledoc """
@@ -39,15 +39,22 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
         changeset = Ash.Changeset.change_attribute(changeset, :course_id, course.id)
 
         # Generate multiple exercises
-        case generate_multiple_exercises(course_name, knowledge_name, chapter_name, exercise_type, number) do
+        case generate_multiple_exercises(
+               course_name,
+               knowledge_name,
+               chapter_name,
+               exercise_type,
+               number
+             ) do
           {:ok, exercises_data} ->
             # Create database records for all generated exercises
-            exercises_with_metadata = Enum.map(exercises_data, fn exercise_data ->
-              Map.merge(exercise_data, %{
-                course_id: course.id,
-                question_type: exercise_type
-              })
-            end)
+            exercises_with_metadata =
+              Enum.map(exercises_data, fn exercise_data ->
+                Map.merge(exercise_data, %{
+                  course_id: course.id,
+                  question_type: exercise_type
+                })
+              end)
 
             # Store exercises in changeset metadata for later processing
             changeset
@@ -74,19 +81,26 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
       "Knowledge topic: #{knowledge_name}"
     ]
 
-    context_parts = if chapter_name do
-      context_parts ++ ["Chapter: #{chapter_name}"]
-    else
-      context_parts
-    end
+    context_parts =
+      if chapter_name do
+        context_parts ++ ["Chapter: #{chapter_name}"]
+      else
+        context_parts
+      end
 
     context = Enum.join(context_parts, ", ")
 
-    exercise_type_description = case exercise_type do
-      :multiple_choice -> "multiple choice questions with 4 options (A, B, C, D) and indicate the correct answer"
-      :essay -> "essay questions with detailed answer guidelines"
-      :fill_in_blank -> "fill-in-the-blank questions with the correct answers"
-    end
+    exercise_type_description =
+      case exercise_type do
+        :multiple_choice ->
+          "multiple choice questions with 4 options (A, B, C, D) and indicate the correct answer"
+
+        :essay ->
+          "essay questions with detailed answer guidelines"
+
+        :fill_in_blank ->
+          "fill-in-the-blank questions with the correct answers"
+      end
 
     """
     You are an educational content expert. Please create one #{exercise_type_description} based on the following context:
@@ -122,22 +136,30 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     """
   end
 
-  def generate_multiple_exercises(course_name, knowledge_name, chapter_name, exercise_type, number) do
+  def generate_multiple_exercises(
+        course_name,
+        knowledge_name,
+        chapter_name,
+        exercise_type,
+        number
+      ) do
     Logger.info("Generating #{number} exercises of type #{exercise_type}")
 
     try do
-      exercises = Enum.map(1..number, fn _index ->
-        prompt = build_exercise_prompt(course_name, knowledge_name, chapter_name, exercise_type)
+      exercises =
+        Enum.map(1..number, fn _index ->
+          prompt = build_exercise_prompt(course_name, knowledge_name, chapter_name, exercise_type)
 
-        case generate_exercise_content(prompt, exercise_type) do
-          {:ok, exercise_data} ->
-            exercise_data
-          {:error, reason} ->
-            Logger.error("Failed to generate exercise: #{inspect(reason)}")
-            nil
-        end
-      end)
-      |> Enum.filter(&(&1 != nil))
+          case generate_exercise_content(prompt, exercise_type) do
+            {:ok, exercise_data} ->
+              exercise_data
+
+            {:error, reason} ->
+              Logger.error("Failed to generate exercise: #{inspect(reason)}")
+              nil
+          end
+        end)
+        |> Enum.filter(&(&1 != nil))
 
       if length(exercises) > 0 do
         {:ok, exercises}
@@ -163,8 +185,8 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
       {:ok, response} ->
         {:ok, object} = ReqLLM.Response.text(response) |> JsonCleanerAdvanced.parse(keys: :atoms)
         Logger.info("Generated exercise object: #{inspect(object)}")
-        case parse_structured_exercise(object, exercise_type) do
 
+        case parse_structured_exercise(object, exercise_type) do
           {:ok, exercise_data} -> {:ok, exercise_data}
           {:error, reason} -> {:error, reason}
         end
@@ -214,6 +236,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
         answer: object.answer,
         options: parse_structured_options(object, exercise_type)
       }
+
       Logger.info("exercise_data is #{inspect(exercise_data)}")
       {:ok, exercise_data}
     rescue
@@ -253,6 +276,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
         case create_multiple_exercises(exercises) do
           {:ok, created_exercises} ->
             Ash.Changeset.put_context(changeset, :created_exercises, created_exercises)
+
           {:error, reason} ->
             Ash.Changeset.add_error(changeset, %Ash.Error.Changes.InvalidAttribute{
               field: :question_content,

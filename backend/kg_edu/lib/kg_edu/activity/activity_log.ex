@@ -8,21 +8,17 @@ defmodule KgEdu.Activity.ActivityLog do
 
   require Logger
 
-  typescript do
-    type_name "ActivityLog"
-  end
-
   postgres do
     table "activity_logs"
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "activity_log"
+  end
+
+  typescript do
+    type_name "ActivityLog"
   end
 
   code_interface do
@@ -258,6 +254,10 @@ defmodule KgEdu.Activity.ActivityLog do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_primary_key :id
 
@@ -309,14 +309,14 @@ defmodule KgEdu.Activity.ActivityLog do
   calculations do
     calculate :action_description, :string do
       calculation expr(
-        cond do
-          action_type == :file_view -> "Viewed file"
-          action_type == :video_view -> "Viewed video"
-          action_type == :exercise_submit -> "Submitted exercise"
-          action_type == :homework_submit -> "Submitted homework"
-          true -> "Unknown action"
-        end
-      )
+                    cond do
+                      action_type == :file_view -> "Viewed file"
+                      action_type == :video_view -> "Viewed video"
+                      action_type == :exercise_submit -> "Submitted exercise"
+                      action_type == :homework_submit -> "Submitted homework"
+                      true -> "Unknown action"
+                    end
+                  )
     end
   end
 end

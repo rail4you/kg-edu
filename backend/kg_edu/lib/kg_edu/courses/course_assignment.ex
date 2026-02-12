@@ -21,57 +21,53 @@ defmodule KgEdu.Courses.CourseAssignment do
   require Logger
   require Ash.Query
 
-  attributes do
-    uuid_primary_key :id do
-      public? true
-      writable? false
-    end
+  # policies do
+  #   # Admins can do everything
+  #   policy always() do
+  #     description "Admins can manage all course assignments"
+  #     authorize_if expr({:_actor, :role} == :admin)
+  #   end
 
-    attribute :role, :atom do
-      description "The role of the teacher in this course"
-      public? true
-      writable? true
-      constraints [one_of: [:primary_teacher, :assistant_teacher, :guest_teacher]]
-      default :assistant_teacher
-      allow_nil? false
-    end
+  #   # Allow course assignment (custom action) - fallback for non-admins
+  #   policy always() do
+  #     description "Allow course assignment for all users"
+  #     authorize_if expr({:_ash_bindings, :action} == :assign_course_to_teacher)
+  #   end
 
-    attribute :assigned_at, :utc_datetime do
-      description "When the teacher was assigned to the course"
-      public? true
-      writable? false
-      default &DateTime.utc_now/0
-    end
+  #   # Teachers can view assignments they created
+  #   policy action(:read) do
+  #     description "Teachers can view assignments they created"
+  #     authorize_if expr(assigned_by_id == ^actor(:id))
+  #   end
 
-    attribute :assigned_by_id, :uuid do
-      description "ID of the user who made this assignment"
-      public? false
-      writable? true
-      allow_nil? true
-    end
+  #   # Users can create assignments
+  #   policy action(:create) do
+  #     description "Users can create assignments"
+  #     authorize_if always()
+  #   end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+  #   # Teachers can remove themselves from courses
+  #   policy action(:destroy) do
+  #     description "Teachers can remove themselves from courses"
+  #     authorize_if expr(teacher_id == ^actor(:id))
+  #   end
+
+  #   # Primary teachers can manage assignments for their courses
+  #   policy [action(:update), action(:destroy)] do
+  #     description "Primary teachers can manage all assignments for their courses"
+  #     authorize_if expr(
+  #                    exists(KgEdu.Courses.Course, id == course_id and teacher_id == ^actor(:id))
+  #                  )
+  #   end
+  # end
+
+  postgres do
+    table "course_assignments"
+    repo KgEdu.Repo
   end
 
-  relationships do
-    belongs_to :course, KgEdu.Courses.Course do
-      description "The course this teacher is assigned to"
-      public? true
-      allow_nil? false
-    end
-
-    belongs_to :teacher, KgEdu.Accounts.User do
-      description "The teacher assigned to the course"
-      public? true
-      allow_nil? false
-    end
-
-    belongs_to :assigned_by, KgEdu.Accounts.User do
-      description "The user who made this assignment"
-      public? true
-      allow_nil? true
-    end
+  typescript do
+    type_name "CourseAssignment"
   end
 
   actions do
@@ -89,16 +85,17 @@ defmodule KgEdu.Courses.CourseAssignment do
       change set_attribute(:assigned_at, &DateTime.utc_now/0)
 
       change fn changeset, context ->
-        dbg context
+        dbg(context)
         # Extract actor ID from the context - access directly from struct
-        assigned_by_id = cond do
-          # Try to get actor from context struct
-          context.actor && context.actor.id -> context.actor.id
-          # Fallback to argument
-          assigned_by = Ash.Changeset.get_argument(changeset, :assigned_by) -> assigned_by
-          # Default to nil
-          true -> nil
-        end
+        assigned_by_id =
+          cond do
+            # Try to get actor from context struct
+            context.actor && context.actor.id -> context.actor.id
+            # Fallback to argument
+            assigned_by = Ash.Changeset.get_argument(changeset, :assigned_by) -> assigned_by
+            # Default to nil
+            true -> nil
+          end
 
         # Debug: Log what we found
         Logger.info("COURSE ASSIGNMENT: Context actor: #{inspect(context.actor)}")
@@ -168,7 +165,7 @@ defmodule KgEdu.Courses.CourseAssignment do
         description "The role of the teacher in this course"
         allow_nil? false
         public? true
-        constraints [one_of: [:primary_teacher, :assistant_teacher, :guest_teacher]]
+        constraints one_of: [:primary_teacher, :assistant_teacher, :guest_teacher]
         default :assistant_teacher
       end
 
@@ -221,18 +218,22 @@ defmodule KgEdu.Courses.CourseAssignment do
         case KgEdu.Courses.CourseAssignment
              |> Ash.Query.filter(teacher_id: teacher_id, course_id: course_id)
              |> Ash.read(tenant: context.tenant, actor: context.actor) do
-          {:ok, [assignment]} -> # Found exactly one assignment
+          # Found exactly one assignment
+          {:ok, [assignment]} ->
             case Ash.destroy(assignment, tenant: context.tenant, actor: context.actor) do
               :ok ->
                 {:ok, %{message: "Assignment removed successfully"}}
+
               {:error, error} ->
                 {:error, "Failed to remove assignment: #{inspect(error)}"}
             end
 
-          {:ok, []} -> # No assignments found
+          # No assignments found
+          {:ok, []} ->
             {:error, "No assignment found for this teacher and course"}
 
-          {:ok, assignments} when length(assignments) > 1 -> # Multiple assignments found
+          # Multiple assignments found
+          {:ok, assignments} when length(assignments) > 1 ->
             {:error, "Multiple assignments found, cannot remove"}
 
           {:error, error} ->
@@ -241,62 +242,67 @@ defmodule KgEdu.Courses.CourseAssignment do
       end
     end
   end
+
   policies do
     policy always() do
       authorize_if always()
     end
   end
 
-  # policies do
-  #   # Admins can do everything
-  #   policy always() do
-  #     description "Admins can manage all course assignments"
-  #     authorize_if expr({:_actor, :role} == :admin)
-  #   end
-
-  #   # Allow course assignment (custom action) - fallback for non-admins
-  #   policy always() do
-  #     description "Allow course assignment for all users"
-  #     authorize_if expr({:_ash_bindings, :action} == :assign_course_to_teacher)
-  #   end
-
-  #   # Teachers can view assignments they created
-  #   policy action(:read) do
-  #     description "Teachers can view assignments they created"
-  #     authorize_if expr(assigned_by_id == ^actor(:id))
-  #   end
-
-  #   # Users can create assignments
-  #   policy action(:create) do
-  #     description "Users can create assignments"
-  #     authorize_if always()
-  #   end
-
-  #   # Teachers can remove themselves from courses
-  #   policy action(:destroy) do
-  #     description "Teachers can remove themselves from courses"
-  #     authorize_if expr(teacher_id == ^actor(:id))
-  #   end
-
-  #   # Primary teachers can manage assignments for their courses
-  #   policy [action(:update), action(:destroy)] do
-  #     description "Primary teachers can manage all assignments for their courses"
-  #     authorize_if expr(
-  #                    exists(KgEdu.Courses.Course, id == course_id and teacher_id == ^actor(:id))
-  #                  )
-  #   end
-  # end
-
-  postgres do
-    table "course_assignments"
-    repo KgEdu.Repo
-  end
-
   multitenancy do
     strategy :context
   end
 
-  typescript do
-    type_name "CourseAssignment"
+  attributes do
+    uuid_primary_key :id do
+      public? true
+      writable? false
+    end
+
+    attribute :role, :atom do
+      description "The role of the teacher in this course"
+      public? true
+      writable? true
+      constraints one_of: [:primary_teacher, :assistant_teacher, :guest_teacher]
+      default :assistant_teacher
+      allow_nil? false
+    end
+
+    attribute :assigned_at, :utc_datetime do
+      description "When the teacher was assigned to the course"
+      public? true
+      writable? false
+      default &DateTime.utc_now/0
+    end
+
+    attribute :assigned_by_id, :uuid do
+      description "ID of the user who made this assignment"
+      public? false
+      writable? true
+      allow_nil? true
+    end
+
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :course, KgEdu.Courses.Course do
+      description "The course this teacher is assigned to"
+      public? true
+      allow_nil? false
+    end
+
+    belongs_to :teacher, KgEdu.Accounts.User do
+      description "The teacher assigned to the course"
+      public? true
+      allow_nil? false
+    end
+
+    belongs_to :assigned_by, KgEdu.Accounts.User do
+      description "The user who made this assignment"
+      public? true
+      allow_nil? true
+    end
   end
 end

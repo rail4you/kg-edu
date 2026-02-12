@@ -8,14 +8,14 @@ IO.puts("From: #{sender_id}")
 IO.puts("To: #{receiver_id}")
 
 case KgEdu.Email.EmailMessage.send_email(
-  %{
-    sender_user_id: sender_id,
-    receiver_user_id: receiver_id,
-    subject: "Test Email from IEx",
-    body: "This is a test email sent via IEx to check the email sending system."
-  },
-  tenant: tenant
-) do
+       %{
+         sender_user_id: sender_id,
+         receiver_user_id: receiver_id,
+         subject: "Test Email from IEx",
+         body: "This is a test email sent via IEx to check the email sending system."
+       },
+       tenant: tenant
+     ) do
   {:ok, email_message} ->
     IO.puts("\n✓ Email message created successfully!")
     IO.puts("  ID: #{email_message.id}")

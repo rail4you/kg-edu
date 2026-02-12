@@ -85,6 +85,7 @@ defmodule CoursePaginationTest do
           case KgEdu.Courses.Course.list_courses!(actor: nil, page: [limit: 5, after: keyset]) do
             %Ash.Page.Keyset{} = next_page ->
               IO.puts("✓ Next page has #{length(next_page.results)} results")
+
             _ ->
               IO.puts("✗ Failed to get next page")
           end
@@ -132,7 +133,8 @@ defmodule CoursePaginationTest do
         # Try to navigate to next page
         if page.more? do
           case Ash.page!(page, :next) do
-            next_page when is_struct(next_page, Ash.Page.Offset) or is_struct(next_page, Ash.Page.Keyset) ->
+            next_page
+            when is_struct(next_page, Ash.Page.Offset) or is_struct(next_page, Ash.Page.Keyset) ->
               IO.puts("✓ Next page has #{length(next_page.results)} results")
 
               if length(next_page.results) > 0 do

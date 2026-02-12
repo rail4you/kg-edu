@@ -61,7 +61,9 @@ defmodule KgEduWeb.UploadVideoController do
   def webhook(conn, _params) do
     signature_header = List.first(get_req_header(conn, "mux-signature"))
     raw_body = List.first(conn.assigns.raw_body)
-    secret = Application.get_env(:kg_edu, :mux_webhook_secret) || "86h1a5uueieeqm0tot4ptrdd9pg6s5d4"
+
+    secret =
+      Application.get_env(:kg_edu, :mux_webhook_secret) || "86h1a5uueieeqm0tot4ptrdd9pg6s5d4"
 
     case Mux.Webhooks.verify_header(raw_body, signature_header, secret) do
       :ok ->
@@ -123,7 +125,10 @@ defmodule KgEduWeb.UploadVideoController do
 
     asset_id = data["id"]
     playback_id = data["playback_ids"] |> List.first() |> Map.get("id")
-    duration = data["tracks"] |> Enum.find(fn track -> track["type"] == "video" end) |> Map.get("duration")
+
+    duration =
+      data["tracks"] |> Enum.find(fn track -> track["type"] == "video" end) |> Map.get("duration")
+
     thumbnail = "https://image.mux.com/#{playback_id}/thumbnail.webp"
 
     Logger.info("Duration: #{duration}")
@@ -132,17 +137,18 @@ defmodule KgEduWeb.UploadVideoController do
 
     # create video use asset_id, playback_id, duration, thumbnail
     case Ash.Changeset.for_create(KgEdu.Courses.Video, :create, %{
-      asset_id: asset_id,
-      playback_id: playback_id,
-      duration: duration,
-      thumbnail: thumbnail
-    }) |> Ash.create do
+           asset_id: asset_id,
+           playback_id: playback_id,
+           duration: duration,
+           thumbnail: thumbnail
+         })
+         |> Ash.create() do
       {:ok, video} ->
         Logger.info("Created new video #{video.id} with playback details")
+
       {:error, error} ->
         Logger.error("Failed to create video with playback details: #{inspect(error)}")
     end
-
   end
 
   defp handle_webhook_event(%{"type" => _type, "data" => _data}) do
@@ -237,6 +243,4 @@ defmodule KgEduWeb.UploadVideoController do
         })
     end
   end
-
-
 end

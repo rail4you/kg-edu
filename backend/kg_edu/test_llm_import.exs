@@ -5,11 +5,12 @@
 
 # Load the application with dev environment
 Mix.start()
-Mix.env(:dev)  # Ensure we're in dev environment
+# Ensure we're in dev environment
+Mix.env(:dev)
 Application.ensure_all_started(:kg_edu)
 
 # Make sure we're using the dev repo configuration (matches config/dev.exs)
-Application.put_env(:kg_edu, KgEdu.Repo, [
+Application.put_env(:kg_edu, KgEdu.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -18,7 +19,7 @@ Application.put_env(:kg_edu, KgEdu.Repo, [
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
-])
+)
 
 # Start the repo to ensure database connection
 KgEdu.Repo.start_link()
@@ -90,15 +91,19 @@ case Course.get_course(course_id) do
     case ImportFromLLM.import_from_text(chinese_text, course.id) do
       {:ok, result} ->
         IO.puts("✅ Successfully imported knowledge!")
-        
+
         IO.puts("\n📊 Resource Summary:")
+
         Enum.each(result[:resources] || [], fn resource ->
-          type_icon = case resource.knowledge_type do
-            :subject -> "📖"
-            :knowledge_unit -> "📚"
-            :knowledge_cell -> "📄"
-          end
+          type_icon =
+            case resource.knowledge_type do
+              :subject -> "📖"
+              :knowledge_unit -> "📚"
+              :knowledge_cell -> "📄"
+            end
+
           IO.puts("  #{type_icon} #{resource.name} (#{resource.knowledge_type})")
+
           if resource.unit && resource.unit != "" do
             IO.puts("    Unit: #{resource.unit}")
           end
@@ -107,9 +112,12 @@ case Course.get_course(course_id) do
         # Display relations
         if length(result[:relations] || []) > 0 do
           IO.puts("\n🔗 Relations:")
+
           Enum.each(result[:relations] || [], fn relation ->
             if relation do
-              IO.puts("  • #{relation.source_knowledge.name} → #{relation.target_knowledge.name} (#{relation.relation_type.name})")
+              IO.puts(
+                "  • #{relation.source_knowledge.name} → #{relation.target_knowledge.name} (#{relation.relation_type.name})"
+              )
             end
           end)
         end
@@ -129,7 +137,11 @@ case Course.get_course(course_id) do
     IO.puts("You can:")
     IO.puts("  1. Check if the course ID is correct")
     IO.puts("  2. Create a course with this ID first:")
-    IO.puts("     In iex: KgEdu.Courses.Course.create_course(%{title: \"Test Course\", description: \"Test Description\", teacher_id: \"teacher-uuid\"})")
+
+    IO.puts(
+      "     In iex: KgEdu.Courses.Course.create_course(%{title: \"Test Course\", description: \"Test Description\", teacher_id: \"teacher-uuid\"})"
+    )
+
     IO.puts("  3. Use a different course ID that exists")
     IO.puts("  4. List existing courses:")
 
@@ -137,9 +149,12 @@ case Course.get_course(course_id) do
     case Course.list_courses() do
       {:ok, courses} ->
         IO.puts("   Found #{length(courses)} courses in database:")
-        Enum.take(courses, 5) |> Enum.each(fn course ->
+
+        Enum.take(courses, 5)
+        |> Enum.each(fn course ->
           IO.puts("     - #{course.title} (ID: #{course.id})")
         end)
+
         if length(courses) > 5 do
           IO.puts("     ... and #{length(courses) - 5} more")
         end

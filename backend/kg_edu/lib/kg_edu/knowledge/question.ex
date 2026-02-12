@@ -18,10 +18,6 @@ defmodule KgEdu.Knowledge.Question do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "knowledge_question"
   end
@@ -76,9 +72,9 @@ defmodule KgEdu.Knowledge.Question do
       argument :course_id, :uuid, allow_nil?: true
 
       filter expr(
-        question_level == :global and
-        (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
-      )
+               question_level == :global and
+                 (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
+             )
 
       prepare fn query, _context ->
         Ash.Query.sort(query, position: :asc, title: :asc)
@@ -90,9 +86,9 @@ defmodule KgEdu.Knowledge.Question do
       argument :course_id, :uuid, allow_nil?: true
 
       filter expr(
-        question_level == :concept and
-        (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
-      )
+               question_level == :concept and
+                 (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
+             )
 
       prepare fn query, _context ->
         Ash.Query.sort(query, position: :asc, title: :asc)
@@ -104,9 +100,9 @@ defmodule KgEdu.Knowledge.Question do
       argument :course_id, :uuid, allow_nil?: true
 
       filter expr(
-        question_level == :method and
-        (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
-      )
+               question_level == :method and
+                 (is_nil(^arg(:course_id)) or course_id == ^arg(:course_id))
+             )
 
       prepare fn query, _context ->
         Ash.Query.sort(query, position: :asc, title: :asc)
@@ -180,7 +176,16 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Update Actions ============
     update :update_question do
       description "Update a question"
-      accept [:title, :description, :position, :tags, :question_level, :course_id, :knowledge_resource_id]
+
+      accept [
+        :title,
+        :description,
+        :position,
+        :tags,
+        :question_level,
+        :course_id,
+        :knowledge_resource_id
+      ]
     end
 
     # ============ Link/Unlink Actions ============
@@ -208,6 +213,7 @@ defmodule KgEdu.Knowledge.Question do
     # ============ Knowledge Resource Queries ============
     read :by_knowledge_resource do
       description "Get all questions for a specific knowledge resource"
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
         description "Knowledge resource ID"
@@ -258,8 +264,10 @@ defmodule KgEdu.Knowledge.Question do
       argument :attributes, {:array, :atom} do
         allow_nil? false
       end
+
       run fn input, context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+
         case KgEdu.Knowledge.Question.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                input.arguments.attributes,
@@ -270,7 +278,6 @@ defmodule KgEdu.Knowledge.Question do
           {:error, reason} -> {:error, reason}
         end
       end
-
     end
 
     action :export_question_template do
@@ -328,6 +335,10 @@ defmodule KgEdu.Knowledge.Question do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_primary_key :id
 
@@ -364,12 +375,10 @@ defmodule KgEdu.Knowledge.Question do
       description "Tags associated with the question"
     end
 
-
     attribute :created_by_id, :uuid do
       allow_nil? true
-      public?  true
+      public? true
     end
-
 
     timestamps()
   end
@@ -425,8 +434,13 @@ defmodule KgEdu.Knowledge.Question do
       {:ok, question} ->
         # Create connections if provided
         if question_data["connections"] || question_data[:connections] do
-          create_question_connections(question, question_data["connections"] || question_data[:connections], tenant)
+          create_question_connections(
+            question,
+            question_data["connections"] || question_data[:connections],
+            tenant
+          )
         end
+
         {:ok, question}
 
       {:error, reason} ->

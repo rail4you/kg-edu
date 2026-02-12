@@ -1,11 +1,13 @@
 defmodule KgEdu.Knowledge.Relation do
   alias ElixirSense.Log
+
   use Ash.Resource,
     otp_app: :kg_edu,
     domain: KgEdu.Knowledge,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
+
   import Logger, only: [info: 1, error: 1]
 
   require Logger
@@ -21,10 +23,6 @@ defmodule KgEdu.Knowledge.Relation do
       reference :source_knowledge, on_delete: :delete
       reference :target_knowledge, on_delete: :delete
     end
-  end
-
-  multitenancy do
-    strategy :context
   end
 
   json_api do
@@ -46,8 +44,15 @@ defmodule KgEdu.Knowledge.Relation do
     define :update_knowledge_relation, action: :update_knowledge_relation
     define :delete_knowledge_relation, action: :destroy
     define :bulk_destroy_relations, action: :bulk_destroy_relations
-    define :delete_all_knowledge_relations, args: [:course_id], action: :delete_all_knowledge_relations
-    define :delete_all_knowledge_relations_rpc, args: [:course_id], action: :delete_all_knowledge_relations_rpc
+
+    define :delete_all_knowledge_relations,
+      args: [:course_id],
+      action: :delete_all_knowledge_relations
+
+    define :delete_all_knowledge_relations_rpc,
+      args: [:course_id],
+      action: :delete_all_knowledge_relations_rpc
+
     define :import_relations_from_excel, action: :import_relations_from_excel
   end
 
@@ -154,13 +159,19 @@ defmodule KgEdu.Knowledge.Relation do
         course_id = input.arguments.course_id
 
         # Use Ecto query to delete relations where either source or target knowledge belongs to the course
-        source_query = from(r in "knowledge_relations",
-          join: k in "knowledge_resources", on: r.source_knowledge_id == k.id,
-          where: k.course_id == type(^course_id, :binary_id))
+        source_query =
+          from(r in "knowledge_relations",
+            join: k in "knowledge_resources",
+            on: r.source_knowledge_id == k.id,
+            where: k.course_id == type(^course_id, :binary_id)
+          )
 
-        target_query = from(r in "knowledge_relations",
-          join: k in "knowledge_resources", on: r.target_knowledge_id == k.id,
-          where: k.course_id == type(^course_id, :binary_id))
+        target_query =
+          from(r in "knowledge_relations",
+            join: k in "knowledge_resources",
+            on: r.target_knowledge_id == k.id,
+            where: k.course_id == type(^course_id, :binary_id)
+          )
 
         # Delete relations where source knowledge is in the course
         case KgEdu.Repo.delete_all(source_query) do
@@ -192,13 +203,19 @@ defmodule KgEdu.Knowledge.Relation do
         course_id = input.arguments.course_id
 
         # Use Ecto query to delete relations where either source or target knowledge belongs to the course
-        source_query = from(r in "knowledge_relations",
-          join: k in "knowledge_resources", on: r.source_knowledge_id == k.id,
-          where: k.course_id == type(^course_id, :binary_id))
+        source_query =
+          from(r in "knowledge_relations",
+            join: k in "knowledge_resources",
+            on: r.source_knowledge_id == k.id,
+            where: k.course_id == type(^course_id, :binary_id)
+          )
 
-        target_query = from(r in "knowledge_relations",
-          join: k in "knowledge_resources", on: r.target_knowledge_id == k.id,
-          where: k.course_id == type(^course_id, :binary_id))
+        target_query =
+          from(r in "knowledge_relations",
+            join: k in "knowledge_resources",
+            on: r.target_knowledge_id == k.id,
+            where: k.course_id == type(^course_id, :binary_id)
+          )
 
         # Delete relations where source knowledge is in the course
         case KgEdu.Repo.delete_all(source_query) do
@@ -207,7 +224,13 @@ defmodule KgEdu.Knowledge.Relation do
             case KgEdu.Repo.delete_all(target_query) do
               {target_deleted, nil} ->
                 total_deleted = source_deleted + target_deleted
-                {:ok, %{deleted_count: total_deleted, source_deleted: source_deleted, target_deleted: target_deleted}}
+
+                {:ok,
+                 %{
+                   deleted_count: total_deleted,
+                   source_deleted: source_deleted,
+                   target_deleted: target_deleted
+                 }}
 
               {:error, reason} ->
                 {:error, "Failed to delete target relations: #{inspect(reason)}"}
@@ -226,16 +249,20 @@ defmodule KgEdu.Knowledge.Relation do
       argument :course_id, :uuid, allow_nil?: false
 
       run fn input, context ->
-         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
+        case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
           {:ok, %{sheet: knowledge_data}} ->
-            case process_relation_import(knowledge_data, input.arguments.course_id, context.tenant) do
+            case process_relation_import(
+                   knowledge_data,
+                   input.arguments.course_id,
+                   context.tenant
+                 ) do
               {:ok, _} -> :ok
               {:error, reason} -> {:error, "Failed to parse Excel file: #{reason}"}
             end
 
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
-          end
+        end
       end
     end
   end
@@ -244,6 +271,10 @@ defmodule KgEdu.Knowledge.Relation do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -282,16 +313,18 @@ defmodule KgEdu.Knowledge.Relation do
 
   defp process_relation_import(relation_data, course_id, tenant) do
     # Process each row of relation data
-    result = Enum.reduce_while(relation_data, {:ok, 0}, fn row, {:ok, count} ->
-      case process_relation_row(row, course_id, tenant) do
-        {:ok} -> {:cont, {:ok, count + 1}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
+    result =
+      Enum.reduce_while(relation_data, {:ok, 0}, fn row, {:ok, count} ->
+        case process_relation_row(row, course_id, tenant) do
+          {:ok} -> {:cont, {:ok, count + 1}}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
 
     case result do
       {:ok, imported_count} ->
         {:ok, "Successfully imported #{imported_count} knowledge relations"}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -303,40 +336,49 @@ defmodule KgEdu.Knowledge.Relation do
     Logger.info("#{knowledge1_name} #{relation_type_name} #{knowledge2_name}")
     # Skip row if any field is missing
     if is_nil(knowledge1_name) or is_nil(relation_type_name) or is_nil(knowledge2_name) or
-       knowledge1_name == "" or relation_type_name == "" or knowledge2_name == "" do
-      {:ok}  # Skip empty rows
+         knowledge1_name == "" or relation_type_name == "" or knowledge2_name == "" do
+      # Skip empty rows
+      {:ok}
     else
       # Find knowledge resources by name and course
-      with {:ok, source_knowledge} <- find_knowledge_by_name_and_course(knowledge1_name, course_id, tenant),
-           {:ok, target_knowledge} <- find_knowledge_by_name_and_course(knowledge2_name, course_id, tenant),
+      with {:ok, source_knowledge} <-
+             find_knowledge_by_name_and_course(knowledge1_name, course_id, tenant),
+           {:ok, target_knowledge} <-
+             find_knowledge_by_name_and_course(knowledge2_name, course_id, tenant),
            {:ok, relation_type} <- create_or_get_relation_type(relation_type_name, tenant) do
-
         # Create the relation
         relation_attrs = %{
           source_knowledge_id: source_knowledge.id,
           target_knowledge_id: target_knowledge.id,
           relation_type_id: relation_type.id
         }
+
         Logger.info("Creating relation: #{inspect(relation_attrs)}")
 
         case create_relation(relation_attrs, tenant) do
           {:ok, _relation} ->
             {:ok}
+
           {:error, reason} ->
-            error_msg = case reason do
+            error_msg =
+              case reason do
+                %Ash.Error.Invalid{} -> Exception.message(reason)
+                %Ash.Error.Query.NotFound{} -> "Resource not found"
+                _ -> Exception.message(reason)
+              end
+
+            {:error,
+             "Failed to create relation between '#{knowledge1_name}' and '#{knowledge2_name}': #{error_msg}"}
+        end
+      else
+        {:error, reason} ->
+          error_msg =
+            case reason do
               %Ash.Error.Invalid{} -> Exception.message(reason)
               %Ash.Error.Query.NotFound{} -> "Resource not found"
               _ -> Exception.message(reason)
             end
-            {:error, "Failed to create relation between '#{knowledge1_name}' and '#{knowledge2_name}': #{error_msg}"}
-        end
-      else
-        {:error, reason} ->
-          error_msg = case reason do
-            %Ash.Error.Invalid{} -> Exception.message(reason)
-            %Ash.Error.Query.NotFound{} -> "Resource not found"
-            _ -> Exception.message(reason)
-          end
+
           {:error, error_msg}
       end
     end
@@ -348,44 +390,58 @@ defmodule KgEdu.Knowledge.Relation do
 
   defp find_knowledge_by_name_and_course(name, course_id, tenant) do
     # Try exact name match first
-    case KgEdu.Knowledge.Resource.get_by_any_name_and_course(%{name: name, course_id: course_id}, tenant: tenant) do
-      {:ok, knowledge} -> {:ok, knowledge}
+    case KgEdu.Knowledge.Resource.get_by_any_name_and_course(%{name: name, course_id: course_id},
+           tenant: tenant
+         ) do
+      {:ok, knowledge} ->
+        {:ok, knowledge}
+
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
         # Try searching by subject
         case KgEdu.Knowledge.Resource.list_knowledges(
-          authorize?: false,
-          tenant: tenant,
-          query: [
-            filter: [
-              subject: name,
-              course_id: course_id
-            ],
-            limit: 1
-          ]
-        ) do
-          {:ok, [knowledge]} -> {:ok, knowledge}
+               authorize?: false,
+               tenant: tenant,
+               query: [
+                 filter: [
+                   subject: name,
+                   course_id: course_id
+                 ],
+                 limit: 1
+               ]
+             ) do
+          {:ok, [knowledge]} ->
+            {:ok, knowledge}
+
           {:ok, []} ->
             # Try searching by unit
             case KgEdu.Knowledge.Resource.list_knowledges(
-              authorize?: false,
-              tenant: tenant,
-              query: [
-                filter: [
-                  unit: name,
-                  course_id: course_id
-                ],
-                limit: 1
-              ]
-            ) do
-              {:ok, [knowledge]} -> {:ok, knowledge}
+                   authorize?: false,
+                   tenant: tenant,
+                   query: [
+                     filter: [
+                       unit: name,
+                       course_id: course_id
+                     ],
+                     limit: 1
+                   ]
+                 ) do
+              {:ok, [knowledge]} ->
+                {:ok, knowledge}
+
               {:ok, []} ->
                 # Create basic knowledge resource if not found
                 create_basic_knowledge(name, course_id, tenant)
-              {:error, reason} -> {:error, reason}
+
+              {:error, reason} ->
+                {:error, reason}
             end
-          {:error, reason} -> {:error, reason}
+
+          {:error, reason} ->
+            {:error, reason}
         end
-      {:error, reason} -> {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -399,10 +455,16 @@ defmodule KgEdu.Knowledge.Relation do
       description: "Basic knowledge: #{name}"
     }
 
-    case KgEdu.Knowledge.Resource.create_knowledge_resource(knowledge_attrs, authorize?: false, tenant: tenant) do
-      {:ok, knowledge} -> {:ok, knowledge}
+    case KgEdu.Knowledge.Resource.create_knowledge_resource(knowledge_attrs,
+           authorize?: false,
+           tenant: tenant
+         ) do
+      {:ok, knowledge} ->
+        {:ok, knowledge}
+
       {:error, %Ash.Error.Invalid{} = error} ->
         {:error, "Failed to create knowledge resource '#{name}': #{Exception.message(error)}"}
+
       {:error, reason} ->
         {:error, "Failed to create knowledge resource '#{name}': #{inspect(reason)}"}
     end
@@ -410,20 +472,31 @@ defmodule KgEdu.Knowledge.Relation do
 
   defp create_or_get_relation_type(relation_type_name, tenant) do
     # First try to get existing relation type
-    case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name}, tenant: tenant) do
+    case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name},
+           tenant: tenant
+         ) do
       {:ok, relation_type} ->
         {:ok, relation_type}
 
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
         # Create new relation type using the code interface
-        case KgEdu.Knowledge.RelationType.upsert_relation_type(%{
-          name: relation_type_name,
-          display_name: String.capitalize(relation_type_name) |> String.replace("_", " "),
-          description: "Relation type: #{String.capitalize(relation_type_name) |> String.replace("_", " ")}"
-        }, authorize?: false, tenant: tenant) do
-          {:ok, relation_type} -> {:ok, relation_type}
+        case KgEdu.Knowledge.RelationType.upsert_relation_type(
+               %{
+                 name: relation_type_name,
+                 display_name: String.capitalize(relation_type_name) |> String.replace("_", " "),
+                 description:
+                   "Relation type: #{String.capitalize(relation_type_name) |> String.replace("_", " ")}"
+               },
+               authorize?: false,
+               tenant: tenant
+             ) do
+          {:ok, relation_type} ->
+            {:ok, relation_type}
+
           {:error, %Ash.Error.Invalid{} = error} ->
-            {:error, "Failed to create relation type '#{relation_type_name}': #{Exception.message(error)}"}
+            {:error,
+             "Failed to create relation type '#{relation_type_name}': #{Exception.message(error)}"}
+
           {:error, reason} ->
             {:error, "Failed to create relation type '#{relation_type_name}': #{inspect(reason)}"}
         end
@@ -439,9 +512,11 @@ defmodule KgEdu.Knowledge.Relation do
       {:ok, []} ->
         # Relation doesn't exist, create it
         create_relation_import(attrs, authorize?: false, tenant: tenant)
+
       {:ok, _existing_relation} ->
         # Relation already exists, skip creation
         {:ok, nil}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -450,17 +525,17 @@ defmodule KgEdu.Knowledge.Relation do
   defp find_existing_relation(attrs, tenant) do
     # Find existing relation by source, target, and relation type
     case KgEdu.Knowledge.Relation.list_knowledge_relations(
-      authorize?: false,
-      tenant: tenant,
-      query: [
-        filter: [
-          source_knowledge_id: attrs.source_knowledge_id,
-          target_knowledge_id: attrs.target_knowledge_id,
-          relation_type_id: attrs.relation_type_id
-        ],
-        limit: 1
-      ]
-    ) do
+           authorize?: false,
+           tenant: tenant,
+           query: [
+             filter: [
+               source_knowledge_id: attrs.source_knowledge_id,
+               target_knowledge_id: attrs.target_knowledge_id,
+               relation_type_id: attrs.relation_type_id
+             ],
+             limit: 1
+           ]
+         ) do
       {:ok, [relation]} -> {:ok, relation}
       {:ok, []} -> {:ok, []}
       {:error, reason} -> {:error, reason}

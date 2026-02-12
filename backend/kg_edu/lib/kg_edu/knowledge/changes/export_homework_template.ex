@@ -6,12 +6,13 @@ defmodule KgEdu.Knowledge.Changes.ExportHomeworkTemplate do
 
   def change(changeset, _opts, _context) do
     _created_by_id = Ash.Changeset.get_argument(changeset, :created_by_id)
-    
+
     case generate_template_xlsx() do
       {:ok, xlsx_base64} ->
         Ash.Changeset.after_action(changeset, fn _resource, _record ->
           {:ok, %{template_base64: xlsx_base64, filename: "homework_template.xlsx"}}
         end)
+
       {:error, error} ->
         Ash.Changeset.add_error(changeset, error)
     end
@@ -21,9 +22,12 @@ defmodule KgEdu.Knowledge.Changes.ExportHomeworkTemplate do
     try do
       # Create template data
       headers = [
-        "标题", "内容", "分数", "课程名称"
+        "标题",
+        "内容",
+        "分数",
+        "课程名称"
       ]
-      
+
       example_rows = [
         ["第一章练习题", "完成教材第25页的练习1-10", "100", "数学基础"],
         ["期中复习", "复习第1-5章的所有知识点", "150", "数学基础"],
@@ -40,6 +44,7 @@ defmodule KgEdu.Knowledge.Changes.ExportHomeworkTemplate do
         {:ok, {_filename, content}} ->
           xlsx_base64 = Base.encode64(content)
           {:ok, xlsx_base64}
+
         {:error, reason} ->
           {:error, "Failed to generate XLSX: #{inspect(reason)}"}
       end

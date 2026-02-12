@@ -10,7 +10,7 @@ defmodule KgEdu.Repo.Migrations.AddPublishStatusSafe do
     try do
       execute("ALTER TABLE courses ADD COLUMN IF NOT EXISTS publish_status BOOLEAN DEFAULT true")
     rescue
-      Postgrex.Error -> 
+      Postgrex.Error ->
         # Column might already exist, ignore error
         :ok
     end

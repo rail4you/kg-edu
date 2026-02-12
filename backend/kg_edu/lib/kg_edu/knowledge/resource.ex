@@ -24,10 +24,6 @@ defmodule KgEdu.Knowledge.Resource do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "knowledge_resource"
   end
@@ -192,7 +188,7 @@ defmodule KgEdu.Knowledge.Resource do
           __MODULE__
           |> Ash.Query.filter(
             course_id == ^course_id and
-            knowledge_type == :subject
+              knowledge_type == :subject
           )
 
         case Ash.bulk_destroy(
@@ -484,6 +480,7 @@ defmodule KgEdu.Knowledge.Resource do
 
       accept [
         :name,
+        :en_name,
         :description,
         :tag,
         :dimension,
@@ -504,7 +501,9 @@ defmodule KgEdu.Knowledge.Resource do
         knowledge_type = Ash.Changeset.get_attribute(changeset, :knowledge_type)
         parent_subject_id = Ash.Changeset.get_attribute(changeset, :parent_subject_id)
         parent_unit_id = Ash.Changeset.get_attribute(changeset, :parent_unit_id)
-        parent_knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :parent_knowledge_resource_id)
+
+        parent_knowledge_resource_id =
+          Ash.Changeset.get_attribute(changeset, :parent_knowledge_resource_id)
 
         case knowledge_type do
           :subject ->
@@ -535,13 +534,14 @@ defmodule KgEdu.Knowledge.Resource do
             # - parent_knowledge_resource_id (nested child of another cell, for levels 4-7)
             cond do
               # Cell must have at least one parent
-              is_nil(parent_subject_id) and is_nil(parent_unit_id) and is_nil(parent_knowledge_resource_id) ->
+              is_nil(parent_subject_id) and is_nil(parent_unit_id) and
+                  is_nil(parent_knowledge_resource_id) ->
                 {:error, "Knowledge cells must have a parent (subject, unit, or another cell)"}
 
               # Cannot have multiple parent types
               (not is_nil(parent_subject_id) and not is_nil(parent_unit_id)) or
-              (not is_nil(parent_subject_id) and not is_nil(parent_knowledge_resource_id)) or
-              (not is_nil(parent_unit_id) and not is_nil(parent_knowledge_resource_id)) ->
+                (not is_nil(parent_subject_id) and not is_nil(parent_knowledge_resource_id)) or
+                  (not is_nil(parent_unit_id) and not is_nil(parent_knowledge_resource_id)) ->
                 {:error, "Knowledge cells can only have one parent (subject, unit, or cell)"}
 
               true ->
@@ -553,7 +553,17 @@ defmodule KgEdu.Knowledge.Resource do
 
     # ============ Update Actions ============
     update :update_knowledge_resource do
-      accept [:name, :importance_level, :description, :tag, :dimension, :category, :teaching_goal, :parent_knowledge_resource_id]
+      accept [
+        :name,
+        :en_name,
+        :importance_level,
+        :description,
+        :tag,
+        :dimension,
+        :category,
+        :teaching_goal,
+        :parent_knowledge_resource_id
+      ]
     end
 
     update :add_tag do
@@ -569,7 +579,8 @@ defmodule KgEdu.Knowledge.Resource do
         tag_to_add = Ash.Changeset.get_argument(changeset, :tag)
 
         # Clean the tag: trim whitespace and remove any semicolons
-        cleaned_tag = tag_to_add
+        cleaned_tag =
+          tag_to_add
           |> String.trim()
           |> String.replace(";", "")
 
@@ -580,22 +591,24 @@ defmodule KgEdu.Knowledge.Resource do
           current_tags = Ash.Changeset.get_attribute(changeset, :tag) || ""
 
           # Append the new tag
-          new_tags = if current_tags == "" do
-            cleaned_tag
-          else
-            # Check if tag already exists
-            existing_tags = current_tags
-              |> String.split(";", trim: true)
-              |> Enum.map(&String.trim/1)
-              |> MapSet.new()
-
-            if cleaned_tag in existing_tags do
-              # Tag already exists, don't add it again
-              current_tags
+          new_tags =
+            if current_tags == "" do
+              cleaned_tag
             else
-              "#{current_tags};#{cleaned_tag}"
+              # Check if tag already exists
+              existing_tags =
+                current_tags
+                |> String.split(";", trim: true)
+                |> Enum.map(&String.trim/1)
+                |> MapSet.new()
+
+              if cleaned_tag in existing_tags do
+                # Tag already exists, don't add it again
+                current_tags
+              else
+                "#{current_tags};#{cleaned_tag}"
+              end
             end
-          end
 
           Ash.Changeset.change_attribute(changeset, :tag, new_tags)
         end
@@ -615,7 +628,8 @@ defmodule KgEdu.Knowledge.Resource do
         tag_to_remove = Ash.Changeset.get_argument(changeset, :tag)
 
         # Clean the tag: trim whitespace and remove any semicolons
-        cleaned_tag = tag_to_remove
+        cleaned_tag =
+          tag_to_remove
           |> String.trim()
           |> String.replace(";", "")
 
@@ -629,7 +643,8 @@ defmodule KgEdu.Knowledge.Resource do
             changeset
           else
             # Remove the tag if it exists
-            new_tags = current_tags
+            new_tags =
+              current_tags
               |> String.split(";", trim: true)
               |> Enum.map(&String.trim/1)
               |> Enum.reject(&(&1 == cleaned_tag))
@@ -931,6 +946,7 @@ defmodule KgEdu.Knowledge.Resource do
 
         # Get all knowledge resources for the course with their relationships
         Logger.info("Getting knowledge resources for course_id: #{course_id}, tenant: #{tenant}")
+
         case get_knowledge_resources_by_course(%{course_id: course_id},
                tenant: tenant,
                authorize?: false,
@@ -938,7 +954,9 @@ defmodule KgEdu.Knowledge.Resource do
                load: [:videos, :files, :homeworks, :exercises]
              ) do
           {:ok, knowledge_resources} ->
-            Logger.info("Found #{length(knowledge_resources)} knowledge resources for course #{course_id}")
+            Logger.info(
+              "Found #{length(knowledge_resources)} knowledge resources for course #{course_id}"
+            )
 
             # Collect all material IDs from all knowledge resources in the course
             all_video_ids =
@@ -957,7 +975,9 @@ defmodule KgEdu.Knowledge.Resource do
               knowledge_resources
               |> Enum.flat_map(fn resource -> (resource.exercises || []) |> Enum.map(& &1.id) end)
 
-            Logger.info("Course materials - Videos: #{length(all_video_ids)}, Files: #{length(all_file_ids)}, Homework: #{length(all_homework_ids)}, Exercises: #{length(all_exercise_ids)}")
+            Logger.info(
+              "Course materials - Videos: #{length(all_video_ids)}, Files: #{length(all_file_ids)}, Homework: #{length(all_homework_ids)}, Exercises: #{length(all_exercise_ids)}"
+            )
 
             # Get all activity logs for this tenant
             case KgEdu.Activity.ActivityLog.list_activity_logs(
@@ -972,10 +992,14 @@ defmodule KgEdu.Knowledge.Resource do
                 course_logs =
                   all_logs
                   |> Enum.filter(fn log ->
-                    (log.resource_type in ["KgEdu.Courses.File", "File"] and log.resource_id in all_file_ids) or
-                    (log.resource_type in ["KgEdu.Courses.Video", "Video"] and log.resource_id in all_video_ids) or
-                    (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and log.resource_id in all_homework_ids) or
-                    (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and log.resource_id in all_exercise_ids)
+                    (log.resource_type in ["KgEdu.Courses.File", "File"] and
+                       log.resource_id in all_file_ids) or
+                      (log.resource_type in ["KgEdu.Courses.Video", "Video"] and
+                         log.resource_id in all_video_ids) or
+                      (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
+                         log.resource_id in all_homework_ids) or
+                      (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
+                         log.resource_id in all_exercise_ids)
                   end)
 
                 Logger.info("Found #{length(course_logs)} activity logs for course materials")
@@ -991,47 +1015,73 @@ defmodule KgEdu.Knowledge.Resource do
 
                 # Generate stats for each student
                 Logger.info("student_logs_map: #{inspect(student_logs_map)}")
+
                 student_stats =
                   student_logs_map
                   |> Enum.map(fn {student_id, logs} ->
                     # Count completed activities by type (unique materials per student)
                     completed_videos =
                       logs
-                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and &1.action_type in [:video_view, :view]))
+                      |> Enum.filter(
+                        &(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and
+                            &1.action_type in [:video_view, :view])
+                      )
                       |> Enum.map(& &1.resource_id)
                       |> Enum.uniq()
                       |> length()
 
                     completed_files =
                       logs
-                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.File", "File"] and &1.action_type in [:file_view, :view, :download]))
+                      |> Enum.filter(
+                        &(&1.resource_type in ["KgEdu.Courses.File", "File"] and
+                            &1.action_type in [:file_view, :view, :download])
+                      )
                       |> Enum.map(& &1.resource_id)
                       |> Enum.uniq()
                       |> length()
 
                     completed_exercises =
                       logs
-                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and &1.action_type in [:exercise_submit, :submit, :complete]))
+                      |> Enum.filter(
+                        &(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
+                            &1.action_type in [:exercise_submit, :submit, :complete])
+                      )
                       |> Enum.map(& &1.resource_id)
                       |> Enum.uniq()
                       |> length()
 
                     completed_homework =
                       logs
-                      |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and &1.action_type in [:homework_submit, :submit, :complete]))
+                      |> Enum.filter(
+                        &(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
+                            &1.action_type in [:homework_submit, :submit, :complete])
+                      )
                       |> Enum.map(& &1.resource_id)
                       |> Enum.uniq()
                       |> length()
 
                     # Calculate completion ratios
-                    video_completion = if total_videos > 0, do: completed_videos / total_videos, else: 0.0
-                    file_completion = if total_files > 0, do: completed_files / total_files, else: 0.0
-                    exercise_completion = if total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0
-                    homework_completion = if total_homeworks > 0, do: completed_homework / total_homeworks, else: 0.0
+                    video_completion =
+                      if total_videos > 0, do: completed_videos / total_videos, else: 0.0
 
-                    total_completed = completed_videos + completed_files + completed_exercises + completed_homework
-                    total_resources = total_videos + total_files + total_exercises + total_homeworks
-                    overall_completion = if total_resources > 0, do: total_completed / total_resources, else: 0.0
+                    file_completion =
+                      if total_files > 0, do: completed_files / total_files, else: 0.0
+
+                    exercise_completion =
+                      if total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0
+
+                    homework_completion =
+                      if total_homeworks > 0, do: completed_homework / total_homeworks, else: 0.0
+
+                    total_completed =
+                      completed_videos + completed_files + completed_exercises +
+                        completed_homework
+
+                    total_resources =
+                      total_videos + total_files + total_exercises + total_homeworks
+
+                    overall_completion =
+                      if total_resources > 0, do: total_completed / total_resources, else: 0.0
 
                     %{
                       student_id: student_id,
@@ -1098,6 +1148,10 @@ defmodule KgEdu.Knowledge.Resource do
     strategy :context
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_primary_key :id
 
@@ -1137,6 +1191,12 @@ defmodule KgEdu.Knowledge.Resource do
       allow_nil? false
       # constraints min_length: 3, max_length: 100
       public? true
+    end
+
+    attribute :en_name, :string do
+      allow_nil? true
+      public? true
+      description "English name of the knowledge resource"
     end
 
     attribute :description, :string do
@@ -1207,6 +1267,7 @@ defmodule KgEdu.Knowledge.Resource do
     belongs_to :parent_knowledge_resource, __MODULE__ do
       public? true
       allow_nil? true
+
       description "Parent knowledge resource (generic hierarchical relationship for tree structure)"
     end
 
@@ -1244,6 +1305,7 @@ defmodule KgEdu.Knowledge.Resource do
       public? true
       destination_attribute :parent_knowledge_resource_id
       filter expr(knowledge_type == :knowledge_cell)
+
       description "Knowledge cells that are nested under this cell (for hierarchical cell structure up to level 7)"
     end
 
@@ -1415,116 +1477,135 @@ defmodule KgEdu.Knowledge.Resource do
               end
 
             {:error, reason} ->
-              Logger.error("Failed to create parent subject for unit '#{knowledge_name}': #{inspect(reason)}")
+              Logger.error(
+                "Failed to create parent subject for unit '#{knowledge_name}': #{inspect(reason)}"
+              )
+
               final_acc = %{acc | skipped: acc.skipped + 1}
               {:ok, final_acc}
           end
 
         :knowledge_cell ->
           # For cells, handle different parent types
-          {parent_subject_id, parent_unit_id, parent_cell_id, new_acc} = cond do
-            # Has parent cell (nested cell, depth 3+)
-            Map.has_key?(resource_attrs, :parent_cell_name) ->
-              parent_cell_name = resource_attrs.parent_cell_name
+          {parent_subject_id, parent_unit_id, parent_cell_id, new_acc} =
+            cond do
+              # Has parent cell (nested cell, depth 3+)
+              Map.has_key?(resource_attrs, :parent_cell_name) ->
+                parent_cell_name = resource_attrs.parent_cell_name
 
-              # First ensure parent subject/unit exist
-              case create_or_get_subject(subject_name, course_id, acc) do
-                {:ok, subject_id, acc1} ->
-                  acc2 = if unit_name && unit_name != "" do
-                    case create_or_get_unit(unit_name, course_id, subject_id, acc1) do
-                      {:ok, _unit_id, acc} -> acc
-                      {:error, _} -> acc1
-                    end
-                  else
-                    acc1
-                  end
-
-                  # Find parent cell by name
-                  case get_by_name_and_course(%{
-                    name: parent_cell_name,
-                    knowledge_type: :knowledge_cell,
-                    course_id: course_id
-                  }, tenant: acc2.tenant, authorize?: false) do
-                    {:ok, parent_cell} ->
-                      {nil, nil, parent_cell.id, acc2}
-
-                    {:error, _} ->
-                      Logger.warning("Parent cell '#{parent_cell_name}' not found for '#{knowledge_name}', creating without parent")
-                      {nil, nil, nil, acc2}
-                  end
-
-                {:error, _} ->
-                  {nil, nil, nil, acc}
-              end
-
-            # Has parent unit
-            Map.has_key?(resource_attrs, :parent_unit_name) ->
-              parent_unit_name = resource_attrs.parent_unit_name
-
-              case create_or_get_subject(subject_name, course_id, acc) do
-                {:ok, subject_id, acc1} ->
-                  # Create or get the parent unit with correct subject_id
-                  case create_or_get_unit(parent_unit_name, course_id, subject_id, acc1) do
-                    {:ok, unit_id, acc2} ->
-                      {nil, unit_id, nil, acc2}
-
-                    {:error, _} ->
-                      Logger.warning("Parent unit '#{parent_unit_name}' not found for '#{knowledge_name}', creating without parent unit")
-                      # Fallback: create cell directly under subject
-                      {subject_id, nil, nil, acc1}
-                  end
-
-                {:error, _} ->
-                  {nil, nil, nil, acc}
-              end
-
-            # Has parent subject (direct child of subject)
-            Map.has_key?(resource_attrs, :parent_subject_name) ->
-              parent_subject_name = resource_attrs.parent_subject_name
-
-              case create_or_get_subject(parent_subject_name, course_id, acc) do
-                {:ok, subject_id, new_acc} ->
-                  {subject_id, nil, nil, new_acc}
-
-                {:error, _} ->
-                  {nil, nil, nil, acc}
-              end
-
-            # No parent info specified, infer from context
-            true ->
-              if unit_name && unit_name != "" do
-                # Assume it's under a unit
+                # First ensure parent subject/unit exist
                 case create_or_get_subject(subject_name, course_id, acc) do
                   {:ok, subject_id, acc1} ->
-                    case create_or_get_unit(unit_name, course_id, subject_id, acc1) do
+                    acc2 =
+                      if unit_name && unit_name != "" do
+                        case create_or_get_unit(unit_name, course_id, subject_id, acc1) do
+                          {:ok, _unit_id, acc} -> acc
+                          {:error, _} -> acc1
+                        end
+                      else
+                        acc1
+                      end
+
+                    # Find parent cell by name
+                    case get_by_name_and_course(
+                           %{
+                             name: parent_cell_name,
+                             knowledge_type: :knowledge_cell,
+                             course_id: course_id
+                           },
+                           tenant: acc2.tenant,
+                           authorize?: false
+                         ) do
+                      {:ok, parent_cell} ->
+                        {nil, nil, parent_cell.id, acc2}
+
+                      {:error, _} ->
+                        Logger.warning(
+                          "Parent cell '#{parent_cell_name}' not found for '#{knowledge_name}', creating without parent"
+                        )
+
+                        {nil, nil, nil, acc2}
+                    end
+
+                  {:error, _} ->
+                    {nil, nil, nil, acc}
+                end
+
+              # Has parent unit
+              Map.has_key?(resource_attrs, :parent_unit_name) ->
+                parent_unit_name = resource_attrs.parent_unit_name
+
+                case create_or_get_subject(subject_name, course_id, acc) do
+                  {:ok, subject_id, acc1} ->
+                    # Create or get the parent unit with correct subject_id
+                    case create_or_get_unit(parent_unit_name, course_id, subject_id, acc1) do
                       {:ok, unit_id, acc2} ->
                         {nil, unit_id, nil, acc2}
 
                       {:error, _} ->
+                        Logger.warning(
+                          "Parent unit '#{parent_unit_name}' not found for '#{knowledge_name}', creating without parent unit"
+                        )
+
+                        # Fallback: create cell directly under subject
                         {subject_id, nil, nil, acc1}
                     end
 
                   {:error, _} ->
                     {nil, nil, nil, acc}
                 end
-              else
-                # Assume it's directly under subject
-                case create_or_get_subject(subject_name, course_id, acc) do
+
+              # Has parent subject (direct child of subject)
+              Map.has_key?(resource_attrs, :parent_subject_name) ->
+                parent_subject_name = resource_attrs.parent_subject_name
+
+                case create_or_get_subject(parent_subject_name, course_id, acc) do
                   {:ok, subject_id, new_acc} ->
                     {subject_id, nil, nil, new_acc}
 
                   {:error, _} ->
                     {nil, nil, nil, acc}
                 end
-              end
-          end
+
+              # No parent info specified, infer from context
+              true ->
+                if unit_name && unit_name != "" do
+                  # Assume it's under a unit
+                  case create_or_get_subject(subject_name, course_id, acc) do
+                    {:ok, subject_id, acc1} ->
+                      case create_or_get_unit(unit_name, course_id, subject_id, acc1) do
+                        {:ok, unit_id, acc2} ->
+                          {nil, unit_id, nil, acc2}
+
+                        {:error, _} ->
+                          {subject_id, nil, nil, acc1}
+                      end
+
+                    {:error, _} ->
+                      {nil, nil, nil, acc}
+                  end
+                else
+                  # Assume it's directly under subject
+                  case create_or_get_subject(subject_name, course_id, acc) do
+                    {:ok, subject_id, new_acc} ->
+                      {subject_id, nil, nil, new_acc}
+
+                    {:error, _} ->
+                      {nil, nil, nil, acc}
+                  end
+                end
+            end
 
           # Check if resource already exists
-          case get_by_name_and_course(%{
-            name: knowledge_name,
-            knowledge_type: :knowledge_cell,
-            course_id: course_id
-          }, tenant: new_acc.tenant, authorize?: false) do
+          case get_by_name_and_course(
+                 %{
+                   name: knowledge_name,
+                   knowledge_type: :knowledge_cell,
+                   course_id: course_id
+                 },
+                 tenant: new_acc.tenant,
+                 authorize?: false
+               ) do
             {:ok, _existing} ->
               # Resource already exists, skip it
               final_acc = %{new_acc | skipped: new_acc.skipped + 1}
@@ -1551,7 +1632,10 @@ defmodule KgEdu.Knowledge.Resource do
                   {:ok, final_acc}
 
                 {:error, reason} ->
-                  Logger.error("Failed to create knowledge cell '#{knowledge_name}': #{inspect(reason)}")
+                  Logger.error(
+                    "Failed to create knowledge cell '#{knowledge_name}': #{inspect(reason)}"
+                  )
+
                   final_acc = %{new_acc | skipped: new_acc.skipped + 1}
                   {:ok, final_acc}
               end
@@ -1835,7 +1919,9 @@ defmodule KgEdu.Knowledge.Resource do
         tenant = Ash.Changeset.get_tenant(resource)
 
         case get_resource_learning_stats_via_materials(resource, student_id, tenant) do
-          {:ok, stats} -> stats
+          {:ok, stats} ->
+            stats
+
           {:error, _reason} ->
             # Fallback to basic resource counts if calculation fails
             total_videos = length(resource.videos || [])
@@ -1961,61 +2047,73 @@ defmodule KgEdu.Knowledge.Resource do
                  tenant: tenant,
                  authorize?: false,
                  actor: nil,
-                 load: [:videos, :files, :homeworks, :exercises]) do
+                 load: [:videos, :files, :homeworks, :exercises]
+               ) do
             {:ok, loaded_resource} -> loaded_resource
             {:error, _reason} -> resource
           end
+
         {_, %Ash.NotLoaded{}, _, _} ->
           case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
                  tenant: tenant,
                  authorize?: false,
                  actor: nil,
-                 load: [:videos, :files, :homeworks, :exercises]) do
+                 load: [:videos, :files, :homeworks, :exercises]
+               ) do
             {:ok, loaded_resource} -> loaded_resource
             {:error, _reason} -> resource
           end
+
         {_, _, %Ash.NotLoaded{}, _} ->
           case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
                  tenant: tenant,
                  authorize?: false,
                  actor: nil,
-                 load: [:videos, :files, :homeworks, :exercises]) do
+                 load: [:videos, :files, :homeworks, :exercises]
+               ) do
             {:ok, loaded_resource} -> loaded_resource
             {:error, _reason} -> resource
           end
+
         {_, _, _, %Ash.NotLoaded{}} ->
           case KgEdu.Knowledge.Resource.get_knowledge_resource(resource.id,
                  tenant: tenant,
                  authorize?: false,
                  actor: nil,
-                 load: [:videos, :files, :homeworks, :exercises]) do
+                 load: [:videos, :files, :homeworks, :exercises]
+               ) do
             {:ok, loaded_resource} -> loaded_resource
             {:error, _reason} -> resource
           end
+
         _ ->
           resource
       end
 
     # Get all material IDs associated with this knowledge resource
-    video_ids = case resource_with_relationships.videos do
-      %Ash.NotLoaded{} -> []
-      videos -> videos |> Enum.map(& &1.id)
-    end
+    video_ids =
+      case resource_with_relationships.videos do
+        %Ash.NotLoaded{} -> []
+        videos -> videos |> Enum.map(& &1.id)
+      end
 
-    file_ids = case resource_with_relationships.files do
-      %Ash.NotLoaded{} -> []
-      files -> files |> Enum.map(& &1.id)
-    end
+    file_ids =
+      case resource_with_relationships.files do
+        %Ash.NotLoaded{} -> []
+        files -> files |> Enum.map(& &1.id)
+      end
 
-    homework_ids = case resource_with_relationships.homeworks do
-      %Ash.NotLoaded{} -> []
-      homeworks -> homeworks |> Enum.map(& &1.id)
-    end
+    homework_ids =
+      case resource_with_relationships.homeworks do
+        %Ash.NotLoaded{} -> []
+        homeworks -> homeworks |> Enum.map(& &1.id)
+      end
 
-    exercise_ids = case resource_with_relationships.exercises do
-      %Ash.NotLoaded{} -> []
-      exercises -> exercises |> Enum.map(& &1.id)
-    end
+    exercise_ids =
+      case resource_with_relationships.exercises do
+        %Ash.NotLoaded{} -> []
+        exercises -> exercises |> Enum.map(& &1.id)
+      end
 
     # Get activity logs for this student and these materials
     case KgEdu.Activity.ActivityLog.list_activity_logs(actor: nil, tenant: tenant) do
@@ -2026,36 +2124,51 @@ defmodule KgEdu.Knowledge.Resource do
           |> Enum.filter(&(&1.user_id == student_id))
           |> Enum.filter(fn log ->
             (log.resource_type in ["KgEdu.Courses.File", "File"] and log.resource_id in file_ids) or
-            (log.resource_type in ["KgEdu.Courses.Video", "Video"] and log.resource_id in video_ids) or
-            (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and log.resource_id in homework_ids) or
-            (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and log.resource_id in exercise_ids)
+              (log.resource_type in ["KgEdu.Courses.Video", "Video"] and
+                 log.resource_id in video_ids) or
+              (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
+                 log.resource_id in homework_ids) or
+              (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
+                 log.resource_id in exercise_ids)
           end)
 
         # Count completed activities by type
         completed_videos =
           student_logs
-          |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and &1.action_type in [:video_view, :view]))
+          |> Enum.filter(
+            &(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and
+                &1.action_type in [:video_view, :view])
+          )
           |> Enum.map(& &1.resource_id)
           |> Enum.uniq()
           |> length()
 
         completed_files =
           student_logs
-          |> Enum.filter(&(&1.resource_type in ["KgEdu.Courses.File", "File"] and &1.action_type in [:file_view, :view, :download]))
+          |> Enum.filter(
+            &(&1.resource_type in ["KgEdu.Courses.File", "File"] and
+                &1.action_type in [:file_view, :view, :download])
+          )
           |> Enum.map(& &1.resource_id)
           |> Enum.uniq()
           |> length()
 
         completed_exercises =
           student_logs
-          |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and &1.action_type in [:exercise_submit, :submit, :complete]))
+          |> Enum.filter(
+            &(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
+                &1.action_type in [:exercise_submit, :submit, :complete])
+          )
           |> Enum.map(& &1.resource_id)
           |> Enum.uniq()
           |> length()
 
         completed_homework =
           student_logs
-          |> Enum.filter(&(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and &1.action_type in [:homework_submit, :submit, :complete]))
+          |> Enum.filter(
+            &(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
+                &1.action_type in [:homework_submit, :submit, :complete])
+          )
           |> Enum.map(& &1.resource_id)
           |> Enum.uniq()
           |> length()
@@ -2066,7 +2179,9 @@ defmodule KgEdu.Knowledge.Resource do
         total_exercises = length(exercise_ids)
         total_homework = length(homework_ids)
 
-        total_completed = completed_videos + completed_files + completed_exercises + completed_homework
+        total_completed =
+          completed_videos + completed_files + completed_exercises + completed_homework
+
         total_resources = total_videos + total_files + total_exercises + total_homework
 
         overall_ratio = if total_resources > 0, do: total_completed / total_resources, else: 0.0
@@ -2088,12 +2203,14 @@ defmodule KgEdu.Knowledge.Resource do
           exercises: %{
             completed: completed_exercises,
             total: total_exercises,
-            completion_ratio: if(total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0)
+            completion_ratio:
+              if(total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0)
           },
           homeworks: %{
             completed: completed_homework,
             total: total_homework,
-            completion_ratio: if(total_homework > 0, do: completed_homework / total_homework, else: 0.0)
+            completion_ratio:
+              if(total_homework > 0, do: completed_homework / total_homework, else: 0.0)
           },
           overall: %{
             total_completed: total_completed,
@@ -2118,14 +2235,16 @@ defmodule KgEdu.Knowledge.Resource do
   """
   def build_nested_cell_hierarchy(cells) when is_list(cells) do
     # Separate root cells (those WITHOUT parent_knowledge_resource_id) from nested cells
-    {root_cells, nested_cells} = Enum.split_with(cells, fn cell ->
-      is_nil(cell.parent_knowledge_resource_id)
-    end)
+    {root_cells, nested_cells} =
+      Enum.split_with(cells, fn cell ->
+        is_nil(cell.parent_knowledge_resource_id)
+      end)
 
     # Build a map of nested cells by their parent_id
-    nested_by_parent = Enum.group_by(nested_cells, fn cell ->
-      cell.parent_knowledge_resource_id
-    end)
+    nested_by_parent =
+      Enum.group_by(nested_cells, fn cell ->
+        cell.parent_knowledge_resource_id
+      end)
 
     # Recursively build the tree
     build_tree(root_cells, nested_by_parent)

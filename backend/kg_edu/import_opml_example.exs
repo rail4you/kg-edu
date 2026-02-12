@@ -46,10 +46,14 @@ defmodule OpmlImportScript do
             IO.puts("Proceeding with import...")
             IO.puts("")
 
-            import_result = KgEdu.Knowledge.Resource.import_knowledge_from_opml(%{
-              opml_data: opml_content,
-              course_id: @course_id,
-            }, tenant: @tenant)
+            import_result =
+              KgEdu.Knowledge.Resource.import_knowledge_from_opml(
+                %{
+                  opml_data: opml_content,
+                  course_id: @course_id
+                },
+                tenant: @tenant
+              )
 
             case import_result do
               :ok ->
@@ -101,6 +105,7 @@ defmodule OpmlImportScript do
       if length(items) > 2 do
         IO.puts("     ... and #{length(items) - 2} more items")
       end
+
       IO.puts("")
     end)
   end
@@ -129,14 +134,19 @@ defmodule OpmlImportScript do
             {:ok, knowledge_data} ->
               IO.puts("Found #{length(knowledge_data)} items to import")
 
-              import_result = KgEdu.Knowledge.Resource.import_knowledge_from_opml(%{
-                opml_data: opml_content,
-                course_id: @course_id,
-              }, tenant: @tenant)
+              import_result =
+                KgEdu.Knowledge.Resource.import_knowledge_from_opml(
+                  %{
+                    opml_data: opml_content,
+                    course_id: @course_id
+                  },
+                  tenant: @tenant
+                )
 
               case import_result do
                 :ok ->
                   IO.puts("✅ #{subject_name} imported successfully")
+
                 {:error, reason} ->
                   IO.puts("❌ #{subject_name} import failed: #{reason}")
               end
@@ -200,14 +210,19 @@ defmodule OpmlImportScript do
 
               IO.puts("Importing now...")
 
-              import_result = KgEdu.Knowledge.Resource.import_knowledge_from_opml(%{
-                opml_data: opml_content,
-                course_id: @course_id,
-              }, tenant: @tenant)
+              import_result =
+                KgEdu.Knowledge.Resource.import_knowledge_from_opml(
+                  %{
+                    opml_data: opml_content,
+                    course_id: @course_id
+                  },
+                  tenant: @tenant
+                )
 
               case import_result do
                 :ok ->
                   IO.puts("🎉 Import completed successfully!")
+
                 {:error, reason} ->
                   IO.puts("❌ Import failed: #{reason}")
               end

@@ -26,7 +26,6 @@ defmodule KgEduWeb.Endpoint do
     gzip: not code_reloading?,
     only: KgEduWeb.static_paths()
 
-
   if Code.ensure_loaded?(Tidewave) do
     plug Tidewave
   end

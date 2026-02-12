@@ -3,6 +3,7 @@ IO.puts("\n=== Testing HTTP Request ===\n")
 
 # Start :inets manually
 IO.puts("Starting :inets...")
+
 case Application.ensure_all_started(:inets) do
   {:ok, _} -> IO.puts("✓ :inets started")
   {:error, reason} -> IO.puts("✗ Failed to start :inets: #{inspect(reason)}")
@@ -10,6 +11,7 @@ end
 
 # Test HTTP request
 url = 'http://localhost:5000/agent/email'
+
 payload = %{
   senderEmail: "619126989@qq.com",
   senderPassword: "uzrnvmdhsozcbajj",
@@ -24,17 +26,18 @@ json = Jason.encode!(payload)
 
 IO.puts("\nMaking HTTP POST request to #{url}...")
 
-result = :httpc.request(
-  :post,
-  {
-    url,
-    [{'Content-Type', 'application/json'}],
-    'application/json',
-    json |> to_charlist()
-  },
-  [],
-  body_format: :binary
-)
+result =
+  :httpc.request(
+    :post,
+    {
+      url,
+      [{'Content-Type', 'application/json'}],
+      'application/json',
+      json |> to_charlist()
+    },
+    [],
+    body_format: :binary
+  )
 
 IO.puts("\nResult:")
 IO.puts(inspect(result, pretty: true))

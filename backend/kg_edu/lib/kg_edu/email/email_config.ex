@@ -11,10 +11,6 @@ defmodule KgEdu.Email.EmailConfig do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "email_config"
   end
@@ -51,6 +47,7 @@ defmodule KgEdu.Email.EmailConfig do
     create :create do
       description "Create a new email config for a user"
       accept [:email_address, :sender_name, :api_key]
+
       argument :user_id, :uuid do
         allow_nil? false
         description "The user ID to create email config for"
@@ -81,6 +78,16 @@ defmodule KgEdu.Email.EmailConfig do
       description "Update email config"
       accept [:email_address, :sender_name, :api_key]
     end
+  end
+
+  policies do
+    policy always() do
+      authorize_if always()
+    end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -119,12 +126,6 @@ defmodule KgEdu.Email.EmailConfig do
       public? true
       destination_attribute :receiver_user_id
       description "Email messages received by this user"
-    end
-  end
-
-  policies do
-    policy always() do
-      authorize_if always()
     end
   end
 end

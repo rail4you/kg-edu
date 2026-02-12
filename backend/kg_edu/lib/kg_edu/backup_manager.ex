@@ -71,18 +71,22 @@ defmodule KgEdu.BackupManager do
 
     case Repo.query(query, [organization_id]) do
       {:ok, %{rows: rows}} ->
-        backups = Enum.map(rows, fn [backup_id, org_id, created_at, file_size, backup_type, metadata] ->
-          %{
-            backup_id: backup_id,
-            organization_id: org_id,
-            created_at: created_at,
-            file_size: file_size,
-            backup_type: backup_type,
-            metadata: metadata
-          }
-        end)
+        backups =
+          Enum.map(rows, fn [backup_id, org_id, created_at, file_size, backup_type, metadata] ->
+            %{
+              backup_id: backup_id,
+              organization_id: org_id,
+              created_at: created_at,
+              file_size: file_size,
+              backup_type: backup_type,
+              metadata: metadata
+            }
+          end)
+
         {:ok, backups}
-      {:error, reason} -> {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -105,13 +109,14 @@ defmodule KgEdu.BackupManager do
   def create_scheduled_backups(backup_type \\ :daily) do
     organizations = get_all_organizations()
 
-    results = Enum.map(organizations, fn org ->
-      backup_organization(org.id, [
-        backup_type: backup_type,
-        scheduled: true,
-        automatic: true
-      ])
-    end)
+    results =
+      Enum.map(organizations, fn org ->
+        backup_organization(org.id,
+          backup_type: backup_type,
+          scheduled: true,
+          automatic: true
+        )
+      end)
 
     successful = Enum.count(results, fn {result, _} -> result == :ok end)
     total = length(results)
@@ -125,12 +130,13 @@ defmodule KgEdu.BackupManager do
   def backup_all_organizations(opts \\ []) do
     organizations = get_all_organizations()
 
-    results = Enum.map(organizations, fn org ->
-      case backup_organization(org.id, Keyword.put(opts, :backup_type, :full_system)) do
-        {:ok, backup_info} -> {org.id, {:ok, backup_info}}
-        {:error, reason} -> {org.id, {:error, reason}}
-      end
-    end)
+    results =
+      Enum.map(organizations, fn org ->
+        case backup_organization(org.id, Keyword.put(opts, :backup_type, :full_system)) do
+          {:ok, backup_info} -> {org.id, {:ok, backup_info}}
+          {:error, reason} -> {org.id, {:error, reason}}
+        end
+      end)
 
     successful = Enum.count(results, fn {_, result} -> elem(result, 0) == :ok end)
     total = length(results)
@@ -154,16 +160,20 @@ defmodule KgEdu.BackupManager do
 
     case Repo.query(query) do
       {:ok, %{rows: rows}} ->
-        stats = Enum.map(rows, fn [backup_type, count, total_size, last_backup] ->
-          %{
-            backup_type: backup_type,
-            count: count,
-            total_size: total_size,
-            last_backup: last_backup
-          }
-        end)
+        stats =
+          Enum.map(rows, fn [backup_type, count, total_size, last_backup] ->
+            %{
+              backup_type: backup_type,
+              count: count,
+              total_size: total_size,
+              last_backup: last_backup
+            }
+          end)
+
         {:ok, stats}
-      {:error, reason} -> {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -185,7 +195,9 @@ defmodule KgEdu.BackupManager do
 
   defp create_backup_directory(organization) do
     timestamp = DateTime.utc_now() |> DateTime.to_iso8601()
-    backup_id = "backup_#{timestamp |> String.replace(":", "") |> String.replace("-", "") |> String.replace(".", "")}"
+
+    backup_id =
+      "backup_#{timestamp |> String.replace(":", "") |> String.replace("-", "") |> String.replace(".", "")}"
 
     backup_dir = get_backup_directory()
     backup_file = Path.join(backup_dir, "#{backup_id}.sql")
@@ -201,8 +213,11 @@ defmodule KgEdu.BackupManager do
           backup_file: backup_file,
           timestamp: timestamp
         }
+
         {:ok, backup_info}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -238,6 +253,7 @@ defmodule KgEdu.BackupManager do
         final_sql = add_backup_metadata_to_sql(output, backup_info, opts)
         File.write!(backup_file, final_sql)
         {:ok, backup_file}
+
       {error_output, exit_code} ->
         {:error, {:dump_failed, exit_code, error_output}}
     end
@@ -251,15 +267,21 @@ defmodule KgEdu.BackupManager do
     username = Keyword.get(db_config, :username)
 
     base_command = [
-      "--host", host,
-      "--port", to_string(port),
-      "--username", username,
-      "--dbname", database,
-      "--schema", schema_name,
+      "--host",
+      host,
+      "--port",
+      to_string(port),
+      "--username",
+      username,
+      "--dbname",
+      database,
+      "--schema",
+      schema_name,
       "--no-owner",
       "--no-privileges",
       "--verbose",
-      "--file", backup_file,
+      "--file",
+      backup_file,
       "--format=custom"
     ]
 
@@ -267,7 +289,10 @@ defmodule KgEdu.BackupManager do
     optional_flags = [
       if(Keyword.get(opts, :data_only, false), do: "--data-only", else: nil),
       if(Keyword.get(opts, :schema_only, false), do: "--schema-only", else: nil),
-      if(Keyword.get(opts, :exclude_sequences, false), do: "--exclude-table-data=*_seq", else: nil)
+      if(Keyword.get(opts, :exclude_sequences, false),
+        do: "--exclude-table-data=*_seq",
+        else: nil
+      )
     ]
 
     base_command ++ Enum.filter(optional_flags, &(&1 != nil))
@@ -286,6 +311,7 @@ defmodule KgEdu.BackupManager do
     }
 
     metadata_json = Jason.encode!(metadata)
+
     header_comment = """
     -- KgEdu Organization Backup
     -- Backup ID: #{backup_info.backup_id}
@@ -325,17 +351,19 @@ defmodule KgEdu.BackupManager do
     }
 
     case Repo.query(query, [
-      backup_info.backup_id,
-      backup_info.organization_id,
-      backup_file,
-      file_info.size,
-      Keyword.get(opts, :backup_type, :manual),
-      metadata,
-      backup_info.timestamp
-    ]) do
+           backup_info.backup_id,
+           backup_info.organization_id,
+           backup_file,
+           file_info.size,
+           Keyword.get(opts, :backup_type, :manual),
+           metadata,
+           backup_info.timestamp
+         ]) do
       {:ok, _} ->
         {:ok, backup_info}
-      {:error, reason} -> {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -385,6 +413,7 @@ defmodule KgEdu.BackupManager do
       {output, 0} ->
         # Post-restore actions
         post_restore_actions(organization, opts)
+
       {error_output, exit_code} ->
         {:error, {:restore_failed, exit_code, error_output}}
     end
@@ -398,11 +427,16 @@ defmodule KgEdu.BackupManager do
     username = Keyword.get(db_config, :username)
 
     base_command = [
-      "--host", host,
-      "--port", to_string(port),
-      "--username", username,
-      "--dbname", database,
-      "--schema", schema_name,
+      "--host",
+      host,
+      "--port",
+      to_string(port),
+      "--username",
+      username,
+      "--dbname",
+      database,
+      "--schema",
+      schema_name,
       "--verbose",
       "--no-owner",
       "--no-privileges",
@@ -446,7 +480,9 @@ defmodule KgEdu.BackupManager do
           full_sequence_name = "#{schema_name}.#{sequence_name}"
           Repo.query("SELECT setval('#{full_sequence_name}', 1, false)")
         end)
-      _ -> :ok
+
+      _ ->
+        :ok
     end
   end
 

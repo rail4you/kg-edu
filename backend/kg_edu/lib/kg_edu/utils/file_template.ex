@@ -11,11 +11,6 @@ defmodule KgEdu.Utils.FileTemplate do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
-
   json_api do
     type "file_template"
   end
@@ -61,6 +56,10 @@ defmodule KgEdu.Utils.FileTemplate do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

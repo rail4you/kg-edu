@@ -1,5 +1,7 @@
 defmodule KgEdu.Email do
-  use Ash.Domain, otp_app: :kg_edu, extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc]
+  use Ash.Domain,
+    otp_app: :kg_edu,
+    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc]
 
   admin do
     show? true

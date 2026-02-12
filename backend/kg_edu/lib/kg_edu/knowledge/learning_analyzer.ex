@@ -71,7 +71,9 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
     tenant = Keyword.get(opts, :tenant)
     auto_update = Keyword.get(opts, :auto_update_mastery, true)
 
-    Logger.info("Analyzing exercise result for exercise #{exercise_id}, student #{student_id}, correct: #{is_correct}")
+    Logger.info(
+      "Analyzing exercise result for exercise #{exercise_id}, student #{student_id}, correct: #{is_correct}"
+    )
 
     # Get the exercise with its knowledge resource
     case Ash.get(
@@ -123,31 +125,44 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
     Logger.info("Batch analyzing all exams")
 
     # Get all graded student exams
-    query = KgEdu.Knowledge.StudentExam
-    |> filter(status: :graded)
+    query =
+      KgEdu.Knowledge.StudentExam
+      |> filter(status: :graded)
 
-    query = if course_id do
-      Ash.Query.filter(query, exam_id in subquery(
-        KgEdu.Knowledge.Exam
-        |> filter(course_id: ^course_id)
-        |> select([:id])
-      ))
-    else
-      query
-    end
+    query =
+      if course_id do
+        Ash.Query.filter(
+          query,
+          exam_id in subquery(
+            KgEdu.Knowledge.Exam
+            |> filter(course_id: ^course_id)
+            |> select([:id])
+          )
+        )
+      else
+        query
+      end
 
     case Ash.read(query, tenant: tenant, authorize?: false) do
       {:ok, student_exams} ->
-        results = Enum.map(student_exams, fn student_exam ->
-          analyze_exam_results(student_exam.id, tenant: tenant, auto_generate_recommendations: false)
-        end)
+        results =
+          Enum.map(student_exams, fn student_exam ->
+            analyze_exam_results(student_exam.id,
+              tenant: tenant,
+              auto_generate_recommendations: false
+            )
+          end)
 
-        success_count = Enum.count(results, fn
-          :ok -> true
-          _ -> false
-        end)
+        success_count =
+          Enum.count(results, fn
+            :ok -> true
+            _ -> false
+          end)
 
-        Logger.info("Batch analysis completed: #{success_count}/#{length(student_exams)} successful")
+        Logger.info(
+          "Batch analysis completed: #{success_count}/#{length(student_exams)} successful"
+        )
+
         {:ok, %{total: length(student_exams), successful: success_count}}
 
       {:error, reason} ->
@@ -190,9 +205,12 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
         total_count = length(filtered_masteries)
 
         mastered_count = Enum.count(filtered_masteries, fn m -> m.mastery_level >= 0.8 end)
-        learning_count = Enum.count(filtered_masteries, fn m ->
-          m.mastery_level >= 0.4 and m.mastery_level < 0.8
-        end)
+
+        learning_count =
+          Enum.count(filtered_masteries, fn m ->
+            m.mastery_level >= 0.4 and m.mastery_level < 0.8
+          end)
+
         weak_count = Enum.count(filtered_masteries, fn m -> m.mastery_level < 0.4 end)
 
         avg_mastery =
@@ -254,8 +272,8 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
 
               Map.update(acc, knowledge_id, %{correct: 0, wrong: 0, total: 0}, fn stats ->
                 %{
-                  correct: stats.correct + (if is_correct, do: 1, else: 0),
-                  wrong: stats.wrong + (if is_correct, do: 0, else: 1),
+                  correct: stats.correct + if(is_correct, do: 1, else: 0),
+                  wrong: stats.wrong + if(is_correct, do: 0, else: 1),
                   total: stats.total + 1
                 }
               end)
@@ -278,10 +296,14 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
              tenant: tenant
            ) do
         :ok ->
-          Logger.debug("Updated mastery for knowledge #{knowledge_id}: #{stats.correct}/#{stats.total}")
+          Logger.debug(
+            "Updated mastery for knowledge #{knowledge_id}: #{stats.correct}/#{stats.total}"
+          )
 
         {:error, reason} ->
-          Logger.error("Failed to update mastery for knowledge #{knowledge_id}: #{inspect(reason)}")
+          Logger.error(
+            "Failed to update mastery for knowledge #{knowledge_id}: #{inspect(reason)}"
+          )
       end
     end)
   end

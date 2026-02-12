@@ -11,10 +11,6 @@ defmodule KgEdu.Accounts.Class do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "class"
   end
@@ -44,6 +40,7 @@ defmodule KgEdu.Accounts.Class do
 
     read :get_classes_by_college do
       description "Get classes filtered by college"
+
       argument :college, :string do
         description "The college to filter classes by"
         allow_nil? false
@@ -54,6 +51,7 @@ defmodule KgEdu.Accounts.Class do
 
     read :get_classes_by_major do
       description "Get classes filtered by major"
+
       argument :major, :string do
         description "The major to filter classes by"
         allow_nil? false
@@ -98,39 +96,52 @@ defmodule KgEdu.Accounts.Class do
              |> Ash.create(tenant: context.tenant) do
           {:ok, class} ->
             # Create students if provided
-            students_result = case input.arguments.students do
-              nil -> {:ok, []}
-              [] -> {:ok, []}
-              students ->
-                results = Enum.map(students, fn student_attrs ->
-                  student_with_class = Map.put(student_attrs, :class_id, class.id)
+            students_result =
+              case input.arguments.students do
+                nil ->
+                  {:ok, []}
 
-                  case KgEdu.Accounts.User
-                       |> Ash.Changeset.for_action(:create_student, student_with_class)
-                       |> Ash.create(tenant: context.tenant) do
-                    {:ok, student} -> {:ok, student}
-                    {:error, error} -> {:error, "Failed to create student #{student_attrs[:member_id]}: #{inspect(error)}"}
-                  end
-                end)
+                [] ->
+                  {:ok, []}
 
-                # Separate successful and failed results
-                {successful, failed} = Enum.split_with(results, fn
-                  {:ok, _} -> true
-                  {:error, _} -> false
-                end)
+                students ->
+                  results =
+                    Enum.map(students, fn student_attrs ->
+                      student_with_class = Map.put(student_attrs, :class_id, class.id)
 
-                {:ok, %{
-                  created: length(successful),
-                  failed: length(failed),
-                  errors: Enum.map(failed, &elem(&1, 1)),
-                  students: Enum.map(successful, &elem(&1, 1))
-                }}
-            end
+                      case KgEdu.Accounts.User
+                           |> Ash.Changeset.for_action(:create_student, student_with_class)
+                           |> Ash.create(tenant: context.tenant) do
+                        {:ok, student} ->
+                          {:ok, student}
 
-            {:ok, %{
-              class: class,
-              students: students_result
-            }}
+                        {:error, error} ->
+                          {:error,
+                           "Failed to create student #{student_attrs[:member_id]}: #{inspect(error)}"}
+                      end
+                    end)
+
+                  # Separate successful and failed results
+                  {successful, failed} =
+                    Enum.split_with(results, fn
+                      {:ok, _} -> true
+                      {:error, _} -> false
+                    end)
+
+                  {:ok,
+                   %{
+                     created: length(successful),
+                     failed: length(failed),
+                     errors: Enum.map(failed, &elem(&1, 1)),
+                     students: Enum.map(successful, &elem(&1, 1))
+                   }}
+              end
+
+            {:ok,
+             %{
+               class: class,
+               students: students_result
+             }}
 
           {:error, error} ->
             {:error, error}
@@ -140,12 +151,24 @@ defmodule KgEdu.Accounts.Class do
 
     read :get_students_in_class do
       description "Get all students in a specific class"
+
       argument :class_id, :uuid do
         description "The class ID to get students for"
         allow_nil? false
       end
+
       filter expr(role == :user and class_id == ^arg(:class_id))
     end
+  end
+
+  policies do
+    policy always() do
+      authorize_if always()
+    end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -183,11 +206,5 @@ defmodule KgEdu.Accounts.Class do
 
   identities do
     identity :unique_class_name, [:name, :college, :major]
-  end
-
-  policies do
-    policy always() do
-      authorize_if always()
-    end
   end
 end

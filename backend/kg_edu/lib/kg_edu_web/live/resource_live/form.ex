@@ -12,14 +12,14 @@ defmodule KgEduWeb.ResourceLive.Form do
         </.header>
 
         <.form for={@form} id="resource-form" phx-change="validate" phx-submit="save">
-        <fieldset>
-          <.input field={@form[:name]} type="text" label="Name" />
-          <.input field={@form[:description]} type="text" label="Description" />
-          <.input field={@form[:course_id]} type="select" label="Course" options={@course_list} />
-        </fieldset>
-        <.button phx-disable-with="Saving..." variant="primary">Save Resource</.button>
-        <.button navigate={return_path(@return_to, @resource)}>Cancel</.button>
-      </.form>
+          <fieldset>
+            <.input field={@form[:name]} type="text" label="Name" />
+            <.input field={@form[:description]} type="text" label="Description" />
+            <.input field={@form[:course_id]} type="select" label="Course" options={@course_list} />
+          </fieldset>
+          <.button phx-disable-with="Saving..." variant="primary">Save Resource</.button>
+          <.button navigate={return_path(@return_to, @resource)}>Cancel</.button>
+        </.form>
       </div>
     </Layouts.app>
     """

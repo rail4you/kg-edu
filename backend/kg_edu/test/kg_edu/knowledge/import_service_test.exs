@@ -1,6 +1,6 @@
 defmodule KgEdu.Knowledge.ImportServiceTest do
   use ExUnit.Case, async: false
-  
+
   alias KgEdu.Knowledge.ImportService
   alias KgEdu.Knowledge.Resource
   alias KgEdu.Knowledge.RelationType
@@ -12,15 +12,16 @@ defmodule KgEdu.Knowledge.ImportServiceTest do
       # Test with valid Excel data (base64 encoded minimal Excel)
       # This is a basic test - in practice you'd use real Excel files
       valid_excel_data = create_test_excel_data()
-      
+
       case ImportService.validate_excel_format(valid_excel_data) do
         {:ok, result} ->
           assert %{
-            sheet1_valid: true,
-            sheet2_valid: true,
-            sheet1_rows: _,
-            sheet2_rows: _
-          } = result
+                   sheet1_valid: true,
+                   sheet2_valid: true,
+                   sheet1_rows: _,
+                   sheet2_rows: _
+                 } = result
+
         {:error, _} ->
           # Expected for this test since we're using dummy data
           :ok
@@ -32,16 +33,16 @@ defmodule KgEdu.Knowledge.ImportServiceTest do
     test "can create knowledge resources from import data" do
       # Create a test course first
       {:ok, course} = create_test_course()
-      
+
       # Test knowledge resource creation
       knowledge_attrs = %{
         name: "Test Knowledge",
-        description: "Test Description", 
+        description: "Test Description",
         knowledge_type: :knowledge_cell,
         course_id: course.id,
         importance_level: :normal
       }
-      
+
       assert {:ok, _knowledge} = Resource.create_knowledge_resource(knowledge_attrs)
     end
 
@@ -51,7 +52,7 @@ defmodule KgEdu.Knowledge.ImportServiceTest do
         display_name: "Test Relation",
         description: "A test relation type"
       }
-      
+
       assert {:ok, _relation_type} = RelationType.create_relation_type(relation_attrs)
     end
   end
@@ -60,7 +61,8 @@ defmodule KgEdu.Knowledge.ImportServiceTest do
   defp create_test_excel_data do
     # Create a minimal base64 string for testing
     # In practice, you'd encode an actual Excel file
-    "dGVzdCBkYXRh"  # Base64 for "test data"
+    # Base64 for "test data"
+    "dGVzdCBkYXRh"
   end
 
   defp create_test_course do
@@ -69,7 +71,7 @@ defmodule KgEdu.Knowledge.ImportServiceTest do
       description: "A test course for import testing",
       teacher_id: get_test_user_id()
     }
-    
+
     Course.create_course(course_attrs)
   end
 

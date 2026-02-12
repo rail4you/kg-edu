@@ -6,10 +6,6 @@ defmodule KgEdu.Knowledge.ExamExercise do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
-  typescript do
-    type_name "ExamExercise"
-  end
-
   postgres do
     table "exam_exercises"
     repo KgEdu.Repo
@@ -20,12 +16,12 @@ defmodule KgEdu.Knowledge.ExamExercise do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "exam_exercise"
+  end
+
+  typescript do
+    type_name "ExamExercise"
   end
 
   code_interface do
@@ -85,6 +81,10 @@ defmodule KgEdu.Knowledge.ExamExercise do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

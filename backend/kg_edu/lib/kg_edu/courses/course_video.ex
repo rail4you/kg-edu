@@ -11,10 +11,6 @@ defmodule KgEdu.Courses.CourseVideo do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "course_video"
   end
@@ -59,6 +55,10 @@ defmodule KgEdu.Courses.CourseVideo do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

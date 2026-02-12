@@ -20,10 +20,6 @@ defmodule KgEdu.Knowledge.UserCase do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "user_case"
   end
@@ -46,16 +42,17 @@ defmodule KgEdu.Knowledge.UserCase do
 
     create :create do
       primary? true
-      accept [:title, :description, :content, :knowledge_resource_id]
+      accept [:title, :description, :content, :case_relation_name, :knowledge_resource_id]
     end
 
     update :update do
       primary? true
-      accept [:title, :description, :content]
+      accept [:title, :description, :content, :case_relation_name]
     end
 
     read :by_knowledge_resource do
       description "Get all user cases for a specific knowledge resource"
+
       argument :knowledge_resource_id, :uuid do
         allow_nil? false
       end
@@ -82,6 +79,10 @@ defmodule KgEdu.Knowledge.UserCase do
     end
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_primary_key :id
 
@@ -101,6 +102,12 @@ defmodule KgEdu.Knowledge.UserCase do
       allow_nil? true
       public? true
       description "The detailed content of the case"
+    end
+
+    attribute :case_relation_name, :string do
+      allow_nil? true
+      public? true
+      description "The relation name for the case"
     end
 
     timestamps()

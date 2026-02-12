@@ -43,10 +43,6 @@ defmodule KgEdu.Accounts.User do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "user"
   end
@@ -92,13 +88,28 @@ defmodule KgEdu.Accounts.User do
     defaults [:read, :destroy]
 
     create :create_student do
-      accept [:member_id, :name, :phone, :email, :class_name, :major, :school, :colledge, :avatar_url, :class_id, :job_title, :bio]
+      accept [
+        :member_id,
+        :name,
+        :phone,
+        :email,
+        :class_name,
+        :major,
+        :school,
+        :colledge,
+        :avatar_url,
+        :class_id,
+        :job_title,
+        :bio
+      ]
+
       argument :password, :string do
         description "Student password (will be hashed)"
         allow_nil? false
         constraints min_length: 8
         sensitive? true
       end
+
       change set_attribute(:role, :user)
       change AshAuthentication.Strategy.Password.HashPasswordChange
       change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
@@ -121,29 +132,36 @@ defmodule KgEdu.Accounts.User do
         class_name = input.arguments.class_name
         students = input.arguments.students
 
-        results = Enum.map(students, fn student_attrs ->
-          student_with_class = Map.put(student_attrs, :class_name, class_name)
+        results =
+          Enum.map(students, fn student_attrs ->
+            student_with_class = Map.put(student_attrs, :class_name, class_name)
 
-          case KgEdu.Accounts.User
-               |> Ash.Changeset.for_action(:create_student, student_with_class)
-               |> Ash.create(tenant: context.tenant) do
-            {:ok, student} -> {:ok, student}
-            {:error, error} -> {:error, "Failed to create student #{student_attrs[:member_id]}: #{inspect(error)}"}
-          end
-        end)
+            case KgEdu.Accounts.User
+                 |> Ash.Changeset.for_action(:create_student, student_with_class)
+                 |> Ash.create(tenant: context.tenant) do
+              {:ok, student} ->
+                {:ok, student}
+
+              {:error, error} ->
+                {:error,
+                 "Failed to create student #{student_attrs[:member_id]}: #{inspect(error)}"}
+            end
+          end)
 
         # Separate successful and failed results
-        {successful, failed} = Enum.split_with(results, fn
-          {:ok, _} -> true
-          {:error, _} -> false
-        end)
+        {successful, failed} =
+          Enum.split_with(results, fn
+            {:ok, _} -> true
+            {:error, _} -> false
+          end)
 
-        {:ok, %{
-          created: length(successful),
-          failed: length(failed),
-          errors: Enum.map(failed, &elem(&1, 1)),
-          students: Enum.map(successful, &elem(&1, 1))
-        }}
+        {:ok,
+         %{
+           created: length(successful),
+           failed: length(failed),
+           errors: Enum.map(failed, &elem(&1, 1)),
+           students: Enum.map(successful, &elem(&1, 1))
+         }}
       end
     end
 
@@ -152,10 +170,25 @@ defmodule KgEdu.Accounts.User do
     end
 
     update :update_student do
-      accept [:member_id, :name, :phone, :email, :major, :school, :colledge, :class_name, :avatar_url, :class_id, :job_title, :bio]
+      accept [
+        :member_id,
+        :name,
+        :phone,
+        :email,
+        :major,
+        :school,
+        :colledge,
+        :class_name,
+        :avatar_url,
+        :class_id,
+        :job_title,
+        :bio
+      ]
+
       argument :password, :string do
         allow_nil? true
       end
+
       require_atomic? false
       # change set_attribute(:role, "user")
       change {KgEdu.Accounts.User.Changes.UpdateStudent, []}
@@ -171,9 +204,9 @@ defmodule KgEdu.Accounts.User do
       # Note: This action should only be called on student users (role == :user)
     end
 
-    
     read :get_students_by_class do
       description "Get students filtered by class name"
+
       argument :class_name, :string do
         description "The class name to filter students by"
         allow_nil? true
@@ -184,9 +217,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
-      filter expr(role == :user and
+      filter expr(
+               role == :user and
                  ((not is_nil(^arg(:class_name)) and class_name == ^arg(:class_name)) or
-                  (not is_nil(^arg(:class_id)) and class_id == ^arg(:class_id))))
+                    (not is_nil(^arg(:class_id)) and class_id == ^arg(:class_id)))
+             )
     end
 
     read :list_student_classes do
@@ -279,7 +314,20 @@ defmodule KgEdu.Accounts.User do
 
     update :update do
       description "Update user profile information"
-      accept [:name, :role, :phone, :email, :avatar_url, :job_title, :bio, :class_id, :class_name, :school]
+
+      accept [
+        :name,
+        :role,
+        :phone,
+        :email,
+        :avatar_url,
+        :job_title,
+        :bio,
+        :class_id,
+        :class_name,
+        :school
+      ]
+
       require_atomic? false
     end
 
@@ -369,6 +417,7 @@ defmodule KgEdu.Accounts.User do
         case Ash.update(changeset, tenant: tenant) do
           {:ok, updated_user} ->
             {:ok, updated_user}
+
           {:error, error} ->
             {:error, error}
         end
@@ -450,7 +499,9 @@ defmodule KgEdu.Accounts.User do
                 users
                 |> Enum.filter(&(&1.role == :super_admin))
                 |> Enum.filter(&(&1.member_id == input.arguments.member_id))
-              _ -> []
+
+              _ ->
+                []
             end
           end)
 
@@ -461,17 +512,19 @@ defmodule KgEdu.Accounts.User do
           user ->
             # Use Bcrypt for password verification (as configured in the user resource)
             case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
-            true ->
-              # Generate token using the same method as the register action
-              case AshAuthentication.Jwt.token_for_user(user) do
-                {:ok, token, _} ->
-                  {:ok, %{user | __metadata__: %{token: token}}}
-                {:error, reason} ->
-                  {:error, reason}
-              end
-            false ->
-              {:error, :invalid_credentials}
-          end
+              true ->
+                # Generate token using the same method as the register action
+                case AshAuthentication.Jwt.token_for_user(user) do
+                  {:ok, token, _} ->
+                    {:ok, %{user | __metadata__: %{token: token}}}
+
+                  {:error, reason} ->
+                    {:error, reason}
+                end
+
+              false ->
+                {:error, :invalid_credentials}
+            end
         end
       end
     end
@@ -508,6 +561,7 @@ defmodule KgEdu.Accounts.User do
                 |> case do
                   nil ->
                     {:error, :invalid_credentials}
+
                   user ->
                     # Use Bcrypt for password verification (as configured in the user resource)
                     case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
@@ -516,13 +570,16 @@ defmodule KgEdu.Accounts.User do
                         case AshAuthentication.Jwt.token_for_user(user) do
                           {:ok, token, _} ->
                             {:ok, %{user | __metadata__: %{token: token}}}
+
                           {:error, reason} ->
                             {:error, reason}
                         end
+
                       false ->
                         {:error, :invalid_credentials}
                     end
                 end
+
               {:error, reason} ->
                 {:error, reason}
             end
@@ -708,6 +765,7 @@ defmodule KgEdu.Accounts.User do
                 # Generate token using the same method as the register action
                 token = AshAuthentication.Jwt.token_for_user(user)
                 {:ok, %{user | __metadata__: %{token: token}}}
+
               error ->
                 error
             end
@@ -748,15 +806,20 @@ defmodule KgEdu.Accounts.User do
         # Find a default tenant or create one for super admin storage
         tenants = KgEdu.Repo.all_tenants()
 
-        target_tenant = case tenants do
-          [] ->
-            # Create a default system tenant if none exists
-            case KgEdu.Accounts.Organization |> Ash.Changeset.for_action(:create, %{name: "System"}) |> Ash.create() do
-              {:ok, org} -> org.schema_name
-              _ -> nil
-            end
-          [first_tenant | _] -> first_tenant
-        end
+        target_tenant =
+          case tenants do
+            [] ->
+              # Create a default system tenant if none exists
+              case KgEdu.Accounts.Organization
+                   |> Ash.Changeset.for_action(:create, %{name: "System"})
+                   |> Ash.create() do
+                {:ok, org} -> org.schema_name
+                _ -> nil
+              end
+
+            [first_tenant | _] ->
+              first_tenant
+          end
 
         if target_tenant do
           case KgEdu.Accounts.User
@@ -772,6 +835,7 @@ defmodule KgEdu.Accounts.User do
               # Generate token using the same method as the register action
               token = AshAuthentication.Jwt.token_for_user(user)
               {:ok, %{user | __metadata__: %{token: token}}}
+
             error ->
               error
           end
@@ -854,10 +918,10 @@ defmodule KgEdu.Accounts.User do
       run {AshAuthentication.Actions.SignOut, action: :sign_out}
     end
 
-    action :import_users_from_excel do
+    action :import_users_from_excel, :map do
       description "Import multiple users from an Excel file with Base64 encoding.
-                   For users with role 'user', the 'class' column will be used to assign them to a class.
-                   If the class exists, it will be used; otherwise, a new class will be created."
+                     For users with role 'user', the 'class' column will be used to assign them to a class.
+                     If the class exists, it will be used; otherwise, a new class will be created."
 
       argument :excel_file, :string do
         description "Base64 encoded Excel file containing user data"
@@ -897,24 +961,73 @@ defmodule KgEdu.Accounts.User do
           Logger.info("Using tenant context: #{inspect(tenant_to_use)}")
 
           # Import users with tenant context
-          import_result = try do
-            KgEdu.Accounts.User.ImportFromExcel.parse_excel(
-              excel_file,
-              attributes || [:member_id, :name, :phone, :email, :password, :role, :class],
-              tenant_to_use
-            )
-          rescue
-            e ->
-              Logger.error("Exception during user import: #{Exception.message(e)}")
-              Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
-              Logger.error("Excel file length: #{if excel_file, do: byte_size(excel_file), else: nil}")
-              {:error, {:import_exception, Exception.message(e)}}
-          end
+          import_result =
+            try do
+              KgEdu.Accounts.User.ImportFromExcel.parse_excel(
+                excel_file,
+                attributes || [:member_id, :name, :phone, :email, :password, :role, :class],
+                tenant_to_use
+              )
+            rescue
+              e ->
+                Logger.error("Exception during user import: #{Exception.message(e)}")
+                Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+
+                Logger.error(
+                  "Excel file length: #{if excel_file, do: byte_size(excel_file), else: nil}"
+                )
+
+                {:error, {:import_exception, Exception.message(e)}}
+            end
 
           case import_result do
             {:ok, users} ->
               Logger.info("Successfully imported #{length(users)} users")
-              :ok
+
+              # Count created vs updated users
+              {created_count, updated_count} =
+                Enum.reduce(users, {0, 0}, fn user, {created, updated} ->
+                  case Map.get(user, :_action) do
+                    :created -> {created + 1, updated}
+                    :updated -> {created, updated + 1}
+                    _ -> {created, updated}
+                  end
+                end)
+
+              # Build appropriate message based on what happened
+              message =
+                cond do
+                  created_count > 0 and updated_count > 0 ->
+                    "成功创建 #{created_count} 个用户，更新 #{updated_count} 个用户"
+
+                  created_count > 0 ->
+                    "成功导入 #{created_count} 个用户"
+
+                  updated_count > 0 ->
+                    "成功更新 #{updated_count} 个用户"
+
+                  true ->
+                    "成功导入 #{length(users)} 个用户"
+                end
+
+              {:ok,
+               %{
+                 message: message,
+                 count: length(users),
+                 created_count: created_count,
+                 updated_count: updated_count,
+                 users:
+                   Enum.map(users, fn user ->
+                     %{
+                       id: user.id,
+                       member_id: user.member_id,
+                       name: user.name,
+                       email: user.email,
+                       role: user.role,
+                       action: Map.get(user, :_action, :unknown)
+                     }
+                   end)
+               }}
 
             {:error, reason} ->
               Logger.error("Failed to import users: #{inspect(reason)}")
@@ -923,7 +1036,6 @@ defmodule KgEdu.Accounts.User do
         end
       end
     end
-
 
     read :get_users_from_tenant do
       description "Get users from a specific tenant (super admin only)"
@@ -994,6 +1106,10 @@ defmodule KgEdu.Accounts.User do
     # policy always() do
     #   authorize_if always()
     # end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -1077,15 +1193,15 @@ defmodule KgEdu.Accounts.User do
     end
   end
 
-  calculations do
-    calculate :auth_token, :string do
-      calculation expr(context[:token])
-    end
-  end
-
   relationships do
     belongs_to :class, KgEdu.Accounts.Class do
       allow_nil? true
+    end
+  end
+
+  calculations do
+    calculate :auth_token, :string do
+      calculation expr(context[:token])
     end
   end
 

@@ -8,10 +8,6 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
 
   require Logger
 
-  typescript do
-    type_name "StudentExamAnswer"
-  end
-
   postgres do
     table "student_exam_answers"
     repo KgEdu.Repo
@@ -23,12 +19,12 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "student_exam_answer"
+  end
+
+  typescript do
+    type_name "StudentExamAnswer"
   end
 
   code_interface do
@@ -40,6 +36,12 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
 
   actions do
     defaults [:read, :update, :destroy]
+
+    update :grade do
+      description "Update the grade-related fields for a student exam answer"
+      accept [:points_earned, :graded, :feedback, :graded_at]
+      require_atomic? false
+    end
 
     update :update_answer do
       description "Update answer for a student exam answer"
@@ -56,6 +58,7 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
         :answered_at,
         :graded_at
       ]
+
       primary? true
 
       argument :student_exam_id, :uuid do
@@ -129,7 +132,7 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
       run fn input, _context ->
         student_exam_answer_id = input.arguments.student_exam_answer_id
         awarded_points = input.arguments.awarded_points
-        feedback = input.arguments.feedback
+        feedback = Map.get(input.arguments, :feedback)
         tenant = input.context.tenant
 
         case Ash.get(
@@ -165,11 +168,15 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
                 update_attrs
               end
 
-            Ash.update(
-              answer_record,
-              update_attrs,
-              tenant: tenant
-            )
+            case Ash.update(
+                   answer_record,
+                   update_attrs,
+                   action: :grade,
+                   tenant: tenant
+                 ) do
+              {:ok, _updated_record} -> :ok
+              {:error, reason} -> {:error, reason}
+            end
 
           {:error, reason} ->
             {:error, reason}
@@ -182,6 +189,10 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

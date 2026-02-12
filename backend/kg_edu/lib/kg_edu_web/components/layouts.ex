@@ -55,7 +55,7 @@ defmodule KgEduWeb.Layouts do
     <div class="drawer lg:drawer-open">
       <!-- Sidebar toggle for mobile -->
       <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
-
+      
     <!-- Main content -->
       <div class="drawer-content flex flex-col">
         <!-- Navigation Banner -->
@@ -134,7 +134,7 @@ defmodule KgEduWeb.Layouts do
             </div>
           </div>
         </header>
-
+        
     <!-- Main content area -->
         <main class="flex-1 p-4 sm:p-6 lg:p-8">
           <div class="mx-auto max-w-7xl">
@@ -144,7 +144,7 @@ defmodule KgEduWeb.Layouts do
 
         <.custom_flash_group flash={@flash} />
       </div>
-
+      
     <!-- Sidebar -->
       <div class="drawer-side">
         <label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>

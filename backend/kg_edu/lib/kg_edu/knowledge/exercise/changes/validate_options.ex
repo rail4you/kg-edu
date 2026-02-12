@@ -14,7 +14,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.ValidateOptions do
 
   defp validate_options(changeset, options) do
     exercise_options = KgEdu.Knowledge.ExerciseOptions.from_map(options)
-    
+
     if KgEdu.Knowledge.ExerciseOptions.valid?(exercise_options) do
       validated_options = KgEdu.Knowledge.ExerciseOptions.to_map(exercise_options)
       Ash.Changeset.change_attribute(changeset, :options, validated_options)

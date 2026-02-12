@@ -1,6 +1,6 @@
 defmodule KgEdu.Release do
   @moduledoc """
-Tasks that need to be executed in the released application (because mix is not present in releases).
+  Tasks that need to be executed in the released application (because mix is not present in releases).
   """
   @app :kg_edu
   def migrate do

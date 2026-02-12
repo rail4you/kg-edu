@@ -122,21 +122,29 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   defp ensure_atom_question_type(exercise_map) do
     case exercise_map do
       %{:question_type => type} when is_binary(type) ->
-        atom_type = case type do
-          "multiple_choice" -> :multiple_choice
-          "essay" -> :essay
-          "fill_in_blank" -> :fill_in_blank
-          _ -> :multiple_choice  # default
-        end
+        atom_type =
+          case type do
+            "multiple_choice" -> :multiple_choice
+            "essay" -> :essay
+            "fill_in_blank" -> :fill_in_blank
+            # default
+            _ -> :multiple_choice
+          end
+
         Map.put(exercise_map, :question_type, atom_type)
+
       %{"question_type" => type} when is_binary(type) ->
-        atom_type = case type do
-          "multiple_choice" -> :multiple_choice
-          "essay" -> :essay
-          "fill_in_blank" -> :fill_in_blank
-          _ -> :multiple_choice  # default
-        end
+        atom_type =
+          case type do
+            "multiple_choice" -> :multiple_choice
+            "essay" -> :essay
+            "fill_in_blank" -> :fill_in_blank
+            # default
+            _ -> :multiple_choice
+          end
+
         Map.put(exercise_map, "question_type", atom_type)
+
       _ ->
         exercise_map
     end

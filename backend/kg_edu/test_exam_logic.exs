@@ -78,10 +78,13 @@ defmodule ExamLogicTest do
   end
 
   defp continue_or_start_exam_test(student_id, exam_id, tenant) do
-    case KgEdu.Knowledge.StudentExam.continue_or_start_exam(%{
-           exam_id: exam_id,
-           student_id: student_id
-         }, tenant: tenant) do
+    case KgEdu.Knowledge.StudentExam.continue_or_start_exam(
+           %{
+             exam_id: exam_id,
+             student_id: student_id
+           },
+           tenant: tenant
+         ) do
       {:ok, student_exam} ->
         IO.puts("  ✓ continue_or_start_exam succeeded")
         IO.puts("    Student Exam ID: #{student_exam.id}")
@@ -94,9 +97,12 @@ defmodule ExamLogicTest do
   end
 
   defp get_in_progress_exam_test(student_id, tenant) do
-    case KgEdu.Knowledge.StudentExam.get_in_progress_exam(%{
-           student_id: student_id
-         }, tenant: tenant) do
+    case KgEdu.Knowledge.StudentExam.get_in_progress_exam(
+           %{
+             student_id: student_id
+           },
+           tenant: tenant
+         ) do
       {:ok, student_exam} ->
         IO.puts("  ✓ Retrieved in-progress exam")
         IO.puts("    Exam ID: #{student_exam.exam_id}")

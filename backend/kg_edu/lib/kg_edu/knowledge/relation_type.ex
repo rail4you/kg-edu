@@ -11,10 +11,6 @@ defmodule KgEdu.Knowledge.RelationType do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "relation_type"
   end
@@ -68,8 +64,13 @@ defmodule KgEdu.Knowledge.RelationType do
 
       change fn changeset, _context ->
         name = Ash.Changeset.get_argument(changeset, :name)
-        display_name = Ash.Changeset.get_argument(changeset, :display_name) || String.capitalize(name) |> String.replace("_", " ")
-        description = Ash.Changeset.get_argument(changeset, :description) || "Relation type: #{display_name}"
+
+        display_name =
+          Ash.Changeset.get_argument(changeset, :display_name) ||
+            String.capitalize(name) |> String.replace("_", " ")
+
+        description =
+          Ash.Changeset.get_argument(changeset, :description) || "Relation type: #{display_name}"
 
         changeset
         |> Ash.Changeset.change_attribute(:name, name)
@@ -87,6 +88,10 @@ defmodule KgEdu.Knowledge.RelationType do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

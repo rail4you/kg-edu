@@ -6,15 +6,13 @@ defmodule KgEdu.Courses.Course do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Rpc, AshTypescript.Resource],
     primary_read_warning?: false
+
   require Logger
   require Ash.Query
+
   postgres do
     table "courses"
     repo KgEdu.Repo
-  end
-
-  multitenancy do
-    strategy :context
   end
 
   json_api do
@@ -26,7 +24,7 @@ defmodule KgEdu.Courses.Course do
     type_name "Course"
   end
 
-code_interface do
+  code_interface do
     define :create_course, action: :create
     define :update_course, action: :update
     define :delete_course, action: :destroy
@@ -44,24 +42,17 @@ code_interface do
     define :my_courses, action: :my_courses
   end
 
-
-  aggregates do
-    # Count videos through chapters
-    count :videos_count, [:chapters, :videos]
-    count :knowledge_resources_count, :knowledge_resources do
-      public? true
-    end
-  end
   actions do
     defaults [:destroy]
+
     read :read do
       primary? true
 
       pagination do
-        required?(false)
-        offset?(true)
-        keyset?(true)
-        countable(true)
+        required? false
+        offset? true
+        keyset? true
+        countable true
       end
 
       prepare fn query, context ->
@@ -70,35 +61,39 @@ code_interface do
         Logger.info("COURSE LIST: context is #{inspect(context)}")
         Logger.info("COURSE LIST: actor is #{inspect(context.actor)}")
 
-        query = case context.actor do
-          %{role: :user, id: user_id} ->
-            Logger.info("COURSE LIST: Filtering courses for student #{user_id}")
-            # Students see only courses they're enrolled in and published
-            query
-            |> Ash.Query.filter(publish_status == true)
-            |> Ash.Query.filter(course_enrollments.member_id == ^user_id)
+        query =
+          case context.actor do
+            %{role: :user, id: user_id} ->
+              Logger.info("COURSE LIST: Filtering courses for student #{user_id}")
+              # Students see only courses they're enrolled in and published
+              query
+              |> Ash.Query.filter(publish_status == true)
+              |> Ash.Query.filter(course_enrollments.member_id == ^user_id)
 
-          %{role: :teacher, id: teacher_id} ->
-            Logger.info("COURSE LIST: Filtering courses for teacher #{teacher_id}")
-            # Teachers see courses where they are either:
-            # 1. The primary teacher (teacher_id matches)
-            # 2. Assigned to the course through CourseAssignment
-            Ash.Query.filter(query, teacher_id == ^teacher_id or course_assignments.teacher_id == ^teacher_id)
+            %{role: :teacher, id: teacher_id} ->
+              Logger.info("COURSE LIST: Filtering courses for teacher #{teacher_id}")
+              # Teachers see courses where they are either:
+              # 1. The primary teacher (teacher_id matches)
+              # 2. Assigned to the course through CourseAssignment
+              Ash.Query.filter(
+                query,
+                teacher_id == ^teacher_id or course_assignments.teacher_id == ^teacher_id
+              )
 
-          %{role: :admin} ->
-            Logger.info("COURSE LIST: Admin can see all courses")
-            # Admins can see all courses
-            query
+            %{role: :admin} ->
+              Logger.info("COURSE LIST: Admin can see all courses")
+              # Admins can see all courses
+              query
 
-          %{role: :super_admin} ->
-            Logger.info("COURSE LIST: Super admin can see all courses")
-            # Super admins can see all courses
-            query
+            %{role: :super_admin} ->
+              Logger.info("COURSE LIST: Super admin can see all courses")
+              # Super admins can see all courses
+              query
 
-          other ->
-            Logger.info("COURSE LIST: No access for actor: #{inspect(other)}")
-            Ash.Query.filter(query, false)
-        end
+            other ->
+              Logger.info("COURSE LIST: No access for actor: #{inspect(other)}")
+              Ash.Query.filter(query, false)
+          end
 
         query |> Ash.Query.load(:subject_category)
       end
@@ -110,7 +105,19 @@ code_interface do
     end
 
     create :create do
-      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id, :teacher_id]
+      accept [
+        :title,
+        :description,
+        :image_url,
+        :major,
+        :semester,
+        :semester_hours,
+        :credits,
+        :book_id,
+        :publish_status,
+        :subject_category_id,
+        :teacher_id
+      ]
     end
 
     action :create_with_primary_teacher, :map do
@@ -188,7 +195,9 @@ code_interface do
 
         try do
           # Create the course first
-          case KgEdu.Courses.Course |> Ash.Changeset.for_action(:create, course_attrs) |> Ash.create(tenant: context.tenant) do
+          case KgEdu.Courses.Course
+               |> Ash.Changeset.for_action(:create, course_attrs)
+               |> Ash.create(tenant: context.tenant) do
             {:ok, course} ->
               # Create primary teacher assignment
               assignment_attrs = %{
@@ -199,16 +208,25 @@ code_interface do
                 assigned_at: DateTime.utc_now()
               }
 
-              case KgEdu.Courses.CourseAssignment |> Ash.Changeset.for_action(:create, assignment_attrs) |> Ash.create(tenant: context.tenant) do
+              case KgEdu.Courses.CourseAssignment
+                   |> Ash.Changeset.for_action(:create, assignment_attrs)
+                   |> Ash.create(tenant: context.tenant) do
                 {:ok, _assignment} ->
                   {:ok, course}
+
                 {:error, assignment_error} ->
                   # Rollback course creation if assignment fails
                   case Ash.destroy(course, tenant: context.tenant) do
-                    :ok -> {:error, "Failed to create teacher assignment: #{inspect(assignment_error)}"}
-                    _ -> {:error, "Failed to create teacher assignment and failed to rollback course: #{inspect(assignment_error)}"}
+                    :ok ->
+                      {:error,
+                       "Failed to create teacher assignment: #{inspect(assignment_error)}"}
+
+                    _ ->
+                      {:error,
+                       "Failed to create teacher assignment and failed to rollback course: #{inspect(assignment_error)}"}
                   end
               end
+
             {:error, course_error} ->
               {:error, "Failed to create course: #{inspect(course_error)}"}
           end
@@ -220,7 +238,19 @@ code_interface do
     end
 
     update :update do
-      accept [:title, :description, :image_url, :major, :semester, :semester_hours, :credits, :book_id, :publish_status, :subject_category_id, :teacher_id]
+      accept [
+        :title,
+        :description,
+        :image_url,
+        :major,
+        :semester,
+        :semester_hours,
+        :credits,
+        :book_id,
+        :publish_status,
+        :subject_category_id,
+        :teacher_id
+      ]
     end
 
     read :by_teacher do
@@ -230,7 +260,10 @@ code_interface do
         allow_nil? false
       end
 
-      filter expr(teacher_id == ^arg(:teacher_id) or course_assignments.teacher_id == ^arg(:teacher_id))
+      filter expr(
+               teacher_id == ^arg(:teacher_id) or
+                 course_assignments.teacher_id == ^arg(:teacher_id)
+             )
     end
 
     read :get_courses_for_teacher do
@@ -241,7 +274,10 @@ code_interface do
         allow_nil? false
       end
 
-      filter expr(teacher_id == ^arg(:teacher_id) or course_assignments.teacher_id == ^arg(:teacher_id))
+      filter expr(
+               teacher_id == ^arg(:teacher_id) or
+                 course_assignments.teacher_id == ^arg(:teacher_id)
+             )
     end
 
     read :my_courses do
@@ -302,7 +338,6 @@ code_interface do
       filter expr(id == ^arg(:course_id))
     end
 
-
     action :calculate_course_statistics, :map do
       description "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
 
@@ -316,11 +351,12 @@ code_interface do
 
         try do
           # Get knowledge resource statistics
-          {:ok, all_resources} = KgEdu.Knowledge.Resource.list_knowledges(
-            authorize?: false,
-            tenant: context.tenant,
-            query: [filter: [course_id: course_id]]
-          )
+          {:ok, all_resources} =
+            KgEdu.Knowledge.Resource.list_knowledges(
+              authorize?: false,
+              tenant: context.tenant,
+              query: [filter: [course_id: course_id]]
+            )
 
           # Count by knowledge type
           subject_count = Enum.count(all_resources, &(&1.knowledge_type == :subject))
@@ -329,62 +365,70 @@ code_interface do
           total_knowledge = length(all_resources)
 
           # Get files count
-          {:ok, files} = KgEdu.Courses.File.list_files(
-            authorize?: false,
-            tenant: context.tenant,
-            query: [filter: [course_id: course_id]]
-          )
+          {:ok, files} =
+            KgEdu.Courses.File.list_files(
+              authorize?: false,
+              tenant: context.tenant,
+              query: [filter: [course_id: course_id]]
+            )
+
           file_count = length(files)
 
           # Get videos count through chapters
-          {:ok, chapters} = KgEdu.Courses.Chapter.list_chapters(
-            authorize?: false,
-            tenant: context.tenant,
-            query: [filter: [course_id: course_id]]
-          )
+          {:ok, chapters} =
+            KgEdu.Courses.Chapter.list_chapters(
+              authorize?: false,
+              tenant: context.tenant,
+              query: [filter: [course_id: course_id]]
+            )
 
           chapter_ids = Enum.map(chapters, & &1.id)
 
-          video_count = if length(chapter_ids) > 0 do
-            {:ok, videos} = KgEdu.Courses.Video.list_videos(
-              authorize?: false,
-              tenant: context.tenant,
-              query: [filter: [chapter_id: [in: chapter_ids]]]
-            )
-            length(videos)
-          else
-            0
-          end
+          video_count =
+            if length(chapter_ids) > 0 do
+              {:ok, videos} =
+                KgEdu.Courses.Video.list_videos(
+                  authorize?: false,
+                  tenant: context.tenant,
+                  query: [filter: [chapter_id: [in: chapter_ids]]]
+                )
+
+              length(videos)
+            else
+              0
+            end
 
           # Also check videos directly linked to knowledge resources in this course
-          {:ok, knowledge_videos} = KgEdu.Courses.Video.list_videos(
-            authorize?: false,
-            tenant: context.tenant,
-            query: [load: [:knowledge_resource]]
-          )
+          {:ok, knowledge_videos} =
+            KgEdu.Courses.Video.list_videos(
+              authorize?: false,
+              tenant: context.tenant,
+              query: [load: [:knowledge_resource]]
+            )
 
           # Count videos where the associated knowledge resource belongs to this course
-          course_video_count = Enum.count(knowledge_videos, fn video ->
-            video.knowledge_resource && video.knowledge_resource.course_id == course_id
-          end)
+          course_video_count =
+            Enum.count(knowledge_videos, fn video ->
+              video.knowledge_resource && video.knowledge_resource.course_id == course_id
+            end)
 
           total_videos = video_count + course_video_count
 
-          {:ok, %{
-            course_id: course_id,
-            knowledge_hierarchy: %{
-              total_knowledge_resources: total_knowledge,
-              subjects: subject_count,
-              units: unit_count,
-              cells: cell_count
-            },
-            media_counts: %{
-              total_files: file_count,
-              total_videos: total_videos
-            },
-            calculated_at: DateTime.utc_now()
-          }}
-
+          {:ok,
+           %{
+             course_id: course_id,
+             knowledge_hierarchy: %{
+               total_knowledge_resources: total_knowledge,
+               subjects: subject_count,
+               units: unit_count,
+               cells: cell_count
+             },
+             media_counts: %{
+               total_files: file_count,
+               total_videos: total_videos
+             },
+             calculated_at: DateTime.utc_now()
+           }}
         rescue
           error ->
             {:error, "Failed to calculate course statistics: #{inspect(error)}"}
@@ -405,64 +449,96 @@ code_interface do
 
         try do
           # Get enrolled users statistics (simplified version without authorization)
-          user_stats = case KgEdu.Accounts.User |> Ash.read(tenant: context.tenant, authorize?: false) do
-            {:ok, users} ->
-              # For now, count all users in the tenant as enrolled students
-              # You can implement proper enrollment logic later
-              total_users = length(users)
-              users_by_role = users |> Enum.group_by(& &1.role) |> Enum.map(fn {role, users} -> {role, length(users)} end) |> Map.new()
+          user_stats =
+            case KgEdu.Accounts.User |> Ash.read(tenant: context.tenant, authorize?: false) do
+              {:ok, users} ->
+                # For now, count all users in the tenant as enrolled students
+                # You can implement proper enrollment logic later
+                total_users = length(users)
 
-              %{
-                total: total_users,
-                by_role: users_by_role,
-                super_admins: Map.get(users_by_role, :super_admin, 0),
-                admins: Map.get(users_by_role, :admin, 0),
-                teachers: Map.get(users_by_role, :teacher, 0),
-                students: Map.get(users_by_role, :user, 0)
-              }
-            {:error, _} ->
-              %{
-                total: 0, by_role: %{}, super_admins: 0, admins: 0, teachers: 0, students: 0
-              }
-          end
+                users_by_role =
+                  users
+                  |> Enum.group_by(& &1.role)
+                  |> Enum.map(fn {role, users} -> {role, length(users)} end)
+                  |> Map.new()
+
+                %{
+                  total: total_users,
+                  by_role: users_by_role,
+                  super_admins: Map.get(users_by_role, :super_admin, 0),
+                  admins: Map.get(users_by_role, :admin, 0),
+                  teachers: Map.get(users_by_role, :teacher, 0),
+                  students: Map.get(users_by_role, :user, 0)
+                }
+
+              {:error, _} ->
+                %{
+                  total: 0,
+                  by_role: %{},
+                  super_admins: 0,
+                  admins: 0,
+                  teachers: 0,
+                  students: 0
+                }
+            end
 
           # Get knowledge resource statistics (without authorization)
-          IO.puts("DEBUG: Starting knowledge resource query for course #{course_id} in tenant #{context.tenant}")
+          IO.puts(
+            "DEBUG: Starting knowledge resource query for course #{course_id} in tenant #{context.tenant}"
+          )
 
-          knowledge_stats = case KgEdu.Knowledge.Resource |> Ash.Query.filter(course_id: course_id) |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, resources} ->
-              total_knowledge = length(resources)
-              IO.puts("DEBUG: SUCCESS: Found #{total_knowledge} knowledge resources for course #{course_id}")
-              IO.puts("DEBUG: Resource IDs: #{Enum.map(resources, & &1.id) |> inspect}")
-              by_type = resources |> Enum.group_by(& &1.knowledge_type) |> Enum.map(fn {type, resources} -> {type, length(resources)} end) |> Map.new()
-              %{
-                total: total_knowledge,
-                by_type: by_type,
-                subjects: Map.get(by_type, :subject, 0),
-                knowledge_units: Map.get(by_type, :knowledge_unit, 0),
-                knowledge_cells: Map.get(by_type, :knowledge_cell, 0)
-              }
-            {:error, error} ->
-              IO.puts("DEBUG: ERROR: Failed to get knowledge resources: #{inspect(error)}")
-              %{total: 0, by_type: %{}, subjects: 0, knowledge_units: 0, knowledge_cells: 0}
-          end
+          knowledge_stats =
+            case KgEdu.Knowledge.Resource
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, resources} ->
+                total_knowledge = length(resources)
+
+                IO.puts(
+                  "DEBUG: SUCCESS: Found #{total_knowledge} knowledge resources for course #{course_id}"
+                )
+
+                IO.puts("DEBUG: Resource IDs: #{Enum.map(resources, & &1.id) |> inspect}")
+
+                by_type =
+                  resources
+                  |> Enum.group_by(& &1.knowledge_type)
+                  |> Enum.map(fn {type, resources} -> {type, length(resources)} end)
+                  |> Map.new()
+
+                %{
+                  total: total_knowledge,
+                  by_type: by_type,
+                  subjects: Map.get(by_type, :subject, 0),
+                  knowledge_units: Map.get(by_type, :knowledge_unit, 0),
+                  knowledge_cells: Map.get(by_type, :knowledge_cell, 0)
+                }
+
+              {:error, error} ->
+                IO.puts("DEBUG: ERROR: Failed to get knowledge resources: #{inspect(error)}")
+                %{total: 0, by_type: %{}, subjects: 0, knowledge_units: 0, knowledge_cells: 0}
+            end
 
           # Get files statistics (without authorization)
-          file_stats = case KgEdu.Courses.File |> Ash.Query.filter(course_id: course_id) |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, files} ->
-              file_count = length(files)
-              IO.puts("DEBUG: Found #{file_count} files for course #{course_id}")
-              %{total: file_count}
-            {:error, error} ->
-              IO.puts("DEBUG: Error getting files: #{inspect(error)}")
-              %{total: 0}
-          end
+          file_stats =
+            case KgEdu.Courses.File
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, files} ->
+                file_count = length(files)
+                IO.puts("DEBUG: Found #{file_count} files for course #{course_id}")
+                %{total: file_count}
+
+              {:error, error} ->
+                IO.puts("DEBUG: Error getting files: #{inspect(error)}")
+                %{total: 0}
+            end
 
           # Get videos statistics (step-by-step debugging approach)
           IO.puts("DEBUG: Starting video count investigation for course #{course_id}")
@@ -473,65 +549,96 @@ code_interface do
           course_resources = []
 
           # Step 1: Get all videos in the tenant first to see what exists
-          all_videos = case KgEdu.Courses.Video |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, videos} ->
-              IO.puts("DEBUG: Total videos in tenant: #{length(videos)}")
-              Enum.each(videos, fn video ->
-                IO.puts("DEBUG: Video - ID: #{video.id}, Title: #{video.title}, Chapter ID: #{Map.get(video, :chapter_id)}, Knowledge Resource ID: #{Map.get(video, :knowledge_resource_id)}")
-              end)
-              videos
-            {:error, error} ->
-              IO.puts("DEBUG: Error getting all videos: #{inspect(error)}")
-              []
-          end
+          all_videos =
+            case KgEdu.Courses.Video
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, videos} ->
+                IO.puts("DEBUG: Total videos in tenant: #{length(videos)}")
+
+                Enum.each(videos, fn video ->
+                  IO.puts(
+                    "DEBUG: Video - ID: #{video.id}, Title: #{video.title}, Chapter ID: #{Map.get(video, :chapter_id)}, Knowledge Resource ID: #{Map.get(video, :knowledge_resource_id)}"
+                  )
+                end)
+
+                videos
+
+              {:error, error} ->
+                IO.puts("DEBUG: Error getting all videos: #{inspect(error)}")
+                []
+            end
 
           # Step 2: Get all chapters in this course
-          course_chapters = case KgEdu.Courses.Chapter |> Ash.Query.filter(course_id: course_id) |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, chapters} ->
-              IO.puts("DEBUG: Found #{length(chapters)} chapters for course #{course_id}")
-              Enum.each(chapters, fn chapter ->
-                IO.puts("DEBUG: Chapter - ID: #{chapter.id}, Title: #{Map.get(chapter, :title)}")
-              end)
-              chapters
-            {:error, error} ->
-              IO.puts("DEBUG: Error getting chapters: #{inspect(error)}")
-              []
-          end
+          course_chapters =
+            case KgEdu.Courses.Chapter
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, chapters} ->
+                IO.puts("DEBUG: Found #{length(chapters)} chapters for course #{course_id}")
+
+                Enum.each(chapters, fn chapter ->
+                  IO.puts(
+                    "DEBUG: Chapter - ID: #{chapter.id}, Title: #{Map.get(chapter, :title)}"
+                  )
+                end)
+
+                chapters
+
+              {:error, error} ->
+                IO.puts("DEBUG: Error getting chapters: #{inspect(error)}")
+                []
+            end
 
           # Step 3: Get all knowledge resources in this course
-          course_resources = case KgEdu.Knowledge.Resource |> Ash.Query.filter(course_id: course_id) |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, resources} ->
-              IO.puts("DEBUG: Found #{length(resources)} knowledge resources for course #{course_id}")
-              Enum.each(resources, fn resource ->
-                IO.puts("DEBUG: Resource - ID: #{resource.id}, Name: #{resource.name}, Type: #{resource.knowledge_type}")
-              end)
-              resources
-            {:error, error} ->
-              IO.puts("DEBUG: Error getting knowledge resources: #{inspect(error)}")
-              []
-          end
+          course_resources =
+            case KgEdu.Knowledge.Resource
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, resources} ->
+                IO.puts(
+                  "DEBUG: Found #{length(resources)} knowledge resources for course #{course_id}"
+                )
+
+                Enum.each(resources, fn resource ->
+                  IO.puts(
+                    "DEBUG: Resource - ID: #{resource.id}, Name: #{resource.name}, Type: #{resource.knowledge_type}"
+                  )
+                end)
+
+                resources
+
+              {:error, error} ->
+                IO.puts("DEBUG: Error getting knowledge resources: #{inspect(error)}")
+                []
+            end
 
           # Step 4: Count videos by matching chapter IDs
           chapter_ids = Enum.map(course_chapters, & &1.id)
-          chapter_linked_videos = Enum.count(all_videos, fn video ->
-            Map.get(video, :chapter_id) in chapter_ids
-          end)
+
+          chapter_linked_videos =
+            Enum.count(all_videos, fn video ->
+              Map.get(video, :chapter_id) in chapter_ids
+            end)
+
           IO.puts("DEBUG: Videos linked to course chapters: #{chapter_linked_videos}")
 
           # Step 5: Count videos by matching knowledge resource IDs
           resource_ids = Enum.map(course_resources, & &1.id)
-          knowledge_linked_videos = Enum.count(all_videos, fn video ->
-            Map.get(video, :knowledge_resource_id) in resource_ids
-          end)
+
+          knowledge_linked_videos =
+            Enum.count(all_videos, fn video ->
+              Map.get(video, :knowledge_resource_id) in resource_ids
+            end)
+
           IO.puts("DEBUG: Videos linked to knowledge resources: #{knowledge_linked_videos}")
 
           total_videos = chapter_linked_videos + knowledge_linked_videos
@@ -544,77 +651,99 @@ code_interface do
           }
 
           # Get homework statistics (without authorization)
-          homework_stats = case KgEdu.Knowledge.Homework |> Ash.Query.filter(course_id: course_id) |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, homeworks} ->
-              homework_count = length(homeworks)
-              IO.puts("DEBUG: Found #{homework_count} homeworks for course #{course_id}")
-              %{total: homework_count}
-            {:error, error} ->
-              IO.puts("DEBUG: Error getting homeworks: #{inspect(error)}")
-              %{total: 0}
-          end
+          homework_stats =
+            case KgEdu.Knowledge.Homework
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, homeworks} ->
+                homework_count = length(homeworks)
+                IO.puts("DEBUG: Found #{homework_count} homeworks for course #{course_id}")
+                %{total: homework_count}
+
+              {:error, error} ->
+                IO.puts("DEBUG: Error getting homeworks: #{inspect(error)}")
+                %{total: 0}
+            end
 
           # Get exercise statistics (without authorization)
-          exercise_stats = case KgEdu.Knowledge.Exercise |> Ash.Query.filter(course_id: course_id) |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, exercises} ->
-              exercise_count = length(exercises)
-              IO.puts("DEBUG: Found #{exercise_count} exercises for course #{course_id}")
-              %{total: exercise_count}
-            {:error, error} ->
-              IO.puts("DEBUG: Error getting exercises: #{inspect(error)}")
-              %{total: 0}
-          end
+          exercise_stats =
+            case KgEdu.Knowledge.Exercise
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, exercises} ->
+                exercise_count = length(exercises)
+                IO.puts("DEBUG: Found #{exercise_count} exercises for course #{course_id}")
+                %{total: exercise_count}
+
+              {:error, error} ->
+                IO.puts("DEBUG: Error getting exercises: #{inspect(error)}")
+                %{total: 0}
+            end
 
           # Get activity statistics (without authorization)
-          activity_stats = case KgEdu.Activity.ActivityLog |> Ash.read(
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, activities} ->
-              course_activities = activities |> Enum.filter(fn activity ->
-                # Filter activities related to this course (you may need to adjust this logic based on your activity structure)
-                activity.metadata && Map.get(activity.metadata, :course_id) == course_id
-              end)
+          activity_stats =
+            case KgEdu.Activity.ActivityLog
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, activities} ->
+                course_activities =
+                  activities
+                  |> Enum.filter(fn activity ->
+                    # Filter activities related to this course (you may need to adjust this logic based on your activity structure)
+                    activity.metadata && Map.get(activity.metadata, :course_id) == course_id
+                  end)
 
-              by_type = course_activities |> Enum.group_by(& &1.action_type) |> Enum.map(fn {type, activities} -> {type, length(activities)} end) |> Map.new()
+                by_type =
+                  course_activities
+                  |> Enum.group_by(& &1.action_type)
+                  |> Enum.map(fn {type, activities} -> {type, length(activities)} end)
+                  |> Map.new()
 
-              %{
-                total: length(course_activities),
-                by_type: by_type
-              }
-            {:error, _} ->
-              %{total: 0, by_type: %{}}
-          end
+                %{
+                  total: length(course_activities),
+                  by_type: by_type
+                }
+
+              {:error, _} ->
+                %{total: 0, by_type: %{}}
+            end
 
           # Get course details (without authorization)
-          course_details = case KgEdu.Courses.Course |> Ash.get(
-            course_id,
-            tenant: context.tenant,
-            authorize?: false
-          ) do
-            {:ok, course} ->
-              %{
-                id: course.id,
-                title: course.title,
-                description: course.description,
-                publish_status: course.publish_status,
-                created_at: DateTime.utc_now()  # Using current time since we don't have timestamps
-              }
-            {:error, _} ->
-              %{
-                id: course_id,
-                title: "Unknown Course",
-                description: "",
-                publish_status: false,
-                created_at: DateTime.utc_now()
-              }
-          end
+          course_details =
+            case KgEdu.Courses.Course
+                 |> Ash.get(
+                   course_id,
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, course} ->
+                %{
+                  id: course.id,
+                  title: course.title,
+                  description: course.description,
+                  publish_status: course.publish_status,
+
+                  # Using current time since we don't have timestamps
+                  created_at: DateTime.utc_now()
+                }
+
+              {:error, _} ->
+                %{
+                  id: course_id,
+                  title: "Unknown Course",
+                  description: "",
+                  publish_status: false,
+                  created_at: DateTime.utc_now()
+                }
+            end
 
           overview = %{
             course: course_details,
@@ -630,13 +759,13 @@ code_interface do
               videos: video_stats.total,
               homeworks: homework_stats.total,
               exercises: exercise_stats.total,
-              total: file_stats.total + video_stats.total + homework_stats.total + exercise_stats.total
+              total:
+                file_stats.total + video_stats.total + homework_stats.total + exercise_stats.total
             },
             calculated_at: DateTime.utc_now()
           }
 
           {:ok, overview}
-
         rescue
           error ->
             {:error, "Failed to get course overview: #{inspect(error)}"}
@@ -668,6 +797,10 @@ code_interface do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do
@@ -731,8 +864,6 @@ code_interface do
       description "Whether the course is published"
     end
 
-
-
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -743,7 +874,6 @@ code_interface do
       destination_attribute :course_id
       description "Teacher assignments for this course"
     end
-
 
     has_many :course_enrollments, KgEdu.Courses.CourseEnrollment do
       public? true
@@ -800,6 +930,15 @@ code_interface do
       public? true
       destination_attribute :course_id
       description "Main abilities for this course"
+    end
+  end
+
+  aggregates do
+    # Count videos through chapters
+    count :videos_count, [:chapters, :videos]
+
+    count :knowledge_resources_count, :knowledge_resources do
+      public? true
     end
   end
 end

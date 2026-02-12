@@ -16,10 +16,6 @@ defmodule KgEdu.Knowledge.MainAbility do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "main_ability"
   end
@@ -53,6 +49,7 @@ defmodule KgEdu.Knowledge.MainAbility do
 
     read :by_course do
       description "Get all main abilities for a specific course"
+
       argument :course_id, :uuid do
         allow_nil? false
       end
@@ -62,6 +59,7 @@ defmodule KgEdu.Knowledge.MainAbility do
 
     read :by_name do
       description "Get a main ability by name within a course"
+
       argument :name, :string do
         allow_nil? false
       end
@@ -79,6 +77,10 @@ defmodule KgEdu.Knowledge.MainAbility do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

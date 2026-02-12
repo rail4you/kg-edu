@@ -15,15 +15,6 @@ defmodule KgEdu.Courses.Chapter do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
-  typescript do
-    # Choose appropriate name
-    type_name "Chapter"
-  end
-
   json_api do
     type "chapter"
   end
@@ -36,6 +27,11 @@ defmodule KgEdu.Courses.Chapter do
       rpc_action :update_chapter, :update
       rpc_action :delete_chapter, :destroy
     end
+  end
+
+  typescript do
+    # Choose appropriate name
+    type_name "Chapter"
   end
 
   code_interface do
@@ -60,11 +56,13 @@ defmodule KgEdu.Courses.Chapter do
 
     read :by_course do
       description "Get all chapters for a specific course"
+
       argument :course_id, :uuid do
         allow_nil? false
       end
 
       filter expr(course_id == ^arg(:course_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, sort_order: :asc, title: :asc)
       end
@@ -72,11 +70,13 @@ defmodule KgEdu.Courses.Chapter do
 
     read :root_chapters do
       description "Get root chapters (chapters without a parent) for a specific course"
+
       argument :course_id, :uuid do
         allow_nil? false
       end
 
       filter expr(course_id == ^arg(:course_id) and is_nil(parent_chapter_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, sort_order: :asc, title: :asc)
       end
@@ -84,11 +84,13 @@ defmodule KgEdu.Courses.Chapter do
 
     read :subchapters do
       description "Get subchapters for a specific chapter"
+
       argument :parent_chapter_id, :uuid do
         allow_nil? false
       end
 
       filter expr(parent_chapter_id == ^arg(:parent_chapter_id))
+
       prepare fn query, _context ->
         Ash.Query.sort(query, sort_order: :asc, title: :asc)
       end
@@ -97,11 +99,13 @@ defmodule KgEdu.Courses.Chapter do
     read :get_with_subchapters do
       description "Get a chapter with all its subchapters loaded recursively"
       get? true
+
       argument :id, :uuid do
         allow_nil? false
       end
 
       filter expr(id == ^arg(:id))
+
       prepare fn query, _context ->
         Ash.Query.load(query, subchapters: [:subchapters])
       end
@@ -109,11 +113,13 @@ defmodule KgEdu.Courses.Chapter do
 
     read :course_full_hierarchy do
       description "Get the nested full hierarchy of chapters for a course (include chapters and subchapters)"
+
       argument :course_id, :uuid do
         allow_nil? false
       end
 
       filter expr(course_id == ^arg(:course_id) and is_nil(parent_chapter_id))
+
       prepare fn query, _context ->
         query
         |> Ash.Query.sort(sort_order: :asc, title: :asc)
@@ -138,6 +144,7 @@ defmodule KgEdu.Courses.Chapter do
               else
                 {:error, "Parent chapter must belong to the same course"}
               end
+
             {:error, _} ->
               {:error, "Parent chapter not found"}
           end
@@ -152,6 +159,10 @@ defmodule KgEdu.Courses.Chapter do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

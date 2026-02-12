@@ -10,7 +10,7 @@ defmodule KgEduWeb.ExerciseAPITest do
   describe "POST /api/exercises/ai/generate" do
     setup %{conn: conn} do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Physics 101",
@@ -62,7 +62,7 @@ defmodule KgEduWeb.ExerciseAPITest do
       # Note: This test will fail in practice because ReqLLM needs actual API key
       # But it demonstrates the correct API structure
       conn = post(conn, "/api/exercises/ai/generate", params)
-      
+
       # Should return either success or error response
       # In real usage, this would create an AI-generated exercise
       assert response = json_response(conn, 201)
@@ -81,7 +81,7 @@ defmodule KgEduWeb.ExerciseAPITest do
       }
 
       conn = post(conn, "/api/exercises/ai/generate", params)
-      
+
       # Should return error response
       assert response = json_response(conn, 422)
       assert is_map(response)
@@ -102,7 +102,7 @@ defmodule KgEduWeb.ExerciseAPITest do
       }
 
       conn = post(conn, "/api/exercises/ai/generate", params)
-      
+
       # Should return error response
       assert response = json_response(conn, 422)
       assert is_map(response)
@@ -112,7 +112,7 @@ defmodule KgEduWeb.ExerciseAPITest do
   describe "GET /api/exercises/ai/recent" do
     setup %{conn: conn} do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Mathematics 101",
@@ -156,25 +156,29 @@ defmodule KgEduWeb.ExerciseAPITest do
 
     test "returns only AI-generated exercises", %{conn: conn, ai_exercise: ai_exercise} do
       conn = get(conn, "/api/exercises/ai/recent")
-      
+
       response = json_response(conn, 200)
       assert is_map(response)
       assert Map.has_key?(response, "data")
-      
+
       exercises = response["data"]
       assert length(exercises) == 1
-      
+
       exercise = hd(exercises)
       assert exercise["id"] == ai_exercise.id
       assert exercise["attributes"]["ai_type"] == "ai_generated"
     end
 
-    test "filters by course_id when provided", %{conn: conn, course: course, ai_exercise: ai_exercise} do
+    test "filters by course_id when provided", %{
+      conn: conn,
+      course: course,
+      ai_exercise: ai_exercise
+    } do
       conn = get(conn, "/api/exercises/ai/recent?course_id=#{course.id}")
-      
+
       response = json_response(conn, 200)
       exercises = response["data"]
-      
+
       assert length(exercises) == 1
       exercise = hd(exercises)
       assert exercise["id"] == ai_exercise.id
@@ -182,22 +186,22 @@ defmodule KgEduWeb.ExerciseAPITest do
 
     test "limits results when limit parameter is provided", %{conn: conn} do
       conn = get(conn, "/api/exercises/ai/recent?limit=1")
-      
+
       response = json_response(conn, 200)
       exercises = response["data"]
-      
+
       assert length(exercises) <= 1
     end
 
     test "returns empty list when no AI exercises exist", %{conn: conn} do
       # Delete the AI exercise first
       Exercise.delete_exercise(%{id: ai_exercise.id})
-      
+
       conn = get(conn, "/api/exercises/ai/recent")
-      
+
       response = json_response(conn, 200)
       exercises = response["data"]
-      
+
       assert exercises == []
     end
   end
@@ -205,7 +209,7 @@ defmodule KgEduWeb.ExerciseAPITest do
   describe "GET /api/exercises/:id" do
     setup %{conn: conn} do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Chemistry 101",
@@ -232,21 +236,24 @@ defmodule KgEduWeb.ExerciseAPITest do
 
     test "returns AI exercise with all attributes", %{conn: conn, exercise: exercise} do
       conn = get(conn, "/api/exercises/#{exercise.id}")
-      
+
       response = json_response(conn, 200)
       exercise_data = response["data"]
-      
+
       assert exercise_data["id"] == exercise.id
       assert exercise_data["attributes"]["title"] == "AI Generated Chemistry Question"
       assert exercise_data["attributes"]["ai_type"] == "ai_generated"
       assert exercise_data["attributes"]["question_type"] == "fill_in_blank"
-      assert exercise_data["attributes"]["question_content"] == "What is the chemical formula for water?"
+
+      assert exercise_data["attributes"]["question_content"] ==
+               "What is the chemical formula for water?"
+
       assert exercise_data["attributes"]["answer"] == "H2O"
     end
 
     test "returns 404 for non-existent exercise", %{conn: conn} do
       conn = get(conn, "/api/exercises/#{UUID.uuid4()}")
-      
+
       response = json_response(conn, 404)
       assert is_map(response)
     end
@@ -255,7 +262,7 @@ defmodule KgEduWeb.ExerciseAPITest do
   describe "standard exercise CRUD operations" do
     setup %{conn: conn} do
       user = user_fixture()
-      
+
       {:ok, course} =
         Course.create_course(%{
           title: "Biology 101",
@@ -282,7 +289,7 @@ defmodule KgEduWeb.ExerciseAPITest do
             question_type: "multiple_choice",
             options: %{
               "A" => "Nucleus",
-              "B" => "Mitochondria", 
+              "B" => "Mitochondria",
               "C" => "Ribosome",
               "D" => "Endoplasmic reticulum"
             },
@@ -292,10 +299,10 @@ defmodule KgEduWeb.ExerciseAPITest do
       }
 
       conn = post(conn, "/api/exercises", params)
-      
+
       response = json_response(conn, 201)
       exercise_data = response["data"]
-      
+
       assert exercise_data["attributes"]["title"] == "Regular Biology Question"
       assert exercise_data["attributes"]["ai_type"] == nil
     end
@@ -316,10 +323,10 @@ defmodule KgEduWeb.ExerciseAPITest do
       }
 
       conn = post(conn, "/api/exercises", params)
-      
+
       response = json_response(conn, 201)
       exercise_data = response["data"]
-      
+
       assert exercise_data["attributes"]["title"] == "Manual AI Exercise"
       assert exercise_data["attributes"]["ai_type"] == "ai_generated"
     end

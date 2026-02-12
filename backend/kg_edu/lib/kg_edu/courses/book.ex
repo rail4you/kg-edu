@@ -11,10 +11,6 @@ defmodule KgEdu.Courses.Book do
     repo KgEdu.Repo
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   json_api do
     type "book"
   end
@@ -59,7 +55,16 @@ defmodule KgEdu.Courses.Book do
     end
 
     create :create do
-      accept [:title, :publish, :cover_image, :attachment, :author, :publisher, :course_id, :created_by_id]
+      accept [
+        :title,
+        :publish,
+        :cover_image,
+        :attachment,
+        :author,
+        :publisher,
+        :course_id,
+        :created_by_id
+      ]
 
       argument :course_id, :uuid, allow_nil?: false
       change set_attribute(:course_id, arg(:course_id))
@@ -75,6 +80,10 @@ defmodule KgEdu.Courses.Book do
     policy always() do
       authorize_if always()
     end
+  end
+
+  multitenancy do
+    strategy :context
   end
 
   attributes do

@@ -5,7 +5,10 @@ tenant = "org_2af44c7b_081a_497a_9858_365fa90ad5d7"
 IO.puts("\n=== Debugging EmailSender ===\n")
 
 # Get the email message
-case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant, authorize?: false) do
+case KgEdu.Email.EmailMessage.get_email_message(email_message_id,
+       tenant: tenant,
+       authorize?: false
+     ) do
   {:ok, email_msg} ->
     IO.puts("✓ Got email message:")
     IO.puts("  ID: #{email_msg.id}")
@@ -15,9 +18,10 @@ case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant
     IO.puts("\n=== Testing EmailSender.send_email ===\n")
 
     # Test EmailSender with timeout
-    task = Task.async(fn ->
-      KgEdu.Email.EmailSender.send_email(email_msg, tenant: tenant)
-    end)
+    task =
+      Task.async(fn ->
+        KgEdu.Email.EmailSender.send_email(email_msg, tenant: tenant)
+      end)
 
     case Task.yield(task, 10000) do
       {:ok, result} ->
@@ -35,6 +39,7 @@ case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant
               {:ok, updated} ->
                 IO.puts("✓ Message updated to sent")
                 IO.puts("  Sent at: #{updated.sent_at}")
+
               {:error, error} ->
                 IO.puts("✗ Failed to update message:")
                 IO.puts(inspect(error, pretty: true))
@@ -51,6 +56,7 @@ case KgEdu.Email.EmailMessage.get_email_message(email_message_id, tenant: tenant
               {:ok, updated} ->
                 IO.puts("✓ Message updated to failed")
                 IO.puts("  Error: #{updated.error_message}")
+
               {:error, error} ->
                 IO.puts("✗ Failed to update message:")
                 IO.puts(inspect(error, pretty: true))
