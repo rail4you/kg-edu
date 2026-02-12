@@ -58,10 +58,6 @@ defmodule KgEdu.Utils.FileTemplate do
     end
   end
 
-  multitenancy do
-    strategy :context
-  end
-
   attributes do
     uuid_primary_key :id do
       public? true
