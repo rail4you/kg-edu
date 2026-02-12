@@ -187,13 +187,15 @@ defmodule KgEdu.Knowledge.StudentExam do
             # Check if answers exist, create them if not
             case ensure_exam_answers(existing_student_exam, exam_id, tenant) do
               :ok ->
-                {:ok, %{
-                  id: existing_student_exam.id,
-                  exam_id: existing_student_exam.exam_id,
-                  student_id: existing_student_exam.student_id,
-                  status: existing_student_exam.status,
-                  started_at: existing_student_exam.started_at
-                }}
+                {:ok,
+                 %{
+                   id: existing_student_exam.id,
+                   exam_id: existing_student_exam.exam_id,
+                   student_id: existing_student_exam.student_id,
+                   status: existing_student_exam.status,
+                   started_at: existing_student_exam.started_at
+                 }}
+
               {:error, reason} ->
                 {:error, "Failed to ensure exam answers: #{inspect(reason)}"}
             end
@@ -208,13 +210,14 @@ defmodule KgEdu.Knowledge.StudentExam do
                  ) do
               {:ok, new_student_exam} ->
                 # Return just the essential fields as a map
-                {:ok, %{
-                  id: new_student_exam.id,
-                  exam_id: new_student_exam.exam_id,
-                  student_id: new_student_exam.student_id,
-                  status: new_student_exam.status,
-                  started_at: new_student_exam.started_at
-                }}
+                {:ok,
+                 %{
+                   id: new_student_exam.id,
+                   exam_id: new_student_exam.exam_id,
+                   student_id: new_student_exam.student_id,
+                   status: new_student_exam.status,
+                   started_at: new_student_exam.started_at
+                 }}
 
               {:error, reason} ->
                 {:error, "Failed to start exam: #{inspect(reason)}"}
@@ -400,7 +403,12 @@ defmodule KgEdu.Knowledge.StudentExam do
               {:error, "还有题目未批改，请先完成以下题目的批改: #{ungraded_info}"}
             else
               # All answers are graded, calculate total score
-              total_score = Enum.reduce(answers, 0, fn ans, acc -> acc + ans.points_earned end)
+              total_score =
+                answers
+                |> Enum.reduce(Decimal.new(0), fn ans, acc ->
+                  Decimal.add(acc, Decimal.new(ans.points_earned))
+                end)
+                |> Decimal.to_integer()
 
               # Update student exam with total score and passed status
               case Ash.get(KgEdu.Knowledge.StudentExam, student_exam_id,

@@ -11,10 +11,10 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
       {:ok, token} ->
         # Try to decode JWT manually to avoid Ash's validation issues
         case decode_jwt_manually(token) do
-          {:ok, %{"tenant" => tenant, "sub" => subject}}
-          when not is_nil(tenant) and not is_nil(subject) ->
+          {:ok, %{"tenant" => tenant, "sub" => subject_value}}
+          when not is_nil(tenant) and not is_nil(subject_value) ->
             # Extract user ID from subject (format: "user?id=<uuid>")
-            user_id = extract_user_id_from_subject(subject)
+            user_id = extract_user_id_from_subject(subject_value)
 
             # Load user with tenant context
             case load_user_with_tenant(user_id, tenant) do
@@ -22,9 +22,6 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
                 # Set tenant and user info in connection
                 conn
                 |> put_private(:ash_tenant, tenant)
-                |> assign(:ash_tenant, tenant)
-                # For Ash.PlugHelpers.get_tenant/1
-                |> assign(:tenant, tenant)
                 # Set user for set_actor plug
                 |> assign(:current_user, user)
                 |> put_private(:ash_context, %{tenant: tenant, actor: user})
@@ -40,9 +37,6 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
 
                 conn
                 |> put_private(:ash_tenant, tenant)
-                |> assign(:ash_tenant, tenant)
-                # For Ash.PlugHelpers.get_tenant/1
-                |> assign(:tenant, tenant)
                 |> put_private(:ash_context, %{tenant: tenant})
                 |> put_private(:ash, %{tenant: tenant, context: %{tenant: tenant}})
             end
@@ -51,9 +45,6 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
             # Token has tenant but no subject - just set tenant
             conn
             |> put_private(:ash_tenant, tenant)
-            |> assign(:ash_tenant, tenant)
-            # For Ash.PlugHelpers.get_tenant/1
-            |> assign(:tenant, tenant)
             |> put_private(:ash_context, %{tenant: tenant})
             |> put_private(:ash, %{tenant: tenant, context: %{tenant: tenant}})
 
@@ -64,23 +55,21 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
           {:error, reason} ->
             # Manual decode failed, try Ash's peek as fallback
             require Logger
-            Logger.warn("Manual JWT decode failed: #{inspect(reason)}, trying Ash peek")
+
+            Logger.warning("Manual JWT decode failed: #{inspect(reason)}, trying Ash peek")
 
             case AshAuthentication.Jwt.peek(token) do
               {:ok, %{"tenant" => tenant}} when not is_nil(tenant) ->
                 conn
                 |> put_private(:ash_tenant, tenant)
-                |> assign(:ash_tenant, tenant)
-                # For Ash.PlugHelpers.get_tenant/1
-                |> assign(:tenant, tenant)
                 |> put_private(:ash_context, %{tenant: tenant})
                 |> put_private(:ash, %{tenant: tenant, context: %{tenant: tenant}})
 
               {:ok, _} ->
                 conn
 
-              {:error, _reason} ->
-                Logger.warn("Ash JWT peek failed: #{inspect(_reason)}")
+              {:error, reason} ->
+                Logger.warning("Ash JWT peek failed: #{inspect(reason)}")
                 conn
             end
         end
@@ -97,7 +86,7 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
   defp decode_jwt_manually(token) do
     try do
       # Split token into parts
-      [header_b64, payload_b64, _signature] = String.split(token, ".")
+      [_header_b64, payload_b64, _signature] = String.split(token, ".")
 
       # Decode payload (add padding if needed)
       payload_b64 =

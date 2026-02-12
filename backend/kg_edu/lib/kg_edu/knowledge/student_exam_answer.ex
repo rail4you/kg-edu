@@ -174,7 +174,7 @@ defmodule KgEdu.Knowledge.StudentExamAnswer do
                    action: :grade,
                    tenant: tenant
                  ) do
-              {:ok, _updated_record} -> :ok
+              {:ok, updated_record} -> {:ok, updated_record}
               {:error, reason} -> {:error, reason}
             end
 
