@@ -53,6 +53,7 @@ defmodule KgEdu.Courses do
       rpc_action :calculate_course_statistics, :calculate_course_statistics
       rpc_action :course_overview, :course_overview
       rpc_action :my_courses, :my_courses
+      rpc_action :get_dashboard_stats, :get_dashboard_stats
     end
 
     resource KgEdu.Courses.Chapter do
@@ -61,6 +62,7 @@ defmodule KgEdu.Courses do
       rpc_action :get_chapter, :read
       rpc_action :update_chapter, :update
       rpc_action :delete_chapter, :destroy
+      rpc_action :reorder_chapters, :reorder
     end
 
     resource KgEdu.Courses.File do
@@ -70,6 +72,7 @@ defmodule KgEdu.Courses do
       rpc_action :delete_file, :destroy
       rpc_action :link_file_to_knowledge, :link_file_to_knowledge
       rpc_action :unlink_file_from_knowledge, :unlink_file_from_knowledge
+      rpc_action :list_ai_generated_files_by_course, :ai_generated_by_course
       # rpc_action :get_file, :get
     end
 
@@ -153,9 +156,19 @@ defmodule KgEdu.Courses do
       rpc_action :update_course_assignment, :update
       rpc_action :delete_course_assignment, :destroy
       rpc_action :list_assignments_by_teacher, :by_teacher
+      rpc_action :list_assignments_for_teacher, :assignments_for_teacher
       rpc_action :list_assignments_by_course, :by_course
       rpc_action :assign_course_to_teacher, :create
       rpc_action :remove_course_from_teacher, :remove_course_from_teacher
+    end
+
+    resource KgEdu.Courses.Discussion do
+      rpc_action :create_discussion, :create
+      rpc_action :list_discussions, :read
+      rpc_action :list_discussions_by_course, :by_course
+      rpc_action :get_discussion, :read
+      rpc_action :update_discussion, :update
+      rpc_action :delete_discussion, :destroy
     end
   end
 
@@ -171,5 +184,6 @@ defmodule KgEdu.Courses do
     resource KgEdu.Courses.Link
     resource KgEdu.Courses.SubjectCategory
     resource KgEdu.Courses.CourseVideo
+    resource KgEdu.Courses.Discussion
   end
 end

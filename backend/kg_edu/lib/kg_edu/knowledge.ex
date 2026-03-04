@@ -26,6 +26,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_course_learning_stats_by_student, :get_course_learning_stats_by_student
       rpc_action :add_tag_to_knowledge, :add_tag
       rpc_action :remove_tag_from_knowledge, :remove_tag
+      rpc_action :regenerate_sort_paths, :regenerate_sort_paths
+      rpc_action :reorder_knowledge_resource, :reorder
     end
 
     resource KgEdu.Knowledge.Relation do
@@ -46,6 +48,7 @@ defmodule KgEdu.Knowledge do
 
     resource KgEdu.Knowledge.Exercise do
       rpc_action :list_exercises, :read
+      rpc_action :get_exercises_by_course, :by_course
       rpc_action :create_exercise, :create
       rpc_action :destroy_exercises, :destroy
       rpc_action :get_exercise, :by_id
@@ -56,6 +59,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :unlink_exercise_from_knowledge, :unlink_exercise_from_knowledge
       rpc_action :import_exercises_from_excel, :import_exercises_from_excel
       rpc_action :export_exercise_template, :export_exercise_template
+      rpc_action :move_exercise_up, :move_up
+      rpc_action :move_exercise_down, :move_down
     end
 
     resource KgEdu.Knowledge.Question do
@@ -73,6 +78,9 @@ defmodule KgEdu.Knowledge do
       rpc_action :unlink_question_from_knowledge, :unlink_question_from_knowledge
       rpc_action :import_questions_from_xlsx, :import_questions_from_xlsx
       rpc_action :export_question_template, :export_question_template
+      rpc_action :bulk_destroy_questions, :bulk_destroy_questions
+      rpc_action :move_question_up, :move_up
+      rpc_action :move_question_down, :move_down
     end
 
     resource KgEdu.Knowledge.QuestionConnection do
@@ -95,6 +103,9 @@ defmodule KgEdu.Knowledge do
       rpc_action :unlink_homework_from_knowledge, :unlink_homework_from_knowledge
       rpc_action :import_homework_from_xlsx, :import_homework_from_xlsx
       rpc_action :export_homework_template, :export_homework_template
+      rpc_action :move_homework_up, :move_up
+      rpc_action :move_homework_down, :move_down
+      rpc_action :bulk_destroy_homeworks, :bulk_destroy
     end
 
     resource KgEdu.Knowledge.KnowledgePointCognitive do

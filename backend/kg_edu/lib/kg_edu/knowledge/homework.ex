@@ -7,6 +7,7 @@ defmodule KgEdu.Knowledge.Homework do
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
   require Logger
+  require Ash.Query
 
   postgres do
     table "homeworks"
@@ -41,10 +42,25 @@ defmodule KgEdu.Knowledge.Homework do
     define :import_homework_from_xlsx, action: :import_homework_from_xlsx
     define :export_homework_template, action: :export_homework_template
     define :log_homework_submit_activity, action: :log_homework_submit
+    define :move_homework_up, action: :move_up
+    define :move_homework_down, action: :move_down
+    define :bulk_destroy_homeworks, action: :bulk_destroy
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:update, :destroy]
+
+    read :read do
+      primary? true
+      description "List homeworks with optional pagination"
+
+      pagination do
+        required? false
+        offset? true
+        keyset? true
+        countable true
+      end
+    end
 
     read :by_id do
       description "Get a homework by ID"
@@ -104,7 +120,8 @@ defmodule KgEdu.Knowledge.Homework do
         :course_id,
         :chapter_id,
         :knowledge_resource_id,
-        :created_by_id
+        :created_by_id,
+        :position
       ]
 
       validate fn changeset, _context ->
@@ -170,7 +187,7 @@ defmodule KgEdu.Knowledge.Homework do
 
     update :update_homework do
       description "Update a homework"
-      accept [:title, :content, :score, :answer, :chapter_id, :knowledge_resource_id]
+      accept [:title, :content, :score, :answer, :chapter_id, :knowledge_resource_id, :position]
       require_atomic? false
 
       # validate fn changeset, _context ->
@@ -237,6 +254,105 @@ defmodule KgEdu.Knowledge.Homework do
       change set_attribute(:knowledge_resource_id, nil)
     end
 
+    update :move_up do
+      description "将作业在课程内向上移动一位"
+      require_atomic? false
+
+      change fn changeset, context ->
+        homework = changeset.data
+        course_id = homework.course_id
+        current_position = homework.position || 0
+
+        # 获取当前课程中 position 小于当前作业的最大 position 的作业
+        sibling =
+          KgEdu.Knowledge.Homework
+          |> Ash.Query.filter(course_id == ^course_id)
+          |> Ash.Query.filter(position < ^current_position)
+          |> Ash.Query.sort(position: :desc)
+          |> Ash.Query.limit(1)
+          |> Ash.read_one!(tenant: context.tenant, authorize?: false)
+
+        if sibling do
+          new_position = sibling.position
+
+          sibling
+          |> Ash.Changeset.for_update(:update_homework, %{position: current_position})
+          |> Ash.update!(tenant: context.tenant, authorize?: false)
+
+          Ash.Changeset.change_attribute(changeset, :position, new_position)
+        else
+          changeset
+        end
+      end
+    end
+
+    update :move_down do
+      description "将作业在课程内向下移动一位"
+      require_atomic? false
+
+      change fn changeset, context ->
+        homework = changeset.data
+        course_id = homework.course_id
+        current_position = homework.position || 0
+
+        # 获取当前课程中 position 大于当前作业的最小 position 的作业
+        sibling =
+          KgEdu.Knowledge.Homework
+          |> Ash.Query.filter(course_id == ^course_id)
+          |> Ash.Query.filter(position > ^current_position)
+          |> Ash.Query.sort(position: :asc)
+          |> Ash.Query.limit(1)
+          |> Ash.read_one!(tenant: context.tenant, authorize?: false)
+
+        if sibling do
+          new_position = sibling.position
+
+          sibling
+          |> Ash.Changeset.for_update(:update_homework, %{position: current_position})
+          |> Ash.update!(tenant: context.tenant, authorize?: false)
+
+          Ash.Changeset.change_attribute(changeset, :position, new_position)
+        else
+          changeset
+        end
+      end
+    end
+
+    action :bulk_destroy do
+      description "批量删除作业"
+
+      argument :homework_ids, {:array, :uuid} do
+        allow_nil? false
+        description "要删除的作业ID列表"
+      end
+
+      returns :map
+
+      run fn input, context ->
+        homework_ids = input.arguments.homework_ids
+
+        if Enum.empty?(homework_ids) do
+          {:ok, %{deleted_count: 0, message: "没有提供要删除的作业ID"}}
+        else
+          result =
+            KgEdu.Knowledge.Homework
+            |> Ash.Query.filter(expr(id in ^homework_ids))
+            |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant, authorize?: false)
+
+          case result do
+            %Ash.BulkResult{status: :success, records: records} ->
+              {:ok, %{deleted_count: length(records), message: "成功删除 #{length(records)} 个作业"}}
+
+            %Ash.BulkResult{status: :partial_success, records: records, errors: errors} ->
+              {:ok, %{deleted_count: length(records), errors: errors, message: "部分删除成功，#{length(records)} 个作业已删除"}}
+
+            %Ash.BulkResult{status: :error, errors: errors} ->
+              {:error, %{message: "删除失败", errors: Enum.map(errors, &inspect/1)}}
+          end
+        end
+      end
+    end
+
     action :import_homework_from_xlsx do
       description "Import homeworks from XLSX file"
 
@@ -254,6 +370,8 @@ defmodule KgEdu.Knowledge.Homework do
         allow_nil? false
       end
 
+      returns :map
+
       run fn input, context ->
         Logger.info("attributes are #{inspect(input.arguments.attributes)}")
 
@@ -264,8 +382,17 @@ defmodule KgEdu.Knowledge.Homework do
                input.arguments.course_id,
                context.tenant
              ) do
-          {:ok, homework} -> :ok
-          {:error, reason} -> {:error, reason}
+          {:ok, result} when is_map(result) ->
+            {:ok, %{
+              success_count: result[:success_count] || result["success_count"] || 0,
+              skipped_count: result[:skipped_count] || result["skipped_count"] || 0,
+              error_count: result[:error_count] || result["error_count"] || 0,
+              skipped: result[:skipped] || result["skipped"] || [],
+              errors: result[:errors] || result["errors"] || []
+            }}
+
+          {:error, reason} ->
+            {:error, reason}
         end
       end
     end
@@ -344,7 +471,8 @@ defmodule KgEdu.Knowledge.Homework do
     end
 
     attribute :content, :string do
-      allow_nil? false
+      allow_nil? true
+      default ""
       public? true
       description "Homework content or instructions"
     end
@@ -359,6 +487,13 @@ defmodule KgEdu.Knowledge.Homework do
       allow_nil? true
       public? true
       description "Answer or solution for the homework"
+    end
+
+    attribute :position, :integer do
+      allow_nil? false
+      default 0
+      public? true
+      description "Position within the course for ordering"
     end
 
     create_timestamp :inserted_at

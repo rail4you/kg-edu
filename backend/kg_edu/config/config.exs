@@ -35,7 +35,7 @@ config :waffle,
 # }
 
 config :ash_typescript,
-  output_file: "../../minimal-vite-ts/src/lib/ash_rpc.ts",
+  output_file: "../../kg-edu-vite-antd/src/lib/ash_rpc.ts",
   run_endpoint: "/rpc/run",
   validate_endpoint: "/rpc/validate",
   input_field_formatter: :camel_case,

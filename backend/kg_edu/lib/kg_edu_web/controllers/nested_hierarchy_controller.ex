@@ -69,7 +69,9 @@ defmodule KgEduWeb.NestedHierarchyController do
       chapterId: resource.chapter_id,
       parentSubjectId: resource.parent_subject_id,
       parentUnitId: resource.parent_unit_id,
-      parentKnowledgeResourceId: resource.parent_knowledge_resource_id
+      parentKnowledgeResourceId: resource.parent_knowledge_resource_id,
+      sortPath: resource.sort_path,
+      displayOrder: resource.display_order
     }
 
     # Recursively serialize relationships
@@ -136,7 +138,9 @@ defmodule KgEduWeb.NestedHierarchyController do
       chapterId: Map.get(resource, :chapter_id),
       parentSubjectId: Map.get(resource, :parent_subject_id),
       parentUnitId: Map.get(resource, :parent_unit_id),
-      parentKnowledgeResourceId: Map.get(resource, :parent_knowledge_resource_id)
+      parentKnowledgeResourceId: Map.get(resource, :parent_knowledge_resource_id),
+      sortPath: Map.get(resource, :sort_path),
+      displayOrder: Map.get(resource, :display_order)
     }
 
     # Recursively serialize relationships

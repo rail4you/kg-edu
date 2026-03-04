@@ -77,6 +77,10 @@ defmodule KgEdu.Knowledge.Resource do
     define :get_by_any_name_and_course, action: :by_any_name_and_course
     define :bulk_update_importance_level, action: :bulk_update_importance_level
     define :get_course_learning_stats_by_student, action: :get_course_learning_stats_by_student
+
+    # Sort order actions
+    define :reorder_knowledge_resource, action: :reorder
+    define :regenerate_sort_paths, args: [:course_id], action: :regenerate_sort_paths
   end
 
   actions do
@@ -283,6 +287,10 @@ defmodule KgEdu.Knowledge.Resource do
       description "List all subjects (top-level knowledge resources)"
       argument :course_id, :uuid, allow_nil?: true
       filter expr(knowledge_type == :subject and course_id == ^arg(:course_id))
+
+      prepare fn query, _context ->
+        Ash.Query.sort(query, sort_path: :asc)
+      end
     end
 
     read :get_subject_with_units do
@@ -293,7 +301,8 @@ defmodule KgEdu.Knowledge.Resource do
       filter expr(id == ^arg(:subject_id) and knowledge_type == :subject)
 
       prepare fn query, _context ->
-        Ash.Query.load(query, child_units: [:child_cells])
+        query
+        |> Ash.Query.load(child_units: [:child_cells])
       end
     end
 
@@ -308,7 +317,7 @@ defmodule KgEdu.Knowledge.Resource do
              )
 
       prepare fn query, _context ->
-        Ash.Query.sort(query, unit: :asc, name: :asc)
+        Ash.Query.sort(query, sort_path: :asc)
       end
     end
 
@@ -335,7 +344,7 @@ defmodule KgEdu.Knowledge.Resource do
              )
 
       prepare fn query, _context ->
-        Ash.Query.sort(query, name: :asc)
+        Ash.Query.sort(query, sort_path: :asc)
       end
     end
 
@@ -350,7 +359,7 @@ defmodule KgEdu.Knowledge.Resource do
              )
 
       prepare fn query, _context ->
-        Ash.Query.sort(query, name: :asc)
+        Ash.Query.sort(query, sort_path: :asc)
       end
     end
 
@@ -420,28 +429,93 @@ defmodule KgEdu.Knowledge.Resource do
 
       prepare fn query, _context ->
         query
+        |> Ash.Query.load([:sort_path, :display_order])
         |> Ash.Query.load(
-          # Load units under subjects
           child_units: [
-            # Load cells under units (level 3) with their nested children (level 4+)
+            :sort_path,
+            :display_order,
             child_cells: [
-              :nested_child_cells
+              :sort_path,
+              :display_order,
+              nested_child_cells: [
+                :sort_path,
+                :display_order,
+                nested_child_cells: [
+                  :sort_path,
+                  :display_order,
+                  nested_child_cells: [
+                    :sort_path,
+                    :display_order,
+                    nested_child_cells: [
+                      :sort_path,
+                      :display_order,
+                      nested_child_cells: [
+                        :sort_path,
+                        :display_order,
+                        nested_child_cells: [
+                          :sort_path,
+                          :display_order
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
             ]
           ],
-          # Load direct cells under subjects (no unit, level 3) with their nested children
           direct_cells: [
-            :nested_child_cells
+            :sort_path,
+            :display_order,
+            nested_child_cells: [
+              :sort_path,
+              :display_order,
+              nested_child_cells: [
+                :sort_path,
+                :display_order,
+                nested_child_cells: [
+                  :sort_path,
+                  :display_order,
+                  nested_child_cells: [
+                    :sort_path,
+                    :display_order,
+                    nested_child_cells: [
+                      :sort_path,
+                      :display_order
+                    ]
+                  ]
+                ]
+              ]
+            ]
           ],
-          # Load all cells under subjects (for backward compatibility) with nested children
           subject_cells: [
-            :nested_child_cells
+            :sort_path,
+            :display_order,
+            nested_child_cells: [
+              :sort_path,
+              :display_order,
+              nested_child_cells: [
+                :sort_path,
+                :display_order,
+                nested_child_cells: [
+                  :sort_path,
+                  :display_order,
+                  nested_child_cells: [
+                    :sort_path,
+                    :display_order,
+                    nested_child_cells: [
+                      :sort_path,
+                      :display_order
+                    ]
+                  ]
+                ]
+              ]
+            ]
           ]
         )
-        |> Ash.Query.sort(subject: :asc, name: :asc)
+        |> Ash.Query.sort(sort_path: :asc)
       end
     end
 
-    # Action that returns fully nested hierarchy (processed server-side)
     read :get_full_hierarchy_nested do
       description "Get the full hierarchy with cells automatically nested (unlimited depth). This action builds nested structure server-side."
       argument :course_id, :uuid, allow_nil?: false
@@ -453,24 +527,90 @@ defmodule KgEdu.Knowledge.Resource do
 
       prepare fn query, _context ->
         query
+        |> Ash.Query.load([:sort_path, :display_order])
         |> Ash.Query.load(
-          # Load units under subjects
           child_units: [
-            # Load cells under units (level 3) with their nested children (level 4+)
+            :sort_path,
+            :display_order,
             child_cells: [
-              :nested_child_cells
+              :sort_path,
+              :display_order,
+              nested_child_cells: [
+                :sort_path,
+                :display_order,
+                nested_child_cells: [
+                  :sort_path,
+                  :display_order,
+                  nested_child_cells: [
+                    :sort_path,
+                    :display_order,
+                    nested_child_cells: [
+                      :sort_path,
+                      :display_order,
+                      nested_child_cells: [
+                        :sort_path,
+                        :display_order,
+                        nested_child_cells: [
+                          :sort_path,
+                          :display_order
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
             ]
           ],
-          # Load direct cells under subjects (no unit, level 3) with their nested children
           direct_cells: [
-            :nested_child_cells
+            :sort_path,
+            :display_order,
+            nested_child_cells: [
+              :sort_path,
+              :display_order,
+              nested_child_cells: [
+                :sort_path,
+                :display_order,
+                nested_child_cells: [
+                  :sort_path,
+                  :display_order,
+                  nested_child_cells: [
+                    :sort_path,
+                    :display_order,
+                    nested_child_cells: [
+                      :sort_path,
+                      :display_order
+                    ]
+                  ]
+                ]
+              ]
+            ]
           ],
-          # Load all cells under subjects (for backward compatibility) with nested children
           subject_cells: [
-            :nested_child_cells
+            :sort_path,
+            :display_order,
+            nested_child_cells: [
+              :sort_path,
+              :display_order,
+              nested_child_cells: [
+                :sort_path,
+                :display_order,
+                nested_child_cells: [
+                  :sort_path,
+                  :display_order,
+                  nested_child_cells: [
+                    :sort_path,
+                    :display_order,
+                    nested_child_cells: [
+                      :sort_path,
+                      :display_order
+                    ]
+                  ]
+                ]
+              ]
+            ]
           ]
         )
-        |> Ash.Query.sort(subject: :asc, name: :asc)
+        |> Ash.Query.sort(sort_path: :asc)
       end
     end
 
@@ -494,7 +634,9 @@ defmodule KgEdu.Knowledge.Resource do
         :parent_unit_id,
         :parent_knowledge_resource_id,
         :importance_level,
-        :knowledge_type
+        :knowledge_type,
+        :sort_path,
+        :display_order
       ]
 
       validate fn changeset, _context ->
@@ -507,7 +649,6 @@ defmodule KgEdu.Knowledge.Resource do
 
         case knowledge_type do
           :subject ->
-            # Subjects should not have parents
             if not is_nil(parent_subject_id) || not is_nil(parent_unit_id) do
               {:error, "Subjects cannot have parent resources"}
             else
@@ -515,7 +656,6 @@ defmodule KgEdu.Knowledge.Resource do
             end
 
           :knowledge_unit ->
-            # Units must have a parent subject, no parent unit
             cond do
               is_nil(parent_subject_id) ->
                 {:error, "Knowledge units must have a parent subject"}
@@ -528,17 +668,11 @@ defmodule KgEdu.Knowledge.Resource do
             end
 
           :knowledge_cell ->
-            # Cells can have:
-            # - parent_subject_id (direct child of subject)
-            # - parent_unit_id (child of a unit)
-            # - parent_knowledge_resource_id (nested child of another cell, for levels 4-7)
             cond do
-              # Cell must have at least one parent
               is_nil(parent_subject_id) and is_nil(parent_unit_id) and
                   is_nil(parent_knowledge_resource_id) ->
                 {:error, "Knowledge cells must have a parent (subject, unit, or another cell)"}
 
-              # Cannot have multiple parent types
               (not is_nil(parent_subject_id) and not is_nil(parent_unit_id)) or
                 (not is_nil(parent_subject_id) and not is_nil(parent_knowledge_resource_id)) or
                   (not is_nil(parent_unit_id) and not is_nil(parent_knowledge_resource_id)) ->
@@ -547,6 +681,35 @@ defmodule KgEdu.Knowledge.Resource do
               true ->
                 :ok
             end
+        end
+      end
+
+      change fn changeset, context ->
+        sort_path = Ash.Changeset.get_attribute(changeset, :sort_path)
+        display_order = Ash.Changeset.get_attribute(changeset, :display_order)
+
+        if is_nil(sort_path) or sort_path == "" do
+          course_id = Ash.Changeset.get_attribute(changeset, :course_id)
+          knowledge_type = Ash.Changeset.get_attribute(changeset, :knowledge_type)
+          parent_subject_id = Ash.Changeset.get_attribute(changeset, :parent_subject_id)
+          parent_unit_id = Ash.Changeset.get_attribute(changeset, :parent_unit_id)
+          parent_cell_id = Ash.Changeset.get_attribute(changeset, :parent_knowledge_resource_id)
+
+          {new_sort_path, new_display_order} =
+            calculate_sort_path_and_order(
+              course_id,
+              knowledge_type,
+              parent_subject_id,
+              parent_unit_id,
+              parent_cell_id,
+              context.tenant
+            )
+
+          changeset
+          |> Ash.Changeset.change_attribute(:sort_path, new_sort_path)
+          |> Ash.Changeset.change_attribute(:display_order, new_display_order)
+        else
+          changeset
         end
       end
     end
@@ -562,8 +725,52 @@ defmodule KgEdu.Knowledge.Resource do
         :dimension,
         :category,
         :teaching_goal,
-        :parent_knowledge_resource_id
+        :parent_knowledge_resource_id,
+        :sort_path,
+        :display_order
       ]
+    end
+
+    update :reorder do
+      description "Reorder a knowledge resource within its level"
+      require_atomic? false
+
+      argument :new_display_order, :integer do
+        allow_nil? false
+        description "New display order position (1-based)"
+      end
+
+      change fn changeset, context ->
+        new_order = Ash.Changeset.get_argument(changeset, :new_display_order)
+        resource = changeset.data
+
+        # 从 sort_path 解析当前的 display_order（取最后 4 位数字）
+        old_order =
+          case resource.sort_path do
+            nil -> 1
+            "" -> 1
+            path ->
+              # 取最后 4 位字符并转换为整数
+              path
+              |> String.slice(-4..-1)
+              |> String.to_integer()
+          end
+
+        if new_order == old_order do
+          changeset
+        else
+          parent_path = get_parent_sort_path(resource)
+          new_path = build_sort_path(parent_path, new_order)
+
+          changeset
+          |> Ash.Changeset.change_attribute(:display_order, new_order)
+          |> Ash.Changeset.change_attribute(:sort_path, new_path)
+
+          reorder_siblings(resource, old_order, new_order, context.tenant)
+        end
+
+        changeset
+      end
     end
 
     update :add_tag do
@@ -1136,6 +1343,25 @@ defmodule KgEdu.Knowledge.Resource do
         end
       end
     end
+
+    action :regenerate_sort_paths do
+      description "Regenerate sort_path for all knowledge resources in a course based on current hierarchy"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+        description "Course ID to regenerate sort paths for"
+      end
+
+      run fn input, context ->
+        course_id = input.arguments.course_id
+        tenant = context.tenant
+
+        case regenerate_course_sort_paths(course_id, tenant) do
+          :ok -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
+    end
   end
 
   policies do
@@ -1227,6 +1453,19 @@ defmodule KgEdu.Knowledge.Resource do
       allow_nil? true
       public? true
       description "Teaching goal or objective for this knowledge resource"
+    end
+
+    attribute :sort_path, :string do
+      allow_nil? true
+      default ""
+      public? true
+      description "Sort path for hierarchical ordering, format: '01.02.03'"
+    end
+
+    attribute :display_order, :integer do
+      allow_nil? true
+      public? true
+      description "Display order within the same level (1, 2, 3...)"
     end
 
     timestamps()
@@ -1962,6 +2201,40 @@ defmodule KgEdu.Knowledge.Resource do
         end
       end
     end
+
+    calculate :display_number, :string do
+      description "Display number converted from sort_path, e.g., '01.02.03' -> '1.2.3'"
+      public? true
+
+      calculation fn resource, _args ->
+        case resource.sort_path do
+          "" ->
+            ""
+
+          nil ->
+            ""
+
+          path ->
+            path
+            |> String.split(".")
+            |> Enum.map(&String.to_integer/1)
+            |> Enum.join(".")
+        end
+      end
+    end
+
+    calculate :level_number, :integer do
+      description "Depth level of this resource in the hierarchy"
+      public? true
+
+      calculation fn resource, _args ->
+        case resource.sort_path do
+          "" -> 1
+          nil -> 1
+          path -> path |> String.split(".") |> length()
+        end
+      end
+    end
   end
 
   # ============ Helper Functions ============
@@ -2310,6 +2583,301 @@ defmodule KgEdu.Knowledge.Resource do
 
       parent ->
         parent
+    end)
+  end
+
+  defp calculate_sort_path_and_order(
+         course_id,
+         knowledge_type,
+         parent_subject_id,
+         parent_unit_id,
+         parent_cell_id,
+         tenant
+       ) do
+    parent_path =
+      case {knowledge_type, parent_subject_id, parent_unit_id, parent_cell_id} do
+        {:subject, _, _, _} ->
+          ""
+
+        {:knowledge_unit, subject_id, _, _} ->
+          case get_knowledge_resource(subject_id, tenant: tenant, authorize?: false) do
+            {:ok, parent} -> parent.sort_path || ""
+            _ -> ""
+          end
+
+        {:knowledge_cell, _, unit_id, _} when not is_nil(unit_id) ->
+          case get_knowledge_resource(unit_id, tenant: tenant, authorize?: false) do
+            {:ok, parent} -> parent.sort_path || ""
+            _ -> ""
+          end
+
+        {:knowledge_cell, _, _, cell_id} when not is_nil(cell_id) ->
+          case get_knowledge_resource(cell_id, tenant: tenant, authorize?: false) do
+            {:ok, parent} -> parent.sort_path || ""
+            _ -> ""
+          end
+
+        {:knowledge_cell, subject_id, _, _} when not is_nil(subject_id) ->
+          case get_knowledge_resource(subject_id, tenant: tenant, authorize?: false) do
+            {:ok, parent} -> parent.sort_path || ""
+            _ -> ""
+          end
+
+        _ ->
+          ""
+      end
+
+    next_order =
+      get_next_display_order(
+        course_id,
+        knowledge_type,
+        parent_subject_id,
+        parent_unit_id,
+        parent_cell_id,
+        tenant
+      )
+
+    new_path = build_sort_path(parent_path, next_order)
+
+    {new_path, next_order}
+  end
+
+  defp get_next_display_order(
+         course_id,
+         knowledge_type,
+         parent_subject_id,
+         parent_unit_id,
+         parent_cell_id,
+         tenant
+       ) do
+    query =
+      __MODULE__
+      |> Ash.Query.filter(course_id == ^course_id)
+      |> Ash.Query.filter(knowledge_type == ^knowledge_type)
+      |> then(fn q ->
+        case {knowledge_type, parent_subject_id, parent_unit_id, parent_cell_id} do
+          {:subject, _, _, _} ->
+            Ash.Query.filter(q, is_nil(parent_subject_id))
+
+          {:knowledge_unit, subject_id, _, _} ->
+            Ash.Query.filter(q, parent_subject_id == ^subject_id)
+
+          {:knowledge_cell, _, unit_id, _} when not is_nil(unit_id) ->
+            Ash.Query.filter(
+              q,
+              parent_unit_id == ^unit_id and is_nil(parent_knowledge_resource_id)
+            )
+
+          {:knowledge_cell, _, _, cell_id} when not is_nil(cell_id) ->
+            Ash.Query.filter(q, parent_knowledge_resource_id == ^cell_id)
+
+          {:knowledge_cell, subject_id, _, _} when not is_nil(subject_id) ->
+            Ash.Query.filter(
+              q,
+              parent_subject_id == ^subject_id and is_nil(parent_unit_id) and
+                is_nil(parent_knowledge_resource_id)
+            )
+
+          _ ->
+            q
+        end
+      end)
+
+    case Ash.read(query, tenant: tenant, authorize?: false) do
+      {:ok, resources} ->
+        max_order =
+          resources
+          |> Enum.map(&(&1.display_order || 0))
+          |> Enum.max(fn -> 0 end)
+
+        max_order + 1
+
+      _ ->
+        1
+    end
+  end
+
+  defp build_sort_path(parent_path, order) do
+    # 使用 4 位数字格式，与导入时的格式保持一致（如 "0001", "00010002"）
+    order_str = String.pad_leading(Integer.to_string(order), 4, "0")
+
+    if parent_path == "" or is_nil(parent_path) do
+      order_str
+    else
+      "#{parent_path}#{order_str}"
+    end
+  end
+
+  defp get_parent_sort_path(resource) do
+    case resource.sort_path do
+      "" ->
+        ""
+
+      nil ->
+        ""
+
+      path ->
+        # sortPath 格式为 "000100020002"，每级 4 位字符
+        # 父级路径是去掉最后 4 位字符
+        if String.length(path) > 4 do
+          String.slice(path, 0..-5)
+        else
+          ""
+        end
+    end
+  end
+
+  defp reorder_siblings(resource, old_order, new_order, tenant) do
+    parent_path = get_parent_sort_path(resource)
+
+    query =
+      __MODULE__
+      |> Ash.Query.filter(course_id == ^resource.course_id)
+      |> Ash.Query.filter(knowledge_type == ^resource.knowledge_type)
+      |> then(fn q ->
+        case {resource.parent_subject_id, resource.parent_unit_id,
+              resource.parent_knowledge_resource_id} do
+          {nil, nil, nil} ->
+            Ash.Query.filter(q, is_nil(parent_subject_id))
+
+          {subject_id, nil, nil} when not is_nil(subject_id) ->
+            Ash.Query.filter(
+              q,
+              parent_subject_id == ^subject_id and is_nil(parent_unit_id) and
+                is_nil(parent_knowledge_resource_id)
+            )
+
+          {_, unit_id, nil} when not is_nil(unit_id) ->
+            Ash.Query.filter(
+              q,
+              parent_unit_id == ^unit_id and is_nil(parent_knowledge_resource_id)
+            )
+
+          {_, _, cell_id} when not is_nil(cell_id) ->
+            Ash.Query.filter(q, parent_knowledge_resource_id == ^cell_id)
+
+          _ ->
+            q
+        end
+      end)
+      |> Ash.Query.filter(id != ^resource.id)
+
+    case Ash.read(query, tenant: tenant, authorize?: false) do
+      {:ok, siblings} ->
+        siblings_to_update =
+          if new_order < old_order do
+            Enum.filter(siblings, fn s ->
+              (s.display_order || 0) >= new_order and (s.display_order || 0) < old_order
+            end)
+          else
+            Enum.filter(siblings, fn s ->
+              (s.display_order || 0) > old_order and (s.display_order || 0) <= new_order
+            end)
+          end
+
+        Enum.each(siblings_to_update, fn sibling ->
+          shift = if new_order < old_order, do: 1, else: -1
+          new_sibling_order = (sibling.display_order || 0) + shift
+          new_sibling_path = build_sort_path(parent_path, new_sibling_order)
+
+          update_knowledge_resource(
+            sibling,
+            %{
+              display_order: new_sibling_order,
+              sort_path: new_sibling_path
+            },
+            tenant: tenant,
+            authorize?: false
+          )
+        end)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp regenerate_course_sort_paths(course_id, tenant) do
+    case get_knowledge_resources_by_course(%{course_id: course_id},
+           tenant: tenant,
+           authorize?: false
+         ) do
+      {:ok, resources} ->
+        subjects =
+          Enum.filter(resources, &(&1.knowledge_type == :subject))
+          |> Enum.sort_by(& &1.inserted_at)
+
+        Enum.with_index(subjects, 1)
+        |> Enum.each(fn {subject, idx} ->
+          path = build_sort_path("", idx)
+
+          update_knowledge_resource(subject, %{sort_path: path, display_order: idx},
+            tenant: tenant,
+            authorize?: false
+          )
+
+          regenerate_unit_sort_paths(subject, path, resources, tenant)
+        end)
+
+        :ok
+
+      {:error, reason} ->
+        {:error, "Failed to get resources: #{inspect(reason)}"}
+    end
+  end
+
+  defp regenerate_unit_sort_paths(subject, parent_path, all_resources, tenant) do
+    units =
+      Enum.filter(
+        all_resources,
+        &(&1.knowledge_type == :knowledge_unit and &1.parent_subject_id == subject.id)
+      )
+      |> Enum.sort_by(& &1.inserted_at)
+
+    Enum.with_index(units, 1)
+    |> Enum.each(fn {unit, idx} ->
+      path = build_sort_path(parent_path, idx)
+
+      update_knowledge_resource(unit, %{sort_path: path, display_order: idx},
+        tenant: tenant,
+        authorize?: false
+      )
+
+      regenerate_cell_sort_paths(unit, path, all_resources, tenant)
+    end)
+  end
+
+  defp regenerate_cell_sort_paths(parent, parent_path, all_resources, tenant) do
+    cells =
+      case parent.knowledge_type do
+        :knowledge_unit ->
+          Enum.filter(
+            all_resources,
+            &(&1.knowledge_type == :knowledge_cell and &1.parent_unit_id == parent.id and
+                is_nil(&1.parent_knowledge_resource_id))
+          )
+
+        :knowledge_cell ->
+          Enum.filter(
+            all_resources,
+            &(&1.knowledge_type == :knowledge_cell and
+                &1.parent_knowledge_resource_id == parent.id)
+          )
+
+        _ ->
+          []
+      end
+      |> Enum.sort_by(& &1.inserted_at)
+
+    Enum.with_index(cells, 1)
+    |> Enum.each(fn {cell, idx} ->
+      path = build_sort_path(parent_path, idx)
+
+      update_knowledge_resource(cell, %{sort_path: path, display_order: idx},
+        tenant: tenant,
+        authorize?: false
+      )
+
+      regenerate_cell_sort_paths(cell, path, all_resources, tenant)
     end)
   end
 end

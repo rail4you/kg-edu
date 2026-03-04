@@ -45,6 +45,7 @@ defmodule KgEdu.KnowledgeNestedHierarchy do
           list when is_list(list) -> list
           _ -> []
         end
+        |> Enum.sort_by(fn unit -> unit.sort_path || "" end)
         |> Enum.map(&build_unit_nested_cells/1)
 
       # Return subject with nested units
@@ -61,7 +62,9 @@ defmodule KgEdu.KnowledgeNestedHierarchy do
 
     # Process each level 3 cell to include its nested children (level 4+)
     nested_cells =
-      Enum.map(level_3_cells, fn cell ->
+      level_3_cells
+      |> Enum.sort_by(fn cell -> cell.sort_path || "" end)
+      |> Enum.map(fn cell ->
         # Get nested child cells (level 4+) if they exist
         nested_children = get_nested_child_cells(cell)
 
@@ -85,7 +88,9 @@ defmodule KgEdu.KnowledgeNestedHierarchy do
 
   # Recursively build nested cell children
   defp build_nested_cell_children(cells) when is_list(cells) do
-    Enum.map(cells, fn cell ->
+    cells
+    |> Enum.sort_by(fn cell -> cell.sort_path || "" end)
+    |> Enum.map(fn cell ->
       # Get nested children of this cell
       nested_children = get_nested_child_cells(cell)
 

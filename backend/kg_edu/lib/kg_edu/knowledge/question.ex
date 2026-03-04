@@ -4,7 +4,8 @@ defmodule KgEdu.Knowledge.Question do
     domain: KgEdu.Knowledge,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Resource],
+    primary_read_warning?: false
 
   require Ash.Query
   require Logger
@@ -53,10 +54,22 @@ defmodule KgEdu.Knowledge.Question do
     # Import/Export
     define :import_questions_from_xlsx, action: :import_questions_from_xlsx
     define :export_question_template, action: :export_question_template
+
+    # Batch actions
+    define :bulk_destroy_questions, action: :bulk_destroy_questions
+
+    # Move actions
+    define :move_question_up, action: :move_up
+    define :move_question_down, action: :move_down
   end
 
   actions do
-    defaults [:read]
+    read :read do
+      primary? true
+      prepare fn query, _context ->
+        Ash.Query.sort(query, position: :asc, title: :asc)
+      end
+    end
 
     # ============ Basic Queries ============
     read :by_id do
@@ -188,6 +201,76 @@ defmodule KgEdu.Knowledge.Question do
       ]
     end
 
+    update :move_up do
+      description "将问题在课程内向上移动一位"
+      require_atomic? false
+
+      change fn changeset, context ->
+        question = changeset.data
+        course_id = question.course_id
+        current_position = question.position || 0
+
+        # 获取当前课程中 position 小于当前问题的最大 position 的问题
+        sibling =
+          KgEdu.Knowledge.Question
+          |> Ash.Query.filter(course_id == ^course_id)
+          |> Ash.Query.filter(position < ^current_position)
+          |> Ash.Query.sort(position: :desc)
+          |> Ash.Query.limit(1)
+          |> Ash.read_one!(tenant: context.tenant, authorize?: false)
+
+        if sibling do
+          # 保存新的 position 值
+          new_position = sibling.position
+
+          # 更新兄弟问题的 position
+          sibling
+          |> Ash.Changeset.for_update(:update_question, %{position: current_position})
+          |> Ash.update!(tenant: context.tenant, authorize?: false)
+
+          # 返回修改后的 changeset
+          Ash.Changeset.change_attribute(changeset, :position, new_position)
+        else
+          changeset
+        end
+      end
+    end
+
+    update :move_down do
+      description "将问题在课程内向下移动一位"
+      require_atomic? false
+
+      change fn changeset, context ->
+        question = changeset.data
+        course_id = question.course_id
+        current_position = question.position || 0
+
+        # 获取当前课程中 position 大于当前问题的最小 position 的问题
+        sibling =
+          KgEdu.Knowledge.Question
+          |> Ash.Query.filter(course_id == ^course_id)
+          |> Ash.Query.filter(position > ^current_position)
+          |> Ash.Query.sort(position: :asc)
+          |> Ash.Query.limit(1)
+          |> Ash.read_one!(tenant: context.tenant, authorize?: false)
+
+        if sibling do
+          # 保存新的 position 值
+          new_position = sibling.position
+
+          # 更新兄弟问题的 position
+          sibling
+          |> Ash.Changeset.for_update(:update_question, %{position: current_position})
+          |> Ash.update!(tenant: context.tenant, authorize?: false)
+
+          # 返回修改后的 changeset
+          Ash.Changeset.change_attribute(changeset, :position, new_position)
+        else
+          changeset
+        end
+      end
+    end
+
     # ============ Link/Unlink Actions ============
     update :link_question_to_knowledge do
       description "Link a question to a knowledge resource"
@@ -247,9 +330,53 @@ defmodule KgEdu.Knowledge.Question do
       end
     end
 
+    # ============ Batch Actions ============
+    action :bulk_destroy_questions do
+      description "Delete multiple questions by IDs"
+
+      argument :question_ids, {:array, :uuid} do
+        allow_nil? false
+        description "List of question IDs to delete"
+      end
+
+      returns :map
+
+      run fn input, context ->
+        question_ids = input.arguments.question_ids
+
+        if Enum.empty?(question_ids) do
+          {:ok, %{deleted_count: 0, message: "没有提供要删除的问题ID"}}
+        else
+          # 先删除相关的连接
+          KgEdu.Knowledge.QuestionConnection
+          |> Ash.Query.filter(expr(source_question_id in ^question_ids or target_question_id in ^question_ids))
+          |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant, authorize?: false)
+
+          # 批量删除问题
+          result =
+            KgEdu.Knowledge.Question
+            |> Ash.Query.filter(expr(id in ^question_ids))
+            |> Ash.bulk_destroy!(:destroy, %{}, tenant: context.tenant, authorize?: false)
+
+          case result do
+            %Ash.BulkResult{status: :success, records: records} ->
+              {:ok, %{deleted_count: length(records), message: "成功删除 #{length(records)} 个问题"}}
+
+            %Ash.BulkResult{status: :partial_success, records: records, errors: errors} ->
+              {:ok, %{deleted_count: length(records), errors: errors, message: "部分删除成功，#{length(records)} 个问题已删除"}}
+
+            %Ash.BulkResult{status: :error, errors: errors} ->
+              {:error, %{message: "删除失败", errors: Enum.map(errors, &inspect/1)}}
+          end
+        end
+      end
+    end
+
     # ============ Import/Export Actions ============
     action :import_questions_from_xlsx do
       description "Import questions from XLSX file"
+
+      returns :map
 
       argument :excel_file, :string do
         allow_nil? false
@@ -274,8 +401,36 @@ defmodule KgEdu.Knowledge.Question do
                input.arguments.course_id,
                context.tenant
              ) do
-          {:ok, question} -> :ok
-          {:error, reason} -> {:error, reason}
+          {:ok, result} when is_map(result) ->
+            # 只返回必要的字段，避免序列化问题
+            clean_result = %{
+              success_count: result.success_count,
+              failed_count: result.failed_count,
+              errors: result.errors,
+              questions: Enum.map(result.questions, fn q ->
+                %{
+                  id: q.id,
+                  title: q.title,
+                  description: q.description,
+                  question_level: q.question_level,
+                  position: q.position,
+                  course_id: q.course_id
+                }
+              end)
+            }
+
+            # 如果有失败的记录，返回错误
+            if result.failed_count > 0 do
+              {:error, %{message: "导入失败", errors: result.errors, failed_count: result.failed_count, success_count: result.success_count}}
+            else
+              {:ok, clean_result}
+            end
+
+          {:ok, _} ->
+            {:ok, %{success_count: 0, failed_count: 0, message: "No questions imported"}}
+
+          {:error, reason} ->
+            {:error, reason}
         end
       end
     end

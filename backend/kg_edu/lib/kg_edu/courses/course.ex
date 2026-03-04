@@ -772,6 +772,66 @@ defmodule KgEdu.Courses.Course do
         end
       end
     end
+
+    action :get_dashboard_stats, :map do
+      description "Get dashboard statistics for teacher workbench (student count, knowledge count, homework count)"
+
+      run fn _input, context ->
+        try do
+          tenant = context.tenant
+          Logger.info("get_dashboard_stats called with tenant: #{inspect(tenant)}")
+
+          # Get student count (users with role = :user)
+          student_count =
+            case KgEdu.Accounts.User
+                 |> Ash.Query.filter(role == :user)
+                 |> Ash.read(tenant: tenant, authorize?: false) do
+              {:ok, users} -> length(users)
+              {:error, error} ->
+                Logger.error("Failed to get student count: #{inspect(error)}")
+                0
+            end
+
+          # Get knowledge resources count
+          knowledge_count =
+            case KgEdu.Knowledge.Resource
+                 |> Ash.read(tenant: tenant, authorize?: false) do
+              {:ok, resources} -> length(resources)
+              {:error, error} ->
+                Logger.error("Failed to get knowledge count: #{inspect(error)}")
+                0
+            end
+
+          # Get homeworks count
+          homework_result = KgEdu.Knowledge.Homework
+               |> Ash.read(tenant: tenant, authorize?: false)
+
+          Logger.info("Homework query result: #{inspect(homework_result)}")
+
+          homework_count =
+            case homework_result do
+              {:ok, homeworks} -> length(homeworks)
+              {:error, error} ->
+                Logger.error("Failed to get homework count: #{inspect(error)}")
+                0
+            end
+
+          Logger.info("Dashboard stats - students: #{student_count}, knowledge: #{knowledge_count}, homeworks: #{homework_count}")
+
+          {:ok,
+           %{
+             studentCount: student_count,
+             knowledgeCount: knowledge_count,
+             homeworkCount: homework_count,
+             calculatedAt: DateTime.utc_now()
+           }}
+        rescue
+          error ->
+            Logger.error("Failed to get dashboard stats: #{Exception.message(error)}")
+            {:error, "Failed to get dashboard stats: #{inspect(error)}"}
+        end
+      end
+    end
   end
 
   policies do

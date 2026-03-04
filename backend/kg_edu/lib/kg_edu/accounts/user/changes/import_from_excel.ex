@@ -195,17 +195,17 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
       end
 
     # Handle class assignment for user role only
-    {class_id, class_name, errors} =
+    {class_id, errors} =
       if role == :user and not is_nil(user_map[:class]) and user_map[:class] != "" do
         case find_or_create_class(user_map[:class], tenant_schema, user_map) do
           {:ok, class_id} ->
-            {class_id, user_map[:class], errors}
+            {class_id, errors}
 
           {:error, reason} ->
-            {nil, nil, ["Failed to assign class: #{reason}" | errors]}
+            {nil, ["Failed to assign class: #{reason}" | errors]}
         end
       else
-        {nil, nil, errors}
+        {nil, errors}
       end
 
     if errors == [] do
@@ -222,12 +222,10 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
       processed_map =
         if role == :user do
           processed_map
-          |> Map.put(:class_name, class_name)
           |> Map.put(:class_id, class_id)
         else
           # Remove class-related fields for non-user roles
           processed_map
-          |> Map.delete(:class_name)
           |> Map.delete(:class_id)
         end
 

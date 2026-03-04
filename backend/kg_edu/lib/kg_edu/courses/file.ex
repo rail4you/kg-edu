@@ -79,6 +79,7 @@ defmodule KgEdu.Courses.File do
     define :list_files_by_purpose, action: :by_purpose
     define :list_files_by_knowledge_resource, action: :by_knowledge_resource
     define :list_files_by_creator, action: :by_creator
+    define :list_ai_generated_files_by_course, action: :ai_generated_by_course
     define :generate_example_files, action: :generate_examples
     define :download_file, action: :download_file
     define :link_file_to_knowledge, action: :link_file_to_knowledge
@@ -87,7 +88,19 @@ defmodule KgEdu.Courses.File do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:update, :destroy]
+
+    read :read do
+      primary? true
+      description "List files with optional pagination"
+
+      pagination do
+        required? false
+        offset? true
+        keyset? true
+        countable true
+      end
+    end
 
     create :create do
       description "Create a new file record"
@@ -323,6 +336,16 @@ defmodule KgEdu.Courses.File do
       filter expr(created_by_id == ^arg(:created_by_id))
     end
 
+    read :ai_generated_by_course do
+      description "Get AI-generated files for a specific course"
+
+      argument :course_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(course_id == ^arg(:course_id) and source == "ai_generated")
+    end
+
     create :generate_examples do
       description "Generate example files for a knowledge resource"
 
@@ -472,6 +495,13 @@ defmodule KgEdu.Courses.File do
       allow_nil? false
       public? true
       default "course_file"
+    end
+
+    attribute :source, :string do
+      allow_nil? true
+      public? true
+      default nil
+      description "Source of the file: nil for uploaded files, 'ai_generated' for AI-generated files"
     end
 
     attribute :created_by_id, :uuid do

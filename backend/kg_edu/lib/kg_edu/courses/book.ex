@@ -73,6 +73,7 @@ defmodule KgEdu.Courses.Book do
 
     update :update do
       accept [:title, :publish, :cover_image, :attachment, :author, :publisher, :course_id]
+      argument :created_by_id, :uuid, allow_nil?: true
     end
   end
 

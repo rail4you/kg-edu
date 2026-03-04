@@ -127,6 +127,11 @@ For detailed information about any package used in this project, consult the `.r
 - Common pitfalls to avoid
 - Integration guidance between packages
 
+## Frontend Development Rules
+
+- **不要启动开发服务器** - 代码改动后不要自己运行 `npm run dev` 启动开发服务器。开发服务器已经由用户启动，用户会基于已启动的开发服务器地址验证结果。
+- **不要运行完整构建** - 不要运行 `npm run build` 命令进行完整构建。如需验证代码，使用单个文件的 lint 或 build 方式进行验证（例如使用 `npx eslint file.ts` 或 `npx tsc --noEmit file.ts`）。
+
 ## Development Workflow
 
 1. **Plan changes** - Review relevant sections in `.rules`

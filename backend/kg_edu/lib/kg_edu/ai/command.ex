@@ -28,18 +28,31 @@ defmodule KgEdu.AI.Command do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      description "List AI commands for current user"
+      filter expr(created_by == ^actor(:id) or is_nil(created_by))
+      pagination offset?: true, keyset?: true, required?: false
+      primary? true
+    end
 
     read :by_id do
       description "Get a command by ID"
       get? true
       argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
+      filter expr(id == ^arg(:id) and created_by == ^actor(:id))
     end
 
     create :create do
       description "Create a new AI command"
       accept [:title, :user, :system, :assistant]
+
+      change set_attribute(:created_by, arg(:actor_id))
+
+      argument :actor_id, :uuid do
+        allow_nil? true
+      end
 
       validate fn changeset, _context ->
         user = Ash.Changeset.get_attribute(changeset, :user)
@@ -59,6 +72,7 @@ defmodule KgEdu.AI.Command do
     update :update do
       description "Update an AI command"
       accept [:title, :user, :system, :assistant]
+      filter expr(created_by == ^actor(:id))
     end
   end
 
@@ -70,6 +84,12 @@ defmodule KgEdu.AI.Command do
 
   attributes do
     uuid_primary_key :id
+
+    attribute :created_by, :uuid do
+      allow_nil? true
+      public? true
+      description "User ID who created this command"
+    end
 
     attribute :title, :string do
       allow_nil? true

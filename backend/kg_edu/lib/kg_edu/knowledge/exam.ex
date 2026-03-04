@@ -33,6 +33,8 @@ defmodule KgEdu.Knowledge.Exam do
     define :get_exams_by_course, action: :by_course
     define :get_exams_by_creator, action: :by_creator
     define :create_exam, action: :create
+    define :create_exam_with_exercises, action: :create_with_exercises
+    define :get_exam_content, action: :get_exam_content
     define :update_exam, action: :update
     define :delete_exam, action: :destroy
     define :add_exercise_to_exam, action: :add_exercise
@@ -69,6 +71,7 @@ defmodule KgEdu.Knowledge.Exam do
         :description,
         :exam_type,
         :exam_date,
+        :deadline_at,
         :duration_minutes,
         :passing_score,
         :course_id,
@@ -95,6 +98,7 @@ defmodule KgEdu.Knowledge.Exam do
         :description,
         :exam_type,
         :exam_date,
+        :deadline_at,
         :duration_minutes,
         :passing_score,
         :course_id
@@ -325,6 +329,162 @@ defmodule KgEdu.Knowledge.Exam do
         end
       end
     end
+
+    # 同步创建考试，包含基本信息和小练习
+    create :create_with_exercises do
+      description "Create an exam with exercises in one transaction"
+
+      argument :title, :string do
+        allow_nil? false
+        constraints min_length: 3, max_length: 200
+      end
+
+      argument :description, :string do
+        allow_nil? true
+      end
+
+      argument :exam_type, :atom do
+        allow_nil? false
+        constraints one_of: [:midterm, :final, :quiz, :assignment]
+      end
+
+      argument :exam_date, :utc_datetime do
+        allow_nil? true
+      end
+
+      argument :deadline_at, :utc_datetime do
+        allow_nil? true
+      end
+
+      argument :duration_minutes, :integer do
+        allow_nil? true
+      end
+
+      argument :passing_score, :integer do
+        allow_nil? false
+      end
+
+      argument :course_id, :uuid do
+        allow_nil? true
+      end
+
+      argument :created_by_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :exercises, {:array, :map} do
+        allow_nil? true
+        description "List of exercises to add, each map should contain: exercise_id, points, order"
+      end
+
+      change fn changeset, context ->
+        tenant = context.tenant
+
+        # Build exam attributes from arguments
+        exam_attrs = %{
+          title: Ash.Changeset.get_argument(changeset, :title),
+          description: Ash.Changeset.get_argument(changeset, :description),
+          exam_type: Ash.Changeset.get_argument(changeset, :exam_type),
+          exam_date: Ash.Changeset.get_argument(changeset, :exam_date),
+          deadline_at: Ash.Changeset.get_argument(changeset, :deadline_at),
+          duration_minutes: Ash.Changeset.get_argument(changeset, :duration_minutes) || 60,
+          passing_score: Ash.Changeset.get_argument(changeset, :passing_score),
+          course_id: Ash.Changeset.get_argument(changeset, :course_id),
+          created_by_id: Ash.Changeset.get_argument(changeset, :created_by_id)
+        }
+
+        exercises = Ash.Changeset.get_argument(changeset, :exercises) || []
+
+        # First create the exam
+        case Exam
+             |> Ash.Changeset.for_create(:create, exam_attrs)
+             |> Ash.create(tenant: tenant) do
+          {:ok, exam} ->
+            Logger.info("Exam created successfully: #{exam.id}")
+
+            # Then add each exercise
+            results =
+              exercises
+              |> Enum.with_index()
+              |> Enum.map(fn {exercise_map, index} ->
+                exercise_id = Map.get(exercise_map, :exercise_id) || Map.get(exercise_map, "exercise_id")
+                points = Map.get(exercise_map, :points) || Map.get(exercise_map, "points") || 1
+                order = Map.get(exercise_map, :order) || Map.get(exercise_map, "order") || index + 1
+
+                if exercise_id do
+                  case Exam
+                       |> Ash.Changeset.for_update(:add_exercise, %{
+                         id: exam.id,
+                         exercise_id: exercise_id,
+                         points: points,
+                         order: order
+                       })
+                       |> Ash.update(tenant: tenant) do
+                    {:ok, _} ->
+                      {:ok, exercise_id}
+
+                    {:error, error} ->
+                      Logger.error("Failed to add exercise #{exercise_id}: #{inspect(error)}")
+                      {:error, exercise_id, error}
+                  end
+                else
+                  {:error, nil, "exercise_id is required"}
+                end
+              end)
+
+            # Check if any errors occurred
+            errors = Enum.filter(results, &match?({:error, _, _}, &1))
+
+            if Enum.empty?(errors) do
+              # Return the created exam
+              {:ok, exam}
+            else
+              error_messages =
+                errors
+                |> Enum.map(fn {:error, _id, msg} -> msg end)
+                |> Enum.join(", ")
+
+              Ash.Changeset.add_error(
+                changeset,
+                Ash.Error.Changes.InvalidChanges.exception(
+                  message: "Failed to add some exercises: #{error_messages}"
+                )
+              )
+            end
+
+          {:error, error} ->
+            Logger.error("Failed to create exam: #{inspect(error)}")
+
+            error_message =
+              case error do
+                %{message: msg} when is_binary(msg) -> msg
+                _ when is_binary(error) -> error
+                _ -> inspect(error, pretty: true)
+              end
+
+            Ash.Changeset.add_error(
+              changeset,
+              Ash.Error.Changes.InvalidChanges.exception(
+                message: "Failed to create exam: #{error_message}"
+              )
+            )
+        end
+      end
+    end
+
+    # 读取考试内容，包含关联的 exercises 详情
+    read :get_exam_content do
+      description "Get exam with its exercise details"
+      get? true
+
+      argument :id, :uuid do
+        allow_nil? false
+      end
+
+      prepare fn query, _context ->
+        Ash.Query.load(query, exam_exercises: [:exercise])
+      end
+    end
   end
 
   policies do
@@ -365,6 +525,12 @@ defmodule KgEdu.Knowledge.Exam do
     attribute :exam_date, :utc_datetime do
       allow_nil? true
       description "Scheduled date and time for the exam"
+      public? true
+    end
+
+    attribute :deadline_at, :utc_datetime do
+      allow_nil? true
+      description "Deadline for submitting the exam"
       public? true
     end
 

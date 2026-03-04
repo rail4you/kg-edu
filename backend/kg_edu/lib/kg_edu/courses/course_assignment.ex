@@ -121,6 +121,17 @@ defmodule KgEdu.Courses.CourseAssignment do
       filter expr(assigned_by_id == ^actor(:id))
     end
 
+    read :assignments_for_teacher do
+      description "Get all course assignments where the teacher is assigned (as assistant, guest, etc.)"
+
+      argument :teacher_id, :uuid do
+        description "The teacher ID to get assignments for"
+        allow_nil? false
+      end
+
+      filter expr(teacher_id == ^arg(:teacher_id))
+    end
+
     read :by_course do
       description "Get all course assignments for a specific course"
 
@@ -218,23 +229,24 @@ defmodule KgEdu.Courses.CourseAssignment do
         case KgEdu.Courses.CourseAssignment
              |> Ash.Query.filter(teacher_id: teacher_id, course_id: course_id)
              |> Ash.read(tenant: context.tenant, actor: context.actor) do
-          # Found exactly one assignment
-          {:ok, [assignment]} ->
-            case Ash.destroy(assignment, tenant: context.tenant, actor: context.actor) do
-              :ok ->
-                {:ok, %{message: "Assignment removed successfully"}}
-
-              {:error, error} ->
-                {:error, "Failed to remove assignment: #{inspect(error)}"}
-            end
-
           # No assignments found
           {:ok, []} ->
             {:error, "No assignment found for this teacher and course"}
 
-          # Multiple assignments found
-          {:ok, assignments} when length(assignments) > 1 ->
-            {:error, "Multiple assignments found, cannot remove"}
+          # Found one or more assignments - delete all of them
+          {:ok, assignments} ->
+            results =
+              Enum.map(assignments, fn assignment ->
+                Ash.destroy(assignment, tenant: context.tenant, actor: context.actor)
+              end)
+
+            errors = Enum.filter(results, fn result -> result != :ok end)
+
+            if Enum.empty?(errors) do
+              {:ok, %{message: "Assignment removed successfully", count: length(assignments)}}
+            else
+              {:error, "Failed to remove some assignments: #{inspect(errors)}"}
+            end
 
           {:error, error} ->
             {:error, "Failed to find assignment: #{inspect(error)}"}

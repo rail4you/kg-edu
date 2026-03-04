@@ -39,8 +39,11 @@ defmodule KgEdu.Knowledge.Exercise do
     define :link_exercise_to_knowledge, action: :link_exercise_to_knowledge
     define :unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge
     define :import_exercise_from_xlsx, action: :import_exercise_from_xlsx
+    define :import_exercises_from_excel, action: :import_exercises_from_excel
     define :export_exercise_template, action: :export_exercise_template
     define :log_exercise_submit_activity, action: :log_exercise_submit
+    define :move_exercise_up, action: :move_up
+    define :move_exercise_down, action: :move_down
   end
 
   actions do
@@ -63,6 +66,11 @@ defmodule KgEdu.Knowledge.Exercise do
       description "Get exercises for a specific course"
       argument :course_id, :uuid, allow_nil?: false
       filter expr(course_id == ^arg(:course_id))
+
+      prepare fn query, _context ->
+        query
+        |> Ash.Query.sort(position: :asc, inserted_at: :asc)
+      end
     end
 
     read :recent_ai_exercises do
@@ -91,14 +99,19 @@ defmodule KgEdu.Knowledge.Exercise do
         :knowledge_resource_id,
         :course_id,
         :ai_type,
-        :difficulty
+        :difficulty,
+        :created_by_id,
+        :position
       ]
 
+      change {KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []}
+      change {KgEdu.Knowledge.Exercise.Changes.SetDefaultPosition, []}
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
     update :update_exercise do
       description "Update an exercise"
+      require_atomic? false
 
       accept [
         :title,
@@ -109,9 +122,11 @@ defmodule KgEdu.Knowledge.Exercise do
         :knowledge_resource_id,
         :course_id,
         :ai_type,
-        :difficulty
+        :difficulty,
+        :position
       ]
 
+      change {KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []}
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
@@ -134,6 +149,76 @@ defmodule KgEdu.Knowledge.Exercise do
       require_atomic? false
 
       change set_attribute(:knowledge_resource_id, nil)
+    end
+
+    update :move_up do
+      description "将习题在课程内向上移动一位"
+      require_atomic? false
+
+      change fn changeset, context ->
+        exercise = changeset.data
+        course_id = exercise.course_id
+        current_position = exercise.position || 0
+
+        # 获取当前课程中 position 小于当前习题的最大 position 的习题
+        sibling =
+          KgEdu.Knowledge.Exercise
+          |> Ash.Query.filter(course_id == ^course_id)
+          |> Ash.Query.filter(position < ^current_position)
+          |> Ash.Query.sort(position: :desc)
+          |> Ash.Query.limit(1)
+          |> Ash.read_one!(tenant: context.tenant, authorize?: false)
+
+        if sibling do
+          # 保存新的 position 值
+          new_position = sibling.position
+
+          # 更新兄弟习题的 position
+          sibling
+          |> Ash.Changeset.for_update(:update_exercise, %{position: current_position})
+          |> Ash.update!(tenant: context.tenant, authorize?: false)
+
+          # 返回修改后的 changeset
+          Ash.Changeset.change_attribute(changeset, :position, new_position)
+        else
+          changeset
+        end
+      end
+    end
+
+    update :move_down do
+      description "将习题在课程内向下移动一位"
+      require_atomic? false
+
+      change fn changeset, context ->
+        exercise = changeset.data
+        course_id = exercise.course_id
+        current_position = exercise.position || 0
+
+        # 获取当前课程中 position 大于当前习题的最小 position 的习题
+        sibling =
+          KgEdu.Knowledge.Exercise
+          |> Ash.Query.filter(course_id == ^course_id)
+          |> Ash.Query.filter(position > ^current_position)
+          |> Ash.Query.sort(position: :asc)
+          |> Ash.Query.limit(1)
+          |> Ash.read_one!(tenant: context.tenant, authorize?: false)
+
+        if sibling do
+          # 保存新的 position 值
+          new_position = sibling.position
+
+          # 更新兄弟习题的 position
+          sibling
+          |> Ash.Changeset.for_update(:update_exercise, %{position: current_position})
+          |> Ash.update!(tenant: context.tenant, authorize?: false)
+
+          # 返回修改后的 changeset
+          Ash.Changeset.change_attribute(changeset, :position, new_position)
+        else
+          changeset
+        end
+      end
     end
 
     action :generate_ai_exercise do
@@ -276,23 +361,38 @@ defmodule KgEdu.Knowledge.Exercise do
         allow_nil? false
       end
 
+      argument :created_by_id, :uuid do
+        description "User ID who is importing the exercises"
+        allow_nil? false
+      end
+
       argument :attributes, {:array, :atom} do
         description ""
         allow_nil? false
-        default [:title, :question_content, :question_type, :answer, :options]
+        default [:title, :question_content, :question_type, :answer, :options, :difficulty]
       end
 
+      returns :map
+
       run fn input, context ->
-        Logger.info("attributes are #{inspect(input.arguments.attributes)}")
+        Logger.info("Starting import_exercises_from_excel with attributes: #{inspect(input.arguments.attributes)}")
+        Logger.info("Course ID: #{inspect(input.arguments.course_id)}")
+        Logger.info("Created By ID: #{inspect(input.arguments.created_by_id)}")
+        Logger.info("Tenant: #{inspect(context.tenant)}")
 
         case KgEdu.Knowledge.Exercise.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                input.arguments.attributes,
                input.arguments.course_id,
+               input.arguments.created_by_id,
                context.tenant
              ) do
-          {:ok, user} -> :ok
-          {:error, reason} -> {:error, reason}
+          {:ok, result} ->
+            {:ok, result}
+
+          {:error, reason} ->
+            Logger.error("Import failed: #{inspect(reason)}")
+            {:error, reason}
         end
       end
     end
@@ -391,7 +491,7 @@ defmodule KgEdu.Knowledge.Exercise do
 
     attribute :ai_type, :atom do
       allow_nil? true
-      constraints one_of: [:ai_generated]
+      constraints one_of: [:ai_generated, :manual_import]
       public? true
       description "Type of AI generation for this exercise"
     end
@@ -401,6 +501,12 @@ defmodule KgEdu.Knowledge.Exercise do
       constraints min: 1, max: 3
       public? true
       description "Difficulty level: 1 (easy), 2 (medium), 3 (hard)"
+    end
+
+    attribute :position, :integer do
+      allow_nil? true
+      public? true
+      description "习题在课程内的排序位置"
     end
 
     timestamps()

@@ -26,6 +26,7 @@ defmodule KgEdu.Courses.Chapter do
       rpc_action :get_chapter, :read
       rpc_action :update_chapter, :update
       rpc_action :delete_chapter, :destroy
+      rpc_action :reorder_chapters, :reorder
     end
   end
 
@@ -45,13 +46,14 @@ defmodule KgEdu.Courses.Chapter do
     define :list_subchapters, action: :subchapters
     define :get_chapter_with_subchapters, action: :get_with_subchapters
     define :get_course_full_hierarchy, action: :course_full_hierarchy
+    define :reorder_chapters, action: :reorder
   end
 
   actions do
     defaults [:read, :destroy]
 
     update :update do
-      accept [:title, :description, :sort_order, :parent_chapter_id, :course_id]
+      accept [:title, :description, :sort_order, :parent_chapter_id, :course_id, :path]
     end
 
     read :by_course do
@@ -152,6 +154,121 @@ defmodule KgEdu.Courses.Chapter do
           :ok
         end
       end
+
+      change fn changeset, context ->
+        parent_id = Ash.Changeset.get_attribute(changeset, :parent_chapter_id)
+        course_id = Ash.Changeset.get_attribute(changeset, :course_id)
+
+        # 计算 path
+        path = calculate_path(parent_id, course_id, context.tenant)
+        Ash.Changeset.change_attribute(changeset, :path, path)
+      end
+    end
+
+    # 批量重排序 action
+    action :reorder, :map do
+      description "批量重排章节顺序"
+
+      argument :items, {:array, :map} do
+        description "要排序的章节列表，包含 id, new_parent_id, new_index"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        items = input.arguments.items
+        tenant = context.tenant
+
+        results = Enum.map(items, fn item ->
+          id = Map.get(item, "id") || Map.get(item, :id)
+          new_parent_id = Map.get(item, "new_parent_id") || Map.get(item, :new_parent_id)
+          new_index = Map.get(item, "new_index") || Map.get(item, :new_index) || 0
+
+          if id do
+            # 获取当前章节
+            case KgEdu.Courses.Chapter.get_chapter(id, tenant: tenant) do
+              {:ok, chapter} ->
+                # 计算新的 path
+                new_path = calculate_reorder_path(new_parent_id, new_index, tenant)
+                # 更新章节
+                case KgEdu.Courses.Chapter.update_chapter(chapter, %{
+                  parent_chapter_id: new_parent_id,
+                  path: new_path,
+                  sort_order: new_index
+                }, tenant: tenant) do
+                  {:ok, _} -> {:ok, %{id: id, success: true}}
+                  {:error, error} -> {:error, %{id: id, error: inspect(error)}}
+                end
+              {:error, error} ->
+                {:error, %{id: id, error: inspect(error)}}
+            end
+          else
+            {:error, %{error: "Missing id"}}
+          end
+        end)
+
+        # 检查是否有错误
+        errors = Enum.filter(results, fn
+          {:error, _} -> true
+          _ -> false
+        end)
+
+        if Enum.empty?(errors) do
+          {:ok, %{success: true, updated: length(items)}}
+        else
+          {:error, %{message: "部分更新失败", errors: errors}}
+        end
+      end
+    end
+  end
+
+  # 私有函数：计算 path
+  defp calculate_path(parent_id, course_id, tenant) do
+    # 确定当前是第几个子章节
+    index = if parent_id do
+      # 获取父章节下的所有子章节数量
+      case KgEdu.Courses.Chapter.list_subchapters(%{parent_chapter_id: parent_id}, tenant: tenant) do
+        {:ok, existing} -> length(existing) + 1
+        _ -> 1
+      end
+    else
+      # 获取根章节数量
+      case KgEdu.Courses.Chapter.list_root_chapters(%{course_id: course_id}, tenant: tenant) do
+        {:ok, existing} -> length(existing) + 1
+        _ -> 1
+      end
+    end
+
+    # 生成 path
+    if parent_id do
+      case KgEdu.Courses.Chapter.get_chapter(parent_id, tenant: tenant) do
+        {:ok, parent} ->
+          parent_path = parent.path || ""
+          "#{parent_path}#{String.pad_leading(to_string(index), 4, "0")}"
+        _ ->
+          String.pad_leading(to_string(index), 4, "0")
+      end
+    else
+      # 根章节，直接使用索引
+      String.pad_leading(to_string(index), 4, "0")
+    end
+  end
+
+  # 私有函数：重排序时计算 path
+  defp calculate_reorder_path(new_parent_id, new_index, tenant) do
+    index = new_index + 1  # 转换为 1-based
+
+    if new_parent_id do
+      # 有父章节
+      case KgEdu.Courses.Chapter.get_chapter(new_parent_id, tenant: tenant) do
+        {:ok, parent} ->
+          parent_path = parent.path || ""
+          "#{parent_path}#{String.pad_leading(to_string(index), 4, "0")}"
+        _ ->
+          String.pad_leading(to_string(index), 4, "0")
+      end
+    else
+      # 根章节
+      String.pad_leading(to_string(index), 4, "0")
     end
   end
 
@@ -189,6 +306,13 @@ defmodule KgEdu.Courses.Chapter do
       default 0
       public? true
       description "Order for sorting chapters within the same level"
+    end
+
+    attribute :path, :string do
+      allow_nil? true
+      default nil
+      public? true
+      description "排序路径，用于层级排序（如 00010001）"
     end
 
     create_timestamp :inserted_at

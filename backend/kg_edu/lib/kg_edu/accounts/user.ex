@@ -93,7 +93,6 @@ defmodule KgEdu.Accounts.User do
         :name,
         :phone,
         :email,
-        :class_name,
         :major,
         :school,
         :colledge,
@@ -118,8 +117,8 @@ defmodule KgEdu.Accounts.User do
     action :create_students_for_class, :map do
       description "Create multiple students for a specific class"
 
-      argument :class_name, :string do
-        description "The class name to assign students to"
+      argument :class_id, :uuid do
+        description "The class ID to assign students to"
         allow_nil? false
       end
 
@@ -129,12 +128,12 @@ defmodule KgEdu.Accounts.User do
       end
 
       run fn input, context ->
-        class_name = input.arguments.class_name
+        class_id = input.arguments.class_id
         students = input.arguments.students
 
         results =
           Enum.map(students, fn student_attrs ->
-            student_with_class = Map.put(student_attrs, :class_name, class_name)
+            student_with_class = Map.put(student_attrs, :class_id, class_id)
 
             case KgEdu.Accounts.User
                  |> Ash.Changeset.for_action(:create_student, student_with_class)
@@ -178,7 +177,6 @@ defmodule KgEdu.Accounts.User do
         :major,
         :school,
         :colledge,
-        :class_name,
         :avatar_url,
         :class_id,
         :job_title,
@@ -199,34 +197,24 @@ defmodule KgEdu.Accounts.User do
       accept []
 
       change set_attribute(:class_id, nil)
-      change set_attribute(:class_name, nil)
 
       # Note: This action should only be called on student users (role == :user)
     end
 
     read :get_students_by_class do
-      description "Get students filtered by class name"
-
-      argument :class_name, :string do
-        description "The class name to filter students by"
-        allow_nil? true
-      end
+      description "Get students filtered by class ID"
 
       argument :class_id, :uuid do
         description "The class ID to filter students by"
-        allow_nil? true
+        allow_nil? false
       end
 
-      filter expr(
-               role == :user and
-                 ((not is_nil(^arg(:class_name)) and class_name == ^arg(:class_name)) or
-                    (not is_nil(^arg(:class_id)) and class_id == ^arg(:class_id)))
-             )
+      filter expr(role == :user and class_id == ^arg(:class_id))
     end
 
     read :list_student_classes do
-      description "Get all unique class names from student users"
-      filter expr(role == :user and not is_nil(class_name))
+      description "Get all unique class IDs from student users"
+      filter expr(role == :user and not is_nil(class_id))
     end
 
     create :create_user do
@@ -286,13 +274,18 @@ defmodule KgEdu.Accounts.User do
         allow_nil? true
       end
 
-      argument :class_name, :string do
-        description "The class name (for student users)"
+      argument :class_id, :uuid do
+        description "The class ID (for student users)"
         allow_nil? true
       end
 
-      argument :class_id, :uuid do
-        description "The class ID (for student users)"
+      argument :major, :string do
+        description "The user's major (专业)"
+        allow_nil? true
+      end
+
+      argument :colledge, :string do
+        description "The user's college (学院)"
         allow_nil? true
       end
 
@@ -308,8 +301,9 @@ defmodule KgEdu.Accounts.User do
       change set_attribute(:job_title, arg(:job_title))
       change set_attribute(:bio, arg(:bio))
       change set_attribute(:school, arg(:school))
-      change set_attribute(:class_name, arg(:class_name))
       change set_attribute(:class_id, arg(:class_id))
+      change set_attribute(:major, arg(:major))
+      change set_attribute(:colledge, arg(:colledge))
     end
 
     update :update do
@@ -324,15 +318,23 @@ defmodule KgEdu.Accounts.User do
         :job_title,
         :bio,
         :class_id,
-        :class_name,
-        :school
+        :school,
+        :major,
+        :colledge
       ]
 
       require_atomic? false
     end
 
     read :get_users do
-      description "Get all users"
+      description "Get all users with optional pagination"
+
+      pagination do
+        required? false
+        offset? true
+        keyset? true
+        countable true
+      end
 
       # This action is used to retrieve all users, typically for admin purposes
       # filter expr(true) # No filter, retrieves all users
@@ -934,9 +936,9 @@ defmodule KgEdu.Accounts.User do
       end
 
       argument :attributes, {:array, :atom} do
-        description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role, :class]"
+        description "List of attributes in order: [:member_id, :name, :phone, :email, :password, :role, :school, :colledge, :major, :class]"
         allow_nil? true
-        default [:member_id, :name, :phone, :email, :password, :role, :class]
+        default [:member_id, :name, :phone, :email, :password, :role, :school, :colledge, :major, :class]
       end
 
       run fn input, context ->
@@ -965,7 +967,7 @@ defmodule KgEdu.Accounts.User do
             try do
               KgEdu.Accounts.User.ImportFromExcel.parse_excel(
                 excel_file,
-                attributes || [:member_id, :name, :phone, :email, :password, :role, :class],
+                attributes || [:member_id, :name, :phone, :email, :password, :role, :school, :college, :major, :class],
                 tenant_to_use
               )
             rescue
@@ -1126,11 +1128,6 @@ defmodule KgEdu.Accounts.User do
     end
 
     attribute :phone, :string do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :class_name, :string do
       allow_nil? true
       public? true
     end
