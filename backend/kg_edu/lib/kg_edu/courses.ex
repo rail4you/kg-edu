@@ -4,186 +4,195 @@ defmodule KgEdu.Courses do
     extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc]
 
   admin do
-    show? true
+    show?(true)
   end
 
   json_api do
     routes do
       # Course endpoints
       base_route "/courses", KgEdu.Courses.Course do
-        get :read, route: "/"
-        index :by_teacher, route: "/teacher/:teacher_id"
-        index :by_student, route: "/student/:student_id"
-        post :create, route: "/"
-        patch :update, route: "/:id"
-        delete :destroy, route: "/:id"
+        get(:read, route: "/")
+        index(:by_teacher, route: "/teacher/:teacher_id")
+        index(:by_student, route: "/student/:student_id")
+        post(:create, route: "/")
+        patch(:update, route: "/:id")
+        delete(:destroy, route: "/:id")
       end
 
       # Chapter endpoints
       base_route "/chapters", KgEdu.Courses.Chapter do
-        get :read, route: "/"
-        index :by_course, route: "/course/:course_id"
-        index :root_chapters, route: "/course/:course_id/root"
-        index :subchapters, route: "/parent/:parent_chapter_id"
-        post :create, route: "/"
-        patch :update, route: "/:id"
-        delete :destroy, route: "/:id"
+        get(:read, route: "/")
+        index(:by_course, route: "/course/:course_id")
+        index(:root_chapters, route: "/course/:course_id/root")
+        index(:subchapters, route: "/parent/:parent_chapter_id")
+        post(:create, route: "/")
+        patch(:update, route: "/:id")
+        delete(:destroy, route: "/:id")
       end
 
       # Course enrollment endpoints
       base_route "/course-enrollments", KgEdu.Courses.CourseEnrollment do
-        get :read, route: "/"
-        index :by_course, route: "/course/:course_id"
-        index :by_student, route: "/student/:student_id"
-        post :create, route: "/"
-        delete :destroy, route: "/:id"
+        get(:read, route: "/")
+        index(:by_course, route: "/course/:course_id")
+        index(:by_student, route: "/student/:student_id")
+        post(:create, route: "/")
+        delete(:destroy, route: "/:id")
       end
     end
   end
 
   typescript_rpc do
     resource KgEdu.Courses.Course do
-      rpc_action :list_courses, :read
-      rpc_action :get_all_courses, :get_all_courses
-      rpc_action :get_course_by_guest, :get_course_by_guest
-      rpc_action :create_course, :create
-      rpc_action :update_course, :update
-      rpc_action :destroy_course, :destroy
-      rpc_action :get_course, :get
-      rpc_action :calculate_course_statistics, :calculate_course_statistics
-      rpc_action :course_overview, :course_overview
-      rpc_action :my_courses, :my_courses
-      rpc_action :get_dashboard_stats, :get_dashboard_stats
+      rpc_action(:list_courses, :read)
+      rpc_action(:get_all_courses, :get_all_courses)
+      rpc_action(:get_course_by_guest, :get_course_by_guest)
+      rpc_action(:create_course, :create)
+      rpc_action(:update_course, :update)
+      rpc_action(:destroy_course, :destroy)
+      rpc_action(:get_course, :get)
+      rpc_action(:calculate_course_statistics, :calculate_course_statistics)
+      rpc_action(:course_overview, :course_overview)
+      rpc_action(:my_courses, :my_courses)
+      rpc_action(:get_dashboard_stats, :get_dashboard_stats)
     end
 
     resource KgEdu.Courses.Chapter do
-      rpc_action :list_chapters, :read
-      rpc_action :create_chapter, :create
-      rpc_action :get_chapter, :read
-      rpc_action :update_chapter, :update
-      rpc_action :delete_chapter, :destroy
-      rpc_action :reorder_chapters, :reorder
+      rpc_action(:list_chapters, :read)
+      rpc_action(:create_chapter, :create)
+      rpc_action(:get_chapter, :read)
+      rpc_action(:update_chapter, :update)
+      rpc_action(:delete_chapter, :destroy)
+      rpc_action(:reorder_chapters, :reorder)
     end
 
     resource KgEdu.Courses.File do
-      rpc_action :list_files, :read
+      rpc_action(:list_files, :read)
       # rpc_action :upload_file, :upload
-      rpc_action :create_file, :create
-      rpc_action :delete_file, :destroy
-      rpc_action :link_file_to_knowledge, :link_file_to_knowledge
-      rpc_action :unlink_file_from_knowledge, :unlink_file_from_knowledge
-      rpc_action :list_ai_generated_files_by_course, :ai_generated_by_course
+      rpc_action(:create_file, :create)
+      rpc_action(:delete_file, :destroy)
+      rpc_action(:link_file_to_knowledge, :link_file_to_knowledge)
+      rpc_action(:unlink_file_from_knowledge, :unlink_file_from_knowledge)
+      rpc_action(:list_ai_generated_files_by_course, :ai_generated_by_course)
       # rpc_action :get_file, :get
     end
 
     resource KgEdu.Courses.Video do
-      rpc_action :list_videos, :read
-      rpc_action :create_video, :create
-      rpc_action :get_video, :read
-      rpc_action :get_video_by_upload_id, :read
-      rpc_action :update_video, :update_video
-      rpc_action :delete_video, :destroy
-      rpc_action :get_videos_by_course_ids, :by_course_ids
+      rpc_action(:list_videos, :read)
+      rpc_action(:create_video, :create)
+      rpc_action(:get_video, :read)
+      rpc_action(:get_video_by_upload_id, :read)
+      rpc_action(:update_video, :update_video)
+      rpc_action(:delete_video, :destroy)
+      rpc_action(:get_videos_by_course_ids, :by_course_ids)
       # rpc_action :get_videos_by_chapter, :by_chapter
       # rpc_action :get_videos_by_knowledge_resource, :by_knowledge_resource
-      rpc_action :link_video_to_knowledge, :link_video_to_knowledge
-      rpc_action :unlink_video_from_knowledge, :unlink_video_from_knowledge
-      rpc_action :link_video_to_chapter, :link_video_to_chapter
-      rpc_action :unlink_video_from_chapter, :unlink_video_from_chapter
+      rpc_action(:link_video_to_knowledge, :link_video_to_knowledge)
+      rpc_action(:unlink_video_from_knowledge, :unlink_video_from_knowledge)
+      rpc_action(:link_video_to_chapter, :link_video_to_chapter)
+      rpc_action(:unlink_video_from_chapter, :unlink_video_from_chapter)
     end
 
     resource KgEdu.Courses.CourseEnrollment do
-      rpc_action :enroll_student, :create
-      rpc_action :unenroll_student, :destroy
-      rpc_action :get_enrollment, :read
-      rpc_action :list_enrollments, :read
-      rpc_action :list_enrollments_by_course, :by_course
-      rpc_action :list_enrollments_by_student, :by_student
-      rpc_action :bulk_enroll_students, :bulk_enroll
-      rpc_action :bulk_unenroll_students, :bulk_unenroll_students
-      rpc_action :check_enrollment_status, :enrollment_status
+      rpc_action(:enroll_student, :create)
+      rpc_action(:unenroll_student, :destroy)
+      rpc_action(:get_enrollment, :read)
+      rpc_action(:list_enrollments, :read)
+      rpc_action(:list_enrollments_by_course, :by_course)
+      rpc_action(:list_enrollments_by_student, :by_student)
+      rpc_action(:bulk_enroll_students, :bulk_enroll)
+      rpc_action(:bulk_unenroll_students, :bulk_unenroll_students)
+      rpc_action(:check_enrollment_status, :enrollment_status)
     end
 
     resource KgEdu.Courses.Book do
-      rpc_action :list_books, :read
-      rpc_action :create_book, :create
-      rpc_action :get_book, :read
-      rpc_action :update_book, :update
-      rpc_action :delete_book, :destroy
+      rpc_action(:list_books, :read)
+      rpc_action(:create_book, :create)
+      rpc_action(:get_book, :read)
+      rpc_action(:update_book, :update)
+      rpc_action(:delete_book, :destroy)
     end
 
     resource KgEdu.Courses.CourseInfo do
-      rpc_action :list_course_infos, :read
-      rpc_action :create_course_info, :create
-      rpc_action :get_course_info, :read
-      rpc_action :update_course_info, :update
-      rpc_action :delete_course_info, :destroy
+      rpc_action(:list_course_infos, :read)
+      rpc_action(:create_course_info, :create)
+      rpc_action(:get_course_info, :read)
+      rpc_action(:update_course_info, :update)
+      rpc_action(:delete_course_info, :destroy)
     end
 
     resource KgEdu.Courses.Link do
-      rpc_action :list_links, :read
-      rpc_action :create_link, :create
-      rpc_action :get_link, :read
-      rpc_action :update_link, :update
-      rpc_action :delete_link, :destroy
-      rpc_action :list_links_by_course, :by_course
-      rpc_action :link_to_knowledge, :link_to_knowledge
-      rpc_action :unlink_from_knowledge, :unlink_from_knowledge
+      rpc_action(:list_links, :read)
+      rpc_action(:create_link, :create)
+      rpc_action(:get_link, :read)
+      rpc_action(:update_link, :update)
+      rpc_action(:delete_link, :destroy)
+      rpc_action(:list_links_by_course, :by_course)
+      rpc_action(:link_to_knowledge, :link_to_knowledge)
+      rpc_action(:unlink_from_knowledge, :unlink_from_knowledge)
     end
 
     resource KgEdu.Courses.SubjectCategory do
-      rpc_action :create_subject_category, :create
-      rpc_action :list_subject_categories, :read
-      rpc_action :get_subject_category, :read
-      rpc_action :get_subject_category_by_name, :by_name
-      rpc_action :update_subject_category, :update
-      rpc_action :delete_subject_category, :destroy
+      rpc_action(:create_subject_category, :create)
+      rpc_action(:list_subject_categories, :read)
+      rpc_action(:get_subject_category, :read)
+      rpc_action(:get_subject_category_by_name, :by_name)
+      rpc_action(:update_subject_category, :update)
+      rpc_action(:delete_subject_category, :destroy)
     end
 
     resource KgEdu.Courses.CourseVideo do
-      rpc_action :create_course_video, :create
-      rpc_action :list_course_videos, :read
-      rpc_action :get_course_video, :read
-      rpc_action :update_course_video, :update
-      rpc_action :delete_course_video, :destroy
-      rpc_action :list_course_videos_by_course, :by_course
+      rpc_action(:create_course_video, :create)
+      rpc_action(:list_course_videos, :read)
+      rpc_action(:get_course_video, :read)
+      rpc_action(:update_course_video, :update)
+      rpc_action(:delete_course_video, :destroy)
+      rpc_action(:list_course_videos_by_course, :by_course)
     end
 
     resource KgEdu.Courses.CourseAssignment do
-      rpc_action :create_course_assignment, :create
-      rpc_action :list_course_assignments, :read
-      rpc_action :get_course_assignment, :read
-      rpc_action :update_course_assignment, :update
-      rpc_action :delete_course_assignment, :destroy
-      rpc_action :list_assignments_by_teacher, :by_teacher
-      rpc_action :list_assignments_for_teacher, :assignments_for_teacher
-      rpc_action :list_assignments_by_course, :by_course
-      rpc_action :assign_course_to_teacher, :create
-      rpc_action :remove_course_from_teacher, :remove_course_from_teacher
+      rpc_action(:create_course_assignment, :create)
+      rpc_action(:list_course_assignments, :read)
+      rpc_action(:get_course_assignment, :read)
+      rpc_action(:update_course_assignment, :update)
+      rpc_action(:delete_course_assignment, :destroy)
+      rpc_action(:list_assignments_by_teacher, :by_teacher)
+      rpc_action(:list_assignments_for_teacher, :assignments_for_teacher)
+      rpc_action(:list_assignments_by_course, :by_course)
+      rpc_action(:assign_course_to_teacher, :create)
+      rpc_action(:remove_course_from_teacher, :remove_course_from_teacher)
     end
 
     resource KgEdu.Courses.Discussion do
-      rpc_action :create_discussion, :create
-      rpc_action :list_discussions, :read
-      rpc_action :list_discussions_by_course, :by_course
-      rpc_action :get_discussion, :read
-      rpc_action :update_discussion, :update
-      rpc_action :delete_discussion, :destroy
+      rpc_action(:create_discussion, :create)
+      rpc_action(:list_discussions, :read)
+      rpc_action(:list_discussions_by_course, :by_course)
+      rpc_action(:get_discussion, :read)
+      rpc_action(:update_discussion, :update)
+      rpc_action(:delete_discussion, :destroy)
+    end
+
+    resource KgEdu.Courses.DiscussionSession do
+      rpc_action(:create_discussion_session, :create)
+      rpc_action(:list_discussion_sessions, :read)
+      rpc_action(:get_discussion_session_by_token, :by_token)
+      rpc_action(:close_discussion_session, :close)
+      rpc_action(:delete_discussion_session, :destroy)
     end
   end
 
   resources do
-    resource KgEdu.Courses.Course
-    resource KgEdu.Courses.CourseEnrollment
-    resource KgEdu.Courses.CourseAssignment
-    resource KgEdu.Courses.Chapter
-    resource KgEdu.Courses.File
-    resource KgEdu.Courses.Video
-    resource KgEdu.Courses.Book
-    resource KgEdu.Courses.CourseInfo
-    resource KgEdu.Courses.Link
-    resource KgEdu.Courses.SubjectCategory
-    resource KgEdu.Courses.CourseVideo
-    resource KgEdu.Courses.Discussion
+    resource(KgEdu.Courses.Course)
+    resource(KgEdu.Courses.CourseEnrollment)
+    resource(KgEdu.Courses.CourseAssignment)
+    resource(KgEdu.Courses.Chapter)
+    resource(KgEdu.Courses.File)
+    resource(KgEdu.Courses.Video)
+    resource(KgEdu.Courses.Book)
+    resource(KgEdu.Courses.CourseInfo)
+    resource(KgEdu.Courses.Link)
+    resource(KgEdu.Courses.SubjectCategory)
+    resource(KgEdu.Courses.CourseVideo)
+    resource(KgEdu.Courses.Discussion)
+    resource(KgEdu.Courses.DiscussionSession)
   end
 end

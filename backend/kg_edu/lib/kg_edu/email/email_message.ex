@@ -9,113 +9,121 @@ defmodule KgEdu.Email.EmailMessage do
   require Logger
 
   postgres do
-    table "email_messages"
-    repo KgEdu.Repo
+    table("email_messages")
+    repo(KgEdu.Repo)
   end
 
   json_api do
-    type "email_message"
+    type("email_message")
   end
 
   typescript do
-    type_name "EmailMessage"
+    type_name("EmailMessage")
   end
 
   code_interface do
-    define :list_email_messages, action: :read
-    define :get_email_message, action: :by_id
-    define :list_sent_messages, action: :by_sender
-    define :list_received_messages, action: :by_receiver
-    define :create_email_message, action: :create
-    define :send_email, action: :send_email
-    define :reply_email, action: :reply_email
-    define :mark_as_sent, action: :mark_as_sent
-    define :mark_as_failed, action: :mark_as_failed
+    define(:list_email_messages, action: :read)
+    define(:get_email_message, action: :by_id)
+    define(:list_sent_messages, action: :by_sender)
+    define(:list_received_messages, action: :by_receiver)
+    define(:create_email_message, action: :create)
+    define(:send_email, action: :send_email)
+    define(:reply_email, action: :reply_email)
+    define(:mark_as_sent, action: :mark_as_sent)
+    define(:mark_as_failed, action: :mark_as_failed)
+    define(:mark_as_read, action: :mark_as_read)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     read :by_id do
-      description "Get an email message by ID"
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
+      description("Get an email message by ID")
+      get?(true)
+      argument(:id, :uuid, allow_nil?: false)
+      filter(expr(id == ^arg(:id)))
     end
 
     read :by_sender do
-      description "Get all email messages sent by a user"
-      argument :sender_user_id, :uuid, allow_nil?: false
-      filter expr(sender_user_id == ^arg(:sender_user_id))
+      description("Get all email messages sent by a user")
+      argument(:sender_user_id, :uuid, allow_nil?: false)
+      filter(expr(sender_user_id == ^arg(:sender_user_id)))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
-      end
+      end)
     end
 
     read :by_receiver do
-      description "Get all email messages received by a user"
-      argument :receiver_user_id, :uuid, allow_nil?: false
-      filter expr(receiver_user_id == ^arg(:receiver_user_id))
+      description("Get all email messages received by a user")
+      argument(:receiver_user_id, :uuid, allow_nil?: false)
+      filter(expr(receiver_user_id == ^arg(:receiver_user_id)))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
-      end
+      end)
     end
 
     create :create do
-      description "Create a new email message (doesn't send it)"
-      accept [:subject, :body, :parent_message_id]
+      description("Create a new email message (doesn't send it)")
+      accept([:subject, :body, :parent_message_id])
 
       argument :sender_user_id, :uuid do
-        allow_nil? false
-        description "The user ID sending the email"
+        allow_nil?(false)
+        description("The user ID sending the email")
       end
 
       argument :receiver_user_id, :uuid do
-        allow_nil? false
-        description "The user ID receiving the email"
+        allow_nil?(false)
+        description("The user ID receiving the email")
       end
 
-      change set_attribute(:sender_user_id, arg(:sender_user_id))
-      change set_attribute(:receiver_user_id, arg(:receiver_user_id))
-      change set_attribute(:status, :pending)
+      change(set_attribute(:sender_user_id, arg(:sender_user_id)))
+      change(set_attribute(:receiver_user_id, arg(:receiver_user_id)))
+      change(set_attribute(:status, :pending))
     end
 
     update :mark_as_sent do
-      description "Mark email as successfully sent"
-      accept []
-      change set_attribute(:status, :sent)
-      change set_attribute(:sent_at, &DateTime.utc_now/0)
+      description("Mark email as successfully sent")
+      accept([])
+      change(set_attribute(:status, :sent))
+      change(set_attribute(:sent_at, &DateTime.utc_now/0))
     end
 
     update :mark_as_failed do
-      description "Mark email as failed to send"
-      accept [:error_message]
-      change set_attribute(:status, :failed)
-      change set_attribute(:failed_at, &DateTime.utc_now/0)
+      description("Mark email as failed to send")
+      accept([:error_message])
+      change(set_attribute(:status, :failed))
+      change(set_attribute(:failed_at, &DateTime.utc_now/0))
+    end
+
+    update :mark_as_read do
+      description("Mark email as read")
+      accept([])
+      change(set_attribute(:read_status, :read))
+      change(set_attribute(:read_at, &DateTime.utc_now/0))
     end
 
     create :send_email do
-      description "Create and send an email message"
-      accept [:subject, :body, :parent_message_id]
+      description("Create and send an email message")
+      accept([:subject, :body, :parent_message_id])
 
       argument :sender_user_id, :uuid do
-        allow_nil? false
-        description "The user ID sending the email"
+        allow_nil?(false)
+        description("The user ID sending the email")
       end
 
       argument :receiver_user_id, :uuid do
-        allow_nil? false
-        description "The user ID receiving the email"
+        allow_nil?(false)
+        description("The user ID receiving the email")
       end
 
-      change set_attribute(:sender_user_id, arg(:sender_user_id))
-      change set_attribute(:receiver_user_id, arg(:receiver_user_id))
-      change set_attribute(:status, :sending)
+      change(set_attribute(:sender_user_id, arg(:sender_user_id)))
+      change(set_attribute(:receiver_user_id, arg(:receiver_user_id)))
+      change(set_attribute(:status, :sending))
 
       # After creating the message, send the email
-      change fn changeset, context ->
+      change(fn changeset, context ->
         Ash.Changeset.after_action(changeset, fn _changeset, email_message ->
           Logger.info("[EMAIL AFTER_ACTION] Starting email send for message: #{email_message.id}")
 
@@ -163,29 +171,29 @@ defmodule KgEdu.Email.EmailMessage do
               end
           end
         end)
-      end
+      end)
     end
 
     create :reply_email do
-      description "Reply to an existing email message"
-      accept [:subject, :body]
+      description("Reply to an existing email message")
+      accept([:subject, :body])
 
       argument :parent_message_id, :uuid do
-        allow_nil? false
-        description "The ID of the parent email message being replied to"
+        allow_nil?(false)
+        description("The ID of the parent email message being replied to")
       end
 
       argument :sender_user_id, :uuid do
-        allow_nil? false
-        description "The user ID sending the reply"
+        allow_nil?(false)
+        description("The user ID sending the reply")
       end
 
-      change set_attribute(:parent_message_id, arg(:parent_message_id))
-      change set_attribute(:status, :sending)
+      change(set_attribute(:parent_message_id, arg(:parent_message_id)))
+      change(set_attribute(:status, :sending))
 
       # Get parent message and set reply direction
       # Reply goes from original receiver back to original sender
-      change fn changeset, context ->
+      change(fn changeset, context ->
         parent_id = Ash.Changeset.get_argument(changeset, :parent_message_id)
         replier_id = Ash.Changeset.get_argument(changeset, :sender_user_id)
 
@@ -221,10 +229,10 @@ defmodule KgEdu.Email.EmailMessage do
             Logger.error("[REPLY EMAIL] Failed to load parent message: #{inspect(reason)}")
             Ash.Changeset.add_error(changeset, :parent_message_id, "parent message not found")
         end
-      end
+      end)
 
       # After creating the reply, send the email
-      change fn changeset, context ->
+      change(fn changeset, context ->
         Ash.Changeset.after_action(changeset, fn _changeset, email_message ->
           Logger.info(
             "[REPLY EMAIL AFTER_ACTION] Starting reply send for message: #{email_message.id}"
@@ -266,65 +274,79 @@ defmodule KgEdu.Email.EmailMessage do
               end
           end
         end)
-      end
+      end)
     end
   end
 
   policies do
     policy always() do
-      authorize_if always()
+      authorize_if(always())
     end
   end
 
   multitenancy do
-    strategy :context
+    strategy(:context)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :subject, :string do
-      allow_nil? false
-      description "Email subject"
-      public? true
+      allow_nil?(false)
+      description("Email subject")
+      public?(true)
     end
 
     attribute :body, :string do
-      allow_nil? false
-      description "Email body content"
-      public? true
+      allow_nil?(false)
+      description("Email body content")
+      public?(true)
     end
 
     attribute :status, :atom do
-      allow_nil? false
-      default :pending
-      constraints one_of: [:pending, :sending, :sent, :failed]
-      description "Email delivery status"
-      public? true
+      allow_nil?(false)
+      default(:pending)
+      constraints(one_of: [:pending, :sending, :sent, :failed])
+      description("Email delivery status")
+      public?(true)
+    end
+
+    attribute :read_status, :atom do
+      allow_nil?(false)
+      default(:unread)
+      constraints(one_of: [:unread, :read])
+      description("Email read status")
+      public?(true)
+    end
+
+    attribute :read_at, :utc_datetime do
+      allow_nil?(true)
+      description("Timestamp when email was read")
+      public?(true)
     end
 
     attribute :error_message, :string do
-      allow_nil? true
-      description "Error message if sending failed"
-      public? true
+      allow_nil?(true)
+      description("Error message if sending failed")
+      public?(true)
     end
 
     attribute :sent_at, :utc_datetime do
-      allow_nil? true
-      description "Timestamp when email was sent"
-      public? true
+      allow_nil?(true)
+      description("Timestamp when email was sent")
+      public?(true)
     end
 
     attribute :failed_at, :utc_datetime do
-      allow_nil? true
-      description "Timestamp when email failed to send"
-      public? true
+      allow_nil?(true)
+      description("Timestamp when email failed to send")
+      public?(true)
     end
 
     attribute :parent_message_id, :uuid do
-      allow_nil? true
-      description "Parent email message ID for thread/reply tracking"
-      public? true
+      allow_nil?(true)
+      description("Parent email message ID for thread/reply tracking")
+      public?(true)
     end
 
     timestamps(public?: true)
@@ -332,34 +354,34 @@ defmodule KgEdu.Email.EmailMessage do
 
   relationships do
     belongs_to :sender, KgEdu.Accounts.User do
-      public? true
-      allow_nil? false
-      destination_attribute :id
-      source_attribute :sender_user_id
-      description "The user who sent the email"
+      public?(true)
+      allow_nil?(false)
+      destination_attribute(:id)
+      source_attribute(:sender_user_id)
+      description("The user who sent the email")
     end
 
     belongs_to :receiver, KgEdu.Accounts.User do
-      public? true
-      allow_nil? false
-      destination_attribute :id
-      source_attribute :receiver_user_id
-      description "The user who received the email"
+      public?(true)
+      allow_nil?(false)
+      destination_attribute(:id)
+      source_attribute(:receiver_user_id)
+      description("The user who received the email")
     end
 
     belongs_to :parent_message, __MODULE__ do
-      public? true
-      allow_nil? true
-      destination_attribute :id
-      source_attribute :parent_message_id
-      description "Parent email message for thread/reply tracking"
+      public?(true)
+      allow_nil?(true)
+      destination_attribute(:id)
+      source_attribute(:parent_message_id)
+      description("Parent email message for thread/reply tracking")
     end
 
     has_many :sub_messages, __MODULE__ do
-      public? true
-      destination_attribute :parent_message_id
-      source_attribute :id
-      description "Sub-messages (replies) to this email"
+      public?(true)
+      destination_attribute(:parent_message_id)
+      source_attribute(:id)
+      description("Sub-messages (replies) to this email")
     end
   end
 end
