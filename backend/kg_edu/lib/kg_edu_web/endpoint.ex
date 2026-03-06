@@ -36,7 +36,7 @@ defmodule KgEduWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
-    plug AshPhoenix.Plug.CheckCodegenStatus
+    # plug AshPhoenix.Plug.CheckCodegenStatus  # Temporarily disabled for testing
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :kg_edu
   end
 

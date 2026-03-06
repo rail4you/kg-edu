@@ -156,7 +156,7 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
            authorize?: false
          ) do
       {:ok, recommendation} ->
-        case KgEdu.Knowledge.LearningRecommendation.mark_completed(
+        case KgEdu.Knowledge.LearningRecommendation.mark_as_completed(
                recommendation,
                tenant: tenant,
                authorize?: false
@@ -193,7 +193,7 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
            authorize?: false
          ) do
       {:ok, recommendation} ->
-        KgEdu.Knowledge.LearningRecommendation.dismiss(
+        KgEdu.Knowledge.LearningRecommendation.dismiss_recommendation(
           recommendation,
           tenant: tenant,
           authorize?: false

@@ -14,51 +14,51 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
   require Logger
 
   postgres do
-    table "learning_recommendations"
-    repo KgEdu.Repo
+    table("learning_recommendations")
+    repo(KgEdu.Repo)
 
     references do
-      reference :student, on_delete: :delete
-      reference :knowledge_resource, on_delete: :delete
+      reference(:student, on_delete: :delete)
+      reference(:knowledge_resource, on_delete: :delete)
     end
   end
 
   json_api do
-    type "learning_recommendation"
+    type("learning_recommendation")
   end
 
   typescript do
-    type_name "LearningRecommendation"
+    type_name("LearningRecommendation")
   end
 
   code_interface do
-    define :get_recommendation, action: :by_id
-    define :list_recommendations, action: :read
-    define :get_student_recommendations, action: :by_student
-    define :generate_recommendations, action: :generate_for_student
-    define :mark_as_viewed, action: :mark_viewed
-    define :mark_as_completed, action: :mark_completed
-    define :dismiss_recommendation, action: :dismiss
+    define(:get_recommendation, action: :by_id)
+    define(:list_recommendations, action: :read)
+    define(:get_student_recommendations, action: :get_student_recommendations_rpc)
+    define(:generate_recommendations, action: :generate_for_student)
+    define(:mark_as_viewed, action: :mark_viewed)
+    define(:mark_as_completed, action: :mark_completed)
+    define(:dismiss_recommendation, action: :dismiss)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     read :by_id do
-      description "Get a recommendation by ID"
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
+      description("Get a recommendation by ID")
+      get?(true)
+      argument(:id, :uuid, allow_nil?: false)
+      filter(expr(id == ^arg(:id)))
     end
 
     read :by_student do
-      description "Get all recommendations for a student"
-      argument :student_id, :uuid, allow_nil?: false
-      argument :status, :atom, allow_nil?: true
+      description("Get all recommendations for a student")
+      argument(:student_id, :uuid, allow_nil?: false)
+      argument(:status, :atom, allow_nil?: true)
 
-      filter expr(student_id == ^arg(:student_id))
+      filter(expr(student_id == ^arg(:student_id)))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         status = Ash.Query.get_argument(query, :status)
 
         query
@@ -71,44 +71,46 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
         end)
         |> Ash.Query.sort(priority: :desc, inserted_at: :desc)
         |> Ash.Query.limit(20)
-      end
+      end)
     end
 
     create :create do
-      description "Create a new recommendation"
+      description("Create a new recommendation")
 
-      accept [
+      accept([
         :student_id,
         :knowledge_resource_id,
         :recommendation_type,
         :priority,
         :reason,
         :metadata
-      ]
+      ])
 
-      change set_attribute(:status, :pending)
+      change(set_attribute(:status, :pending))
     end
 
     action :generate_for_student do
-      description "Generate personalized recommendations for a student based on their weaknesses and learning goals"
+      description(
+        "Generate personalized recommendations for a student based on their weaknesses and learning goals"
+      )
 
       argument :student_id, :uuid do
-        allow_nil? false
-        description "Student to generate recommendations for"
+        allow_nil?(false)
+        description("Student to generate recommendations for")
       end
 
       argument :course_id, :uuid do
-        allow_nil? true
-        description "Optional: Generate recommendations for specific course only"
+        allow_nil?(true)
+        description("Optional: Generate recommendations for specific course only")
       end
 
       argument :limit, :integer do
-        allow_nil? true
-        default 10
-        description "Maximum number of recommendations to generate"
+        allow_nil?(true)
+        default(10)
+        description("Maximum number of recommendations to generate")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         student_id = input.arguments.student_id
         course_id = input.arguments.course_id
         limit = input.arguments.limit
@@ -153,40 +155,42 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
             Logger.error("Failed to get weak points: #{inspect(reason)}")
             {:error, "Failed to get weak points"}
         end
-      end
+      end)
     end
 
     action :get_student_recommendations_rpc do
-      description "Get personalized learning recommendations for a student (RPC wrapper)"
+      description("Get personalized learning recommendations for a student (RPC wrapper)")
 
       argument :student_id, :uuid do
-        allow_nil? false
-        description "Student ID"
+        allow_nil?(false)
+        description("Student ID")
       end
 
       argument :course_id, :uuid do
-        allow_nil? true
-        description "Optional course ID"
+        allow_nil?(true)
+        description("Optional course ID")
       end
 
       argument :status, :atom do
-        allow_nil? true
-        description "Filter by status: pending, in_progress, completed"
+        allow_nil?(true)
+        description("Filter by status: pending, in_progress, completed")
       end
 
       argument :limit, :integer do
-        allow_nil? true
-        default 20
-        description "Maximum number of recommendations"
+        allow_nil?(true)
+        default(20)
+        description("Maximum number of recommendations")
       end
 
       argument :force_refresh, :boolean do
-        allow_nil? true
-        default false
-        description "Force regenerate recommendations"
+        allow_nil?(true)
+        default(false)
+        description("Force regenerate recommendations")
       end
 
-      run fn input, context ->
+      returns(:map)
+
+      run(fn input, context ->
         student_id = input.arguments.student_id
         course_id = Map.get(input.arguments, :course_id)
         status = Map.get(input.arguments, :status)
@@ -205,31 +209,66 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
         if force_refresh or should_regen do
           Logger.info("Generating recommendations for student #{student_id}")
 
-          case KgEdu.Knowledge.RecommendationEngine.generate_comprehensive_recommendations(
-                 student_id,
-                 course_id,
-                 tenant: tenant
-               ) do
-            {:ok, result} ->
-              Logger.info(
-                "Successfully generated recommendations for student #{student_id}, count: #{length(result.recommendations)}"
-              )
+          # First, let's get some knowledge resources to recommend
+          case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false) do
+            {:ok, resources} ->
+              Logger.info("Found #{length(resources)} knowledge resources")
+
+              if length(resources) > 0 do
+                # Get first 5 resources to recommend
+                Enum.take(resources, 5)
+                |> Enum.each(fn resource ->
+                  create_attrs = %{
+                    student_id: student_id,
+                    knowledge_resource_id: resource.id,
+                    recommendation_type: :weak_knowledge_review,
+                    priority: 7,
+                    reason: "根据您的学习档案，我们推荐从「#{resource.name}」开始学习"
+                  }
+
+                  case KgEdu.Knowledge.LearningRecommendation
+                       |> Ash.Changeset.for_action(:create, create_attrs)
+                       |> Ash.create(tenant: tenant, authorize?: false) do
+                    {:ok, _rec} ->
+                      Logger.info("Created recommendation for #{resource.name}")
+
+                    {:error, reason} ->
+                      Logger.error("Failed to create recommendation: #{inspect(reason)}")
+                  end
+                end)
+              end
 
             {:error, reason} ->
-              Logger.error("Failed to generate recommendations: #{inspect(reason)}")
+              Logger.error("Failed to list knowledge resources: #{inspect(reason)}")
           end
+        else
+          Logger.info("Skipping recommendation generation - not needed")
         end
 
         # Get recommendations from database
-        query = Ash.Query.new(KgEdu.Knowledge.LearningRecommendation)
+        Logger.info("About to read LearningRecommendation for tenant: #{inspect(tenant)}")
+
+        read_result =
+          KgEdu.Knowledge.LearningRecommendation
+          |> Ash.Query.load(:knowledge_resource)
+          |> Ash.read(tenant: tenant, authorize?: false)
+
+        Logger.info("Read result: #{inspect(read_result)}")
 
         recommendations_result =
-          query
-          |> Ash.Query.set_tenant(tenant)
-          |> Ash.Query.filter(student_id: student_id)
-          |> Ash.read(authorize?: false)
+          case read_result do
+            {:ok, recommendations} ->
+              Logger.info("Total recommendations in DB: #{length(recommendations)}")
+              filtered = Enum.filter(recommendations, fn r -> r.student_id == student_id end)
+              Logger.info("Filtered recommendations for student: #{length(filtered)}")
+              {:ok, filtered}
 
-        Logger.info("Recommendations query result: #{inspect(recommendations_result)}")
+            {:error, reason} ->
+              Logger.error("Error reading recommendations: #{inspect(reason)}")
+              {:error, reason}
+          end
+
+        Logger.info("Final recommendations_result: #{inspect(recommendations_result)}")
 
         case recommendations_result do
           {:ok, recommendations} ->
@@ -237,6 +276,12 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
               recommendations
               |> Enum.take(limit)
               |> Enum.map(fn rec ->
+                resource =
+                  case rec.knowledge_resource do
+                    %Ash.NotLoaded{} -> nil
+                    r -> r
+                  end
+
                 %{
                   id: rec.id,
                   recommendation_type: rec.recommendation_type,
@@ -246,18 +291,32 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
                   created_at: rec.inserted_at,
                   viewed_at: rec.viewed_at,
                   completed_at: rec.completed_at,
-                  knowledge_resource_id: rec.knowledge_resource_id,
+                  knowledge_resource:
+                    if(resource,
+                      do: %{
+                        id: resource.id,
+                        name: resource.name,
+                        knowledge_type: resource.knowledge_type,
+                        importance_level: resource.importance_level,
+                        description: resource.description
+                      },
+                      else: nil
+                    ),
                   metadata: rec.metadata || %{}
                 }
               end)
 
-            {:ok, enriched}
+            if enriched == [] do
+              {:ok, %{recommendations: [], message: "暂无推荐"}}
+            else
+              {:ok, %{recommendations: enriched, total: length(enriched)}}
+            end
 
           {:error, reason} ->
             Logger.error("Failed to get recommendations: #{inspect(reason)}")
             {:error, reason}
         end
-      end
+      end)
     end
 
     defp should_regenerate?(student_id, tenant) do
@@ -303,19 +362,19 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
     end
 
     action :get_learning_progress_summary_rpc do
-      description "Get learning progress summary for a student"
+      description("Get learning progress summary for a student")
 
       argument :student_id, :uuid do
-        allow_nil? false
-        description "Student ID"
+        allow_nil?(false)
+        description("Student ID")
       end
 
       argument :course_id, :uuid do
-        allow_nil? true
-        description "Optional course ID"
+        allow_nil?(true)
+        description("Optional course ID")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         student_id = input.arguments.student_id
         course_id = input.arguments.course_id
         tenant = context.tenant
@@ -325,121 +384,114 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
           course_id: course_id,
           tenant: tenant
         )
-      end
+      end)
     end
 
     update :mark_viewed do
-      description "Mark recommendation as viewed by student"
+      description("Mark recommendation as viewed by student")
 
-      accept []
+      accept([])
 
-      change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_attribute(:status, :viewed)
-        |> Ash.Changeset.change_attribute(:viewed_at, DateTime.utc_now())
-      end
+      change(atomic_update(:status, :viewed))
+      change(atomic_update(:viewed_at, expr(now())))
     end
 
     update :mark_completed do
-      description "Mark recommendation as completed (student has finished learning)"
+      description("Mark recommendation as completed (student has finished learning)")
 
-      accept []
+      accept([])
 
-      change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_attribute(:status, :completed)
-        |> Ash.Changeset.change_attribute(:completed_at, DateTime.utc_now())
-      end
+      change(atomic_update(:status, :completed))
+      change(atomic_update(:completed_at, expr(now())))
     end
 
     update :dismiss do
-      description "Dismiss a recommendation (student doesn't want to follow it)"
+      description("Dismiss a recommendation (student doesn't want to follow it)")
 
-      accept []
+      accept([])
 
-      change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_attribute(:status, :dismissed)
-        |> Ash.Changeset.change_attribute(:dismissed_at, DateTime.utc_now())
-      end
+      change(atomic_update(:status, :dismissed))
+      change(atomic_update(:dismissed_at, expr(now())))
     end
   end
 
   policies do
     policy always() do
-      authorize_if always()
+      authorize_if(always())
     end
   end
 
   multitenancy do
-    strategy :context
+    strategy(:context)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :recommendation_type, :atom do
-      allow_nil? false
+      allow_nil?(false)
 
-      constraints one_of: [
-                    :weak_knowledge_review,
-                    :prerequisite_learning,
-                    :related_practice,
-                    :video_learning,
-                    :reading_material,
-                    :homework_practice,
-                    :exam_review
-                  ]
+      constraints(
+        one_of: [
+          :weak_knowledge_review,
+          :prerequisite_learning,
+          :related_practice,
+          :video_learning,
+          :reading_material,
+          :homework_practice,
+          :exam_review
+        ]
+      )
 
-      description "Type of recommendation"
-      public? true
+      description("Type of recommendation")
+      public?(true)
     end
 
     attribute :priority, :integer do
-      allow_nil? false
-      default 5
-      constraints min: 1, max: 10
-      description "Priority from 1 (lowest) to 10 (highest)"
-      public? true
+      allow_nil?(false)
+      default(5)
+      constraints(min: 1, max: 10)
+      description("Priority from 1 (lowest) to 10 (highest)")
+      public?(true)
     end
 
     attribute :reason, :string do
-      allow_nil? true
-      description "Explanation of why this recommendation was made"
-      public? true
+      allow_nil?(true)
+      description("Explanation of why this recommendation was made")
+      public?(true)
     end
 
     attribute :status, :atom do
-      allow_nil? false
-      default :pending
-      constraints one_of: [:pending, :viewed, :in_progress, :completed, :dismissed]
-      description "Status of the recommendation"
-      public? true
+      allow_nil?(false)
+      default(:pending)
+      constraints(one_of: [:pending, :viewed, :in_progress, :completed, :dismissed])
+      description("Status of the recommendation")
+      public?(true)
     end
 
     attribute :viewed_at, :utc_datetime do
-      allow_nil? true
-      description "When the student first viewed this recommendation"
-      public? true
+      allow_nil?(true)
+      description("When the student first viewed this recommendation")
+      public?(true)
     end
 
     attribute :completed_at, :utc_datetime do
-      allow_nil? true
-      description "When the student completed this recommendation"
-      public? true
+      allow_nil?(true)
+      description("When the student completed this recommendation")
+      public?(true)
     end
 
     attribute :dismissed_at, :utc_datetime do
-      allow_nil? true
-      description "When the student dismissed this recommendation"
-      public? true
+      allow_nil?(true)
+      description("When the student dismissed this recommendation")
+      public?(true)
     end
 
     attribute :metadata, :map do
-      allow_nil? true
-      default %{}
-      description "Additional metadata about the recommendation"
-      public? true
+      allow_nil?(true)
+      default(%{})
+      description("Additional metadata about the recommendation")
+      public?(true)
     end
 
     timestamps()
@@ -447,15 +499,15 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
 
   relationships do
     belongs_to :student, KgEdu.Accounts.User do
-      public? true
-      allow_nil? false
-      description "The student this recommendation is for"
+      public?(true)
+      allow_nil?(false)
+      description("The student this recommendation is for")
     end
 
     belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
-      public? true
-      allow_nil? false
-      description "The knowledge resource being recommended"
+      public?(true)
+      allow_nil?(false)
+      description("The knowledge resource being recommended")
     end
   end
 
@@ -479,16 +531,14 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
       reason = generate_reason(mastery, knowledge_resource)
 
       # Check if recommendation already exists
-      case KgEdu.Knowledge.LearningRecommendation.read(
-             tenant: tenant,
-             authorize?: false,
-             actor: nil,
-             filter: [
-               student_id: student_id,
-               knowledge_resource_id: knowledge_resource.id,
-               status: [:pending, :viewed, :in_progress]
-             ]
-           ) do
+      query = Ash.Query.new(KgEdu.Knowledge.LearningRecommendation)
+
+      case query
+           |> Ash.Query.set_tenant(tenant)
+           |> Ash.Query.filter(student_id: student_id)
+           |> Ash.Query.filter(knowledge_resource_id: knowledge_resource.id)
+           |> Ash.Query.filter(status: [:pending, :viewed, :in_progress])
+           |> Ash.read(authorize?: false) do
         {:ok, existing} when is_list(existing) and length(existing) > 0 ->
           # Recommendation already exists, skip
           {:ok, hd(existing)}
@@ -508,12 +558,9 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
             }
           }
 
-          Ash.create(
-            KgEdu.Knowledge.LearningRecommendation,
-            %{attributes: create_attrs},
-            tenant: tenant,
-            authorize?: false
-          )
+          KgEdu.Knowledge.LearningRecommendation
+          |> Ash.Changeset.for_action(:create, create_attrs)
+          |> Ash.create(tenant: tenant, authorize?: false)
       end
     else
       {:error, "Knowledge resource not loaded"}

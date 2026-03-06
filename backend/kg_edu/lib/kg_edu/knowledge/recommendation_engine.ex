@@ -204,14 +204,14 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   end
 
   defp get_knowledge_resource_for_video(video_id, tenant) do
-    case Ash.get(KgEdu.Knowledge.Video, video_id, tenant: tenant, authorize?: false) do
+    case Ash.get(KgEdu.Courses.Video, video_id, tenant: tenant, authorize?: false) do
       {:ok, video} -> video.knowledge_resource_id
       _ -> nil
     end
   end
 
   defp get_knowledge_resource_for_file(file_id, tenant) do
-    case Ash.get(KgEdu.Knowledge.CourseFile, file_id, tenant: tenant, authorize?: false) do
+    case Ash.get(KgEdu.Courses.File, file_id, tenant: tenant, authorize?: false) do
       {:ok, file} -> file.knowledge_resource_id
       _ -> nil
     end
@@ -219,7 +219,7 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
 
   defp has_learning_content?(resource, tenant) do
     case KgEdu.Knowledge.Resource.get_knowledge_resource(
-           resource.id,
+           %{id: resource.id},
            tenant: tenant,
            authorize?: false,
            load: [:videos, :files, :homeworks, :exercises]
@@ -234,18 +234,11 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   end
 
   defp list_student_activities(student_id, tenant) do
-    case KgEdu.Activity.ActivityLog.list_activity_logs(
-           tenant: tenant,
-           authorize?: false,
-           actor: nil
-         ) do
-      {:ok, all_logs} ->
-        student_logs = Enum.filter(all_logs, &(&1.user_id == student_id))
-        {:ok, student_logs}
-
-      error ->
-        error
-    end
+    KgEdu.Activity.ActivityLog.list_activity_logs_by_user(
+      %{user_id: student_id},
+      tenant: tenant,
+      authorize?: false
+    )
   end
 
   defp get_course_knowledge_resources(nil, tenant) do
@@ -282,21 +275,13 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   def analyze_learning_behavior(student_id, tenant) do
     Logger.info("Analyzing learning behavior for student #{student_id}")
 
-    # Get recent activity logs
-    case KgEdu.Activity.ActivityLog.list_activity_logs(
-           tenant: tenant,
-           authorize?: false,
-           actor: nil
-         ) do
-      {:ok, all_logs} ->
+    case list_student_activities(student_id, tenant) do
+      {:ok, student_logs} ->
         student_logs =
-          all_logs
-          |> Enum.filter(&(&1.user_id == student_id))
+          student_logs
           |> Enum.sort_by(& &1.inserted_at, {:desc, NaiveDateTime})
-          # Last 100 activities
           |> Enum.take(100)
 
-        # Analyze patterns
         %{
           preferred_learning_type: determine_preferred_learning_type(student_logs),
           active_hours: determine_active_hours(student_logs),
@@ -518,12 +503,9 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
         }
       }
 
-      Ash.create(
-        KgEdu.Knowledge.LearningRecommendation,
-        %{attributes: create_attrs},
-        tenant: tenant,
-        authorize?: false
-      )
+      KgEdu.Knowledge.LearningRecommendation
+      |> Ash.Changeset.for_action(:create, create_attrs)
+      |> Ash.create(tenant: tenant, authorize?: false)
     else
       {:error, :knowledge_resource_not_loaded}
     end
@@ -567,12 +549,9 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
           }
         }
 
-        Ash.create(
-          KgEdu.Knowledge.LearningRecommendation,
-          %{attributes: create_attrs},
-          tenant: tenant,
-          authorize?: false
-        )
+        KgEdu.Knowledge.LearningRecommendation
+        |> Ash.Changeset.for_action(:create, create_attrs)
+        |> Ash.create(tenant: tenant, authorize?: false)
 
       {:error, _} ->
         {:error, :prerequisite_not_found}
