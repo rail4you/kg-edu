@@ -10,6 +10,7 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
   """
 
   require Logger
+  import Ash.Query
 
   @doc """
   获取学生的个性化学习推荐列表
@@ -392,6 +393,98 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
 
       _ ->
         nil
+    end
+  end
+
+  @doc """
+  获取学生学习进度摘要
+  返回推荐资源的三种状态统计：待学习、进行中、已完成
+  """
+  def get_learning_progress_summary(student_id, opts \\ []) do
+    tenant = Keyword.get(opts, :tenant)
+    course_id = Keyword.get(opts, :course_id)
+
+    Logger.info("Getting learning progress summary for student #{student_id}")
+
+    # Get all recommendations for the student - use Ash.Query directly
+    query =
+      KgEdu.Knowledge.LearningRecommendation
+      |> Ash.Query.filter(student_id == ^student_id)
+
+    query =
+      if course_id do
+        Ash.Query.filter(query, knowledge_resource.course_id == ^course_id)
+      else
+        query
+      end
+
+    case Ash.read(query, tenant: tenant, authorize?: false, page: %{limit: 100}) do
+      {:ok, %{results: recommendations}} when is_list(recommendations) ->
+        # Filter by course if specified
+        filtered_recommendations =
+          if course_id do
+            Enum.filter(recommendations, fn rec ->
+              case rec.knowledge_resource do
+                %Ash.NotLoaded{} ->
+                  false
+
+                kr when is_struct(kr, KgEdu.Knowledge.Resource) ->
+                  kr.course_id == course_id
+
+                _ ->
+                  false
+              end
+            end)
+          else
+            recommendations
+          end
+
+        # Count by status
+        pending = Enum.filter(filtered_recommendations, &(&1.status == :pending))
+
+        in_progress =
+          Enum.filter(filtered_recommendations, &(&1.status in [:viewed, :in_progress]))
+
+        completed = Enum.filter(filtered_recommendations, &(&1.status == :completed))
+        dismissed = Enum.filter(filtered_recommendations, &(&1.status == :dismissed))
+
+        # Calculate completion percentage
+        total_active = length(pending) + length(in_progress) + length(completed)
+
+        completion_rate =
+          if total_active > 0 do
+            Float.round(length(completed) / total_active * 100, 1)
+          else
+            0.0
+          end
+
+        summary = %{
+          student_id: student_id,
+          course_id: course_id,
+          total_recommendations: length(filtered_recommendations),
+          pending: %{
+            count: length(pending),
+            status: "待学习"
+          },
+          in_progress: %{
+            count: length(in_progress),
+            status: "进行中"
+          },
+          completed: %{
+            count: length(completed),
+            status: "已完成"
+          },
+          dismissed: %{
+            count: length(dismissed)
+          },
+          completion_rate: completion_rate
+        }
+
+        {:ok, summary}
+
+      {:error, reason} ->
+        Logger.error("Failed to get learning progress: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 

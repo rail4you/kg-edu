@@ -207,6 +207,7 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_all_student_masteries, :by_student
       rpc_action :get_weak_knowledge_points, :get_weak_points
       rpc_action :recalculate_mastery, :recalculate_mastery
+      rpc_action :get_class_weakness, :class_weakness
     end
 
     resource KgEdu.Knowledge.LearningRecommendation do
@@ -214,6 +215,8 @@ defmodule KgEdu.Knowledge do
       rpc_action :get_recommendation, :by_id
       rpc_action :get_student_recommendations, :by_student
       rpc_action :generate_recommendations, :generate_for_student
+      rpc_action :get_student_recommendations_rpc, :get_student_recommendations_rpc
+      rpc_action :get_learning_progress_summary_rpc, :get_learning_progress_summary_rpc
       rpc_action :mark_as_viewed, :mark_viewed
       rpc_action :mark_as_completed, :mark_completed
       rpc_action :dismiss_recommendation, :dismiss

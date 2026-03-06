@@ -166,7 +166,7 @@ defmodule KgEdu.Knowledge.Homework do
         knowledge_resource_id = Ash.Changeset.get_attribute(changeset, :knowledge_resource_id)
 
         if course_id && knowledge_resource_id do
-          case KgEdu.Knowledge.Resource.get_knowledge_resource(knowledge_resource_id,
+          case KgEdu.Knowledge.Resource.get_knowledge_resource(%{id: knowledge_resource_id},
                  tenant: context.tenant
                ) do
             {:ok, resource} ->
@@ -344,7 +344,12 @@ defmodule KgEdu.Knowledge.Homework do
               {:ok, %{deleted_count: length(records), message: "成功删除 #{length(records)} 个作业"}}
 
             %Ash.BulkResult{status: :partial_success, records: records, errors: errors} ->
-              {:ok, %{deleted_count: length(records), errors: errors, message: "部分删除成功，#{length(records)} 个作业已删除"}}
+              {:ok,
+               %{
+                 deleted_count: length(records),
+                 errors: errors,
+                 message: "部分删除成功，#{length(records)} 个作业已删除"
+               }}
 
             %Ash.BulkResult{status: :error, errors: errors} ->
               {:error, %{message: "删除失败", errors: Enum.map(errors, &inspect/1)}}
@@ -383,13 +388,14 @@ defmodule KgEdu.Knowledge.Homework do
                context.tenant
              ) do
           {:ok, result} when is_map(result) ->
-            {:ok, %{
-              success_count: result[:success_count] || result["success_count"] || 0,
-              skipped_count: result[:skipped_count] || result["skipped_count"] || 0,
-              error_count: result[:error_count] || result["error_count"] || 0,
-              skipped: result[:skipped] || result["skipped"] || [],
-              errors: result[:errors] || result["errors"] || []
-            }}
+            {:ok,
+             %{
+               success_count: result[:success_count] || result["success_count"] || 0,
+               skipped_count: result[:skipped_count] || result["skipped_count"] || 0,
+               error_count: result[:error_count] || result["error_count"] || 0,
+               skipped: result[:skipped] || result["skipped"] || [],
+               errors: result[:errors] || result["errors"] || []
+             }}
 
           {:error, reason} ->
             {:error, reason}

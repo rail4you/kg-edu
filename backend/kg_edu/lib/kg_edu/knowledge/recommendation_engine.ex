@@ -18,24 +18,34 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   def generate_comprehensive_recommendations(student_id, course_id \\ nil, opts \\ []) do
     tenant = Keyword.get(opts, :tenant)
 
-    Logger.info("Generating comprehensive recommendations for student #{student_id}")
+    Logger.info(
+      "Generating comprehensive recommendations for student #{student_id}, tenant: #{inspect(tenant)}"
+    )
 
     # 1. 分析薄弱环节
+    Logger.info("Step 1: Analyzing weak knowledge points...")
     weak_points = analyze_weak_knowledge_points(student_id, course_id, tenant)
+    Logger.info("Weak points analysis result: #{inspect(weak_points)}")
 
     # 2. 分析学习行为模式
+    Logger.info("Step 2: Analyzing learning behavior...")
     behavior_patterns = analyze_learning_behavior(student_id, tenant)
 
     # 3. 获取知识图谱关联
+    Logger.info("Step 3: Getting related knowledge...")
     related_knowledge = get_related_knowledge(student_id, course_id, tenant)
 
     # 4. 生成推荐
+    Logger.info("Step 4: Generating recommendations...")
+
     recommendations =
       []
       |> add_weakness_recommendations(weak_points, student_id, tenant)
       |> add_prerequisite_recommendations(related_knowledge, student_id, tenant)
       |> add_collaborative_recommendations(student_id, course_id, tenant)
       |> add_behavior_based_recommendations(behavior_patterns, student_id, tenant)
+
+    Logger.info("Raw recommendations before sorting: #{length(recommendations)}")
 
     # 5. 排序和限制数量
     limit = Keyword.get(opts, :limit, 20)
@@ -58,37 +68,175 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   end
 
   @doc """
-  分析学生的薄弱知识点
+  分析学生的薄弱知识点（基于活动日志）
   """
   def analyze_weak_knowledge_points(student_id, course_id \\ nil, tenant) do
-    Logger.info("Analyzing weak knowledge points for student #{student_id}")
+    Logger.info("Analyzing weak knowledge points from activity logs for student #{student_id}")
 
-    case KgEdu.Knowledge.StudentKnowledgeMastery.get_weak_knowledge_points(
-           student_id: student_id,
-           threshold: 0.6,
-           course_id: course_id,
-           tenant: tenant,
-           authorize?: false,
-           actor: nil
-         ) do
-      {:ok, weak_masteries} ->
-        # Group by mastery level ranges
-        critical = Enum.filter(weak_masteries, fn m -> m.mastery_level < 0.3 end)
+    # 直接使用活动日志分析，不需要 StudentKnowledgeMastery
+    analyze_from_activity_logs(student_id, course_id, tenant)
+  end
 
-        needs_review =
-          Enum.filter(weak_masteries, fn m -> m.mastery_level >= 0.3 and m.mastery_level < 0.6 end)
+  # Fallback: Analyze weak points from activity logs
+  defp analyze_from_activity_logs(student_id, course_id, tenant) do
+    Logger.info("Falling back to activity log analysis for student #{student_id}")
+
+    # Get all knowledge resources in the course
+    all_resources = get_course_knowledge_resources(course_id, tenant)
+
+    case list_student_activities(student_id, tenant) do
+      {:ok, logs} when length(logs) > 0 ->
+        # Get resources student HAS studied (as KnowledgeResource IDs)
+        # We need to map from File/Video/Exercise/Homework IDs to KnowledgeResource IDs
+        studied_resource_ids = get_studied_knowledge_resource_ids(logs, tenant)
+
+        # Find unstudied resources (that have learning materials)
+        unstudied_with_content =
+          all_resources
+          |> Enum.filter(fn r -> r.id not in studied_resource_ids end)
+          |> Enum.filter(fn r -> has_learning_content?(r, tenant) end)
+
+        critical = []
+        needs_review = Enum.take(unstudied_with_content, 10)
 
         %{
           critical: critical,
           needs_review: needs_review,
-          total_count: length(weak_masteries),
+          total_count: length(unstudied_with_content),
           critical_count: length(critical),
-          review_count: length(needs_review)
+          review_count: length(needs_review),
+          source: :activity_logs
         }
 
-      {:error, reason} ->
-        Logger.error("Failed to analyze weak points: #{inspect(reason)}")
-        %{critical: [], needs_review: [], total_count: 0, critical_count: 0, review_count: 0}
+      _ ->
+        # No activity logs - recommend resources with content
+        resources_with_content =
+          all_resources
+          |> Enum.filter(fn r -> has_learning_content?(r, tenant) end)
+
+        critical = []
+        needs_review = Enum.take(resources_with_content, 10)
+
+        %{
+          critical: critical,
+          needs_review: needs_review,
+          total_count: length(resources_with_content),
+          critical_count: length(critical),
+          review_count: length(needs_review),
+          source: :no_activity
+        }
+    end
+  end
+
+  defp get_studied_knowledge_resource_ids(logs, tenant) do
+    # For each activity, find the related KnowledgeResource
+    logs
+    |> Enum.map(fn log ->
+      case log.resource_type do
+        "Exercise" ->
+          get_knowledge_resource_for_exercise(log.resource_id, tenant)
+
+        "Homework" ->
+          get_knowledge_resource_for_homework(log.resource_id, tenant)
+
+        "Video" ->
+          get_knowledge_resource_for_video(log.resource_id, tenant)
+
+        "File" ->
+          get_knowledge_resource_for_file(log.resource_id, tenant)
+
+        _ ->
+          nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp get_knowledge_resource_for_exercise(exercise_id, tenant) do
+    case Ash.get(KgEdu.Knowledge.Exercise, exercise_id, tenant: tenant, authorize?: false) do
+      {:ok, exercise} -> exercise.knowledge_resource_id
+      _ -> nil
+    end
+  end
+
+  defp get_knowledge_resource_for_homework(homework_id, tenant) do
+    case Ash.get(KgEdu.Knowledge.Homework, homework_id, tenant: tenant, authorize?: false) do
+      {:ok, homework} -> homework.knowledge_resource_id
+      _ -> nil
+    end
+  end
+
+  defp get_knowledge_resource_for_video(video_id, tenant) do
+    case Ash.get(KgEdu.Knowledge.Video, video_id, tenant: tenant, authorize?: false) do
+      {:ok, video} -> video.knowledge_resource_id
+      _ -> nil
+    end
+  end
+
+  defp get_knowledge_resource_for_file(file_id, tenant) do
+    case Ash.get(KgEdu.Knowledge.CourseFile, file_id, tenant: tenant, authorize?: false) do
+      {:ok, file} -> file.knowledge_resource_id
+      _ -> nil
+    end
+  end
+
+  defp has_learning_content?(resource, tenant) do
+    case KgEdu.Knowledge.Resource.get_knowledge_resource(
+           resource.id,
+           tenant: tenant,
+           authorize?: false,
+           load: [:videos, :files, :homeworks, :exercises]
+         ) do
+      {:ok, r} ->
+        has_resources?(r.videos) or has_resources?(r.files) or
+          has_resources?(r.homeworks) or has_resources?(r.exercises)
+
+      _ ->
+        false
+    end
+  end
+
+  defp list_student_activities(student_id, tenant) do
+    case KgEdu.Activity.ActivityLog.list_activity_logs(
+           tenant: tenant,
+           authorize?: false,
+           actor: nil
+         ) do
+      {:ok, all_logs} ->
+        student_logs = Enum.filter(all_logs, &(&1.user_id == student_id))
+        {:ok, student_logs}
+
+      error ->
+        error
+    end
+  end
+
+  defp get_course_knowledge_resources(nil, tenant) do
+    Logger.info("No course_id provided, fetching all knowledge resources for tenant")
+
+    case KgEdu.Knowledge.Resource.list_knowledges(
+           tenant: tenant,
+           authorize?: false
+         ) do
+      {:ok, resources} ->
+        Logger.info("Found #{length(resources)} total knowledge resources")
+        resources
+
+      _ ->
+        Logger.warn("Failed to fetch knowledge resources")
+        []
+    end
+  end
+
+  defp get_course_knowledge_resources(course_id, tenant) do
+    case KgEdu.Knowledge.Resource.get_knowledge_resources_by_course(
+           course_id: course_id,
+           tenant: tenant,
+           authorize?: false
+         ) do
+      {:ok, resources} -> resources
+      _ -> []
     end
   end
 
@@ -305,18 +453,20 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   end
 
   # Create a weakness-based recommendation
-  defp create_weakness_recommendation(mastery, severity, student_id, tenant) do
-    knowledge_resource =
-      case mastery.knowledge_resource do
-        %Ash.NotLoaded{} -> nil
-        resource -> resource
-      end
+  defp create_weakness_recommendation(mastery_or_resource, severity, student_id, tenant) do
+    # Check if it's a mastery record or a Resource directly
+    knowledge_resource = get_knowledge_resource_from_item(mastery_or_resource)
 
     if knowledge_resource do
       recommendation_type = determine_best_resource_type(knowledge_resource, tenant)
       priority = if severity == :critical, do: 10, else: 7
 
-      reason = generate_weakness_reason(mastery, severity, knowledge_resource)
+      # Extract mastery data if available
+      mastery_level = Map.get(mastery_or_resource, :mastery_level, nil)
+      practice_count = Map.get(mastery_or_resource, :practice_count, 0)
+
+      reason =
+        generate_weakness_reason(mastery_or_resource, severity, knowledge_resource, mastery_level)
 
       create_attrs = %{
         student_id: student_id,
@@ -326,8 +476,8 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
         reason: reason,
         metadata: %{
           severity: severity,
-          mastery_level: mastery.mastery_level,
-          practice_count: mastery.practice_count,
+          mastery_level: mastery_level,
+          practice_count: practice_count,
           strategy: :weakness_based
         }
       }
@@ -342,6 +492,19 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
       {:error, :knowledge_resource_not_loaded}
     end
   end
+
+  defp get_knowledge_resource_from_item(%KgEdu.Knowledge.StudentKnowledgeMastery{} = mastery) do
+    case mastery.knowledge_resource do
+      %Ash.NotLoaded{} -> nil
+      resource -> resource
+    end
+  end
+
+  defp get_knowledge_resource_from_item(%KgEdu.Knowledge.Resource{} = resource) do
+    resource
+  end
+
+  defp get_knowledge_resource_from_item(_), do: nil
 
   # Create a prerequisite recommendation
   defp create_prerequisite_recommendation(relation, student_id, tenant) do
@@ -407,8 +570,21 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   defp has_resources?([]), do: false
   defp has_resources?(list) when is_list(list), do: length(list) > 0
 
-  defp generate_weakness_reason(mastery, severity, knowledge_resource) do
-    mastery_percent = Float.round(mastery.mastery_level * 100, 1)
+  defp generate_weakness_reason(mastery_or_resource, severity, knowledge_resource, nil) do
+    # No mastery data - this is from activity logs
+    base_msg = "You haven't studied '#{knowledge_resource.name}' yet."
+
+    severity_msg =
+      case severity do
+        :critical -> " This is an important topic you should learn."
+        :review -> " Consider adding this to your learning plan."
+      end
+
+    base_msg <> severity_msg
+  end
+
+  defp generate_weakness_reason(mastery, severity, knowledge_resource, mastery_level) do
+    mastery_percent = Float.round(mastery_level * 100, 1)
 
     base_msg = "Your mastery of '#{knowledge_resource.name}' is #{mastery_percent}%."
 
@@ -418,9 +594,11 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
         :review -> " Regular review is recommended to strengthen your understanding."
       end
 
+    practice_count = Map.get(mastery, :practice_count, 0)
+
     practice_msg =
-      if mastery.practice_count < 3 do
-        " You've only practiced #{mastery.practice_count} times. More practice will help."
+      if practice_count < 3 do
+        " You've only practiced #{practice_count} times. More practice will help."
       else
         ""
       end

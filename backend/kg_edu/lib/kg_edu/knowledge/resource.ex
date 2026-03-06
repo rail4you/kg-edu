@@ -747,8 +747,12 @@ defmodule KgEdu.Knowledge.Resource do
         # 从 sort_path 解析当前的 display_order（取最后 4 位数字）
         old_order =
           case resource.sort_path do
-            nil -> 1
-            "" -> 1
+            nil ->
+              1
+
+            "" ->
+              1
+
             path ->
               # 取最后 4 位字符并转换为整数
               path
@@ -2600,25 +2604,25 @@ defmodule KgEdu.Knowledge.Resource do
           ""
 
         {:knowledge_unit, subject_id, _, _} ->
-          case get_knowledge_resource(subject_id, tenant: tenant, authorize?: false) do
+          case get_knowledge_resource(%{id: subject_id}, tenant: tenant, authorize?: false) do
             {:ok, parent} -> parent.sort_path || ""
             _ -> ""
           end
 
         {:knowledge_cell, _, unit_id, _} when not is_nil(unit_id) ->
-          case get_knowledge_resource(unit_id, tenant: tenant, authorize?: false) do
+          case get_knowledge_resource(%{id: unit_id}, tenant: tenant, authorize?: false) do
             {:ok, parent} -> parent.sort_path || ""
             _ -> ""
           end
 
         {:knowledge_cell, _, _, cell_id} when not is_nil(cell_id) ->
-          case get_knowledge_resource(cell_id, tenant: tenant, authorize?: false) do
+          case get_knowledge_resource(%{id: cell_id}, tenant: tenant, authorize?: false) do
             {:ok, parent} -> parent.sort_path || ""
             _ -> ""
           end
 
         {:knowledge_cell, subject_id, _, _} when not is_nil(subject_id) ->
-          case get_knowledge_resource(subject_id, tenant: tenant, authorize?: false) do
+          case get_knowledge_resource(%{id: subject_id}, tenant: tenant, authorize?: false) do
             {:ok, parent} -> parent.sort_path || ""
             _ -> ""
           end

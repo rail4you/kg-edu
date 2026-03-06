@@ -118,18 +118,13 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
           "Generating recommendations for student #{student_id} in course #{course_id || "all"}"
         )
 
-        # Step 1: Get weak knowledge points
-        weak_points_result =
-          KgEdu.Knowledge.StudentKnowledgeMastery.get_weak_knowledge_points(
-            student_id: student_id,
-            threshold: 0.6,
-            course_id: course_id,
-            tenant: tenant,
-            authorize?: false,
-            actor: nil
-          )
+        # Step 1: Get weak knowledge points - use Ash.Query directly
+        weak_query =
+          KgEdu.Knowledge.StudentKnowledgeMastery
+          |> Ash.Query.filter(student_id == ^student_id and mastery_level < ^0.6)
+          |> Ash.Query.load(:knowledge_resource)
 
-        case weak_points_result do
+        case Ash.read(weak_query, tenant: tenant, authorize?: false) do
           {:ok, weak_masteries} when is_list(weak_masteries) and length(weak_masteries) > 0 ->
             # Step 2: Generate recommendations for weak points
             recommendations =
@@ -158,6 +153,178 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
             Logger.error("Failed to get weak points: #{inspect(reason)}")
             {:error, "Failed to get weak points"}
         end
+      end
+    end
+
+    action :get_student_recommendations_rpc do
+      description "Get personalized learning recommendations for a student (RPC wrapper)"
+
+      argument :student_id, :uuid do
+        allow_nil? false
+        description "Student ID"
+      end
+
+      argument :course_id, :uuid do
+        allow_nil? true
+        description "Optional course ID"
+      end
+
+      argument :status, :atom do
+        allow_nil? true
+        description "Filter by status: pending, in_progress, completed"
+      end
+
+      argument :limit, :integer do
+        allow_nil? true
+        default 20
+        description "Maximum number of recommendations"
+      end
+
+      argument :force_refresh, :boolean do
+        allow_nil? true
+        default false
+        description "Force regenerate recommendations"
+      end
+
+      run fn input, context ->
+        student_id = input.arguments.student_id
+        course_id = Map.get(input.arguments, :course_id)
+        status = Map.get(input.arguments, :status)
+        limit = Map.get(input.arguments, :limit, 20) || 20
+        force_refresh = Map.get(input.arguments, :force_refresh, false) || false
+        tenant = context.tenant
+
+        Logger.info(
+          "RPC: Getting recommendations for student #{student_id}, force_refresh: #{force_refresh}, tenant: #{inspect(tenant)}"
+        )
+
+        # Check if we need to generate new recommendations
+        should_regen = should_regenerate?(student_id, tenant)
+        Logger.info("should_regenerate? result: #{should_regen}")
+
+        if force_refresh or should_regen do
+          Logger.info("Generating recommendations for student #{student_id}")
+
+          case KgEdu.Knowledge.RecommendationEngine.generate_comprehensive_recommendations(
+                 student_id,
+                 course_id,
+                 tenant: tenant
+               ) do
+            {:ok, result} ->
+              Logger.info(
+                "Successfully generated recommendations for student #{student_id}, count: #{length(result.recommendations)}"
+              )
+
+            {:error, reason} ->
+              Logger.error("Failed to generate recommendations: #{inspect(reason)}")
+          end
+        end
+
+        # Get recommendations from database
+        query = Ash.Query.new(KgEdu.Knowledge.LearningRecommendation)
+
+        recommendations_result =
+          query
+          |> Ash.Query.set_tenant(tenant)
+          |> Ash.Query.filter(student_id: student_id)
+          |> Ash.read(authorize?: false)
+
+        Logger.info("Recommendations query result: #{inspect(recommendations_result)}")
+
+        case recommendations_result do
+          {:ok, recommendations} ->
+            enriched =
+              recommendations
+              |> Enum.take(limit)
+              |> Enum.map(fn rec ->
+                %{
+                  id: rec.id,
+                  recommendation_type: rec.recommendation_type,
+                  priority: rec.priority,
+                  reason: rec.reason,
+                  status: rec.status,
+                  created_at: rec.inserted_at,
+                  viewed_at: rec.viewed_at,
+                  completed_at: rec.completed_at,
+                  knowledge_resource_id: rec.knowledge_resource_id,
+                  metadata: rec.metadata || %{}
+                }
+              end)
+
+            {:ok, enriched}
+
+          {:error, reason} ->
+            Logger.error("Failed to get recommendations: #{inspect(reason)}")
+            {:error, reason}
+        end
+      end
+    end
+
+    defp should_regenerate?(student_id, tenant) do
+      Logger.info(
+        "should_regenerate? called with student_id: #{student_id}, tenant: #{inspect(tenant)}"
+      )
+
+      query = Ash.Query.new(KgEdu.Knowledge.LearningRecommendation)
+
+      result =
+        case query
+             |> Ash.Query.set_tenant(tenant)
+             |> Ash.Query.filter(student_id: student_id)
+             |> Ash.read(authorize?: false) do
+          {:ok, recommendations} when is_list(recommendations) ->
+            Logger.info("Found #{length(recommendations)} existing recommendations")
+
+            if length(recommendations) == 0 do
+              true
+            else
+              oldest = List.last(recommendations)
+
+              if oldest do
+                hours_ago = DateTime.diff(DateTime.utc_now(), oldest.inserted_at) / 3600
+                Logger.info("Oldest recommendation is #{hours_ago} hours old")
+                hours_ago > 24
+              else
+                true
+              end
+            end
+
+          {:error, reason} ->
+            Logger.error("should_regenerate? error: #{inspect(reason)}")
+            true
+
+          other ->
+            Logger.info("should_regenerate? unexpected result: #{inspect(other)}")
+            true
+        end
+
+      Logger.info("should_regenerate? returning: #{result}")
+      result
+    end
+
+    action :get_learning_progress_summary_rpc do
+      description "Get learning progress summary for a student"
+
+      argument :student_id, :uuid do
+        allow_nil? false
+        description "Student ID"
+      end
+
+      argument :course_id, :uuid do
+        allow_nil? true
+        description "Optional course ID"
+      end
+
+      run fn input, context ->
+        student_id = input.arguments.student_id
+        course_id = input.arguments.course_id
+        tenant = context.tenant
+
+        KgEdu.Knowledge.RecommendationAPI.get_learning_progress_summary(
+          student_id,
+          course_id: course_id,
+          tenant: tenant
+        )
       end
     end
 
@@ -356,7 +523,7 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
   defp determine_recommendation_type(knowledge_resource, tenant) do
     # Load associated resources
     case KgEdu.Knowledge.Resource.get_knowledge_resource(
-           knowledge_resource.id,
+           %{id: knowledge_resource.id},
            tenant: tenant,
            authorize?: false,
            load: [:videos, :files, :homeworks, :exercises]

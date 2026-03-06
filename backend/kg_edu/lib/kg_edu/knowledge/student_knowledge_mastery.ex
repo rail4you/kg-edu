@@ -40,6 +40,7 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
     define :update_mastery_from_exercise, action: :update_from_exercise
     define :get_weak_knowledge_points, action: :get_weak_points
     define :recalculate_mastery, action: :recalculate_mastery
+    define :get_class_weakness, action: :class_weakness
   end
 
   actions do
@@ -99,6 +100,43 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
           end
         end)
         |> Ash.Query.sort(mastery_level: :asc)
+      end
+    end
+
+    read :class_weakness do
+      description "Get class-wide weakness analysis for a course (for teachers)"
+      argument :course_id, :uuid, allow_nil?: false
+      argument :importance_level, :string, allow_nil?: true
+
+      prepare fn query, _context ->
+        course_id = Ash.Query.get_argument(query, :course_id)
+        importance_level = Ash.Query.get_argument(query, :importance_level)
+
+        # Get knowledge resources for this course
+        knowledge_resources =
+          case KgEdu.Knowledge.Resource.get_knowledge_resources_by_course(
+                 course_id: course_id,
+                 tenant: query.context.tenant,
+                 authorize?: false,
+                 actor: nil
+               ) do
+            {:ok, resources} -> resources
+            _ -> []
+          end
+
+        knowledge_resource_ids = Enum.map(knowledge_resources, & &1.id)
+
+        # Get all mastery records for knowledge resources in this course
+        query
+        |> Ash.Query.filter(knowledge_resource_id in ^knowledge_resource_ids)
+        |> then(fn q ->
+          if importance_level do
+            # Join with knowledge_resource to filter by importance_level
+            Ash.Query.load(q, :knowledge_resource)
+          else
+            q
+          end
+        end)
       end
     end
 
@@ -479,7 +517,7 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
       {:ok, all_logs} ->
         # Get exercises associated with this knowledge resource
         case KgEdu.Knowledge.Resource.get_knowledge_resource(
-               knowledge_resource_id,
+               %{id: knowledge_resource_id},
                tenant: tenant,
                authorize?: false,
                load: [:exercises]
