@@ -16,123 +16,152 @@ defmodule KgEdu.Knowledge.Relation do
   import Ecto.Query
 
   postgres do
-    table "knowledge_relations"
-    repo KgEdu.Repo
+    table("knowledge_relations")
+    repo(KgEdu.Repo)
 
     references do
-      reference :source_knowledge, on_delete: :delete
-      reference :target_knowledge, on_delete: :delete
+      reference(:source_knowledge, on_delete: :delete)
+      reference(:target_knowledge, on_delete: :delete)
     end
   end
 
   json_api do
-    type "knowledge_relation"
+    type("knowledge_relation")
   end
 
   typescript do
-    type_name "KnowledgeRelation"
+    type_name("KnowledgeRelation")
   end
 
   code_interface do
-    define :get_knowledge_relation, action: :by_id
-    define :list_knowledge_relations, action: :read
-    define :get_relations_by_knowledge, action: :by_knowledge
-    define :get_outgoing_relations, action: :outgoing_relations
-    define :get_incoming_relations, action: :incoming_relations
-    define :create_knowledge_relation, action: :create_knowledge_relation
-    define :create_relation_import, action: :create_relation_import
-    define :update_knowledge_relation, action: :update_knowledge_relation
-    define :delete_knowledge_relation, action: :destroy
-    define :bulk_destroy_relations, action: :bulk_destroy_relations
+    define(:get_knowledge_relation, action: :by_id)
+    define(:list_knowledge_relations, action: :list)
+    define(:get_relations_by_knowledge, action: :by_knowledge)
+    define(:get_outgoing_relations, action: :outgoing_relations)
+    define(:get_incoming_relations, action: :incoming_relations)
+    define(:create_knowledge_relation, action: :create_knowledge_relation)
+    define(:create_relation_import, action: :create_relation_import)
+    define(:update_knowledge_relation, action: :update_knowledge_relation)
+    define(:delete_knowledge_relation, action: :destroy)
+    define(:bulk_destroy_relations, action: :bulk_destroy_relations)
 
-    define :delete_all_knowledge_relations,
+    define(:delete_all_knowledge_relations,
       args: [:course_id],
       action: :delete_all_knowledge_relations
+    )
 
-    define :delete_all_knowledge_relations_rpc,
+    define(:delete_all_knowledge_relations_rpc,
       args: [:course_id],
       action: :delete_all_knowledge_relations_rpc
+    )
 
-    define :import_relations_from_excel, action: :import_relations_from_excel
+    define(:import_relations_from_excel, action: :import_relations_from_excel)
   end
 
   actions do
-    defaults [:read]
+    read :list do
+      description("List knowledge relations with optional filters")
+      argument(:course_id, :uuid, allow_nil?: true)
+      argument(:relation_type_id, :uuid, allow_nil?: true)
+
+      prepare(fn query, _context ->
+        course_id = Ash.Query.get_argument(query, :course_id)
+        relation_type_id = Ash.Query.get_argument(query, :relation_type_id)
+
+        query
+        |> then(fn q ->
+          if course_id do
+            Ash.Query.filter(q, source_knowledge.course_id == ^course_id)
+          else
+            q
+          end
+        end)
+        |> then(fn q ->
+          if relation_type_id do
+            Ash.Query.filter(q, relation_type_id == ^relation_type_id)
+          else
+            q
+          end
+        end)
+      end)
+    end
 
     create :create do
-      accept [:source_knowledge_id, :target_knowledge_id, :relation_type_id]
+      accept([:source_knowledge_id, :target_knowledge_id, :relation_type_id])
     end
 
     read :by_id do
-      description "Get a knowledge relation by ID"
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
+      description("Get a knowledge relation by ID")
+      get?(true)
+      argument(:id, :uuid, allow_nil?: false)
+      filter(expr(id == ^arg(:id)))
     end
 
     read :by_knowledge do
-      description "Get relations for a specific knowledge resource"
-      argument :knowledge_id, :uuid, allow_nil?: false
+      description("Get relations for a specific knowledge resource")
+      argument(:knowledge_id, :uuid, allow_nil?: false)
 
-      filter expr(
-               source_knowledge_id == ^arg(:knowledge_id) or
-                 target_knowledge_id == ^arg(:knowledge_id)
-             )
+      filter(
+        expr(
+          source_knowledge_id == ^arg(:knowledge_id) or
+            target_knowledge_id == ^arg(:knowledge_id)
+        )
+      )
     end
 
     read :outgoing_relations do
-      description "Get outgoing relations from a knowledge resource"
-      argument :source_knowledge_id, :uuid, allow_nil?: false
-      filter expr(source_knowledge_id == ^arg(:source_knowledge_id))
+      description("Get outgoing relations from a knowledge resource")
+      argument(:source_knowledge_id, :uuid, allow_nil?: false)
+      filter(expr(source_knowledge_id == ^arg(:source_knowledge_id)))
     end
 
     read :incoming_relations do
-      description "Get incoming relations to a knowledge resource"
-      argument :target_knowledge_id, :uuid, allow_nil?: false
-      filter expr(target_knowledge_id == ^arg(:target_knowledge_id))
+      description("Get incoming relations to a knowledge resource")
+      argument(:target_knowledge_id, :uuid, allow_nil?: false)
+      filter(expr(target_knowledge_id == ^arg(:target_knowledge_id)))
     end
 
     create :create_knowledge_relation do
-      description "Create a new knowledge relation"
-      accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
+      description("Create a new knowledge relation")
+      accept([:relation_type_id, :source_knowledge_id, :target_knowledge_id])
 
-      change relate_actor(:created_by)
+      change(relate_actor(:created_by))
 
       # validate {Ash.Changeset.Arg, :source_knowledge_id} != {Ash.Changeset.Arg, :target_knowledge_id},
       #   message: "Source and target knowledge cannot be the same"
     end
 
     create :create_relation_import do
-      description "Create a knowledge relation during import (no actor required)"
-      accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
+      description("Create a knowledge relation during import (no actor required)")
+      accept([:relation_type_id, :source_knowledge_id, :target_knowledge_id])
 
       # validate {Ash.Changeset.Arg, :source_knowledge_id} != {Ash.Changeset.Arg, :target_knowledge_id},
       #   message: "Source and target knowledge cannot be the same"
     end
 
     update :update_knowledge_relation do
-      description "Update a knowledge relation"
-      accept [:relation_type_id, :source_knowledge_id, :target_knowledge_id]
+      description("Update a knowledge relation")
+      accept([:relation_type_id, :source_knowledge_id, :target_knowledge_id])
     end
 
     # ============ Destroy Actions ============
     destroy :destroy do
-      description "Delete a knowledge relation"
-      accept []
+      description("Delete a knowledge relation")
+      accept([])
 
       # Relations can be deleted directly as they don't have dependent records
       # that would prevent deletion
     end
 
     action :bulk_destroy_relations do
-      description "Bulk delete knowledge relations"
+      description("Bulk delete knowledge relations")
 
       argument :relation_ids, {:array, :uuid} do
-        allow_nil? false
-        description "List of relation IDs to delete"
+        allow_nil?(false)
+        description("List of relation IDs to delete")
       end
 
-      run fn input, _context ->
+      run(fn input, _context ->
         query =
           KgEdu.Knowledge.Relation
           |> Ash.Query.filter(expr(id in ^input.arguments.relation_ids))
@@ -144,18 +173,18 @@ defmodule KgEdu.Knowledge.Relation do
           %Ash.BulkResult{errors: errors} ->
             {:error, errors}
         end
-      end
+      end)
     end
 
     action :delete_all_knowledge_relations do
-      description "Delete all knowledge relations for a course using SQL"
+      description("Delete all knowledge relations for a course using SQL")
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "The course ID to delete all knowledge relations for"
+        allow_nil?(false)
+        description("The course ID to delete all knowledge relations for")
       end
 
-      run fn input, _context ->
+      run(fn input, _context ->
         course_id = input.arguments.course_id
 
         # Use Ecto query to delete relations where either source or target knowledge belongs to the course
@@ -188,18 +217,20 @@ defmodule KgEdu.Knowledge.Relation do
           {:error, reason} ->
             {:error, "Failed to delete source relations: #{inspect(reason)}"}
         end
-      end
+      end)
     end
 
     action :delete_all_knowledge_relations_rpc do
-      description "Delete all knowledge relations for a course using SQL (RPC style with return value)"
+      description(
+        "Delete all knowledge relations for a course using SQL (RPC style with return value)"
+      )
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "The course ID to delete all knowledge relations for"
+        allow_nil?(false)
+        description("The course ID to delete all knowledge relations for")
       end
 
-      run fn input, _context ->
+      run(fn input, _context ->
         course_id = input.arguments.course_id
 
         # Use Ecto query to delete relations where either source or target knowledge belongs to the course
@@ -239,16 +270,16 @@ defmodule KgEdu.Knowledge.Relation do
           {:error, reason} ->
             {:error, "Failed to delete source relations: #{inspect(reason)}"}
         end
-      end
+      end)
     end
 
     action :import_relations_from_excel do
-      description "Import knowledge relations from Excel file"
+      description("Import knowledge relations from Excel file")
 
-      argument :excel_data, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
+      argument(:excel_data, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      run fn input, context ->
+      run(fn input, context ->
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
           {:ok, %{sheet: knowledge_data}} ->
             case process_relation_import(
@@ -263,50 +294,50 @@ defmodule KgEdu.Knowledge.Relation do
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
         end
-      end
+      end)
     end
   end
 
   policies do
     policy always() do
-      authorize_if always()
+      authorize_if(always())
     end
   end
 
   multitenancy do
-    strategy :context
+    strategy(:context)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     timestamps()
   end
 
   relationships do
     belongs_to :relation_type, KgEdu.Knowledge.RelationType do
-      public? true
-      allow_nil? false
+      public?(true)
+      allow_nil?(false)
     end
 
     belongs_to :source_knowledge, KgEdu.Knowledge.Resource do
-      public? true
-      allow_nil? false
+      public?(true)
+      allow_nil?(false)
     end
 
     belongs_to :target_knowledge, KgEdu.Knowledge.Resource do
-      public? true
-      allow_nil? false
+      public?(true)
+      allow_nil?(false)
     end
 
     belongs_to :created_by, KgEdu.Accounts.User do
-      public? true
-      allow_nil? true
+      public?(true)
+      allow_nil?(true)
     end
   end
 
   identities do
-    identity :unique_relation, [:source_knowledge_id, :target_knowledge_id, :relation_type_id]
+    identity(:unique_relation, [:source_knowledge_id, :target_knowledge_id, :relation_type_id])
   end
 
   # ============ Import Implementation ============
