@@ -79,40 +79,76 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
 
   # Fallback: Analyze weak points from activity logs
   defp analyze_from_activity_logs(student_id, course_id, tenant) do
-    Logger.info("Falling back to activity log analysis for student #{student_id}")
+    Logger.info(
+      "Analyzing from activity logs for student #{student_id}, course_id: #{inspect(course_id)}"
+    )
 
     # Get all knowledge resources in the course
     all_resources = get_course_knowledge_resources(course_id, tenant)
+    Logger.info("Total knowledge resources: #{length(all_resources)}")
 
+    # Get student's activity logs
     case list_student_activities(student_id, tenant) do
-      {:ok, logs} when length(logs) > 0 ->
-        # Get resources student HAS studied (as KnowledgeResource IDs)
-        # We need to map from File/Video/Exercise/Homework IDs to KnowledgeResource IDs
-        studied_resource_ids = get_studied_knowledge_resource_ids(logs, tenant)
+      {:ok, logs} ->
+        Logger.info("Student activity logs count: #{length(logs)}")
 
-        # Find unstudied resources (that have learning materials)
-        unstudied_with_content =
-          all_resources
-          |> Enum.filter(fn r -> r.id not in studied_resource_ids end)
-          |> Enum.filter(fn r -> has_learning_content?(r, tenant) end)
+        if length(logs) > 0 do
+          # Student HAS activity - find resources they haven't studied yet
+          studied_resource_ids = get_studied_knowledge_resource_ids(logs, tenant)
+          Logger.info("Studied resource IDs count: #{length(studied_resource_ids)}")
 
-        critical = []
-        needs_review = Enum.take(unstudied_with_content, 10)
+          # Get resources with learning content
+          resources_with_content =
+            Enum.filter(all_resources, fn r -> has_learning_content?(r, tenant) end)
 
-        %{
-          critical: critical,
-          needs_review: needs_review,
-          total_count: length(unstudied_with_content),
-          critical_count: length(critical),
-          review_count: length(needs_review),
-          source: :activity_logs
-        }
+          Logger.info("Resources with learning content: #{length(resources_with_content)}")
 
-      _ ->
-        # No activity logs - recommend resources with content
+          # Filter out studied ones
+          unstudied =
+            Enum.filter(resources_with_content, fn r -> r.id not in studied_resource_ids end)
+
+          Logger.info("Unstudied resources: #{length(unstudied)}")
+
+          critical = []
+          needs_review = Enum.take(unstudied, 10)
+
+          %{
+            critical: critical,
+            needs_review: needs_review,
+            total_count: length(unstudied),
+            critical_count: length(critical),
+            review_count: length(needs_review),
+            source: :activity_logs
+          }
+        else
+          # No activity logs - recommend ALL resources with content
+          Logger.info("No activity logs, recommending all resources with content")
+
+          resources_with_content =
+            Enum.filter(all_resources, fn r -> has_learning_content?(r, tenant) end)
+
+          Logger.info(
+            "Resources with learning content (no activity): #{length(resources_with_content)}"
+          )
+
+          critical = []
+          needs_review = Enum.take(resources_with_content, 10)
+
+          %{
+            critical: critical,
+            needs_review: needs_review,
+            total_count: length(resources_with_content),
+            critical_count: length(critical),
+            review_count: length(needs_review),
+            source: :no_activity
+          }
+        end
+
+      error ->
+        Logger.error("Failed to get activity logs: #{inspect(error)}")
+        # Fallback: recommend all resources with content
         resources_with_content =
-          all_resources
-          |> Enum.filter(fn r -> has_learning_content?(r, tenant) end)
+          Enum.filter(all_resources, fn r -> has_learning_content?(r, tenant) end)
 
         critical = []
         needs_review = Enum.take(resources_with_content, 10)
@@ -123,7 +159,7 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
           total_count: length(resources_with_content),
           critical_count: length(critical),
           review_count: length(needs_review),
-          source: :no_activity
+          source: :error_fallback
         }
     end
   end

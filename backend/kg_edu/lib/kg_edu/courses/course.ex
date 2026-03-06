@@ -116,7 +116,8 @@ defmodule KgEdu.Courses.Course do
         :book_id,
         :publish_status,
         :subject_category_id,
-        :teacher_id
+        :teacher_id,
+        :browse_count
       ]
     end
 
@@ -249,7 +250,8 @@ defmodule KgEdu.Courses.Course do
         :book_id,
         :publish_status,
         :subject_category_id,
-        :teacher_id
+        :teacher_id,
+        :browse_count
       ]
     end
 
@@ -786,7 +788,9 @@ defmodule KgEdu.Courses.Course do
             case KgEdu.Accounts.User
                  |> Ash.Query.filter(role == :user)
                  |> Ash.read(tenant: tenant, authorize?: false) do
-              {:ok, users} -> length(users)
+              {:ok, users} ->
+                length(users)
+
               {:error, error} ->
                 Logger.error("Failed to get student count: #{inspect(error)}")
                 0
@@ -796,27 +800,34 @@ defmodule KgEdu.Courses.Course do
           knowledge_count =
             case KgEdu.Knowledge.Resource
                  |> Ash.read(tenant: tenant, authorize?: false) do
-              {:ok, resources} -> length(resources)
+              {:ok, resources} ->
+                length(resources)
+
               {:error, error} ->
                 Logger.error("Failed to get knowledge count: #{inspect(error)}")
                 0
             end
 
           # Get homeworks count
-          homework_result = KgEdu.Knowledge.Homework
-               |> Ash.read(tenant: tenant, authorize?: false)
+          homework_result =
+            KgEdu.Knowledge.Homework
+            |> Ash.read(tenant: tenant, authorize?: false)
 
           Logger.info("Homework query result: #{inspect(homework_result)}")
 
           homework_count =
             case homework_result do
-              {:ok, homeworks} -> length(homeworks)
+              {:ok, homeworks} ->
+                length(homeworks)
+
               {:error, error} ->
                 Logger.error("Failed to get homework count: #{inspect(error)}")
                 0
             end
 
-          Logger.info("Dashboard stats - students: #{student_count}, knowledge: #{knowledge_count}, homeworks: #{homework_count}")
+          Logger.info(
+            "Dashboard stats - students: #{student_count}, knowledge: #{knowledge_count}, homeworks: #{homework_count}"
+          )
 
           {:ok,
            %{
@@ -922,6 +933,12 @@ defmodule KgEdu.Courses.Course do
       default true
       public? true
       description "Whether the course is published"
+    end
+
+    attribute :browse_count, :integer do
+      default 0
+      public? true
+      description "Number of times the course has been viewed"
     end
 
     create_timestamp :inserted_at
