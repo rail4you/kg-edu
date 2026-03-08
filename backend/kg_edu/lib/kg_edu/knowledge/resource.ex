@@ -12,99 +12,99 @@ defmodule KgEdu.Knowledge.Resource do
   import Logger, only: [error: 1, info: 1]
 
   postgres do
-    table "knowledge_resources"
-    repo KgEdu.Repo
+    table("knowledge_resources")
+    repo(KgEdu.Repo)
 
     references do
-      reference :chapter, on_delete: :delete
-      reference :exercises, on_delete: :delete
-      reference :parent_subject, on_delete: :delete
-      reference :parent_unit, on_delete: :delete
-      reference :parent_knowledge_resource, on_delete: :delete
+      reference(:chapter, on_delete: :delete)
+      reference(:exercises, on_delete: :delete)
+      reference(:parent_subject, on_delete: :delete)
+      reference(:parent_unit, on_delete: :delete)
+      reference(:parent_knowledge_resource, on_delete: :delete)
     end
   end
 
   json_api do
-    type "knowledge_resource"
+    type("knowledge_resource")
   end
 
   typescript do
     # Choose appropriate name
-    type_name "Resource"
+    type_name("Resource")
   end
 
   code_interface do
     # Basic CRUD
-    define :get_knowledge_resource, action: :by_id
-    define :list_knowledges, action: :read
-    define :create_knowledge_resource, action: :create
-    define :update_knowledge_resource, action: :update_knowledge_resource
-    define :delete_knowledge_resource, action: :destroy
-    define :bulk_destroy_knowledges, action: :bulk_destroy_knowledges
-    define :delete_all_knowledges_by_course, action: :delete_all_knowledges_by_course
-    define :delete_all_knowledge, args: [:course_id], action: :delete_all_knowledge
+    define(:get_knowledge_resource, action: :by_id)
+    define(:list_knowledges, action: :read)
+    define(:create_knowledge_resource, action: :create)
+    define(:update_knowledge_resource, action: :update_knowledge_resource)
+    define(:delete_knowledge_resource, action: :destroy)
+    define(:bulk_destroy_knowledges, action: :bulk_destroy_knowledges)
+    define(:delete_all_knowledges_by_course, action: :delete_all_knowledges_by_course)
+    define(:delete_all_knowledge, args: [:course_id], action: :delete_all_knowledge)
 
     # Course-related queries
-    define :get_knowledge_resources_by_course, action: :by_course
-    define :search_knowledge_resources, action: :search
-    define :get_knowledge_resources_by_name_and_importance, action: :by_name_and_importance
-    define :debug_list_resources, action: :debug_list
+    define(:get_knowledge_resources_by_course, action: :by_course)
+    define(:search_knowledge_resources, action: :search)
+    define(:get_knowledge_resources_by_name_and_importance, action: :by_name_and_importance)
+    define(:debug_list_resources, action: :debug_list)
 
     # Hierarchy queries
-    define :list_subjects, action: :list_subjects
-    define :list_units_by_subject, action: :list_units_by_subject
-    define :list_cells_by_unit, action: :list_cells_by_unit
-    define :list_cells_by_subject, action: :list_cells_by_subject
-    define :get_subject_with_units, action: :get_subject_with_units
-    define :get_unit_with_cells, action: :get_unit_with_cells
-    define :get_full_hierarchy, action: :get_full_hierarchy
-    define :get_full_hierarchy_nested, action: :get_full_hierarchy_nested
-    define :get_parent, action: :get_parent
-    define :get_children, action: :get_children
+    define(:list_subjects, action: :list_subjects)
+    define(:list_units_by_subject, action: :list_units_by_subject)
+    define(:list_cells_by_unit, action: :list_cells_by_unit)
+    define(:list_cells_by_subject, action: :list_cells_by_subject)
+    define(:get_subject_with_units, action: :get_subject_with_units)
+    define(:get_unit_with_cells, action: :get_unit_with_cells)
+    define(:get_full_hierarchy, action: :get_full_hierarchy)
+    define(:get_full_hierarchy_nested, action: :get_full_hierarchy_nested)
+    define(:get_parent, action: :get_parent)
+    define(:get_children, action: :get_children)
 
     # Tag actions
-    define :add_tag_to_knowledge, action: :add_tag
-    define :remove_tag_from_knowledge, action: :remove_tag
+    define(:add_tag_to_knowledge, action: :add_tag)
+    define(:remove_tag_from_knowledge, action: :remove_tag)
 
     # Import actions
-    define :import_knowledge_from_excel, action: :import_from_excel
-    define :import_knowledge_from_llm, action: :import_from_llm
-    define :import_knowledge_from_opml, action: :import_from_opml
-    define :import_knowledge_from_xmind, action: :import_from_xmind
-    define :upsert_subject, action: :upsert_subject
-    define :upsert_unit, action: :upsert_unit
-    define :get_by_name_and_course, action: :by_name_and_course
-    define :get_by_any_name_and_course, action: :by_any_name_and_course
-    define :bulk_update_importance_level, action: :bulk_update_importance_level
-    define :get_course_learning_stats_by_student, action: :get_course_learning_stats_by_student
+    define(:import_knowledge_from_excel, action: :import_from_excel)
+    define(:import_knowledge_from_llm, action: :import_from_llm)
+    define(:import_knowledge_from_opml, action: :import_from_opml)
+    define(:import_knowledge_from_xmind, action: :import_from_xmind)
+    define(:upsert_subject, action: :upsert_subject)
+    define(:upsert_unit, action: :upsert_unit)
+    define(:get_by_name_and_course, action: :by_name_and_course)
+    define(:get_by_any_name_and_course, action: :by_any_name_and_course)
+    define(:bulk_update_importance_level, action: :bulk_update_importance_level)
+    define(:get_course_learning_stats_by_student, action: :get_course_learning_stats_by_student)
 
     # Sort order actions
-    define :reorder_knowledge_resource, action: :reorder
-    define :regenerate_sort_paths, args: [:course_id], action: :regenerate_sort_paths
+    define(:reorder_knowledge_resource, action: :reorder)
+    define(:regenerate_sort_paths, args: [:course_id], action: :regenerate_sort_paths)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     destroy :destroy do
-      description "Destroy a knowledge resource and its dependent relations"
+      description("Destroy a knowledge resource and its dependent relations")
       # Note: Database CASCADE handles deletion of child resources automatically
       # No manual cascading needed - relies on postgres references with on_delete: :delete
     end
 
     action :bulk_destroy_knowledges do
-      description "Unenroll multiple students from a course"
+      description("Unenroll multiple students from a course")
 
       argument :course_id, :uuid do
-        allow_nil? false
+        allow_nil?(false)
       end
 
       argument :knowledge_resource_ids, {:array, :uuid} do
-        allow_nil? false
-        description "List of student IDs to unenroll"
+        allow_nil?(false)
+        description("List of student IDs to unenroll")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         # Read all knowledge resources in tenant and filter manually
         case __MODULE__ |> Ash.read(tenant: context.tenant) do
           {:ok, resources} ->
@@ -135,7 +135,7 @@ defmodule KgEdu.Knowledge.Resource do
           {:error, reason} ->
             {:error, reason}
         end
-      end
+      end)
     end
 
     # action :delete_all_knowledges_by_course do
@@ -175,14 +175,16 @@ defmodule KgEdu.Knowledge.Resource do
     end
 
     action :delete_all_knowledges_by_course do
-      description "Delete all knowledge resources for a course. Only deletes top-level subjects to avoid stale record errors, relying on database CASCADE to delete children."
+      description(
+        "Delete all knowledge resources for a course. Only deletes top-level subjects to avoid stale record errors, relying on database CASCADE to delete children."
+      )
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "The course ID to delete all knowledge resources for"
+        allow_nil?(false)
+        description("The course ID to delete all knowledge resources for")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         course_id = input.arguments.course_id
         tenant = context.tenant
 
@@ -218,34 +220,34 @@ defmodule KgEdu.Knowledge.Resource do
           result ->
             {:error, "Unexpected result: #{inspect(result)}"}
         end
-      end
+      end)
     end
 
     # ============ Basic Queries ============
     read :by_id do
-      description "Get a knowledge resource by ID"
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
+      description("Get a knowledge resource by ID")
+      get?(true)
+      argument(:id, :uuid, allow_nil?: false)
+      filter(expr(id == ^arg(:id)))
     end
 
     read :by_course do
-      description "Get knowledge resources for a specific course"
-      argument :course_id, :uuid, allow_nil?: false
-      filter expr(course_id == ^arg(:course_id))
+      description("Get knowledge resources for a specific course")
+      argument(:course_id, :uuid, allow_nil?: false)
+      filter(expr(course_id == ^arg(:course_id)))
     end
 
     read :search do
-      description "Search knowledge resources by name"
-      argument :query, :string, allow_nil?: false
-      filter expr(contains(name, ^arg(:query)))
+      description("Search knowledge resources by name")
+      argument(:query, :string, allow_nil?: false)
+      filter(expr(contains(name, ^arg(:query))))
     end
 
     read :debug_list do
-      description "Debug: List all knowledge resources for a course"
-      argument :course_id, :uuid, allow_nil?: true
+      description("Debug: List all knowledge resources for a course")
+      argument(:course_id, :uuid, allow_nil?: true)
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         course_id_arg = Ash.Query.get_argument(query, :course_id)
 
         query
@@ -253,16 +255,16 @@ defmodule KgEdu.Knowledge.Resource do
           if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
         end)
         |> Ash.Query.sort(name: :asc)
-      end
+      end)
     end
 
     read :by_name_and_importance do
-      description "Get knowledge resources by name (search) and importance level"
-      argument :name, :string, allow_nil?: true
-      argument :importance_level, :string, allow_nil?: true
-      argument :course_id, :uuid, allow_nil?: true
+      description("Get knowledge resources by name (search) and importance level")
+      argument(:name, :string, allow_nil?: true)
+      argument(:importance_level, :string, allow_nil?: true)
+      argument(:course_id, :uuid, allow_nil?: true)
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         name_arg = Ash.Query.get_argument(query, :name)
         importance_level_arg = Ash.Query.get_argument(query, :importance_level)
         course_id_arg = Ash.Query.get_argument(query, :course_id)
@@ -279,112 +281,118 @@ defmodule KgEdu.Knowledge.Resource do
         |> then(fn q ->
           if course_id_arg, do: Ash.Query.filter(q, course_id == ^course_id_arg), else: q
         end)
-      end
+      end)
     end
 
     # ============ Hierarchy Queries - Level 1: Subjects ============
     read :list_subjects do
-      description "List all subjects (top-level knowledge resources)"
-      argument :course_id, :uuid, allow_nil?: true
-      filter expr(knowledge_type == :subject and course_id == ^arg(:course_id))
+      description("List all subjects (top-level knowledge resources)")
+      argument(:course_id, :uuid, allow_nil?: true)
+      filter(expr(knowledge_type == :subject and course_id == ^arg(:course_id)))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.sort(query, sort_path: :asc)
-      end
+      end)
     end
 
     read :get_subject_with_units do
-      description "Get a subject with all its knowledge units loaded"
-      get? true
-      argument :subject_id, :uuid, allow_nil?: false
+      description("Get a subject with all its knowledge units loaded")
+      get?(true)
+      argument(:subject_id, :uuid, allow_nil?: false)
 
-      filter expr(id == ^arg(:subject_id) and knowledge_type == :subject)
+      filter(expr(id == ^arg(:subject_id) and knowledge_type == :subject))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         query
         |> Ash.Query.load(child_units: [:child_cells])
-      end
+      end)
     end
 
     # ============ Hierarchy Queries - Level 2: Units ============
     read :list_units_by_subject do
-      description "List all knowledge units for a specific subject"
-      argument :subject_id, :uuid, allow_nil?: false
+      description("List all knowledge units for a specific subject")
+      argument(:subject_id, :uuid, allow_nil?: false)
 
-      filter expr(
-               knowledge_type == :knowledge_unit and
-                 parent_subject_id == ^arg(:subject_id)
-             )
+      filter(
+        expr(
+          knowledge_type == :knowledge_unit and
+            parent_subject_id == ^arg(:subject_id)
+        )
+      )
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.sort(query, sort_path: :asc)
-      end
+      end)
     end
 
     read :get_unit_with_cells do
-      description "Get a knowledge unit with all its cells loaded"
-      get? true
-      argument :unit_id, :uuid, allow_nil?: false
+      description("Get a knowledge unit with all its cells loaded")
+      get?(true)
+      argument(:unit_id, :uuid, allow_nil?: false)
 
-      filter expr(id == ^arg(:unit_id) and knowledge_type == :knowledge_unit)
+      filter(expr(id == ^arg(:unit_id) and knowledge_type == :knowledge_unit))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.load(query, [:child_cells, :parent_subject])
-      end
+      end)
     end
 
     # ============ Hierarchy Queries - Level 3: Cells ============
     read :list_cells_by_unit do
-      description "List all knowledge cells for a specific knowledge unit"
-      argument :unit_id, :uuid, allow_nil?: false
+      description("List all knowledge cells for a specific knowledge unit")
+      argument(:unit_id, :uuid, allow_nil?: false)
 
-      filter expr(
-               knowledge_type == :knowledge_cell and
-                 parent_unit_id == ^arg(:unit_id)
-             )
+      filter(
+        expr(
+          knowledge_type == :knowledge_cell and
+            parent_unit_id == ^arg(:unit_id)
+        )
+      )
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.sort(query, sort_path: :asc)
-      end
+      end)
     end
 
     read :list_cells_by_subject do
-      description "List all knowledge cells directly under a subject (no unit)"
-      argument :subject_id, :uuid, allow_nil?: false
+      description("List all knowledge cells directly under a subject (no unit)")
+      argument(:subject_id, :uuid, allow_nil?: false)
 
-      filter expr(
-               knowledge_type == :knowledge_cell and
-                 parent_subject_id == ^arg(:subject_id) and
-                 is_nil(parent_unit_id)
-             )
+      filter(
+        expr(
+          knowledge_type == :knowledge_cell and
+            parent_subject_id == ^arg(:subject_id) and
+            is_nil(parent_unit_id)
+        )
+      )
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         Ash.Query.sort(query, sort_path: :asc)
-      end
+      end)
     end
 
     # ============ Hierarchy Navigation ============
     read :get_parent do
-      description "Get the parent of a knowledge resource"
-      get? true
-      argument :id, :uuid, allow_nil?: false
+      description("Get the parent of a knowledge resource")
+      get?(true)
+      argument(:id, :uuid, allow_nil?: false)
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         query
         |> Ash.Query.filter(expr(id == ^arg(:id)))
         |> Ash.Query.load([:parent_subject, :parent_unit])
-      end
+      end)
     end
 
     read :get_children do
-      description "Get all children of a knowledge resource"
-      argument :id, :uuid, allow_nil?: false
+      description("Get all children of a knowledge resource")
+      argument(:id, :uuid, allow_nil?: false)
 
       argument :type, :atom do
-        constraints one_of: [:subject, :knowledge_unit, :knowledge_cell]
+        constraints(one_of: [:subject, :knowledge_unit, :knowledge_cell])
       end
 
-      prepare fn query, context ->
+      prepare(fn query, context ->
         resource_type = Ash.Query.get_argument(query, :type)
         resource_id = Ash.Query.get_argument(query, :id)
 
@@ -415,19 +423,24 @@ defmodule KgEdu.Knowledge.Resource do
             Ash.Query.filter(query, false)
         end
         |> Ash.Query.sort(knowledge_type: :asc, name: :asc)
-      end
+      end)
     end
 
     read :get_full_hierarchy do
-      description "Get the full hierarchy for a course (subjects with units and cells, supporting nested cells up to unlimited depth)"
-      argument :course_id, :uuid, allow_nil?: false
+      description(
+        "Get the full hierarchy for a course (subjects with units and cells, supporting nested cells up to unlimited depth)"
+      )
 
-      filter expr(
-               course_id == ^arg(:course_id) and
-                 knowledge_type == :subject
-             )
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      prepare fn query, _context ->
+      filter(
+        expr(
+          course_id == ^arg(:course_id) and
+            knowledge_type == :subject
+        )
+      )
+
+      prepare(fn query, _context ->
         query
         |> Ash.Query.load([:sort_path, :display_order])
         |> Ash.Query.load(
@@ -513,19 +526,24 @@ defmodule KgEdu.Knowledge.Resource do
           ]
         )
         |> Ash.Query.sort(sort_path: :asc)
-      end
+      end)
     end
 
     read :get_full_hierarchy_nested do
-      description "Get the full hierarchy with cells automatically nested (unlimited depth). This action builds nested structure server-side."
-      argument :course_id, :uuid, allow_nil?: false
+      description(
+        "Get the full hierarchy with cells automatically nested (unlimited depth). This action builds nested structure server-side."
+      )
 
-      filter expr(
-               course_id == ^arg(:course_id) and
-                 knowledge_type == :subject
-             )
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      prepare fn query, _context ->
+      filter(
+        expr(
+          course_id == ^arg(:course_id) and
+            knowledge_type == :subject
+        )
+      )
+
+      prepare(fn query, _context ->
         query
         |> Ash.Query.load([:sort_path, :display_order])
         |> Ash.Query.load(
@@ -611,14 +629,14 @@ defmodule KgEdu.Knowledge.Resource do
           ]
         )
         |> Ash.Query.sort(sort_path: :asc)
-      end
+      end)
     end
 
     # ============ Create Actions ============
     create :create do
-      description "Create a new knowledge resource"
+      description("Create a new knowledge resource")
 
-      accept [
+      accept([
         :name,
         :en_name,
         :description,
@@ -637,9 +655,9 @@ defmodule KgEdu.Knowledge.Resource do
         :knowledge_type,
         :sort_path,
         :display_order
-      ]
+      ])
 
-      validate fn changeset, _context ->
+      validate(fn changeset, _context ->
         knowledge_type = Ash.Changeset.get_attribute(changeset, :knowledge_type)
         parent_subject_id = Ash.Changeset.get_attribute(changeset, :parent_subject_id)
         parent_unit_id = Ash.Changeset.get_attribute(changeset, :parent_unit_id)
@@ -682,9 +700,9 @@ defmodule KgEdu.Knowledge.Resource do
                 :ok
             end
         end
-      end
+      end)
 
-      change fn changeset, context ->
+      change(fn changeset, context ->
         sort_path = Ash.Changeset.get_attribute(changeset, :sort_path)
         display_order = Ash.Changeset.get_attribute(changeset, :display_order)
 
@@ -711,12 +729,12 @@ defmodule KgEdu.Knowledge.Resource do
         else
           changeset
         end
-      end
+      end)
     end
 
     # ============ Update Actions ============
     update :update_knowledge_resource do
-      accept [
+      accept([
         :name,
         :en_name,
         :importance_level,
@@ -728,19 +746,19 @@ defmodule KgEdu.Knowledge.Resource do
         :parent_knowledge_resource_id,
         :sort_path,
         :display_order
-      ]
+      ])
     end
 
     update :reorder do
-      description "Reorder a knowledge resource within its level"
-      require_atomic? false
+      description("Reorder a knowledge resource within its level")
+      require_atomic?(false)
 
       argument :new_display_order, :integer do
-        allow_nil? false
-        description "New display order position (1-based)"
+        allow_nil?(false)
+        description("New display order position (1-based)")
       end
 
-      change fn changeset, context ->
+      change(fn changeset, context ->
         new_order = Ash.Changeset.get_argument(changeset, :new_display_order)
         resource = changeset.data
 
@@ -774,19 +792,22 @@ defmodule KgEdu.Knowledge.Resource do
         end
 
         changeset
-      end
+      end)
     end
 
     update :add_tag do
-      description "Append a tag to the knowledge resource's tag string (tags are separated by semicolons)"
-      require_atomic? false
+      description(
+        "Append a tag to the knowledge resource's tag string (tags are separated by semicolons)"
+      )
+
+      require_atomic?(false)
 
       argument :tag, :string do
-        description "The tag word to append"
-        allow_nil? false
+        description("The tag word to append")
+        allow_nil?(false)
       end
 
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         tag_to_add = Ash.Changeset.get_argument(changeset, :tag)
 
         # Clean the tag: trim whitespace and remove any semicolons
@@ -823,19 +844,19 @@ defmodule KgEdu.Knowledge.Resource do
 
           Ash.Changeset.change_attribute(changeset, :tag, new_tags)
         end
-      end
+      end)
     end
 
     update :remove_tag do
-      description "Remove a tag from the knowledge resource's tag string"
-      require_atomic? false
+      description("Remove a tag from the knowledge resource's tag string")
+      require_atomic?(false)
 
       argument :tag, :string do
-        description "The tag word to remove"
-        allow_nil? false
+        description("The tag word to remove")
+        allow_nil?(false)
       end
 
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         tag_to_remove = Ash.Changeset.get_argument(changeset, :tag)
 
         # Clean the tag: trim whitespace and remove any semicolons
@@ -864,49 +885,53 @@ defmodule KgEdu.Knowledge.Resource do
             Ash.Changeset.change_attribute(changeset, :tag, new_tags)
           end
         end
-      end
+      end)
     end
 
     # ============ Import Actions ============
     read :by_name_and_course do
-      description "Get a knowledge resource by name and course"
-      get? true
-      argument :name, :string, allow_nil?: false
-      argument :knowledge_type, :atom, allow_nil?: true
-      argument :course_id, :uuid, allow_nil?: false
+      description("Get a knowledge resource by name and course")
+      get?(true)
+      argument(:name, :string, allow_nil?: false)
+      argument(:knowledge_type, :atom, allow_nil?: true)
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      filter expr(
-               name == ^arg(:name) and knowledge_type == ^arg(:knowledge_type) and
-                 course_id == ^arg(:course_id)
-             )
+      filter(
+        expr(
+          name == ^arg(:name) and knowledge_type == ^arg(:knowledge_type) and
+            course_id == ^arg(:course_id)
+        )
+      )
     end
 
     read :by_any_name_and_course do
-      description "Get a knowledge resource by name and course"
-      get? true
-      argument :name, :string, allow_nil?: false
+      description("Get a knowledge resource by name and course")
+      get?(true)
+      argument(:name, :string, allow_nil?: false)
       # argument :knowledge_type, :atom, allow_nil?: true
-      argument :course_id, :uuid, allow_nil?: false
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      filter expr(
-               name == ^arg(:name) and knowledge_type in [:subject, :unit, :knowledge_cell] and
-                 course_id == ^arg(:course_id)
-             )
+      filter(
+        expr(
+          name == ^arg(:name) and knowledge_type in [:subject, :unit, :knowledge_cell] and
+            course_id == ^arg(:course_id)
+        )
+      )
     end
 
     create :upsert_subject do
-      description "Create or update a subject"
-      accept [:name, :course_id, :description, :importance_level]
+      description("Create or update a subject")
+      accept([:name, :course_id, :description, :importance_level])
 
-      argument :name, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
-      argument :description, :string, allow_nil?: true
-      argument :importance_level, :atom, allow_nil?: true, default: :normal
+      argument(:name, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
+      argument(:description, :string, allow_nil?: true)
+      argument(:importance_level, :atom, allow_nil?: true, default: :normal)
 
-      change set_attribute(:knowledge_type, :subject)
-      change set_attribute(:subject, arg(:name))
+      change(set_attribute(:knowledge_type, :subject))
+      change(set_attribute(:subject, arg(:name)))
 
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         name = Ash.Changeset.get_argument(changeset, :name)
         course_id = Ash.Changeset.get_argument(changeset, :course_id)
 
@@ -937,24 +962,24 @@ defmodule KgEdu.Knowledge.Resource do
               Ash.Changeset.get_argument(changeset, :importance_level)
             )
         end
-      end
+      end)
     end
 
     create :upsert_unit do
-      description "Create or update a knowledge unit"
-      accept [:name, :course_id, :parent_subject_id, :description, :importance_level]
+      description("Create or update a knowledge unit")
+      accept([:name, :course_id, :parent_subject_id, :description, :importance_level])
 
-      argument :name, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
-      argument :parent_subject_id, :uuid, allow_nil?: false
-      argument :description, :string, allow_nil?: true
-      argument :importance_level, :atom, allow_nil?: true, default: :normal
+      argument(:name, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
+      argument(:parent_subject_id, :uuid, allow_nil?: false)
+      argument(:description, :string, allow_nil?: true)
+      argument(:importance_level, :atom, allow_nil?: true, default: :normal)
 
-      change set_attribute(:knowledge_type, :knowledge_unit)
-      change set_attribute(:unit, arg(:name))
-      change set_attribute(:parent_subject_id, arg(:parent_subject_id))
+      change(set_attribute(:knowledge_type, :knowledge_unit))
+      change(set_attribute(:unit, arg(:name)))
+      change(set_attribute(:parent_subject_id, arg(:parent_subject_id)))
 
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         name = Ash.Changeset.get_argument(changeset, :name)
         course_id = Ash.Changeset.get_argument(changeset, :course_id)
         parent_subject_id = Ash.Changeset.get_argument(changeset, :parent_subject_id)
@@ -986,16 +1011,16 @@ defmodule KgEdu.Knowledge.Resource do
               Ash.Changeset.get_argument(changeset, :importance_level)
             )
         end
-      end
+      end)
     end
 
     action :import_from_excel do
-      description "Import knowledge resources from Excel file"
+      description("Import knowledge resources from Excel file")
 
-      argument :excel_data, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
+      argument(:excel_data, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      run fn input, context ->
+      run(fn input, context ->
         case KgEdu.ExcelParser.parse_from_base64(input.arguments.excel_data, 0) do
           {:ok, %{sheet: knowledge_data}} ->
             case process_knowledge_import(
@@ -1010,16 +1035,16 @@ defmodule KgEdu.Knowledge.Resource do
           {:error, reason} ->
             {:error, "Failed to parse Excel file: #{reason}"}
         end
-      end
+      end)
     end
 
     action :import_from_llm do
-      description "Import knowledge resources and relations from text using LLM analysis"
+      description("Import knowledge resources and relations from text using LLM analysis")
 
-      argument :text, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
+      argument(:text, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      run fn input, context ->
+      run(fn input, context ->
         case KgEdu.Knowledge.ImportFromLLM.import_from_text(
                input.arguments.text,
                input.arguments.course_id,
@@ -1030,16 +1055,16 @@ defmodule KgEdu.Knowledge.Resource do
           {:ok, result} -> :ok
           {:error, reason} -> {:error, reason}
         end
-      end
+      end)
     end
 
     action :import_from_opml do
-      description "Import knowledge resources from OPML XML data"
+      description("Import knowledge resources from OPML XML data")
 
-      argument :opml_data, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
+      argument(:opml_data, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      run fn input, context ->
+      run(fn input, context ->
         case KgEdu.OpmlParser.parse_from_text(input.arguments.opml_data) do
           {:ok, knowledge_data} ->
             case process_opml_import(knowledge_data, input.arguments.course_id, context.tenant) do
@@ -1050,16 +1075,16 @@ defmodule KgEdu.Knowledge.Resource do
           {:error, reason} ->
             {:error, "Failed to parse OPML data: #{reason}"}
         end
-      end
+      end)
     end
 
     action :import_from_xmind do
-      description "Import knowledge resources from XMind file"
+      description("Import knowledge resources from XMind file")
 
-      argument :xmind_data, :string, allow_nil?: false
-      argument :course_id, :uuid, allow_nil?: false
+      argument(:xmind_data, :string, allow_nil?: false)
+      argument(:course_id, :uuid, allow_nil?: false)
 
-      run fn input, context ->
+      run(fn input, context ->
         Logger.info("context: #{inspect(context)}")
         # Determine tenant context - use provided tenant or detect it as fallback
         tenant = context.tenant
@@ -1080,29 +1105,29 @@ defmodule KgEdu.Knowledge.Resource do
               {:error, "Failed to parse XMind file: #{reason}"}
           end
         end
-      end
+      end)
     end
 
     action :bulk_update_importance_level do
-      description "Bulk update importance levels for multiple knowledge resources in a course"
+      description("Bulk update importance levels for multiple knowledge resources in a course")
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "The course ID to validate knowledge resources belong to"
+        allow_nil?(false)
+        description("The course ID to validate knowledge resources belong to")
       end
 
       argument :knowledge_resource_ids, {:array, :uuid} do
-        allow_nil? false
-        description "List of knowledge resource IDs to update"
+        allow_nil?(false)
+        description("List of knowledge resource IDs to update")
       end
 
       argument :importance_level, :atom do
-        allow_nil? false
-        constraints one_of: [:hard, :important, :normal]
-        description "New importance level to set"
+        allow_nil?(false)
+        constraints(one_of: [:hard, :important, :normal])
+        description("New importance level to set")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         # Read all knowledge resources in tenant and filter manually
         case __MODULE__ |> Ash.read(tenant: context.tenant) do
           {:ok, resources} ->
@@ -1140,18 +1165,20 @@ defmodule KgEdu.Knowledge.Resource do
           {:error, reason} ->
             {:error, "Failed to read knowledge resources: #{inspect(reason)}"}
         end
-      end
+      end)
     end
 
     action :get_course_learning_stats_by_student, :map do
-      description "Get learning statistics for all knowledge resources in a course, grouped by student"
+      description(
+        "Get learning statistics for all knowledge resources in a course, grouped by student"
+      )
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "Course ID to get learning statistics for"
+        allow_nil?(false)
+        description("Course ID to get learning statistics for")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         course_id = input.arguments.course_id
         tenant = context.tenant
 
@@ -1227,9 +1254,25 @@ defmodule KgEdu.Knowledge.Resource do
                 # Generate stats for each student
                 Logger.info("student_logs_map: #{inspect(student_logs_map)}")
 
+                # Get all users for this tenant to look up student names
+                {:ok, all_users} =
+                  KgEdu.Accounts.User.get_users(
+                    tenant: tenant,
+                    authorize?: false,
+                    actor: nil
+                  )
+
+                user_map =
+                  Enum.reduce(all_users, %{}, fn user, acc ->
+                    Map.put(acc, user.id, user.name)
+                  end)
+
                 student_stats =
                   student_logs_map
                   |> Enum.map(fn {student_id, logs} ->
+                    # Get student name from user map
+                    student_name = Map.get(user_map, student_id, "Unknown")
+
                     # Count completed activities by type (unique materials per student)
                     completed_videos =
                       logs
@@ -1295,32 +1338,33 @@ defmodule KgEdu.Knowledge.Resource do
                       if total_resources > 0, do: total_completed / total_resources, else: 0.0
 
                     %{
-                      student_id: student_id,
-                      course_id: course_id,
+                      studentId: student_id,
+                      name: student_name,
+                      courseId: course_id,
                       videos: %{
                         completed: completed_videos,
                         total: total_videos,
-                        completion_ratio: video_completion
+                        completionRatio: video_completion
                       },
                       files: %{
                         completed: completed_files,
                         total: total_files,
-                        completion_ratio: file_completion
+                        completionRatio: file_completion
                       },
                       exercises: %{
                         completed: completed_exercises,
                         total: total_exercises,
-                        completion_ratio: exercise_completion
+                        completionRatio: exercise_completion
                       },
-                      homeworks: %{
+                      homework: %{
                         completed: completed_homework,
                         total: total_homeworks,
-                        completion_ratio: homework_completion
+                        completionRatio: homework_completion
                       },
                       overall: %{
-                        total_completed: total_completed,
-                        total_resources: total_resources,
-                        completion_ratio: overall_completion
+                        totalCompleted: total_completed,
+                        totalResources: total_resources,
+                        completionRatio: overall_completion
                       }
                     }
                   end)
@@ -1345,18 +1389,20 @@ defmodule KgEdu.Knowledge.Resource do
             Logger.error("Failed to get knowledge resources: #{inspect(reason)}")
             {:error, "Failed to get knowledge resources: #{inspect(reason)}"}
         end
-      end
+      end)
     end
 
     action :regenerate_sort_paths do
-      description "Regenerate sort_path for all knowledge resources in a course based on current hierarchy"
+      description(
+        "Regenerate sort_path for all knowledge resources in a course based on current hierarchy"
+      )
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "Course ID to regenerate sort paths for"
+        allow_nil?(false)
+        description("Course ID to regenerate sort paths for")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         course_id = input.arguments.course_id
         tenant = context.tenant
 
@@ -1364,112 +1410,112 @@ defmodule KgEdu.Knowledge.Resource do
           :ok -> :ok
           {:error, reason} -> {:error, reason}
         end
-      end
+      end)
     end
   end
 
   policies do
     policy always() do
-      authorize_if always()
+      authorize_if(always())
     end
   end
 
   multitenancy do
-    strategy :context
+    strategy(:context)
   end
 
   multitenancy do
-    strategy :context
+    strategy(:context)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Knowledge hierarchy type
     attribute :knowledge_type, :atom do
-      allow_nil? false
-      constraints one_of: [:subject, :knowledge_unit, :knowledge_cell]
-      default :knowledge_cell
-      public? true
-      description "The type of knowledge resource in the hierarchy"
+      allow_nil?(false)
+      constraints(one_of: [:subject, :knowledge_unit, :knowledge_cell])
+      default(:knowledge_cell)
+      public?(true)
+      description("The type of knowledge resource in the hierarchy")
     end
 
     # Subject name (for grouping, required for subject type)
     attribute :subject, :string do
-      allow_nil? true
-      public? true
-      description "Subject name (required for subject type resources)"
+      allow_nil?(true)
+      public?(true)
+      description("Subject name (required for subject type resources)")
     end
 
     # Unit name (for grouping, required for knowledge_unit type)
     attribute :unit, :string do
-      allow_nil? true
-      public? true
-      description "Unit name (required for knowledge_unit type resources)"
+      allow_nil?(true)
+      public?(true)
+      description("Unit name (required for knowledge_unit type resources)")
     end
 
     # Importance level (renamed from knowlege_type)
     attribute :importance_level, :string do
-      allow_nil? false
+      allow_nil?(false)
       # constraints one_of: [:hard, :important, :normal]
-      default ""
-      public? true
-      description "Importance level of this knowledge resource"
+      default("")
+      public?(true)
+      description("Importance level of this knowledge resource")
     end
 
     attribute :name, :string do
-      allow_nil? false
+      allow_nil?(false)
       # constraints min_length: 3, max_length: 100
-      public? true
+      public?(true)
     end
 
     attribute :en_name, :string do
-      allow_nil? true
-      public? true
-      description "English name of the knowledge resource"
+      allow_nil?(true)
+      public?(true)
+      description("English name of the knowledge resource")
     end
 
     attribute :description, :string do
-      allow_nil? true
+      allow_nil?(true)
       # constraints max_length: 1000
-      public? true
+      public?(true)
     end
 
     attribute :tag, :string do
-      allow_nil? true
-      public? true
-      description "Tag or label for categorizing the knowledge resource"
+      allow_nil?(true)
+      public?(true)
+      description("Tag or label for categorizing the knowledge resource")
     end
 
     attribute :dimension, :string do
-      allow_nil? true
-      public? true
-      description "Cognitive dimension or category of the knowledge resource"
+      allow_nil?(true)
+      public?(true)
+      description("Cognitive dimension or category of the knowledge resource")
     end
 
     attribute :category, :string do
-      allow_nil? true
-      public? true
-      description "Category classification of the knowledge resource"
+      allow_nil?(true)
+      public?(true)
+      description("Category classification of the knowledge resource")
     end
 
     attribute :teaching_goal, :string do
-      allow_nil? true
-      public? true
-      description "Teaching goal or objective for this knowledge resource"
+      allow_nil?(true)
+      public?(true)
+      description("Teaching goal or objective for this knowledge resource")
     end
 
     attribute :sort_path, :string do
-      allow_nil? true
-      default ""
-      public? true
-      description "Sort path for hierarchical ordering, format: '01.02.03'"
+      allow_nil?(true)
+      default("")
+      public?(true)
+      description("Sort path for hierarchical ordering, format: '01.02.03'")
     end
 
     attribute :display_order, :integer do
-      allow_nil? true
-      public? true
-      description "Display order within the same level (1, 2, 3...)"
+      allow_nil?(true)
+      public?(true)
+      description("Display order within the same level (1, 2, 3...)")
     end
 
     timestamps()
@@ -1477,133 +1523,137 @@ defmodule KgEdu.Knowledge.Resource do
 
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
-      public? true
-      allow_nil? false
+      public?(true)
+      allow_nil?(false)
     end
 
     belongs_to :chapter, KgEdu.Courses.Chapter do
-      public? true
-      allow_nil? true
-      description "Chapter this knowledge resource belongs to"
+      public?(true)
+      allow_nil?(true)
+      description("Chapter this knowledge resource belongs to")
     end
 
     belongs_to :created_by, KgEdu.Accounts.User do
-      public? true
+      public?(true)
     end
 
     # ============ Hierarchy Relationships ============
 
     # Parent relationships
     belongs_to :parent_subject, __MODULE__ do
-      public? true
-      allow_nil? true
-      description "Parent subject (for units and cells that belong to a subject)"
+      public?(true)
+      allow_nil?(true)
+      description("Parent subject (for units and cells that belong to a subject)")
     end
 
     belongs_to :parent_unit, __MODULE__ do
-      public? true
-      allow_nil? true
-      description "Parent unit (for cells that belong to a unit)"
+      public?(true)
+      allow_nil?(true)
+      description("Parent unit (for cells that belong to a unit)")
     end
 
     # Generic parent knowledge resource (self-referential for hierarchical tree structure)
     belongs_to :parent_knowledge_resource, __MODULE__ do
-      public? true
-      allow_nil? true
+      public?(true)
+      allow_nil?(true)
 
-      description "Parent knowledge resource (generic hierarchical relationship for tree structure)"
+      description(
+        "Parent knowledge resource (generic hierarchical relationship for tree structure)"
+      )
     end
 
     # Children relationships
     has_many :child_units, __MODULE__ do
-      public? true
-      destination_attribute :parent_subject_id
-      filter expr(knowledge_type == :knowledge_unit)
-      description "Knowledge units that belong to this subject"
+      public?(true)
+      destination_attribute(:parent_subject_id)
+      filter(expr(knowledge_type == :knowledge_unit))
+      description("Knowledge units that belong to this subject")
     end
 
     has_many :child_cells, __MODULE__ do
-      public? true
-      destination_attribute :parent_unit_id
-      filter expr(knowledge_type == :knowledge_cell)
-      description "Knowledge cells that belong to this unit"
+      public?(true)
+      destination_attribute(:parent_unit_id)
+      filter(expr(knowledge_type == :knowledge_cell))
+      description("Knowledge cells that belong to this unit")
     end
 
     has_many :direct_cells, __MODULE__ do
-      public? true
-      destination_attribute :parent_subject_id
-      filter expr(knowledge_type == :knowledge_cell and is_nil(parent_unit_id))
-      description "Knowledge cells that belong directly to this subject (no unit)"
+      public?(true)
+      destination_attribute(:parent_subject_id)
+      filter(expr(knowledge_type == :knowledge_cell and is_nil(parent_unit_id)))
+      description("Knowledge cells that belong directly to this subject (no unit)")
     end
 
     has_many :subject_cells, __MODULE__ do
-      public? true
-      destination_attribute :parent_subject_id
-      filter expr(knowledge_type == :knowledge_cell)
-      description "All knowledge cells that belong to this subject (regardless of unit)"
+      public?(true)
+      destination_attribute(:parent_subject_id)
+      filter(expr(knowledge_type == :knowledge_cell))
+      description("All knowledge cells that belong to this subject (regardless of unit)")
     end
 
     # Nested child cells (cells that have this cell as parent via parent_knowledge_resource_id)
     has_many :nested_child_cells, __MODULE__ do
-      public? true
-      destination_attribute :parent_knowledge_resource_id
-      filter expr(knowledge_type == :knowledge_cell)
+      public?(true)
+      destination_attribute(:parent_knowledge_resource_id)
+      filter(expr(knowledge_type == :knowledge_cell))
 
-      description "Knowledge cells that are nested under this cell (for hierarchical cell structure up to level 7)"
+      description(
+        "Knowledge cells that are nested under this cell (for hierarchical cell structure up to level 7)"
+      )
     end
 
     # Generic child knowledge resources (self-referential for hierarchical tree structure)
     has_many :child_knowledge_resources, __MODULE__ do
-      public? true
-      destination_attribute :parent_knowledge_resource_id
-      description "All child knowledge resources in the hierarchical tree"
+      public?(true)
+      destination_attribute(:parent_knowledge_resource_id)
+      description("All child knowledge resources in the hierarchical tree")
     end
 
     # ============ Other Relationships ============
 
     has_many :outgoing_relations, KgEdu.Knowledge.Relation do
-      public? true
-      destination_attribute :source_knowledge_id
+      public?(true)
+      destination_attribute(:source_knowledge_id)
     end
 
     has_many :incoming_relations, KgEdu.Knowledge.Relation do
-      public? true
-      destination_attribute :target_knowledge_id
+      public?(true)
+      destination_attribute(:target_knowledge_id)
     end
 
     has_many :files, KgEdu.Courses.File do
-      public? true
-      destination_attribute :knowledge_resource_id
+      public?(true)
+      destination_attribute(:knowledge_resource_id)
     end
 
     has_many :videos, KgEdu.Courses.Video do
-      public? true
-      destination_attribute :knowledge_resource_id
-      description "Videos associated with this knowledge resource"
+      public?(true)
+      destination_attribute(:knowledge_resource_id)
+      description("Videos associated with this knowledge resource")
     end
 
     has_many :homeworks, KgEdu.Knowledge.Homework do
-      public? true
-      destination_attribute :knowledge_resource_id
-      description "Homeworks related to this knowledge resource"
+      public?(true)
+      destination_attribute(:knowledge_resource_id)
+      description("Homeworks related to this knowledge resource")
     end
 
     has_many :exercises, KgEdu.Knowledge.Exercise do
-      public? true
-      destination_attribute :knowledge_resource_id
-      description "Exercises related to this knowledge resource"
+      public?(true)
+      destination_attribute(:knowledge_resource_id)
+      description("Exercises related to this knowledge resource")
     end
 
     has_many :knowledge_point_cognitives, KgEdu.Knowledge.KnowledgePointCognitive do
-      public? true
-      destination_attribute :knowledge_resource_id
-      description "Cognitive resources for this knowledge point at different levels"
+      public?(true)
+      destination_attribute(:knowledge_resource_id)
+      description("Cognitive resources for this knowledge point at different levels")
     end
 
     has_many :user_cases, KgEdu.Knowledge.UserCase do
-      public? true
-      destination_attribute :knowledge_resource_id
-      description "User cases (examples) that illustrate this knowledge resource"
+      public?(true)
+      destination_attribute(:knowledge_resource_id)
+      description("User cases (examples) that illustrate this knowledge resource")
     end
   end
 
@@ -2154,10 +2204,10 @@ defmodule KgEdu.Knowledge.Resource do
   calculations do
     calculate :student_learning_stats, :map do
       argument :student_id, :uuid do
-        allow_nil? false
+        allow_nil?(false)
       end
 
-      calculation fn resource, args ->
+      calculation(fn resource, args ->
         student_id = args[:student_id]
         tenant = Ash.Changeset.get_tenant(resource)
 
@@ -2203,14 +2253,14 @@ defmodule KgEdu.Knowledge.Resource do
               }
             }
         end
-      end
+      end)
     end
 
     calculate :display_number, :string do
-      description "Display number converted from sort_path, e.g., '01.02.03' -> '1.2.3'"
-      public? true
+      description("Display number converted from sort_path, e.g., '01.02.03' -> '1.2.3'")
+      public?(true)
 
-      calculation fn resource, _args ->
+      calculation(fn resource, _args ->
         case resource.sort_path do
           "" ->
             ""
@@ -2224,20 +2274,20 @@ defmodule KgEdu.Knowledge.Resource do
             |> Enum.map(&String.to_integer/1)
             |> Enum.join(".")
         end
-      end
+      end)
     end
 
     calculate :level_number, :integer do
-      description "Depth level of this resource in the hierarchy"
-      public? true
+      description("Depth level of this resource in the hierarchy")
+      public?(true)
 
-      calculation fn resource, _args ->
+      calculation(fn resource, _args ->
         case resource.sort_path do
           "" -> 1
           nil -> 1
           path -> path |> String.split(".") |> length()
         end
-      end
+      end)
     end
   end
 

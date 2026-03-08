@@ -39,7 +39,7 @@ config :kg_edu, KgEduWeb.Endpoint,
 
 # Email API endpoint for development
 config :kg_edu, :email_api,
-  endpoint: System.get_env("EMAIL_API_ENDPOINT") || "http://localhost:5000/agent/email"
+  endpoint: System.get_env("EMAIL_API_ENDPOINT") || "http://localhost:5001/agent/email"
 
 # ## SSL Support
 #
