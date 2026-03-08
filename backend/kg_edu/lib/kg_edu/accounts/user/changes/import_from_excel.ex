@@ -181,6 +181,9 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
             ["Invalid email format: #{email}" | errors]
           end
 
+        email when is_integer(email) ->
+          ["Invalid email format: #{email}" | errors]
+
         _ ->
           # Email is optional
           errors

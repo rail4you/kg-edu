@@ -238,25 +238,25 @@ defmodule KgEdu.ExcelImport do
             nil
 
           value when is_binary(value) ->
-            # Clean Unicode escape sequences first
             cleaned_text = clean_text(value)
 
-            # Try to convert to number if possible
-            case Integer.parse(cleaned_text) do
-              {int_val, ""} ->
-                int_val
+            if String.contains?(cleaned_text, "@") do
+              cleaned_text
+            else
+              case Integer.parse(cleaned_text) do
+                {int_val, ""} ->
+                  int_val
 
-              # Accept partial parsing (e.g., "1234566`" -> 1234566)
-              {int_val, _remainder} ->
-                int_val
+                {int_val, _remainder} ->
+                  int_val
 
-              :error ->
-                case Float.parse(cleaned_text) do
-                  {float_val, ""} -> float_val
-                  # Accept partial parsing
-                  {float_val, _remainder} -> float_val
-                  :error -> cleaned_text
-                end
+                :error ->
+                  case Float.parse(cleaned_text) do
+                    {float_val, ""} -> float_val
+                    {float_val, _remainder} -> float_val
+                    :error -> cleaned_text
+                  end
+              end
             end
 
           value ->
