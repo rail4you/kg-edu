@@ -93,8 +93,7 @@ defmodule KgEdu.Knowledge.Relation do
     read :by_id do
       description("Get a knowledge relation by ID")
       get?(true)
-      argument(:id, :uuid, allow_nil?: false)
-      filter(expr(id == ^arg(:id)))
+      primary?(true)
     end
 
     read :by_knowledge do
@@ -147,10 +146,6 @@ defmodule KgEdu.Knowledge.Relation do
     # ============ Destroy Actions ============
     destroy :destroy do
       description("Delete a knowledge relation")
-      accept([])
-
-      # Relations can be deleted directly as they don't have dependent records
-      # that would prevent deletion
     end
 
     action :bulk_destroy_relations do
