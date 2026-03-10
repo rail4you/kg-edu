@@ -209,37 +209,66 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
         if force_refresh or should_regen do
           Logger.info("Generating recommendations for student #{student_id}")
 
-          # First, let's get some knowledge resources to recommend
-          case KgEdu.Knowledge.Resource.list_knowledges(tenant: tenant, authorize?: false) do
-            {:ok, resources} ->
-              Logger.info("Found #{length(resources)} knowledge resources")
+          # Get student's enrolled courses
+          case KgEdu.Courses.CourseEnrollment.by_student(%{member_id: student_id},
+                 tenant: tenant,
+                 authorize?: false
+               ) do
+            {:ok, enrollments} ->
+              enrolled_course_ids = Enum.map(enrollments, & &1.course_id)
 
-              if length(resources) > 0 do
-                # Get first 5 resources to recommend
-                Enum.take(resources, 5)
-                |> Enum.each(fn resource ->
-                  create_attrs = %{
-                    student_id: student_id,
-                    knowledge_resource_id: resource.id,
-                    recommendation_type: :weak_knowledge_review,
-                    priority: 7,
-                    reason: "根据您的学习档案，我们推荐从「#{resource.name}」开始学习"
-                  }
+              Logger.info(
+                "Student #{student_id} is enrolled in #{length(enrolled_course_ids)} courses: #{inspect(enrolled_course_ids)}"
+              )
 
-                  case KgEdu.Knowledge.LearningRecommendation
-                       |> Ash.Changeset.for_action(:create, create_attrs)
-                       |> Ash.create(tenant: tenant, authorize?: false) do
-                    {:ok, _rec} ->
-                      Logger.info("Created recommendation for #{resource.name}")
+              if length(enrolled_course_ids) > 0 do
+                # Get knowledge resources from enrolled courses (5 per course)
+                resources_result =
+                  Enum.map(enrolled_course_ids, fn course_id ->
+                    case KgEdu.Knowledge.Resource.get_knowledge_resources_by_course(
+                           %{course_id: course_id},
+                           tenant: tenant,
+                           authorize?: false
+                         ) do
+                      {:ok, resources} -> Enum.take(resources, 5)
+                      {:error, _} -> []
+                    end
+                  end)
+                  |> Enum.flat_map(& &1)
 
-                    {:error, reason} ->
-                      Logger.error("Failed to create recommendation: #{inspect(reason)}")
-                  end
-                end)
+                Logger.info(
+                  "Found #{length(resources_result)} knowledge resources from enrolled courses"
+                )
+
+                if length(resources_result) > 0 do
+                  Enum.each(resources_result, fn resource ->
+                    create_attrs = %{
+                      student_id: student_id,
+                      knowledge_resource_id: resource.id,
+                      recommendation_type: :weak_knowledge_review,
+                      priority: 7,
+                      reason: "根据您的学习档案，我们推荐从「#{resource.name}」开始学习"
+                    }
+
+                    case KgEdu.Knowledge.LearningRecommendation
+                         |> Ash.Changeset.for_action(:create, create_attrs)
+                         |> Ash.create(tenant: tenant, authorize?: false) do
+                      {:ok, _rec} ->
+                        Logger.info("Created recommendation for #{resource.name}")
+
+                      {:error, reason} ->
+                        Logger.error("Failed to create recommendation: #{inspect(reason)}")
+                    end
+                  end)
+                else
+                  Logger.info("No knowledge resources found for enrolled courses")
+                end
+              else
+                Logger.info("Student #{student_id} is not enrolled in any course")
               end
 
             {:error, reason} ->
-              Logger.error("Failed to list knowledge resources: #{inspect(reason)}")
+              Logger.error("Failed to get student enrollments: #{inspect(reason)}")
           end
         else
           Logger.info("Skipping recommendation generation - not needed")
