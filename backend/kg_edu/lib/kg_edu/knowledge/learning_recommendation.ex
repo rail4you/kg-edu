@@ -210,7 +210,8 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
           Logger.info("Generating recommendations for student #{student_id}")
 
           # Get student's enrolled courses
-          case KgEdu.Courses.CourseEnrollment.by_student(%{member_id: student_id},
+          case KgEdu.Courses.CourseEnrollment.list_enrollments_by_student(
+                 %{member_id: student_id},
                  tenant: tenant,
                  authorize?: false
                ) do

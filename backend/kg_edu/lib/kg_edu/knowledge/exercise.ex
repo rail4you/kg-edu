@@ -10,87 +10,87 @@ defmodule KgEdu.Knowledge.Exercise do
   require Ash.Query
 
   postgres do
-    table "exercises"
-    repo KgEdu.Repo
+    table("exercises")
+    repo(KgEdu.Repo)
 
     references do
-      reference :knowledge_resource, on_delete: :delete
+      reference(:knowledge_resource, on_delete: :delete)
     end
   end
 
   json_api do
-    type "exercise"
+    type("exercise")
   end
 
   typescript do
-    type_name "Exercise"
+    type_name("Exercise")
   end
 
   code_interface do
-    define :get_exercise, action: :by_id
-    define :list_exercises, action: :read
-    define :get_exercises_by_knowledge, action: :by_knowledge
-    define :get_exercises_by_course, action: :by_course
-    define :create_exercise, action: :create
-    define :update_exercise, action: :update_exercise
-    define :delete_exercise, action: :destroy
-    define :generate_ai_exercise, action: :generate_ai_exercise
-    define :get_recent_ai_exercises, action: :recent_ai_exercises
-    define :link_exercise_to_knowledge, action: :link_exercise_to_knowledge
-    define :unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge
-    define :import_exercise_from_xlsx, action: :import_exercise_from_xlsx
-    define :import_exercises_from_excel, action: :import_exercises_from_excel
-    define :export_exercise_template, action: :export_exercise_template
-    define :log_exercise_submit_activity, action: :log_exercise_submit
-    define :move_exercise_up, action: :move_up
-    define :move_exercise_down, action: :move_down
+    define(:get_exercise, action: :by_id)
+    define(:list_exercises, action: :read)
+    define(:get_exercises_by_knowledge, action: :by_knowledge)
+    define(:get_exercises_by_course, action: :by_course)
+    define(:create_exercise, action: :create)
+    define(:update_exercise, action: :update_exercise)
+    define(:delete_exercise, action: :destroy)
+    define(:generate_ai_exercise, action: :generate_ai_exercise)
+    define(:get_recent_ai_exercises, action: :recent_ai_exercises)
+    define(:link_exercise_to_knowledge, action: :link_exercise_to_knowledge)
+    define(:unlink_exercise_from_knowledge, action: :unlink_exercise_from_knowledge)
+    define(:import_exercise_from_xlsx, action: :import_exercise_from_xlsx)
+    define(:import_exercises_from_excel, action: :import_exercises_from_excel)
+    define(:export_exercise_template, action: :export_exercise_template)
+    define(:log_exercise_submit_activity, action: :log_exercise_submit)
+    define(:move_exercise_up, action: :move_up)
+    define(:move_exercise_down, action: :move_down)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     read :by_id do
-      description "Get an exercise by ID"
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id))
+      description("Get an exercise by ID")
+      get?(true)
+      argument(:id, :uuid, allow_nil?: false)
+      filter(expr(id == ^arg(:id)))
     end
 
     read :by_knowledge do
-      description "Get exercises for a specific knowledge resource"
-      argument :knowledge_resource_id, :uuid, allow_nil?: false
-      filter expr(knowledge_resource_id == ^arg(:knowledge_resource_id))
+      description("Get exercises for a specific knowledge resource")
+      argument(:knowledge_resource_id, :uuid, allow_nil?: false)
+      filter(expr(knowledge_resource_id == ^arg(:knowledge_resource_id)))
     end
 
     read :by_course do
-      description "Get exercises for a specific course"
-      argument :course_id, :uuid, allow_nil?: false
-      filter expr(course_id == ^arg(:course_id))
+      description("Get exercises for a specific course")
+      argument(:course_id, :uuid, allow_nil?: false)
+      filter(expr(course_id == ^arg(:course_id)))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         query
         |> Ash.Query.sort(position: :asc, inserted_at: :asc)
-      end
+      end)
     end
 
     read :recent_ai_exercises do
-      description "Get recent AI-generated exercises"
-      argument :course_id, :uuid, allow_nil?: true
-      argument :limit, :integer, allow_nil?: true, default: 10
+      description("Get recent AI-generated exercises")
+      argument(:course_id, :uuid, allow_nil?: true)
+      argument(:limit, :integer, allow_nil?: true, default: 10)
 
-      filter expr(ai_type == :ai_generated)
+      filter(expr(ai_type == :ai_generated))
 
-      prepare fn query, _context ->
+      prepare(fn query, _context ->
         query
         |> Ash.Query.sort(inserted_at: :desc)
         |> Ash.Query.limit(10)
-      end
+      end)
     end
 
     create :create do
-      description "Create a new exercise"
+      description("Create a new exercise")
 
-      accept [
+      accept([
         :title,
         :question_content,
         :answer,
@@ -102,18 +102,18 @@ defmodule KgEdu.Knowledge.Exercise do
         :difficulty,
         :created_by_id,
         :position
-      ]
+      ])
 
-      change {KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []}
-      change {KgEdu.Knowledge.Exercise.Changes.SetDefaultPosition, []}
+      change({KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []})
+      change({KgEdu.Knowledge.Exercise.Changes.SetDefaultPosition, []})
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
     update :update_exercise do
-      description "Update an exercise"
-      require_atomic? false
+      description("Update an exercise")
+      require_atomic?(false)
 
-      accept [
+      accept([
         :title,
         :question_content,
         :answer,
@@ -124,38 +124,38 @@ defmodule KgEdu.Knowledge.Exercise do
         :ai_type,
         :difficulty,
         :position
-      ]
+      ])
 
-      change {KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []}
+      change({KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []})
       # change {KgEdu.Knowledge.Exercise.Changes.ValidateOptions, []}
     end
 
     update :link_exercise_to_knowledge do
-      description "Link an exercise to a knowledge resource"
-      require_atomic? false
+      description("Link an exercise to a knowledge resource")
+      require_atomic?(false)
 
       argument :knowledge_resource_id, :uuid do
-        allow_nil? false
-        description "The knowledge resource ID to link to"
+        allow_nil?(false)
+        description("The knowledge resource ID to link to")
       end
 
-      change manage_relationship(:knowledge_resource_id, :knowledge_resource,
-               type: :append_and_remove
-             )
+      change(
+        manage_relationship(:knowledge_resource_id, :knowledge_resource, type: :append_and_remove)
+      )
     end
 
     update :unlink_exercise_from_knowledge do
-      description "Unlink an exercise from its knowledge resource"
-      require_atomic? false
+      description("Unlink an exercise from its knowledge resource")
+      require_atomic?(false)
 
-      change set_attribute(:knowledge_resource_id, nil)
+      change(set_attribute(:knowledge_resource_id, nil))
     end
 
     update :move_up do
-      description "将习题在课程内向上移动一位"
-      require_atomic? false
+      description("将习题在课程内向上移动一位")
+      require_atomic?(false)
 
-      change fn changeset, context ->
+      change(fn changeset, context ->
         exercise = changeset.data
         course_id = exercise.course_id
         current_position = exercise.position || 0
@@ -183,14 +183,14 @@ defmodule KgEdu.Knowledge.Exercise do
         else
           changeset
         end
-      end
+      end)
     end
 
     update :move_down do
-      description "将习题在课程内向下移动一位"
-      require_atomic? false
+      description("将习题在课程内向下移动一位")
+      require_atomic?(false)
 
-      change fn changeset, context ->
+      change(fn changeset, context ->
         exercise = changeset.data
         course_id = exercise.course_id
         current_position = exercise.position || 0
@@ -218,40 +218,42 @@ defmodule KgEdu.Knowledge.Exercise do
         else
           changeset
         end
-      end
+      end)
     end
 
     action :generate_ai_exercise do
-      description "Generate AI exercises based on course, knowledge, chapter, and exercise type using bulk create"
+      description(
+        "Generate AI exercises based on course, knowledge, chapter, and exercise type using bulk create"
+      )
 
       argument :course_id, :uuid do
-        allow_nil? false
-        description "Course ID to generate exercises for"
+        allow_nil?(false)
+        description("Course ID to generate exercises for")
       end
 
       argument :knowledge_name, :string do
-        allow_nil? false
-        description "Name of the knowledge resource"
+        allow_nil?(false)
+        description("Name of the knowledge resource")
       end
 
       argument :chapter_name, :string do
-        allow_nil? true
-        description "Name of the chapter"
+        allow_nil?(true)
+        description("Name of the chapter")
       end
 
       argument :exercise_type, :atom do
-        allow_nil? false
-        constraints one_of: [:multiple_choice, :essay, :fill_in_blank]
-        description "Type of exercise to generate"
+        allow_nil?(false)
+        constraints(one_of: [:multiple_choice, :essay, :fill_in_blank])
+        description("Type of exercise to generate")
       end
 
       argument :number, :integer do
-        allow_nil? false
-        default 1
-        description "Number of exercises to generate"
+        allow_nil?(false)
+        default(1)
+        description("Number of exercises to generate")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         course_id = input.arguments.course_id
         knowledge_name = input.arguments.knowledge_name
         chapter_name = input.arguments.chapter_name
@@ -319,63 +321,66 @@ defmodule KgEdu.Knowledge.Exercise do
             Logger.error("Failed to find course: #{inspect(reason)}")
             {:error, "Course not found with ID: #{course_id}"}
         end
-      end
+      end)
     end
 
     create :import_exercise_from_xlsx do
-      description "Import exercise from XLSX file"
+      description("Import exercise from XLSX file")
 
       argument :xlsx_base64, :string do
-        allow_nil? false
-        description "Base64 encoded XLSX file content"
+        allow_nil?(false)
+        description("Base64 encoded XLSX file content")
       end
 
       argument :created_by_id, :uuid do
-        allow_nil? false
-        description "User ID who is importing the exercise"
+        allow_nil?(false)
+        description("User ID who is importing the exercise")
       end
 
-      change {KgEdu.Knowledge.Changes.ImportExerciseFromXlsx, []}
+      change({KgEdu.Knowledge.Changes.ImportExerciseFromXlsx, []})
     end
 
     action :export_exercise_template do
-      description "Generate exercise template XLSX as base64"
+      description("Generate exercise template XLSX as base64")
 
       argument :created_by_id, :uuid do
-        allow_nil? false
-        description "User ID requesting the template"
+        allow_nil?(false)
+        description("User ID requesting the template")
       end
 
-      run {KgEdu.Knowledge.Changes.ExportExerciseTemplate, []}
+      run({KgEdu.Knowledge.Changes.ExportExerciseTemplate, []})
     end
 
     action :import_exercises_from_excel do
-      description "Import multiple exercises from an Excel file with Base64 encoding"
+      description("Import multiple exercises from an Excel file with Base64 encoding")
 
       argument :excel_file, :string do
-        description "Base64 encoded Excel file containing exercise data"
-        allow_nil? false
+        description("Base64 encoded Excel file containing exercise data")
+        allow_nil?(false)
       end
 
       argument :course_id, :string do
-        allow_nil? false
+        allow_nil?(false)
       end
 
       argument :created_by_id, :uuid do
-        description "User ID who is importing the exercises"
-        allow_nil? false
+        description("User ID who is importing the exercises")
+        allow_nil?(false)
       end
 
       argument :attributes, {:array, :atom} do
-        description ""
-        allow_nil? false
-        default [:title, :question_content, :question_type, :answer, :options, :difficulty]
+        description("")
+        allow_nil?(false)
+        default([:title, :question_content, :question_type, :answer, :options, :difficulty])
       end
 
-      returns :map
+      returns(:map)
 
-      run fn input, context ->
-        Logger.info("Starting import_exercises_from_excel with attributes: #{inspect(input.arguments.attributes)}")
+      run(fn input, context ->
+        Logger.info(
+          "Starting import_exercises_from_excel with attributes: #{inspect(input.arguments.attributes)}"
+        )
+
         Logger.info("Course ID: #{inspect(input.arguments.course_id)}")
         Logger.info("Created By ID: #{inspect(input.arguments.created_by_id)}")
         Logger.info("Tenant: #{inspect(context.tenant)}")
@@ -394,29 +399,29 @@ defmodule KgEdu.Knowledge.Exercise do
             Logger.error("Import failed: #{inspect(reason)}")
             {:error, reason}
         end
-      end
+      end)
     end
 
     action :log_exercise_submit do
-      description "Log exercise submission activity"
+      description("Log exercise submission activity")
 
       argument :user_id, :uuid do
-        allow_nil? false
-        description "User ID who submitted the exercise"
+        allow_nil?(false)
+        description("User ID who submitted the exercise")
       end
 
       argument :answer, :string do
-        allow_nil? false
-        description "The answer submitted by the user"
+        allow_nil?(false)
+        description("The answer submitted by the user")
       end
 
       argument :metadata, :map do
-        allow_nil? true
-        default %{}
-        description "Additional metadata about the submission"
+        allow_nil?(true)
+        default(%{})
+        description("Additional metadata about the submission")
       end
 
-      run fn input, context ->
+      run(fn input, context ->
         exercise_id =
           input.arguments[:exercise_id] || input.arguments[:id] ||
             Ash.Changeset.get_attribute(input.context, :id)
@@ -435,13 +440,13 @@ defmodule KgEdu.Knowledge.Exercise do
         end
 
         :ok
-      end
+      end)
     end
   end
 
   policies do
     policy always() do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # policy action_type([:read, :create, :update]) do
@@ -451,80 +456,82 @@ defmodule KgEdu.Knowledge.Exercise do
   end
 
   multitenancy do
-    strategy :context
+    strategy(:context)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :title, :string do
-      allow_nil? false
-      constraints min_length: 3, max_length: 200
-      public? true
+      allow_nil?(false)
+      constraints(min_length: 3, max_length: 200)
+      public?(true)
     end
 
     attribute :question_content, :string do
-      allow_nil? false
+      allow_nil?(false)
       # constraints min_length: 10, max_length: 2000
-      public? true
+      public?(true)
     end
 
     attribute :answer, :string do
-      allow_nil? false
-      constraints min_length: 1, max_length: 2000
-      public? true
+      allow_nil?(false)
+      constraints(min_length: 1, max_length: 2000)
+      public?(true)
     end
 
     attribute :question_type, :atom do
-      allow_nil? false
-      constraints one_of: [:multiple_choice, :essay, :fill_in_blank]
-      public? true
+      allow_nil?(false)
+      constraints(one_of: [:multiple_choice, :essay, :fill_in_blank])
+      public?(true)
     end
 
     attribute :options, :map do
-      allow_nil? true
+      allow_nil?(true)
 
-      description "Options for multiple choice questions. Stored as map with A, B, C, D keys and selected values."
+      description(
+        "Options for multiple choice questions. Stored as map with A, B, C, D keys and selected values."
+      )
 
-      public? true
+      public?(true)
     end
 
     attribute :ai_type, :atom do
-      allow_nil? true
-      constraints one_of: [:ai_generated, :manual_import]
-      public? true
-      description "Type of AI generation for this exercise"
+      allow_nil?(true)
+      constraints(one_of: [:ai_generated, :manual_import])
+      public?(true)
+      description("Type of AI generation for this exercise")
     end
 
     attribute :difficulty, :integer do
-      allow_nil? true
-      constraints min: 1, max: 3
-      public? true
-      description "Difficulty level: 1 (easy), 2 (medium), 3 (hard)"
+      allow_nil?(true)
+      constraints(min: 1, max: 3)
+      public?(true)
+      description("Difficulty level: 1 (easy), 2 (medium), 3 (hard)")
     end
 
     attribute :position, :integer do
-      allow_nil? true
-      public? true
-      description "习题在课程内的排序位置"
+      allow_nil?(true)
+      public?(true)
+      description("习题在课程内的排序位置")
     end
 
-    timestamps()
+    timestamps(public?: true)
   end
 
   relationships do
     belongs_to :knowledge_resource, KgEdu.Knowledge.Resource do
-      public? true
-      allow_nil? true
+      public?(true)
+      allow_nil?(true)
     end
 
     belongs_to :course, KgEdu.Courses.Course do
-      public? true
-      allow_nil? true
+      public?(true)
+      allow_nil?(true)
     end
 
     belongs_to :created_by, KgEdu.Accounts.User do
-      public? true
+      public?(true)
     end
   end
 end

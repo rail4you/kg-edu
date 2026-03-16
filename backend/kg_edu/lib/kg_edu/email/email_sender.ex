@@ -30,9 +30,14 @@ defmodule KgEdu.Email.EmailSender do
     sender_user_id = email_message.sender_user_id
     receiver_user_id = email_message.receiver_user_id
 
+    Logger.info("[EMAIL_SENDER] sender_user_id: #{inspect(sender_user_id)}")
+    Logger.info("[EMAIL_SENDER] receiver_user_id: #{inspect(receiver_user_id)}")
+
     # Get sender and receiver user details
     with {:ok, sender} <- get_user(sender_user_id, tenant),
          {:ok, receiver} <- get_user(receiver_user_id, tenant) do
+      Logger.info("[EMAIL_SENDER] sender: #{inspect(sender)}")
+      Logger.info("[EMAIL_SENDER] receiver: #{inspect(receiver)}")
       # Try to get email config from receiver first, then sender
       email_config_result =
         case get_receiver_email_config(receiver_user_id, tenant) do
@@ -180,12 +185,15 @@ defmodule KgEdu.Email.EmailSender do
            actor: nil
          ) do
       {:ok, user} ->
+        Logger.info("[EMAIL_SENDER] get_user success, user: #{inspect(user, pretty: true)}")
         {:ok, user}
 
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+        Logger.error("[EMAIL_SENDER] User not found: #{user_id}")
         {:error, :user_not_found}
 
       {:error, reason} ->
+        Logger.error("[EMAIL_SENDER] Error getting user #{user_id}: #{inspect(reason)}")
         {:error, reason}
     end
   end
