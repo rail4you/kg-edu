@@ -30,11 +30,16 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   defp import_exercises_from_excel(excel_file, attributes, course_id, created_by_id, tenant)
        when is_binary(excel_file) and is_list(attributes) do
     Logger.info("Starting Excel import for exercises with attributes: #{inspect(attributes)}")
-    Logger.info("Course ID: #{inspect(course_id)}, Created By: #{inspect(created_by_id)}, Tenant: #{inspect(tenant)}")
+
+    Logger.info(
+      "Course ID: #{inspect(course_id)}, Created By: #{inspect(created_by_id)}, Tenant: #{inspect(tenant)}"
+    )
 
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, exercise_data} ->
-        Logger.info("Successfully parsed Excel file, got #{length(exercise_data)} exercise records")
+        Logger.info(
+          "Successfully parsed Excel file, got #{length(exercise_data)} exercise records"
+        )
 
         if length(exercise_data) > 0 do
           Logger.info("Sample exercise data: #{inspect(hd(exercise_data))}")
@@ -52,7 +57,8 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
     {:error, "Invalid parameters"}
   end
 
-  defp process_and_create_exercises(exercise_data, course_id, created_by_id, tenant) when is_list(exercise_data) do
+  defp process_and_create_exercises(exercise_data, course_id, created_by_id, tenant)
+       when is_list(exercise_data) do
     # First, get all existing exercise titles in the same course to detect duplicates
     existing_titles = get_existing_exercise_titles(course_id, tenant)
 
@@ -66,7 +72,16 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
       |> Enum.map(fn {exercise_map, index} ->
         # 计算新习题的 position：max_position + index + 1
         position = max_position + index + 1
-        process_single_exercise(exercise_map, index, course_id, created_by_id, tenant, existing_titles, position)
+
+        process_single_exercise(
+          exercise_map,
+          index,
+          course_id,
+          created_by_id,
+          tenant,
+          existing_titles,
+          position
+        )
       end)
 
     # Categorize results
@@ -113,7 +128,15 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
     end
   end
 
-  defp process_single_exercise(exercise_map, index, course_id, created_by_id, tenant, existing_titles, position) do
+  defp process_single_exercise(
+         exercise_map,
+         index,
+         course_id,
+         created_by_id,
+         tenant,
+         existing_titles,
+         position
+       ) do
     # Transform values to strings
     exercise_map = transform_values_to_string(exercise_map)
 
@@ -129,11 +152,21 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
           {:ok, %{status: :skipped, exercise: %{title: title, reason: "标题重复"}}}
         else
           # Create the exercise
-          create_exercise(exercise_map, course_id, created_by_id, tenant, title, title_key, existing_titles, position)
+          create_exercise(
+            exercise_map,
+            course_id,
+            created_by_id,
+            tenant,
+            title,
+            title_key,
+            existing_titles,
+            position
+          )
         end
 
       {:error, error_message} ->
         Logger.warning("Exercise validation failed: #{error_message}")
+
         {:error,
          %{
            index: index + 1,
@@ -143,7 +176,16 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
     end
   end
 
-  defp create_exercise(exercise_map, course_id, created_by_id, tenant, title, title_key, existing_titles, position) do
+  defp create_exercise(
+         exercise_map,
+         course_id,
+         created_by_id,
+         tenant,
+         title,
+         title_key,
+         existing_titles,
+         position
+       ) do
     # Process exercise data
     processed_map =
       exercise_map
@@ -155,6 +197,9 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
       |> process_options()
       |> process_difficulty()
 
+    # Debug: Log the processed map to check if answer_explanation is present
+    Logger.info("Creating exercise with processed_map: #{inspect(processed_map, pretty: true)}")
+
     # Add to existing_titles to prevent duplicates within the same import
     _updated_titles = Map.put(existing_titles, title_key, true)
 
@@ -165,6 +210,7 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
 
       {:error, reason} ->
         Logger.error("Failed to create exercise #{title}: #{inspect(reason)}")
+
         {:error,
          %{
            index: 0,
@@ -219,13 +265,15 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   defp process_question_type(exercise_map) do
     question_type =
       case exercise_map[:question_type] do
-        type when type in ["multiple_choice", :multiple_choice, "multiple choice", "选择题", "1", 1] ->
+        type
+        when type in ["multiple_choice", :multiple_choice, "multiple choice", "选择题", "1", 1] ->
           :multiple_choice
 
         type when type in ["essay", :essay, "essay", "简答题", "论述题", "问答题", "2", 2] ->
           :essay
 
-        type when type in ["fill_in_blank", :fill_in_blank, "fill in blank", "填空题", "填空", "3", 3] ->
+        type
+        when type in ["fill_in_blank", :fill_in_blank, "fill in blank", "填空题", "填空", "3", 3] ->
           :fill_in_blank
 
         _ ->
@@ -396,15 +444,22 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   end
 
   defp format_error(reason) when is_binary(reason), do: reason
-  defp format_error(%Ash.Error.Changes.InvalidAttribute{field: field, message: message, vars: vars}) do
+
+  defp format_error(%Ash.Error.Changes.InvalidAttribute{
+         field: field,
+         message: message,
+         vars: vars
+       }) do
     formatted_message = interpolate_message(message, vars)
     "#{field}: #{formatted_message}"
   end
+
   defp format_error(%Ash.Error.Invalid{errors: errors}) when is_list(errors) do
     errors
     |> Enum.map(&format_error/1)
     |> Enum.join("; ")
   end
+
   defp format_error(reason) do
     # Extract first error message if it's a changeset-like error
     case reason do

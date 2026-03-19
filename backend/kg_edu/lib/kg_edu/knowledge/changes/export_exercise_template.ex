@@ -22,10 +22,10 @@ defmodule KgEdu.Knowledge.Changes.ExportExerciseTemplate do
     try do
       # Create CSV data with headers and example (easier to handle than XLSX)
       csv_data = """
-      Title,Question Content,Answer,Question Type,Options,Course ID,Knowledge Resource ID (Optional),AI Type (Optional)
-      Example: Math Quiz 1,"What is 2 + 2?","4","multiple_choice","{""A"": ""3"", ""B"": ""4"", ""C"": ""5"", ""D"": ""6""}","550e8400-e29b-41d4-a716-446655440000","550e8400-e29b-41d4-a716-446655440001",""
-      Example: Essay Question,"Explain the Pythagorean theorem","The Pythagorean theorem states that in a right triangle...","essay","","550e8400-e29b-41d4-a716-446655440000","",""
-      Example: Fill in the blank,"The sum of angles in a triangle is ___ degrees","180","fill_in_blank","","550e8400-e29b-41d4-a716-446655440000","","ai_generated"
+      Title,Question Content,Question Type,Answer,Options,Answer Explanation
+      Example: Math Quiz 1,"What is 2 + 2?",multiple_choice,1,"A. 3\nB. 4\nC. 5\nD. 6",This is a basic arithmetic question testing addition skills.
+      Example: Essay Question,"Explain the Pythagorean theorem",essay,"The Pythagorean theorem states that in a right triangle...",,The Pythagorean theorem is fundamental to geometry.
+      Example: Fill in the blank,"The sum of angles in a triangle is ___ degrees",fill_in_blank,180,,This is a basic property of triangles.
       """
 
       # Encode to base64

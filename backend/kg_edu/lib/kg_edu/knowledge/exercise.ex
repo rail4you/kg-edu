@@ -101,7 +101,8 @@ defmodule KgEdu.Knowledge.Exercise do
         :ai_type,
         :difficulty,
         :created_by_id,
-        :position
+        :position,
+        :answer_explanation
       ])
 
       change({KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []})
@@ -123,7 +124,8 @@ defmodule KgEdu.Knowledge.Exercise do
         :course_id,
         :ai_type,
         :difficulty,
-        :position
+        :position,
+        :answer_explanation
       ])
 
       change({KgEdu.Knowledge.Exercise.Changes.ValidateUniqueTitleInCourse, []})
@@ -371,7 +373,15 @@ defmodule KgEdu.Knowledge.Exercise do
       argument :attributes, {:array, :atom} do
         description("")
         allow_nil?(false)
-        default([:title, :question_content, :question_type, :answer, :options, :difficulty])
+
+        default([
+          :title,
+          :question_content,
+          :question_type,
+          :answer,
+          :options,
+          :answer_explanation
+        ])
       end
 
       returns(:map)
@@ -514,6 +524,13 @@ defmodule KgEdu.Knowledge.Exercise do
       allow_nil?(true)
       public?(true)
       description("习题在课程内的排序位置")
+    end
+
+    attribute :answer_explanation, :string do
+      allow_nil?(true)
+      constraints(max_length: 10000)
+      public?(true)
+      description("答案解析：对该题目答案的详细解释")
     end
 
     timestamps(public?: true)
