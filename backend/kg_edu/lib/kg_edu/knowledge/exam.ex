@@ -41,6 +41,10 @@ defmodule KgEdu.Knowledge.Exam do
     define :remove_exercise_from_exam, action: :remove_exercise
   end
 
+  preparations do
+    prepare build(sort: [inserted_at: :desc])
+  end
+
   actions do
     defaults [:read, :destroy]
 
