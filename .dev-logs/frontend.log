@@ -1,0 +1,602 @@
+$ bun run dev & bun run dev:server
+$ vite --port 8081
+$ bun --watch server.ts
+
+  VITE v7.3.1  ready in 227 ms
+
+  ➜  Local:   http://localhost:8081/
+  ➜  Network: http://192.168.31.100:8081/
+  ➜  Network: http://198.18.0.1:8081/
+[Agent Config] AGENT_URL env: (not set)
+[Agent Config] Default agent URL: http://127.0.0.1:5001/agui
+[Agent Config] CSHARP_AGENT_URL: http://127.0.0.1:8000
+Server running on http://127.0.0.1:3000
+Started development server: http://localhost:3000
+11:23:24 AM [vite] (client) warning: Duplicate key "excelFile" in object literal
+6494 |  export const importExcelZodschema = z.object({
+6495 |    excelFile: z.string().optional(),
+6496 |    excelFile: z.string().optional(),
+     |    ^
+6497 |    attributes: z.array(z.string()).optional(),
+6498 |  });
+
+  Plugin: vite:esbuild
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/lib/ash_rpc.ts
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:27:25 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:27:42 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:29:55 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:30:07 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:30:55 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:31:03 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:31:29 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:31:35 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:32:11 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:32:19 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:32:55 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:33:01 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:35:02 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:36:15 AM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+11:36:36 AM [vite] (client) hmr update /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/layouts/teacher-layout.tsx, /src/pages/teacher/settings.tsx, /src/pages/teacher/assign-course.tsx, /src/pages/teacher/course-category.tsx, /src/pages/teacher/virtual-research-room.tsx, /src/pages/teacher/ai-command.tsx, /src/pages/teacher/ai-file.tsx, /src/components/ai-command-templates/TemplateSelector.tsx
+11:36:49 AM [vite] (client) hmr update /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/layouts/teacher-layout.tsx, /src/pages/teacher/settings.tsx, /src/pages/teacher/assign-course.tsx, /src/pages/teacher/course-category.tsx, /src/pages/teacher/virtual-research-room.tsx, /src/pages/teacher/ai-command.tsx, /src/pages/teacher/ai-file.tsx, /src/components/ai-command-templates/TemplateSelector.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+2:15:40 PM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+2:16:33 PM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+2:25:44 PM [vite] (client) hmr update /src/pages/teacher/virtual-research-room.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+2:31:55 PM [vite] (client) hmr update /src/layouts/student-layout.tsx
+2:32:06 PM [vite] (client) hmr update /src/layouts/student-layout.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+2:35:51 PM [vite] (client) hmr update /src/pages/teacher/graph-tree.tsx
+2:39:27 PM [vite] (client) hmr update /src/pages/teacher/graph-tree.tsx
+2:39:36 PM [vite] (client) hmr update /src/pages/teacher/graph-tree.tsx
+2:39:55 PM [vite] (client) hmr update /src/pages/teacher/graph-tree.tsx
+2:40:05 PM [vite] (client) hmr update /src/pages/teacher/graph-tree.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+2:43:20 PM [vite] (client) hmr update /src/pages/teacher/course.tsx
+3:25:14 PM [vite] (client) hmr update /src/auth/auth-context.tsx, /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/pages/home.tsx, /src/pages/teacher/knowledge-relation.tsx, /src/pages/teacher/file.tsx, /src/pages/teacher/homework.tsx, /src/layouts/teacher-layout.tsx, /src/pages/login.tsx, /src/pages/teacher/chapter.tsx, /src/pages/teacher/exam-management.tsx, /src/pages/teacher/question.tsx, /src/pages/teacher/student-enrollment.tsx, /src/pages/teacher/knowledge-resource.tsx, /src/pages/teacher/exam-statistics.tsx, /src/pages/teacher/exercise.tsx, /src/pages/teacher/exam-grading.tsx, /src/pages/teacher/ai-exercise.tsx, /src/pages/teacher/settings.tsx, /src/pages/teacher/course-video.tsx, /src/pages/teacher/assign-course.tsx, /src/pages/teacher/discussion-management.tsx, /src/pages/teacher/discussion-session.tsx, /src/pages/teacher/graph-knowledge.tsx, /src/pages/teacher/book-info.tsx, /src/pages/teacher/activity-summary.tsx, /src/pages/teacher/exam-exercises.tsx, /src/pages/teacher/course-category.tsx, /src/pages/teacher/exam-grade-detail.tsx, /src/pages/teacher/experiment-management.tsx, /src/pages/teacher/teachers.tsx, /src/pages/teacher/learning-recommendations.tsx, /src/pages/teacher/relation-type.tsx, /src/pages/teacher/knowledge-file.tsx, /src/pages/teacher/video.tsx, /src/pages/teacher/virtual-research-room.tsx, /src/pages/teacher/email-config.tsx, /src/pages/teacher/check-in-management.tsx, /src/pages/teacher/knowledge-cognitive-goals.tsx, /src/pages/teacher/email-messages.tsx, /src/pages/teacher/template-management.tsx, /src/pages/teacher/graph-tree.tsx, /src/pages/teacher/graph-competency.tsx, /src/pages/teacher/graph-question.tsx, /src/pages/teacher/ai-command.tsx, /src/pages/teacher/manual.tsx, /src/pages/teacher/graph-circle.tsx, /src/pages/teacher/ai-file.tsx, /src/pages/teacher/link.tsx, /src/pages/teacher/summary.tsx, /src/pages/teacher/study-summary.tsx, /src/pages/teacher/experiment-detail.tsx, /src/pages/teacher/ai-assistant/index.tsx, /src/pages/teacher/experiment-form.tsx, /src/pages/agent/chat.tsx, /src/pages/student/experiment-courses.tsx, /src/pages/student/overview.tsx, /src/pages/student/front.tsx, /src/pages/student/experiment-detail.tsx, /src/pages/student/exam-taking.tsx, /src/pages/student/exam-list.tsx, /src/pages/student/email-qa.tsx, /src/pages/student/graph-competency.tsx, /src/pages/student/exam-courses.tsx, /src/pages/student/check-in.tsx, /src/pages/student/knowledge-cognitive-goals.tsx, /src/pages/student/learning-recommendations.tsx, /src/pages/student/course-video.tsx, /src/pages/student/course-teachers.tsx, /src/pages/student/discussion.tsx, /src/pages/student/graph-layer.tsx, /src/pages/student/resource.tsx, /src/pages/student/graph.tsx, /src/pages/student/graph-category.tsx, /src/pages/student/chat.tsx, /src/pages/student/course-album.tsx, /src/pages/student/course-info.tsx, /src/pages/student/manual.tsx, /src/pages/student/course-summary.tsx, /src/pages/admin/dashboard.tsx, /src/pages/student/course-intro.tsx, /src/pages/admin/students.tsx, /src/pages/admin/permissions.tsx, /src/pages/admin/users.tsx, /src/pages/admin/classes.tsx, /src/pages/teacher/course-info.tsx, /src/components/layout/user-menu.tsx, /src/hooks/use-courses.tsx, /src/components/layout/ai-chat-button.tsx, /src/components/KnowledgeResourcePanel.tsx, /src/components/admin/student-form.tsx, /src/components/admin/import-user-modal.tsx, /src/pages/teacher/graph-ideological/index.tsx
+3:25:15 PM [vite] (client) warning: Duplicate key "excelFile" in object literal
+6494 |  export const importExcelZodschema = z.object({
+6495 |    excelFile: z.string().optional(),
+6496 |    excelFile: z.string().optional(),
+     |    ^
+6497 |    attributes: z.array(z.string()).optional(),
+6498 |  });
+
+  Plugin: vite:esbuild
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/lib/ash_rpc.ts
+3:25:15 PM [vite] (client) hmr invalidate /src/auth/auth-context.tsx Could not Fast Refresh ("useAuth" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:15 PM [vite] (client) hmr update /src/main.tsx, /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/pages/home.tsx, /src/pages/teacher/knowledge-relation.tsx, /src/pages/teacher/file.tsx, /src/pages/teacher/homework.tsx, /src/layouts/teacher-layout.tsx, /src/pages/login.tsx, /src/pages/teacher/chapter.tsx, /src/pages/teacher/exam-management.tsx, /src/pages/teacher/question.tsx, /src/pages/teacher/student-enrollment.tsx, /src/pages/teacher/knowledge-resource.tsx, /src/pages/teacher/exam-statistics.tsx, /src/pages/teacher/exercise.tsx, /src/pages/teacher/exam-grading.tsx, /src/pages/teacher/ai-exercise.tsx, /src/pages/teacher/settings.tsx, /src/pages/teacher/course-video.tsx, /src/pages/teacher/assign-course.tsx, /src/pages/teacher/discussion-management.tsx, /src/pages/teacher/discussion-session.tsx, /src/pages/teacher/graph-knowledge.tsx, /src/pages/teacher/book-info.tsx, /src/pages/teacher/activity-summary.tsx, /src/pages/teacher/exam-exercises.tsx, /src/pages/teacher/course-category.tsx, /src/pages/teacher/exam-grade-detail.tsx, /src/pages/teacher/experiment-management.tsx, /src/pages/teacher/teachers.tsx, /src/pages/teacher/learning-recommendations.tsx, /src/pages/teacher/relation-type.tsx, /src/pages/teacher/knowledge-file.tsx, /src/pages/teacher/video.tsx, /src/pages/teacher/virtual-research-room.tsx, /src/pages/teacher/email-config.tsx, /src/pages/teacher/check-in-management.tsx, /src/pages/teacher/knowledge-cognitive-goals.tsx, /src/pages/teacher/email-messages.tsx, /src/pages/teacher/template-management.tsx, /src/pages/teacher/graph-tree.tsx, /src/pages/teacher/graph-competency.tsx, /src/pages/teacher/graph-question.tsx, /src/pages/teacher/ai-command.tsx, /src/pages/teacher/manual.tsx, /src/pages/teacher/graph-circle.tsx, /src/pages/teacher/ai-file.tsx, /src/pages/teacher/link.tsx, /src/pages/teacher/ai-discussion.tsx, /src/pages/teacher/summary.tsx, /src/pages/teacher/study-summary.tsx, /src/pages/teacher/video-uploader.tsx, /src/pages/teacher/experiment-detail.tsx, /src/pages/teacher/ai-assistant/index.tsx, /src/pages/teacher/graph-ideological/index.tsx, /src/pages/teacher/experiment-form.tsx, /src/pages/agent/chat.tsx, /src/pages/student/experiment-courses.tsx, /src/pages/student/overview.tsx, /src/pages/student/front.tsx, /src/pages/student/experiment-detail.tsx, /src/pages/student/exam-taking.tsx, /src/pages/student/exam-list.tsx, /src/pages/student/email-qa.tsx, /src/pages/student/graph-competency.tsx, /src/pages/student/exam-courses.tsx, /src/pages/student/check-in.tsx, /src/pages/student/knowledge-cognitive-goals.tsx, /src/pages/student/learning-recommendations.tsx, /src/pages/student/course-video.tsx, /src/pages/student/course-teachers.tsx, /src/pages/student/discussion.tsx, /src/pages/student/graph-layer.tsx, /src/pages/student/resource.tsx, /src/pages/student/graph.tsx, /src/pages/student/graph-category.tsx, /src/pages/student/chat.tsx, /src/pages/student/course-album.tsx, /src/pages/student/course-info.tsx, /src/pages/student/manual.tsx, /src/pages/student/course-summary.tsx, /src/pages/admin/dashboard.tsx, /src/pages/student/course-intro.tsx, /src/pages/admin/students.tsx, /src/pages/admin/permissions.tsx, /src/pages/admin/users.tsx, /src/pages/admin/classes.tsx, /src/pages/teacher/course-info.tsx, /src/components/layout/user-menu.tsx, /src/hooks/use-courses.tsx, /src/components/layout/ai-chat-button.tsx, /src/components/KnowledgeResourcePanel.tsx, /src/components/admin/student-form.tsx, /src/components/layout/notification-bell.tsx
+3:25:15 PM [vite] (client) hmr invalidate /src/pages/teacher/template-management.tsx Could not Fast Refresh ("TEMPLATE_SECTIONS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:15 PM [vite] (client) hmr update /src/App.tsx
+3:25:15 PM [vite] (client) hmr invalidate /src/hooks/use-courses.tsx Could not Fast Refresh ("useCourses" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:15 PM [vite] (client) hmr update /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/pages/teacher/knowledge-relation.tsx, /src/pages/teacher/file.tsx, /src/pages/teacher/homework.tsx, /src/pages/teacher/chapter.tsx, /src/pages/teacher/exam-management.tsx, /src/pages/teacher/question.tsx, /src/pages/teacher/student-enrollment.tsx, /src/pages/teacher/knowledge-resource.tsx, /src/pages/teacher/exercise.tsx, /src/pages/teacher/course-video.tsx, /src/pages/teacher/discussion-management.tsx, /src/pages/teacher/discussion-session.tsx, /src/pages/teacher/book-info.tsx, /src/pages/teacher/experiment-management.tsx, /src/pages/teacher/knowledge-file.tsx, /src/pages/teacher/video.tsx, /src/pages/teacher/knowledge-cognitive-goals.tsx, /src/pages/teacher/graph-course.tsx, /src/pages/teacher/graph-competency.tsx, /src/pages/teacher/ai-file.tsx, /src/pages/teacher/link.tsx, /src/pages/teacher/summary.tsx, /src/pages/teacher/experiment-form.tsx, /src/pages/student/discussion.tsx, /src/pages/teacher/course-info.tsx
+3:25:16 PM [vite] (client) hmr invalidate /src/main.tsx Could not Fast Refresh ("true" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:16 PM [vite] (client) page reload src/main.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+3:25:19 PM [vite] (client) hmr update /src/auth/auth-context.tsx, /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/pages/home.tsx, /src/pages/teacher/knowledge-relation.tsx, /src/pages/teacher/file.tsx, /src/pages/teacher/homework.tsx, /src/layouts/teacher-layout.tsx, /src/pages/login.tsx, /src/pages/teacher/chapter.tsx, /src/pages/teacher/exam-management.tsx, /src/pages/teacher/question.tsx, /src/pages/teacher/student-enrollment.tsx, /src/pages/teacher/knowledge-resource.tsx, /src/pages/teacher/exam-statistics.tsx, /src/pages/teacher/exercise.tsx, /src/pages/teacher/exam-grading.tsx, /src/pages/teacher/ai-exercise.tsx, /src/pages/teacher/settings.tsx, /src/pages/teacher/course-video.tsx, /src/pages/teacher/assign-course.tsx, /src/pages/teacher/discussion-management.tsx, /src/pages/teacher/discussion-session.tsx, /src/pages/teacher/graph-knowledge.tsx, /src/pages/teacher/book-info.tsx, /src/pages/teacher/activity-summary.tsx, /src/pages/teacher/exam-exercises.tsx, /src/pages/teacher/course-category.tsx, /src/pages/teacher/exam-grade-detail.tsx, /src/pages/teacher/experiment-management.tsx, /src/pages/teacher/teachers.tsx, /src/pages/teacher/learning-recommendations.tsx, /src/pages/teacher/relation-type.tsx, /src/pages/teacher/knowledge-file.tsx, /src/pages/teacher/video.tsx, /src/pages/teacher/virtual-research-room.tsx, /src/pages/teacher/email-config.tsx, /src/pages/teacher/check-in-management.tsx, /src/pages/teacher/knowledge-cognitive-goals.tsx, /src/pages/teacher/email-messages.tsx, /src/pages/teacher/template-management.tsx, /src/pages/teacher/graph-tree.tsx, /src/pages/teacher/graph-competency.tsx, /src/pages/teacher/graph-question.tsx, /src/pages/teacher/ai-command.tsx, /src/pages/teacher/manual.tsx, /src/pages/teacher/graph-circle.tsx, /src/pages/teacher/ai-file.tsx, /src/pages/teacher/link.tsx, /src/pages/teacher/summary.tsx, /src/pages/teacher/study-summary.tsx, /src/pages/teacher/experiment-detail.tsx, /src/pages/teacher/ai-assistant/index.tsx, /src/pages/teacher/experiment-form.tsx, /src/pages/agent/chat.tsx, /src/pages/student/experiment-courses.tsx, /src/pages/student/overview.tsx, /src/pages/student/front.tsx, /src/pages/student/experiment-detail.tsx, /src/pages/student/exam-taking.tsx, /src/pages/student/exam-list.tsx, /src/pages/student/email-qa.tsx, /src/pages/student/graph-competency.tsx, /src/pages/student/exam-courses.tsx, /src/pages/student/check-in.tsx, /src/pages/student/knowledge-cognitive-goals.tsx, /src/pages/student/learning-recommendations.tsx, /src/pages/student/course-video.tsx, /src/pages/student/course-teachers.tsx, /src/pages/student/discussion.tsx, /src/pages/student/graph-layer.tsx, /src/pages/student/resource.tsx, /src/pages/student/graph.tsx, /src/pages/student/graph-category.tsx, /src/pages/student/chat.tsx, /src/pages/student/course-album.tsx, /src/pages/student/course-info.tsx, /src/pages/student/manual.tsx, /src/pages/student/course-summary.tsx, /src/pages/admin/dashboard.tsx, /src/pages/student/course-intro.tsx, /src/pages/admin/students.tsx, /src/pages/admin/permissions.tsx, /src/pages/admin/users.tsx, /src/pages/admin/classes.tsx, /src/pages/teacher/course-info.tsx, /src/components/layout/user-menu.tsx, /src/hooks/use-courses.tsx, /src/components/layout/ai-chat-button.tsx, /src/components/KnowledgeResourcePanel.tsx, /src/components/admin/student-form.tsx, /src/components/admin/import-user-modal.tsx, /src/pages/teacher/graph-ideological/index.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+3:25:19 PM [vite] (client) warning: Duplicate key "excelFile" in object literal
+6494 |  export const importExcelZodschema = z.object({
+6495 |    excelFile: z.string().optional(),
+6496 |    excelFile: z.string().optional(),
+     |    ^
+6497 |    attributes: z.array(z.string()).optional(),
+6498 |  });
+
+  Plugin: vite:esbuild
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/lib/ash_rpc.ts
+3:25:20 PM [vite] (client) hmr invalidate /src/auth/auth-context.tsx Could not Fast Refresh ("useAuth" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:20 PM [vite] (client) hmr update /src/main.tsx, /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/pages/home.tsx, /src/pages/teacher/knowledge-relation.tsx, /src/pages/teacher/file.tsx, /src/pages/teacher/homework.tsx, /src/layouts/teacher-layout.tsx, /src/pages/login.tsx, /src/pages/teacher/chapter.tsx, /src/pages/teacher/exam-management.tsx, /src/pages/teacher/question.tsx, /src/pages/teacher/student-enrollment.tsx, /src/pages/teacher/knowledge-resource.tsx, /src/pages/teacher/exam-statistics.tsx, /src/pages/teacher/exercise.tsx, /src/pages/teacher/exam-grading.tsx, /src/pages/teacher/ai-exercise.tsx, /src/pages/teacher/settings.tsx, /src/pages/teacher/course-video.tsx, /src/pages/teacher/assign-course.tsx, /src/pages/teacher/discussion-management.tsx, /src/pages/teacher/discussion-session.tsx, /src/pages/teacher/graph-knowledge.tsx, /src/pages/teacher/book-info.tsx, /src/pages/teacher/activity-summary.tsx, /src/pages/teacher/exam-exercises.tsx, /src/pages/teacher/course-category.tsx, /src/pages/teacher/exam-grade-detail.tsx, /src/pages/teacher/experiment-management.tsx, /src/pages/teacher/teachers.tsx, /src/pages/teacher/learning-recommendations.tsx, /src/pages/teacher/relation-type.tsx, /src/pages/teacher/knowledge-file.tsx, /src/pages/teacher/video.tsx, /src/pages/teacher/virtual-research-room.tsx, /src/pages/teacher/email-config.tsx, /src/pages/teacher/check-in-management.tsx, /src/pages/teacher/knowledge-cognitive-goals.tsx, /src/pages/teacher/email-messages.tsx, /src/pages/teacher/template-management.tsx, /src/pages/teacher/graph-tree.tsx, /src/pages/teacher/graph-competency.tsx, /src/pages/teacher/graph-question.tsx, /src/pages/teacher/ai-command.tsx, /src/pages/teacher/manual.tsx, /src/pages/teacher/graph-circle.tsx, /src/pages/teacher/ai-file.tsx, /src/pages/teacher/link.tsx, /src/pages/teacher/ai-discussion.tsx, /src/pages/teacher/summary.tsx, /src/pages/teacher/study-summary.tsx, /src/pages/teacher/video-uploader.tsx, /src/pages/teacher/experiment-detail.tsx, /src/pages/teacher/ai-assistant/index.tsx, /src/pages/teacher/graph-ideological/index.tsx, /src/pages/teacher/experiment-form.tsx, /src/pages/agent/chat.tsx, /src/pages/student/experiment-courses.tsx, /src/pages/student/overview.tsx, /src/pages/student/front.tsx, /src/pages/student/experiment-detail.tsx, /src/pages/student/exam-taking.tsx, /src/pages/student/exam-list.tsx, /src/pages/student/email-qa.tsx, /src/pages/student/graph-competency.tsx, /src/pages/student/exam-courses.tsx, /src/pages/student/check-in.tsx, /src/pages/student/knowledge-cognitive-goals.tsx, /src/pages/student/learning-recommendations.tsx, /src/pages/student/course-video.tsx, /src/pages/student/course-teachers.tsx, /src/pages/student/discussion.tsx, /src/pages/student/graph-layer.tsx, /src/pages/student/resource.tsx, /src/pages/student/graph.tsx, /src/pages/student/graph-category.tsx, /src/pages/student/chat.tsx, /src/pages/student/course-album.tsx, /src/pages/student/course-info.tsx, /src/pages/student/manual.tsx, /src/pages/student/course-summary.tsx, /src/pages/admin/dashboard.tsx, /src/pages/student/course-intro.tsx, /src/pages/admin/students.tsx, /src/pages/admin/permissions.tsx, /src/pages/admin/users.tsx, /src/pages/admin/classes.tsx, /src/pages/teacher/course-info.tsx, /src/components/layout/user-menu.tsx, /src/hooks/use-courses.tsx, /src/components/layout/ai-chat-button.tsx, /src/components/KnowledgeResourcePanel.tsx, /src/components/admin/student-form.tsx, /src/components/layout/notification-bell.tsx
+3:25:20 PM [vite] (client) hmr invalidate /src/pages/teacher/template-management.tsx Could not Fast Refresh ("TEMPLATE_SECTIONS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:20 PM [vite] (client) hmr update /src/App.tsx
+3:25:20 PM [vite] (client) hmr invalidate /src/hooks/use-courses.tsx Could not Fast Refresh ("useCourses" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:20 PM [vite] (client) hmr update /src/pages/teacher/dashboard.tsx, /src/pages/teacher/course.tsx, /src/pages/teacher/knowledge-relation.tsx, /src/pages/teacher/file.tsx, /src/pages/teacher/homework.tsx, /src/pages/teacher/chapter.tsx, /src/pages/teacher/exam-management.tsx, /src/pages/teacher/question.tsx, /src/pages/teacher/student-enrollment.tsx, /src/pages/teacher/knowledge-resource.tsx, /src/pages/teacher/exercise.tsx, /src/pages/teacher/course-video.tsx, /src/pages/teacher/discussion-management.tsx, /src/pages/teacher/discussion-session.tsx, /src/pages/teacher/book-info.tsx, /src/pages/teacher/experiment-management.tsx, /src/pages/teacher/knowledge-file.tsx, /src/pages/teacher/video.tsx, /src/pages/teacher/knowledge-cognitive-goals.tsx, /src/pages/teacher/graph-course.tsx, /src/pages/teacher/graph-competency.tsx, /src/pages/teacher/ai-file.tsx, /src/pages/teacher/link.tsx, /src/pages/teacher/summary.tsx, /src/pages/teacher/experiment-form.tsx, /src/pages/student/discussion.tsx, /src/pages/teacher/course-info.tsx
+3:25:21 PM [vite] (client) hmr invalidate /src/main.tsx Could not Fast Refresh ("true" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+3:25:21 PM [vite] (client) page reload src/main.tsx
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+3:25:38 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:26:19 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:26:46 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:27:16 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:27:46 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:28:04 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:28:04 PM [vite] Internal server error: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx: Missing semicolon. (331:14)
+
+  329 |         tenant,
+  330 |         input,
+> 331 |         fields: ["id"],
+      |               ^
+  332 |         headers: getHeaders(user),
+  333 |       });
+  334 |       if (!result.success) throw new Error("Failed to create");
+  Plugin: vite:react-babel
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx:331:14
+  329 |          tenant,
+  330 |          input,
+  331 |          fields: ["id"],
+      |                ^
+  332 |          headers: getHeaders(user),
+  333 |        });
+      at constructor (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.semicolon (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6895:10)
+      at TypeScriptParserMixin.parseExpressionStatement (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13285:10)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12899:19)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11264:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9766:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11194:27)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11120:19)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9272:18)
+      at TypeScriptParserMixin.parseSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11094:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11085:17)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseObjectProperty (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11950:83)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11978:100)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9744:18)
+      at TypeScriptParserMixin.parsePropertyDefinition (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11915:17)
+      at TypeScriptParserMixin.parseObjectLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11832:21)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11339:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+3:28:04 PM [vite] Internal server error: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx: Missing semicolon. (331:14)
+
+  329 |         tenant,
+  330 |         input,
+> 331 |         fields: ["id"],
+      |               ^
+  332 |         headers: getHeaders(user),
+  333 |       });
+  334 |       if (!result.success) throw new Error("Failed to create");
+  Plugin: vite:react-babel
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx:331:14
+  329 |          tenant,
+  330 |          input,
+  331 |          fields: ["id"],
+      |                ^
+  332 |          headers: getHeaders(user),
+  333 |        });
+      at constructor (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.semicolon (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6895:10)
+      at TypeScriptParserMixin.parseExpressionStatement (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13285:10)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12899:19)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11264:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9766:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11194:27)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11120:19)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9272:18)
+      at TypeScriptParserMixin.parseSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11094:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11085:17)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseObjectProperty (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11950:83)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11978:100)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9744:18)
+      at TypeScriptParserMixin.parsePropertyDefinition (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11915:17)
+      at TypeScriptParserMixin.parseObjectLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11832:21)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11339:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+3:28:15 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+3:28:15 PM [vite] Internal server error: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx: Missing semicolon. (331:14)
+
+  329 |         tenant,
+  330 |         input,
+> 331 |         fields: ["id"],
+      |               ^
+  332 |         headers: getHeaders(user),
+  333 |       });
+  334 |       if (!result.success) throw new Error("Failed to create");
+  Plugin: vite:react-babel
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx:331:14
+  329 |          tenant,
+  330 |          input,
+  331 |          fields: ["id"],
+      |                ^
+  332 |          headers: getHeaders(user),
+  333 |        });
+      at constructor (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.semicolon (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6895:10)
+      at TypeScriptParserMixin.parseExpressionStatement (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13285:10)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12899:19)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11264:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9766:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11194:27)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11120:19)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9272:18)
+      at TypeScriptParserMixin.parseSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11094:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11085:17)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseObjectProperty (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11950:83)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11978:100)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9744:18)
+      at TypeScriptParserMixin.parsePropertyDefinition (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11915:17)
+      at TypeScriptParserMixin.parseObjectLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11832:21)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11339:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+3:28:15 PM [vite] Internal server error: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx: Missing semicolon. (331:14)
+
+  329 |         tenant,
+  330 |         input,
+> 331 |         fields: ["id"],
+      |               ^
+  332 |         headers: getHeaders(user),
+  333 |       });
+  334 |       if (!result.success) throw new Error("Failed to create");
+  Plugin: vite:react-babel
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exercise.tsx:331:14
+  329 |          tenant,
+  330 |          input,
+  331 |          fields: ["id"],
+      |                ^
+  332 |          headers: getHeaders(user),
+  333 |        });
+      at constructor (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.semicolon (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6895:10)
+      at TypeScriptParserMixin.parseExpressionStatement (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13285:10)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12899:19)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11264:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9766:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11194:27)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11120:19)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9272:18)
+      at TypeScriptParserMixin.parseSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11094:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11085:17)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseObjectProperty (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11950:83)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11978:100)
+      at TypeScriptParserMixin.parseObjPropValue (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9744:18)
+      at TypeScriptParserMixin.parsePropertyDefinition (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11915:17)
+      at TypeScriptParserMixin.parseObjectLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11832:21)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11339:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12426:12)
+3:28:48 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:28:59 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:29:14 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:29:26 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:29:38 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:30:24 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:30:51 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:31:14 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+3:31:29 PM [vite] (client) hmr update /src/pages/teacher/exam-exercises.tsx
+3:31:44 PM [vite] (client) hmr update /src/pages/teacher/exam-exercises.tsx
+3:31:44 PM [vite] Internal server error: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exam-exercises.tsx: Unexpected token (176:6)
+
+  174 |         "essay",
+  175 |         "true_false",
+> 176 |       ];
+      |       ^
+  177 |       const stats: ExerciseTypeStats[] = [];
+  178 |
+  179 |       for (const questionType of questionTypes) {
+  Plugin: vite:react-babel
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exam-exercises.tsx:176:6
+  174 |          "essay",
+  175 |          "true_false",
+  176 |        ];
+      |        ^
+  177 |        const stats: ExerciseTypeStats[] = [];
+  178 |  
+      at constructor (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.unexpected (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6619:16)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11442:22)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10789:36)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12895:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseTryStatement (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13205:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12804:21)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11264:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9766:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11194:27)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11120:19)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9272:18)
+      at TypeScriptParserMixin.parseSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11094:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11085:17)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+3:31:44 PM [vite] Internal server error: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exam-exercises.tsx: Unexpected token (176:6)
+
+  174 |         "essay",
+  175 |         "true_false",
+> 176 |       ];
+      |       ^
+  177 |       const stats: ExerciseTypeStats[] = [];
+  178 |
+  179 |       for (const questionType of questionTypes) {
+  Plugin: vite:react-babel
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/pages/teacher/exam-exercises.tsx:176:6
+  174 |          "essay",
+  175 |          "true_false",
+  176 |        ];
+      |        ^
+  177 |        const stats: ExerciseTypeStats[] = [];
+  178 |  
+      at constructor (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.unexpected (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:6619:16)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11442:22)
+      at TypeScriptParserMixin.parseExprAtom (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10789:36)
+      at /Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12895:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseTryStatement (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13205:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12804:21)
+      at TypeScriptParserMixin.parseStatementContent (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11264:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9766:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11194:27)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11120:19)
+      at TypeScriptParserMixin.parseSubscript (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9272:18)
+      at TypeScriptParserMixin.parseSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11094:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11085:17)
+      at TypeScriptParserMixin.parseUpdate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@babel/parser/lib/index.js:9786:20)
+3:32:14 PM [vite] (client) hmr update /src/pages/teacher/exam-grading.tsx
+3:32:28 PM [vite] (client) hmr update /src/pages/teacher/exam-grading.tsx
+3:32:54 PM [vite] (client) hmr update /src/pages/teacher/exam-grading.tsx
+3:33:12 PM [vite] (client) hmr update /src/pages/teacher/exam-grading.tsx
+3:33:40 PM [vite] (client) hmr update /src/components/KnowledgeResourcePanel.tsx
+3:34:34 PM [vite] (client) hmr update /src/components/KnowledgeResourcePanel.tsx
+3:34:56 PM [vite] (client) hmr update /src/components/KnowledgeResourcePanel.tsx
+3:35:10 PM [vite] (client) hmr update /src/pages/student/graph.tsx
+3:35:44 PM [vite] (client) hmr update /src/pages/teacher/study-summary.tsx
+3:35:58 PM [vite] (client) hmr update /src/pages/teacher/activity-summary.tsx
+4:51:44 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+4:53:05 PM [vite] (client) hmr update /src/pages/teacher/exam-exercises.tsx
+4:54:08 PM [vite] (client) hmr update /src/pages/teacher/exercise.tsx
+4:55:54 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx
+4:58:01 PM [vite] (client) hmr update /src/components/KnowledgeResourcePanel.tsx
+5:02:14 PM [vite] (client) hmr update /src/pages/teacher/ai-exercise.tsx

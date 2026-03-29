@@ -245,7 +245,19 @@ defmodule KgEdu.Knowledge.Exercise do
 
       argument :exercise_type, :atom do
         allow_nil?(false)
-        constraints(one_of: [:multiple_choice, :essay, :fill_in_blank])
+
+        constraints(
+          one_of: [
+            :multiple_choice,
+            :essay,
+            :fill_in_blank,
+            :true_false,
+            :multiple_response,
+            :term_definition,
+            :case_study
+          ]
+        )
+
         description("Type of exercise to generate")
       end
 
@@ -492,7 +504,19 @@ defmodule KgEdu.Knowledge.Exercise do
 
     attribute :question_type, :atom do
       allow_nil?(false)
-      constraints(one_of: [:multiple_choice, :essay, :fill_in_blank])
+
+      constraints(
+        one_of: [
+          :multiple_choice,
+          :essay,
+          :fill_in_blank,
+          :true_false,
+          :multiple_response,
+          :term_definition,
+          :case_study
+        ]
+      )
+
       public?(true)
     end
 
@@ -500,7 +524,7 @@ defmodule KgEdu.Knowledge.Exercise do
       allow_nil?(true)
 
       description(
-        "Options for multiple choice questions. Stored as map with A, B, C, D keys and selected values."
+        "Options for choice questions. Stored as map with choices array and correctAnswer/correctAnswers."
       )
 
       public?(true)

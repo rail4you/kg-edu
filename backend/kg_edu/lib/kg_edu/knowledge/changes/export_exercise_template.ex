@@ -26,6 +26,10 @@ defmodule KgEdu.Knowledge.Changes.ExportExerciseTemplate do
       Example: Math Quiz 1,"What is 2 + 2?",multiple_choice,1,"A. 3\nB. 4\nC. 5\nD. 6",This is a basic arithmetic question testing addition skills.
       Example: Essay Question,"Explain the Pythagorean theorem",essay,"The Pythagorean theorem states that in a right triangle...",,The Pythagorean theorem is fundamental to geometry.
       Example: Fill in the blank,"The sum of angles in a triangle is ___ degrees",fill_in_blank,180,,This is a basic property of triangles.
+      Example: True False,"The Earth is flat",true_false,B,,"The Earth is an oblate spheroid."
+      Example: Multiple Response,"Which are primary colors?",multiple_response,"A,C","A. Red\nB. Green\nC. Blue\nD. Yellow",Primary colors of light are Red, Green, and Blue.
+      Example: Term Definition,"Define 'photosynthesis'",term_definition,"Photosynthesis is the process by which plants convert light energy into chemical energy...",,Key points: light, chlorophyll, CO2, water.
+      Example: Case Study,"Analyze the following business case...",case_study,"The analysis reveals that...",,Consider market factors and competitive advantages.
       """
 
       # Encode to base64

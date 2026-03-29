@@ -266,15 +266,47 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
     question_type =
       case exercise_map[:question_type] do
         type
-        when type in ["multiple_choice", :multiple_choice, "multiple choice", "选择题", "1", 1] ->
+        when type in [
+               "multiple_choice",
+               :multiple_choice,
+               "multiple choice",
+               "选择题",
+               "单选题",
+               "1",
+               1
+             ] ->
           :multiple_choice
 
-        type when type in ["essay", :essay, "essay", "简答题", "论述题", "问答题", "2", 2] ->
+        type when type in ["essay", :essay, "简答题", "论述题", "问答题", "2", 2] ->
           :essay
 
         type
         when type in ["fill_in_blank", :fill_in_blank, "fill in blank", "填空题", "填空", "3", 3] ->
           :fill_in_blank
+
+        type
+        when type in ["true_false", :true_false, "true false", "判断题", "判断", "4", 4] ->
+          :true_false
+
+        type
+        when type in [
+               "multiple_response",
+               :multiple_response,
+               "multiple response",
+               "多选题",
+               "多选",
+               "5",
+               5
+             ] ->
+          :multiple_response
+
+        type
+        when type in ["term_definition", :term_definition, "term definition", "名词解释", "6", 6] ->
+          :term_definition
+
+        type
+        when type in ["case_study", :case_study, "case study", "案例题", "案例分析", "7", 7] ->
+          :case_study
 
         _ ->
           :essay
@@ -284,47 +316,77 @@ defmodule KgEdu.Knowledge.Exercise.ImportFromExcel do
   end
 
   defp process_options(exercise_map) do
-    # 只有选择题才需要处理 options，其他题型的 options 应该为空
     question_type = exercise_map[:question_type]
     answer = exercise_map[:answer]
 
     processed_options =
-      if question_type == :multiple_choice do
-        options = exercise_map[:options]
+      case question_type do
+        :multiple_choice ->
+          parse_choice_options(exercise_map[:options], answer)
 
-        case options do
-          nil ->
-            nil
+        :multiple_response ->
+          parse_multiple_response_options(exercise_map[:options], answer)
 
-          opts when is_binary(opts) ->
-            # 空字符串或纯空白字符串返回 nil
-            if String.trim(opts) == "" do
-              nil
-            else
-              try do
-                decoded = Jason.decode!(opts)
-                # 如果是 JSON 格式，确保有 choices 和 correctAnswer
-                ensure_choices_format(decoded, answer)
-              rescue
-                _ ->
-                  # Try to parse as text format: "A. Option 1\nB. Option 2"
-                  parse_options_to_choices_format(opts, answer)
-              end
-            end
+        :true_false ->
+          %{"choices" => ["A. 正确", "B. 错误"]}
 
-          opts when is_map(opts) ->
-            ensure_choices_format(opts, answer)
-
-          _ ->
-            nil
-        end
-      else
-        # 非选择题，options 应该为空
-        nil
+        _ ->
+          nil
       end
 
     Map.put(exercise_map, :options, processed_options)
   end
+
+  defp parse_choice_options(options, answer) do
+    case options do
+      nil ->
+        nil
+
+      opts when is_binary(opts) ->
+        if String.trim(opts) == "" do
+          nil
+        else
+          try do
+            decoded = Jason.decode!(opts)
+            ensure_choices_format(decoded, answer)
+          rescue
+            _ ->
+              parse_options_to_choices_format(opts, answer)
+          end
+        end
+
+      opts when is_map(opts) ->
+        ensure_choices_format(opts, answer)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp parse_multiple_response_options(options, answer) do
+    base = parse_choice_options(options, answer)
+
+    if base do
+      correct_answers = parse_multiple_answer_indices(answer)
+
+      base
+      |> Map.delete("correctAnswer")
+      |> Map.put("correctAnswers", correct_answers)
+    else
+      nil
+    end
+  end
+
+  defp parse_multiple_answer_indices(answer) when is_binary(answer) do
+    answer
+    |> String.split(~r/[,，\s]+/, trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(&String.upcase/1)
+    |> Enum.filter(&(&1 in ["A", "B", "C", "D"]))
+    |> Enum.map(fn l -> (l |> String.to_charlist() |> hd()) - 65 end)
+  end
+
+  defp parse_multiple_answer_indices(_), do: []
 
   # 确保 options 是正确的 choices 格式，并从 answer 解析正确答案
   defp ensure_choices_format(opts, answer) when is_map(opts) do

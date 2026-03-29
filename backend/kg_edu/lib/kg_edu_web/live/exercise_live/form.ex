@@ -50,16 +50,20 @@ defmodule KgEduWeb.ExerciseLive.Form do
               type="select"
               label="Question Type"
               options={[
-                {:multiple_choice, "multiple_choice"},
-                {:fill_in_blank, "fill_in_blank"},
-                {:essay, "essay"}
+                {:multiple_choice, "multiple_choice (单选题)"},
+                {:multiple_response, "multiple_response (多选题)"},
+                {:true_false, "true_false (判断题)"},
+                {:fill_in_blank, "fill_in_blank (填空题)"},
+                {:essay, "essay (问答题)"},
+                {:term_definition, "term_definition (名词解释)"},
+                {:case_study, "case_study (案例题)"}
               ]}
               prompt="Select question type"
               required
             />
 
-            <div :if={@form[:question_type].value == :multiple_choice} class="space-y-4">
-              <h3 class="text-lg font-medium">Multiple Choice Options</h3>
+            <div :if={@form[:question_type].value == :multiple_choice || @form[:question_type].value == :multiple_response} class="space-y-4">
+              <h3 class="text-lg font-medium"><%= if @form[:question_type].value == :multiple_choice, do: "Single Choice Options", else: "Multiple Response Options" %></h3>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -136,6 +140,11 @@ defmodule KgEduWeb.ExerciseLive.Form do
                   Select one or more correct answers. Hold Ctrl/Cmd to select multiple.
                 </p>
               </div>
+            </div>
+
+            <div :if={@form[:question_type].value == :true_false} class="space-y-4">
+              <h3 class="text-lg font-medium">True/False Options</h3>
+              <p class="text-sm text-gray-500">Options are automatically set as "A. 正确 / B. 错误". Set the correct answer in the Answer field (A or B).</p>
             </div>
 
             <.input

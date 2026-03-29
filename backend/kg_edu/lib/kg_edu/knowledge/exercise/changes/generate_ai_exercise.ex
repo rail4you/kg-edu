@@ -95,11 +95,23 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
         :multiple_choice ->
           "multiple choice questions with 4 options (A, B, C, D) and indicate the correct answer"
 
-        :essay ->
-          "essay questions with detailed answer guidelines"
+        :multiple_response ->
+          "multiple response questions with 4 options (A, B, C, D) where 2 or more answers are correct"
+
+        :true_false ->
+          "true/false questions with a statement to judge as correct or incorrect"
 
         :fill_in_blank ->
           "fill-in-the-blank questions with the correct answers"
+
+        :essay ->
+          "essay questions with detailed answer guidelines"
+
+        :term_definition ->
+          "term definition questions: given a term, provide its definition and explanation"
+
+        :case_study ->
+          "case study questions: given a scenario, provide comprehensive analysis"
       end
 
     """
@@ -112,8 +124,12 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
     - Relevant to the topic
     - Clear and well-structured
     - For multiple choice: provide 4 distinct options with only one correct answer
+    - For multiple response: provide 4 options with 2 or more correct answers
+    - For true/false: provide a clear statement that is either correct or incorrect
     - For essays: provide comprehensive answer guidelines
     - For fill-in-blank: provide clear sentences with specific blanks to fill
+    - For term definition: provide a professional term and its complete definition
+    - For case study: provide a realistic scenario and analysis requirements
 
     Please respond with a JSON object with these fields:
     {
@@ -122,7 +138,7 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
       "answer": "The correct answer or answer guidelines"
     }
 
-    For multiple choice questions, also include these fields:
+    For multiple choice and multiple response questions, also include these fields:
     {
       "option_a": "Text for option A",
       "option_b": "Text for option B",
@@ -130,7 +146,11 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
       "option_d": "Text for option D"
     }
 
-    For essay and fill-in-blank questions, only provide the title, question_content, and answer fields.
+    For multiple response questions, the answer field should list all correct option letters (e.g., "A,C" or "A,B,D").
+
+    For true/false questions, the answer should be "A" for correct (正确) or "B" for incorrect (错误).
+
+    For essay, fill-in-blank, term definition, and case study questions, only provide the title, question_content, and answer fields.
     use chinese for the content.
     您应该始终遵循指令并输出一个有效的JSON对象。请根据指令使用指定的JSON对象结构。确保始终以 "```" 结束代码块，以指示JSON对象的结束。
     """
@@ -200,31 +220,27 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   end
 
   defp build_exercise_schema(exercise_type) do
+    base_schema = [
+      title: [type: :string, required: true],
+      question_content: [type: :string, required: true],
+      answer: [type: :string, required: true]
+    ]
+
     case exercise_type do
-      :multiple_choice ->
-        [
-          title: [type: :string, required: true],
-          question_content: [type: :string, required: true],
-          answer: [type: :string, required: true],
-          option_a: [type: :string, required: true],
-          option_b: [type: :string, required: true],
-          option_c: [type: :string, required: true],
-          option_d: [type: :string, required: true]
-        ]
+      type when type in [:multiple_choice, :multiple_response] ->
+        base_schema ++
+          [
+            option_a: [type: :string, required: true],
+            option_b: [type: :string, required: true],
+            option_c: [type: :string, required: true],
+            option_d: [type: :string, required: true]
+          ]
 
-      :essay ->
-        [
-          title: [type: :string, required: true],
-          question_content: [type: :string, required: true],
-          answer: [type: :string, required: true]
-        ]
+      :true_false ->
+        base_schema
 
-      :fill_in_blank ->
-        [
-          title: [type: :string, required: true],
-          question_content: [type: :string, required: true],
-          answer: [type: :string, required: true]
-        ]
+      _ ->
+        base_schema
     end
   end
 
@@ -248,7 +264,6 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   defp parse_structured_options(object, exercise_type) do
     case exercise_type do
       :multiple_choice ->
-        # Build options map from flat fields
         options = %{
           A: object.option_a,
           B: object.option_b,
@@ -256,15 +271,45 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
           D: object.option_d
         }
 
-        # Only return options if all are non-empty
         if Enum.all?(options, fn {_key, value} -> value != "" end) do
           options
         else
           nil
         end
 
+      :multiple_response ->
+        options = %{
+          A: object.option_a,
+          B: object.option_b,
+          C: object.option_c,
+          D: object.option_d
+        }
+
+        if Enum.all?(options, fn {_key, value} -> value != "" end) do
+          answer_str = object.answer || ""
+
+          correct_letters =
+            answer_str
+            |> String.split(~r/[,，\s]+/, trim: true)
+            |> Enum.map(&String.trim/1)
+            |> Enum.map(&String.upcase/1)
+            |> Enum.filter(&(&1 in ["A", "B", "C", "D"]))
+
+          correct_indices =
+            correct_letters
+            |> Enum.map(fn l -> (l |> String.to_charlist() |> hd()) - 65 end)
+
+          Map.put(options, :correctAnswers, correct_indices)
+        else
+          nil
+        end
+
+      :true_false ->
+        %{
+          choices: ["A. 正确", "B. 错误"]
+        }
+
       _ ->
-        # For essay and fill-in-blank, options should be null
         nil
     end
   end

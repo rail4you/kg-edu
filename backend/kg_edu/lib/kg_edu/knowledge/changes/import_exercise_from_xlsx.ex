@@ -105,12 +105,36 @@ defmodule KgEdu.Knowledge.Changes.ImportExerciseFromXlsx do
       "multiple_choice" -> :multiple_choice
       "multiple choice" -> :multiple_choice
       "mc" -> :multiple_choice
+      "选择题" -> :multiple_choice
+      "单选题" -> :multiple_choice
       "essay" -> :essay
+      "简答题" -> :essay
+      "问答题" -> :essay
+      "论述题" -> :essay
       "fill_in_blank" -> :fill_in_blank
       "fill in blank" -> :fill_in_blank
       "fill_blank" -> :fill_in_blank
       "blank" -> :fill_in_blank
-      # Default to essay
+      "填空题" -> :fill_in_blank
+      "true_false" -> :true_false
+      "true false" -> :true_false
+      "tf" -> :true_false
+      "判断题" -> :true_false
+      "判断" -> :true_false
+      "multiple_response" -> :multiple_response
+      "multiple response" -> :multiple_response
+      "mr" -> :multiple_response
+      "多选题" -> :multiple_response
+      "多选" -> :multiple_response
+      "term_definition" -> :term_definition
+      "term definition" -> :term_definition
+      "td" -> :term_definition
+      "名词解释" -> :term_definition
+      "case_study" -> :case_study
+      "case study" -> :case_study
+      "cs" -> :case_study
+      "案例题" -> :case_study
+      "案例分析" -> :case_study
       _ -> :essay
     end
   end

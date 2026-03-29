@@ -1,0 +1,42 @@
+Using launch settings from Properties/launchSettings.json...
+Building...
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1902: Package 'MimeKit' 4.9.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1701: Package 'Aliyun.OSS.SDK 2.14.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net10.0'. This package may not be fully compatible with your project.
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1902: Package 'MimeKit' 4.9.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1701: Package 'Aliyun.OSS.SDK 2.14.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net10.0'. This package may not be fully compatible with your project.
+=== KgAgent starting ===
+=== WebApplication.Build done ===
+[RequestContext] HttpContextAccessor initialized
+=== KgAgent started successfully ===
+=== Mapping AG UI endpoint ===
+[KgAgentAGUI] Creating agent with default instructions (will be overridden at runtime)
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5050
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /Users/bai/projects/kg-edu/ai-agent/KgAgent
+Using launch settings from Properties/launchSettings.json...
+Building...
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1902: Package 'MimeKit' 4.9.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1701: Package 'Aliyun.OSS.SDK 2.14.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net10.0'. This package may not be fully compatible with your project.
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1902: Package 'MimeKit' 4.9.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx
+/Users/bai/projects/kg-edu/ai-agent/KgAgent/KgAgent.csproj : warning NU1701: Package 'Aliyun.OSS.SDK 2.14.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net10.0'. This package may not be fully compatible with your project.
+=== KgAgent starting ===
+=== WebApplication.Build done ===
+[RequestContext] HttpContextAccessor initialized
+=== KgAgent started successfully ===
+=== Mapping AG UI endpoint ===
+[KgAgentAGUI] Creating agent with default instructions (will be overridden at runtime)
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5001
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /Users/bai/projects/kg-edu/ai-agent/KgAgent
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
