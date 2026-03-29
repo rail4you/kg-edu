@@ -535,11 +535,11 @@ defmodule KgEdu.Accounts.User do
     end
 
     action :sign_in_tenant, :map do
-      description("Sign in to a specific tenant by member_id and password.")
+      description("Sign in to a specific tenant by member_id/phone and password.")
 
       argument :member_id, :string do
-        description("The user's member ID")
-        allow_nil?(false)
+        description("The user's member ID or phone number")
+        allow_nil?(true)
       end
 
       argument :password, :string do
@@ -553,44 +553,49 @@ defmodule KgEdu.Accounts.User do
         allow_nil?(false)
       end
 
-      run(fn input, context ->
-        # Get the tenant schema
-        case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
-          {:ok, organization} ->
-            # Search for user in the specific tenant by reading all and filtering
-            case KgEdu.Accounts.User
-                 |> Ash.read(tenant: organization.schema_name) do
-              {:ok, users} ->
-                users
-                |> Enum.find(&(&1.member_id == input.arguments.member_id))
-                |> case do
-                  nil ->
-                    {:error, :invalid_credentials}
+      run(fn input, _context ->
+        if is_nil(input.arguments.member_id) or input.arguments.member_id == "" do
+          {:error, :invalid_credentials}
+        else
+          case KgEdu.Accounts.Organization |> Ash.get(input.arguments.tenant_id) do
+            {:ok, organization} ->
+              case KgEdu.Accounts.User
+                   |> Ash.read(tenant: organization.schema_name) do
+                {:ok, users} ->
+                  member_id_value = String.trim(input.arguments.member_id)
 
-                  user ->
-                    # Use Bcrypt for password verification (as configured in the user resource)
-                    case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
-                      true ->
-                        # Generate token using the same method as the register action
-                        case AshAuthentication.Jwt.token_for_user(user) do
-                          {:ok, token, _} ->
-                            {:ok, %{user | __metadata__: %{token: token}}}
+                  user =
+                    Enum.find(users, fn u ->
+                      u.member_id == member_id_value || u.phone == member_id_value
+                    end)
 
-                          {:error, reason} ->
-                            {:error, reason}
-                        end
+                  case user do
+                    nil ->
+                      {:error, :invalid_credentials}
 
-                      false ->
-                        {:error, :invalid_credentials}
-                    end
-                end
+                    user ->
+                      case Bcrypt.verify_pass(input.arguments.password, user.hashed_password) do
+                        true ->
+                          case AshAuthentication.Jwt.token_for_user(user) do
+                            {:ok, token, _} ->
+                              {:ok, %{user | __metadata__: %{token: token}}}
 
-              {:error, reason} ->
-                {:error, reason}
-            end
+                            {:error, reason} ->
+                              {:error, reason}
+                          end
 
-          {:error, reason} ->
-            {:error, :tenant_not_found}
+                        false ->
+                          {:error, :invalid_credentials}
+                      end
+                  end
+
+                {:error, reason} ->
+                  {:error, reason}
+              end
+
+            {:error, _reason} ->
+              {:error, :tenant_not_found}
+          end
         end
       end)
     end
