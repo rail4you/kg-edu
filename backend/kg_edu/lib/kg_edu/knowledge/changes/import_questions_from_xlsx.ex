@@ -128,19 +128,24 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
 
   defp process_single_question(question_map, course_id, tenant, position) do
     try do
-      # Remove tags from question_map to avoid processing errors
+      # Convert atom keys to string keys for consistent access
+      question_map = MapTransformer.atom_keys_to_string(question_map)
+
+      # Remove fields not in Question model
       question_map = Map.delete(question_map, "tags")
+      question_map = Map.delete(question_map, "title_summary")
 
-      # Transform all values to strings first
-      question_map =
-        question_map
-        |> MapTransformer.transform_values_to_string()
+      # Transform all values to strings
+      question_map = MapTransformer.transform_values_to_string(question_map)
 
-      # Add course_id and position directly
-      processed_question =
-        question_map
-        |> Map.put("course_id", course_id)
-        |> Map.put("position", position)
+      # Build attributes for create_question (atom keys)
+      processed_question = %{
+        title: question_map["title"],
+        description: question_map["description"],
+        question_level: :global,
+        position: position,
+        course_id: course_id
+      }
 
       create_single_question(processed_question, tenant)
     rescue

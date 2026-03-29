@@ -18,6 +18,19 @@ defmodule MapTransformer do
 
   # Handle non-map values if you call this function directly with them
   def transform_values_to_string(value), do: to_string(value)
+
+  @doc """
+  Convert all atom keys in a map to string keys.
+  """
+  def atom_keys_to_string(map) when is_map(map) do
+    map
+    |> Enum.map(fn {key, value} ->
+      new_key = if is_atom(key), do: Atom.to_string(key), else: key
+      new_value = if is_map(value), do: atom_keys_to_string(value), else: value
+      {new_key, new_value}
+    end)
+    |> Map.new()
+  end
 end
 
 defmodule KgEdu.Accounts.User.ImportFromExcel do
@@ -40,8 +53,8 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
   ## Returns
   {:ok, users} or {:error, reason}
   """
-  def parse_excel(excel_file, attributes, tenant_schema \\ nil) do
-    case import_users_from_excel(excel_file, attributes, tenant_schema) do
+  def parse_excel(excel_file, attributes, tenant_schema \\ nil, role_override \\ nil) do
+    case import_users_from_excel(excel_file, attributes, tenant_schema, role_override) do
       {:ok, users} ->
         {:ok, users}
 
@@ -50,19 +63,30 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     end
   end
 
-  defp import_users_from_excel(nil, _attributes, _tenant) do
+  defp import_users_from_excel(nil, _attributes, _tenant, _role_override) do
     {:error, "Excel file is required"}
   end
 
-  defp import_users_from_excel(excel_file, attributes, tenant_schema)
+  defp import_users_from_excel(excel_file, attributes, tenant_schema, role_override)
        when is_binary(excel_file) and is_list(attributes) do
     Logger.info("Starting Excel import with attributes: #{inspect(attributes)}")
     Logger.info("Using tenant schema: #{inspect(tenant_schema)}")
+    Logger.info("Role override: #{inspect(role_override)}")
     Logger.info("Excel file length: #{byte_size(excel_file)} bytes")
 
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, user_data} ->
         Logger.info("Successfully parsed Excel file, got #{length(user_data)} user records")
+
+        # Apply role override if provided
+        user_data =
+          if role_override do
+            Enum.map(user_data, fn user_map ->
+              Map.put(user_map, :role, role_override)
+            end)
+          else
+            user_data
+          end
 
         if length(user_data) > 0 do
           Logger.info("Sample user data: #{inspect(hd(user_data))}")
@@ -113,11 +137,34 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     user_map = MapTransformer.transform_values_to_string(user_map)
     Logger.info("user_map is #{inspect(user_map)}")
 
-    # Validate required fields first
-    required_fields = [:member_id, :name, :password]
+    # Auto-generate member_id if missing: use phone, email, or auto-generate
+    user_map =
+      case Map.get(user_map, :member_id) do
+        nil ->
+          generated_id = generate_member_id(user_map)
+          Map.put(user_map, :member_id, generated_id)
+
+        "" ->
+          generated_id = generate_member_id(user_map)
+          Map.put(user_map, :member_id, generated_id)
+
+        _ ->
+          user_map
+      end
+
+    # Validate required fields: member_id and name are required
+    required_fields = [:member_id, :name]
 
     case validate_required_fields(user_map, required_fields) do
       :ok ->
+        # Auto-generate password if missing
+        user_map =
+          case Map.get(user_map, :password) do
+            nil -> Map.put(user_map, :password, "123456")
+            "" -> Map.put(user_map, :password, "123456")
+            _ -> user_map
+          end
+
         # Process and validate user data
         case process_user_data(user_map, tenant_schema) do
           {:ok, processed_user_map} ->
@@ -132,6 +179,23 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     end
   end
 
+  # Generate member_id from phone, email, or auto-generate
+  defp generate_member_id(user_map) do
+    phone = Map.get(user_map, :phone)
+    email = Map.get(user_map, :email)
+
+    cond do
+      is_binary(phone) and phone != "" ->
+        phone
+
+      is_binary(email) and email != "" ->
+        email
+
+      true ->
+        "user_#{System.system_time(:millisecond)}_#{:rand.uniform(10000)}"
+    end
+  end
+
   # Process user data to validate and transform fields
   defp process_user_data(user_map, tenant_schema) do
     errors = []
@@ -139,11 +203,11 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     # Validate password length
     errors =
       case user_map[:password] do
-        password when is_binary(password) and byte_size(password) >= 8 ->
+        password when is_binary(password) and byte_size(password) >= 6 ->
           errors
 
         password when is_binary(password) ->
-          ["Password must be at least 8 characters long" | errors]
+          ["Password must be at least 6 characters long" | errors]
 
         _ ->
           ["Password is required" | errors]

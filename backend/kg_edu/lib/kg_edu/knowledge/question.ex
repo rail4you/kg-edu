@@ -421,8 +421,8 @@ defmodule KgEdu.Knowledge.Question do
             # 只返回必要的字段，避免序列化问题
             clean_result = %{
               success_count: result.success_count,
-              failed_count: result.failed_count,
-              errors: result.errors,
+              skipped_count: result.skipped_count,
+              error_count: result.error_count,
               questions:
                 Enum.map(result.questions, fn q ->
                   %{
@@ -433,24 +433,15 @@ defmodule KgEdu.Knowledge.Question do
                     position: q.position,
                     course_id: q.course_id
                   }
-                end)
+                end),
+              skipped: result.skipped,
+              errors: result.errors
             }
 
-            # 如果有失败的记录，返回错误
-            if result.failed_count > 0 do
-              {:error,
-               %{
-                 message: "导入失败",
-                 errors: result.errors,
-                 failed_count: result.failed_count,
-                 success_count: result.success_count
-               }}
-            else
-              {:ok, clean_result}
-            end
+            {:ok, clean_result}
 
           {:ok, _} ->
-            {:ok, %{success_count: 0, failed_count: 0, message: "No questions imported"}}
+            {:ok, %{success_count: 0, skipped_count: 0, error_count: 0, message: "No questions imported", questions: [], skipped: [], errors: []}}
 
           {:error, reason} ->
             {:error, reason}
