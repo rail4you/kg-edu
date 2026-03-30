@@ -328,7 +328,8 @@ defmodule KgEdu.Knowledge.LearningRecommendation do
                         name: resource.name,
                         knowledge_type: resource.knowledge_type,
                         importance_level: resource.importance_level,
-                        description: resource.description
+                        description: resource.description,
+                        course_id: resource.course_id
                       },
                       else: nil
                     ),

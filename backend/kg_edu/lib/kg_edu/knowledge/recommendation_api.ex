@@ -357,7 +357,8 @@ defmodule KgEdu.Knowledge.RecommendationAPI do
         name: if(knowledge_resource, do: knowledge_resource.name, else: "Unknown"),
         importance_level:
           if(knowledge_resource, do: knowledge_resource.importance_level, else: "normal"),
-        description: if(knowledge_resource, do: knowledge_resource.description, else: nil)
+        description: if(knowledge_resource, do: knowledge_resource.description, else: nil),
+        course_id: if(knowledge_resource, do: knowledge_resource.course_id, else: nil)
       },
       metadata: recommendation.metadata || %{}
     }
