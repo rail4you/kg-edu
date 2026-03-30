@@ -404,7 +404,7 @@ defmodule KgEdu.Knowledge.Question do
         description("Course ID who is importing the questions")
       end
 
-      argument :attributes, {:array, :atom} do
+      argument :attributes, {:array, :string} do
         allow_nil?(false)
       end
 
