@@ -1217,172 +1217,196 @@ defmodule KgEdu.Knowledge.Resource do
               "Course materials - Videos: #{length(all_video_ids)}, Files: #{length(all_file_ids)}, Homework: #{length(all_homework_ids)}, Exercises: #{length(all_exercise_ids)}"
             )
 
-            # Get all activity logs for this tenant
-            case KgEdu.Activity.ActivityLog.list_activity_logs(
+            # Get enrolled students for this course
+            case KgEdu.Courses.CourseEnrollment.list_enrollments_by_course(
+                   %{course_id: course_id},
                    tenant: tenant,
                    authorize?: false,
                    actor: nil
                  ) do
-              {:ok, all_logs} ->
-                Logger.info("Found #{length(all_logs)} total activity logs")
+              {:ok, enrollments} ->
+                enrolled_student_ids = Enum.map(enrollments, & &1.member_id) |> Enum.uniq()
 
-                # Filter logs for materials belonging to this course's knowledge resources
-                course_logs =
-                  all_logs
-                  |> Enum.filter(fn log ->
-                    (log.resource_type in ["KgEdu.Courses.File", "File"] and
-                       log.resource_id in all_file_ids) or
-                      (log.resource_type in ["KgEdu.Courses.Video", "Video"] and
-                         log.resource_id in all_video_ids) or
-                      (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
-                         log.resource_id in all_homework_ids) or
-                      (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
-                         log.resource_id in all_exercise_ids)
-                  end)
+                Logger.info(
+                  "Found #{length(enrolled_student_ids)} enrolled students for course #{course_id}"
+                )
 
-                Logger.info("Found #{length(course_logs)} activity logs for course materials")
+                # Get all activity logs for this tenant
+                case KgEdu.Activity.ActivityLog.list_activity_logs(
+                       tenant: tenant,
+                       authorize?: false,
+                       actor: nil
+                     ) do
+                  {:ok, all_logs} ->
+                    Logger.info("Found #{length(all_logs)} total activity logs")
 
-                # Group logs by student
-                student_logs_map = Enum.group_by(course_logs, & &1.user_id)
+                    # Filter logs for materials belonging to this course's knowledge resources
+                    course_logs =
+                      all_logs
+                      |> Enum.filter(fn log ->
+                        (log.resource_type in ["KgEdu.Courses.File", "File"] and
+                           log.resource_id in all_file_ids) or
+                          (log.resource_type in ["KgEdu.Courses.Video", "Video"] and
+                             log.resource_id in all_video_ids) or
+                          (log.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
+                             log.resource_id in all_homework_ids) or
+                          (log.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
+                             log.resource_id in all_exercise_ids)
+                      end)
 
-                # Calculate totals for the course
-                total_videos = length(all_video_ids)
-                total_files = length(all_file_ids)
-                total_exercises = length(all_exercise_ids)
-                total_homeworks = length(all_homework_ids)
+                    Logger.info("Found #{length(course_logs)} activity logs for course materials")
 
-                # Generate stats for each student
-                Logger.info("student_logs_map: #{inspect(student_logs_map)}")
+                    # Group logs by student, only for enrolled students
+                    student_logs_map =
+                      course_logs
+                      |> Enum.filter(fn log -> log.user_id in enrolled_student_ids end)
+                      |> Enum.group_by(& &1.user_id)
 
-                # Get all users for this tenant to look up student names
-                {:ok, all_users} =
-                  KgEdu.Accounts.User.get_users(
-                    tenant: tenant,
-                    authorize?: false,
-                    actor: nil
-                  )
+                    # Calculate totals for the course
+                    total_videos = length(all_video_ids)
+                    total_files = length(all_file_ids)
+                    total_exercises = length(all_exercise_ids)
+                    total_homeworks = length(all_homework_ids)
 
-                user_map =
-                  Enum.reduce(all_users, %{}, fn user, acc ->
-                    Map.put(acc, user.id, user.name)
-                  end)
+                    # Generate stats for each student
+                    Logger.info("student_logs_map: #{inspect(student_logs_map)}")
 
-                student_stats =
-                  student_logs_map
-                  |> Enum.map(fn {student_id, logs} ->
-                    # Get student name from user map
-                    student_name = Map.get(user_map, student_id, "Unknown")
-
-                    # Count completed activities by type (unique materials per student)
-                    completed_videos =
-                      logs
-                      |> Enum.filter(
-                        &(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and
-                            &1.action_type in [:video_view, :view])
+                    # Get all users for this tenant to look up student names and roles
+                    {:ok, all_users} =
+                      KgEdu.Accounts.User.get_users(
+                        tenant: tenant,
+                        authorize?: false,
+                        actor: nil
                       )
-                      |> Enum.map(& &1.resource_id)
-                      |> Enum.uniq()
-                      |> length()
 
-                    completed_files =
-                      logs
-                      |> Enum.filter(
-                        &(&1.resource_type in ["KgEdu.Courses.File", "File"] and
-                            &1.action_type in [:file_view, :view, :download])
-                      )
-                      |> Enum.map(& &1.resource_id)
-                      |> Enum.uniq()
-                      |> length()
+                    user_map =
+                      Enum.reduce(all_users, %{}, fn user, acc ->
+                        Map.put(acc, user.id, %{name: user.name, role: user.role})
+                      end)
 
-                    completed_exercises =
-                      logs
-                      |> Enum.filter(
-                        &(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
-                            &1.action_type in [:exercise_submit, :submit, :complete])
-                      )
-                      |> Enum.map(& &1.resource_id)
-                      |> Enum.uniq()
-                      |> length()
+                    # Build stats for all enrolled students (including those with no activity)
+                    student_stats =
+                      enrolled_student_ids
+                      |> Enum.map(fn student_id ->
+                        user_info = Map.get(user_map, student_id, %{name: "Unknown", role: nil})
+                        student_name = user_info[:name] || "Unknown"
+                        logs = Map.get(student_logs_map, student_id, [])
 
-                    completed_homework =
-                      logs
-                      |> Enum.filter(
-                        &(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
-                            &1.action_type in [:homework_submit, :submit, :complete])
-                      )
-                      |> Enum.map(& &1.resource_id)
-                      |> Enum.uniq()
-                      |> length()
+                        # Count completed activities by type (unique materials per student)
+                        completed_videos =
+                          logs
+                          |> Enum.filter(
+                            &(&1.resource_type in ["KgEdu.Courses.Video", "Video"] and
+                                &1.action_type in [:video_view, :view])
+                          )
+                          |> Enum.map(& &1.resource_id)
+                          |> Enum.uniq()
+                          |> length()
 
-                    # Calculate completion ratios
-                    video_completion =
-                      if total_videos > 0, do: completed_videos / total_videos, else: 0.0
+                        completed_files =
+                          logs
+                          |> Enum.filter(
+                            &(&1.resource_type in ["KgEdu.Courses.File", "File"] and
+                                &1.action_type in [:file_view, :view, :download])
+                          )
+                          |> Enum.map(& &1.resource_id)
+                          |> Enum.uniq()
+                          |> length()
 
-                    file_completion =
-                      if total_files > 0, do: completed_files / total_files, else: 0.0
+                        completed_exercises =
+                          logs
+                          |> Enum.filter(
+                            &(&1.resource_type in ["KgEdu.Knowledge.Exercise", "Exercise"] and
+                                &1.action_type in [:exercise_submit, :submit, :complete])
+                          )
+                          |> Enum.map(& &1.resource_id)
+                          |> Enum.uniq()
+                          |> length()
 
-                    exercise_completion =
-                      if total_exercises > 0, do: completed_exercises / total_exercises, else: 0.0
+                        completed_homework =
+                          logs
+                          |> Enum.filter(
+                            &(&1.resource_type in ["KgEdu.Knowledge.Homework", "Homework"] and
+                                &1.action_type in [:homework_submit, :submit, :complete])
+                          )
+                          |> Enum.map(& &1.resource_id)
+                          |> Enum.uniq()
+                          |> length()
 
-                    homework_completion =
-                      if total_homeworks > 0, do: completed_homework / total_homeworks, else: 0.0
+                        # Calculate completion ratios
+                        video_completion =
+                          if total_videos > 0, do: completed_videos / total_videos, else: 0.0
 
-                    total_completed =
-                      completed_videos + completed_files + completed_exercises +
-                        completed_homework
+                        file_completion =
+                          if total_files > 0, do: completed_files / total_files, else: 0.0
 
-                    total_resources =
-                      total_videos + total_files + total_exercises + total_homeworks
+                        exercise_completion =
+                          if total_exercises > 0,
+                            do: completed_exercises / total_exercises,
+                            else: 0.0
 
-                    overall_completion =
-                      if total_resources > 0, do: total_completed / total_resources, else: 0.0
+                        homework_completion =
+                          if total_homeworks > 0,
+                            do: completed_homework / total_homeworks,
+                            else: 0.0
 
-                    %{
-                      studentId: student_id,
-                      name: student_name,
-                      courseId: course_id,
-                      videos: %{
-                        completed: completed_videos,
-                        total: total_videos,
-                        completionRatio: video_completion
-                      },
-                      files: %{
-                        completed: completed_files,
-                        total: total_files,
-                        completionRatio: file_completion
-                      },
-                      exercises: %{
-                        completed: completed_exercises,
-                        total: total_exercises,
-                        completionRatio: exercise_completion
-                      },
-                      homework: %{
-                        completed: completed_homework,
-                        total: total_homeworks,
-                        completionRatio: homework_completion
-                      },
-                      overall: %{
-                        totalCompleted: total_completed,
-                        totalResources: total_resources,
-                        completionRatio: overall_completion
-                      }
-                    }
-                  end)
+                        total_completed =
+                          completed_videos + completed_files + completed_exercises +
+                            completed_homework
 
-                Logger.info("student_stats result: #{inspect(student_stats)}")
-                Logger.info("About to return {:ok, student_stats}")
+                        total_resources =
+                          total_videos + total_files + total_exercises + total_homeworks
 
-                result = {:ok, student_stats}
-                Logger.info("Final result: #{inspect(result)}")
+                        overall_completion =
+                          if total_resources > 0,
+                            do: total_completed / total_resources,
+                            else: 0.0
 
-                # Ash Framework generic actions must return {:ok, result}
-                final_result = {:ok, student_stats}
-                Logger.info("Final result (Ash format): #{inspect(final_result)}")
-                final_result
+                        %{
+                          studentId: student_id,
+                          name: student_name,
+                          courseId: course_id,
+                          videos: %{
+                            completed: completed_videos,
+                            total: total_videos,
+                            completionRatio: video_completion
+                          },
+                          files: %{
+                            completed: completed_files,
+                            total: total_files,
+                            completionRatio: file_completion
+                          },
+                          exercises: %{
+                            completed: completed_exercises,
+                            total: total_exercises,
+                            completionRatio: exercise_completion
+                          },
+                          homework: %{
+                            completed: completed_homework,
+                            total: total_homeworks,
+                            completionRatio: homework_completion
+                          },
+                          overall: %{
+                            totalCompleted: total_completed,
+                            totalResources: total_resources,
+                            completionRatio: overall_completion
+                          }
+                        }
+                      end)
+
+                    Logger.info("student_stats result: #{inspect(student_stats)}")
+
+                    final_result = {:ok, student_stats}
+                    final_result
+
+                  {:error, reason} ->
+                    Logger.error("Failed to get activity logs: #{inspect(reason)}")
+                    {:error, "Failed to get activity logs: #{inspect(reason)}"}
+                end
 
               {:error, reason} ->
-                Logger.error("Failed to get activity logs: #{inspect(reason)}")
-                {:error, "Failed to get activity logs: #{inspect(reason)}"}
+                Logger.error("Failed to get enrollments: #{inspect(reason)}")
+                {:error, "Failed to get enrollments: #{inspect(reason)}"}
             end
 
           {:error, reason} ->
