@@ -383,7 +383,9 @@ defmodule KgEdu.Knowledge.Homework do
         case KgEdu.Knowledge.Homework.ImportFromExcel.parse_excel(
                input.arguments.excel_file,
                #  input.arguments.attributes,
-               ["title", "content", "score", "answer"],
+               # 模板格式: 作业内容(title) | 成绩(score) | 答案(answer)
+               # content 从 title 复制（作业内容即标题也是内容）
+               ["title", "score", "answer"],
                input.arguments.course_id,
                context.tenant
              ) do

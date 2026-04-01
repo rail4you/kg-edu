@@ -98,8 +98,125 @@ defmodule KgEdu.ExcelImport do
   Process rows from Excel file.
 
   Ignores first two rows (comment row and header row) and maps remaining data rows to attributes.
+  When a header row is detected, uses header names to build attribute mapping.
   """
   defp process_rows(rows, attributes) do
+    case rows do
+      [comment_row, header_row | data_rows] when is_list(header_row) ->
+        # Try to detect header-based mapping
+        header_mapping = build_header_mapping(header_row, comment_row)
+
+        if map_size(header_mapping) > 0 do
+          Logger.info("Detected header mapping: #{inspect(header_mapping)}")
+
+          try do
+            result =
+              Enum.map(data_rows, fn row ->
+                map_row_by_header(row, header_mapping)
+              end)
+
+            result = Enum.filter(result, &(&1 != nil))
+
+            Logger.info(
+              "processed #{length(result)} valid rows from #{length(data_rows)} data rows (header-based)"
+            )
+
+            {:ok, result}
+          rescue
+            e ->
+              Logger.error("Error processing rows with header mapping: #{Exception.message(e)}")
+              # Fallback to positional mapping
+              process_rows_positional(rows, attributes)
+          end
+        else
+          # No header mapping detected, use positional attributes
+          process_rows_positional(rows, attributes)
+        end
+
+      [_comment_row | data_rows] ->
+        # Fallback for files with only comment row, no separate header
+        Logger.info("processing rows with only comment row")
+        process_rows_positional([nil, nil | data_rows], attributes)
+
+      [] ->
+        {:ok, []}
+
+      _ ->
+        {:error, "Excel file has insufficient rows (need at least comment and header rows)"}
+    end
+  end
+
+  # Build attribute mapping from header row
+  defp build_header_mapping(header_row, _comment_row) do
+    # Map Chinese/English header names to attribute atoms
+    header_to_attr = %{
+      "姓名" => :name,
+      "名字" => :name,
+      "用户名" => :name,
+      "电话" => :phone,
+      "手机" => :phone,
+      "手机号" => :phone,
+      "电话号码" => :phone,
+      "电子邮箱" => :email,
+      "邮箱" => :email,
+      "email" => :email,
+      "密码" => :password,
+      "password" => :password,
+      "角色" => :role,
+      "用户角色" => :role,
+      "role" => :role,
+      "学校" => :school,
+      "院校" => :school,
+      "学院" => :colledge,
+      "colledge" => :colledge,
+      "college" => :colledge,
+      "专业" => :major,
+      "major" => :major,
+      "班级" => :class,
+      "class" => :class,
+      "工号" => :member_id,
+      "学号" => :member_id,
+      "用户id" => :member_id,
+      "member_id" => :member_id,
+      "member id" => :member_id
+    }
+
+    header_row
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {header, idx}, acc ->
+      header_str = to_string(header) |> String.trim() |> String.downcase()
+
+      # Try exact match first, then case-insensitive match
+      attr =
+        Enum.find_value(header_to_attr, fn {key, val} ->
+          if String.downcase(key) == header_str, do: val, else: nil
+        end)
+
+      if attr, do: Map.put(acc, idx, attr), else: acc
+    end)
+  end
+
+  # Map a row using header-based attribute mapping
+  defp map_row_by_header(row, header_mapping) do
+    all_empty? = Enum.all?(row, fn val -> is_nil(val) or val == "" end)
+
+    if all_empty? do
+      nil
+    else
+      row
+      |> Enum.with_index()
+      |> Enum.reduce(%{}, fn {val, idx}, acc ->
+        case Map.get(header_mapping, idx) do
+          nil -> acc
+          attr -> Map.put(acc, attr, val)
+        end
+      end)
+      |> clean_values()
+    end
+  end
+
+  # Positional mapping fallback (original logic)
+  defp process_rows_positional(rows, attributes) do
     case rows do
       [_comment_row, _header_row | data_rows] ->
         try do
@@ -153,6 +270,18 @@ defmodule KgEdu.ExcelImport do
   Map with attribute-value pairs or nil if row is invalid
   """
   defp map_row_to_attributes(row, attributes) when is_list(row) do
+    # Skip completely empty rows (all nil or empty values)
+    all_empty? = Enum.all?(row, fn val -> is_nil(val) or val == "" end)
+
+    if all_empty? do
+      Logger.debug("Skipping empty row")
+      nil
+    else
+      map_row_to_attributes_with_data(row, attributes)
+    end
+  end
+
+  defp map_row_to_attributes_with_data(row, attributes) do
     # Skip rows that are too short (less than half the expected columns)
     if length(row) < div(length(attributes), 2) do
       Logger.warning("Skipping row with insufficient columns: #{inspect(row)}")

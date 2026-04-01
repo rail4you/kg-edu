@@ -20,24 +20,26 @@ defmodule KgEdu.Knowledge.Changes.ExportHomeworkTemplate do
 
   defp generate_template_xlsx do
     try do
-      # Create template data
+      # 说明行
+      comment_row = [
+        "使用说明：\n1.A到C列按标题进行正确填写\n2.分数填写标准：0-100"
+      ]
+
+      # 表头行
       headers = [
-        "标题",
-        "内容",
-        "分数",
-        "课程名称"
+        "作业内容",
+        "成绩",
+        "答案"
       ]
 
       example_rows = [
-        ["第一章练习题", "完成教材第25页的练习1-10", "100", "数学基础"],
-        ["期中复习", "复习第1-5章的所有知识点", "150", "数学基础"],
-        ["实验作业三", "完成实验手册中的编程项目", "80", "数据结构"]
+        ["什么是色彩的明度对比？请列举2种明度对比的应用场景。", "10", "色彩的明度对比，指不同色彩之间或同一色彩不同深浅之间的明暗差异。"]
       ]
 
       # Convert to XLSX format using Elixlsx
       sheet = %Elixlsx.Sheet{
-        name: "Homework",
-        rows: [headers | example_rows]
+        name: "Sheet1",
+        rows: [comment_row, headers | example_rows]
       }
 
       case Elixlsx.write_to_memory(%Elixlsx.Workbook{sheets: [sheet]}, "homework_template") do

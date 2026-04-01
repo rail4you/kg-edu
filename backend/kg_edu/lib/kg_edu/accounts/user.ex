@@ -243,7 +243,7 @@ defmodule KgEdu.Accounts.User do
       argument :password, :string do
         description("The user's password (will be hashed)")
         allow_nil?(false)
-        constraints(min_length: 8)
+        constraints(min_length: 6)
         sensitive?(true)
       end
 
@@ -945,9 +945,14 @@ defmodule KgEdu.Accounts.User do
         allow_nil?(true)
       end
 
+      argument :role, :atom do
+        description("Role to assign to all imported users (admin, teacher, user). Overrides any role column in the Excel file.")
+        allow_nil?(true)
+      end
+
       argument :attributes, {:array, :atom} do
         description(
-          "List of attributes in order: [:member_id, :name, :password, :email, :phone, :role, :school, :colledge, :major, :class]"
+          "List of attributes in order: [:name, :phone, :email, :password, :colledge, :major, :class]"
         )
 
         allow_nil?(true)
@@ -955,9 +960,9 @@ defmodule KgEdu.Accounts.User do
         default([
           :member_id,
           :name,
-          :password,
-          :email,
           :phone,
+          :email,
+          :password,
           :role,
           :school,
           :colledge,
@@ -974,9 +979,11 @@ defmodule KgEdu.Accounts.User do
         # Extract arguments safely - the API call might be using different field names
         excel_file = Map.get(input.arguments, :excelFile) || Map.get(input.arguments, :excel_file)
         attributes = Map.get(input.arguments, :attributes)
+        role_override = Map.get(input.arguments, :role)
 
         Logger.info("Excel file present: #{not is_nil(excel_file)}")
         Logger.info("Attributes: #{inspect(attributes)}")
+        Logger.info("Role override: #{inspect(role_override)}")
 
         # Handle tenant logic - use context.tenant as primary source (from request)
         tenant_to_use = context.tenant
@@ -1001,11 +1008,12 @@ defmodule KgEdu.Accounts.User do
                     :password,
                     :role,
                     :school,
-                    :college,
+                    :colledge,
                     :major,
                     :class
                   ],
-                tenant_to_use
+                tenant_to_use,
+                role_override
               )
             rescue
               e ->

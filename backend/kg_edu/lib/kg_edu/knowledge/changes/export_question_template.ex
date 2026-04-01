@@ -20,26 +20,34 @@ defmodule KgEdu.Knowledge.Changes.ExportQuestionTemplate do
 
   defp generate_template() do
     try do
-      # Create template data
+      # Create template data matching the question import template format
+      # Row 1: Instructions
+      instructions = [
+        "说明：1. 问题标题可以是自由形式的，使用层级命名，如\"全局层问题 - 概念层问题 - 方法层问题/实践场景 - 思考拓展 - 技能要点\"。一门课程只能使用一种层级结构。",
+        "2. 标题概括：总结标题的含义。",
+        "3. 问题描述：填写问题的内容。",
+        "4. 问题位置用于排序；如果位置相同，则不应用特定顺序。"
+      ]
+
       headers = [
-        "标题",
-        "描述",
-        "级别",
-        "位置",
-        "标签",
-        "课程名称"
+        "问题标题",
+        "标题概括",
+        "问题描述",
+        "问题位置"
       ]
 
       example_rows = [
-        ["什么是向量", "向量的基本概念定义", "global", "1", "基础概念,向量", "线性代数"],
-        ["向量加法的性质", "向量加法的交换律和结合律", "concept", "2", "运算,性质", "线性代数"],
-        ["如何计算向量点积", "向量点积的计算步骤和方法", "method", "3", "计算,点积", "线性代数"]
+        ["全局层问题", "与课程对应的问题", "四大核心模块的逻辑关系？", "1"],
+        ["概念层问题", "从概念角度分解课程内容", "什么是数据结构？", "2"],
+        ["方法层问题", "具体的方法和技巧", "如何实现二叉树的遍历？", "3"]
       ]
 
       # Convert to XLSX format using Elixlsx
+      # Row 1: instructions (comment row), Row 2: headers, Row 3+: data
+      instruction_row = [Enum.join(instructions, " ")]
       sheet = %Elixlsx.Sheet{
         name: "Questions",
-        rows: [headers | example_rows]
+        rows: [instruction_row, headers | example_rows]
       }
 
       case Elixlsx.write_to_memory(%Elixlsx.Workbook{sheets: [sheet]}, "question_template") do

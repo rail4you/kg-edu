@@ -29,6 +29,22 @@ defmodule KgEdu.Knowledge.Homework.ImportFromExcel do
     case KgEdu.ExcelImport.import_from_excel(excel_file, attributes) do
       {:ok, homework_data} ->
         Logger.info("homework data count: #{length(homework_data)}, course id is #{course_id}")
+
+        # 如果模板只有3列（title, score, answer），将 title 复制到 content
+        homework_data =
+          if attributes == ["title", "score", "answer"] do
+            Enum.map(homework_data, fn row ->
+              title = Map.get(row, "title") || Map.get(row, :title)
+              if title && !Map.get(row, "content") && !Map.get(row, :content) do
+                Map.put(row, "content", title)
+              else
+                row
+              end
+            end)
+          else
+            homework_data
+          end
+
         create_homework_from_data(homework_data, course_id, tenant)
 
       {:error, reason} ->

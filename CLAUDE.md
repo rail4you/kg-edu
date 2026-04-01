@@ -9,9 +9,10 @@ This is a Phoenix application built with the Ash Framework for educational knowl
   - Phoenix for web interface and APIs
   - PostgreSQL database
   - Authentication with AshAuthentication
-- **Frontend** (nextjs-ts) - Next.js application
-  - React with TypeScript and Material-UI
+- **Frontend** (`kg-edu-vite-antd/`) - Vite + React + Ant Design
+ V  - React with TypeScript + Ant Design (Ant ant Design and ProX)
   - Authentication integration with backend
+  - 位于 `backend/kg_edu/` 的前端应用
 
 ## Development Setup
 
