@@ -14,25 +14,54 @@ This is a Phoenix application built with the Ash Framework for educational knowl
   - Authentication integration with backend
   - 位于 `backend/kg_edu/` 的前端应用
 
-## Development Setup
+## 服务管理 (dev.sh)
+
+项目提供统一的 `dev.sh` 脚本管理所有服务的启动、停止和状态查看。**必须使用此脚本操作服务，不要直接运行 `mix phx.server` 或 `npm run dev`。**
 
 ```bash
-# Install dependencies and setup
-cd backend/kg_edu
-mix setup
+# 查看所有服务状态
+./dev.sh status
 
-# Start the development server
-mix phx.server
+# 启动所有服务
+./dev.sh start
 
-# Or start with IEx for interactive development
-iex -S mix phx.server
+# 启动指定服务
+./dev.sh start backend
+./dev.sh start frontend
+./dev.sh start agent
 
-cd nextjs-ts
-npm run dev
+# 停止所有服务
+./dev.sh stop
+
+# 停止指定服务
+./dev.sh stop backend
+./dev.sh stop frontend
+
+# 重启服务
+./dev.sh restart backend
+
+# 查看服务日志
+./dev.sh logs backend
+./dev.sh logs frontend
+./dev.sh logs agent
 ```
 
-Visit [localhost:4000](http://localhost:4000) to access the application.
-Nextjs app run localhost:8082
+### 服务端口
+
+| 服务 | 地址 |
+|------|------|
+| 后端 (Backend - Phoenix) | http://localhost:4000 |
+| 前端 (Frontend - Vite) | http://localhost:8081 |
+| 前端 API Server | http://localhost:3000 |
+| AI Agent (.NET) | http://localhost:5000 或 5001 |
+
+### 其他命令
+
+```bash
+./dev.sh codegen <task>  # 生成 Ash API 代码
+./dev.sh migrate         # 执行数据库迁移
+./dev.sh build           # 清理缓存并构建前端
+```
 
 ## Key Development Commands
 

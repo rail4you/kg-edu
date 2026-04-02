@@ -13,21 +13,39 @@ This is a Phoenix application built with the Ash Framework for educational knowl
   - JSON:API endpoints with AshJsonApi
 
 
-## Development Setup
+## 服务管理 (dev.sh)
+
+项目根目录提供统一的 `dev.sh` 脚本管理所有服务。**必须使用此脚本操作服务，不要直接运行 `mix phx.server` 或 `npm run dev`。**
 
 ```bash
-# Install dependencies and setup
-mix setup
+# 查看所有服务状态
+../../dev.sh status
 
-# Start the development server
-mix phx.server
+# 启动/停止/重启后端服务
+../../dev.sh start backend
+../../dev.sh stop backend
+../../dev.sh restart backend
 
-# Or start with IEx for interactive development
-iex -S mix phx.server
+# 启动所有服务
+../../dev.sh start
+
+# 查看后端日志
+../../dev.sh logs backend
+
+# 数据库迁移
+../../dev.sh migrate
+
+# 生成 Ash API 代码
+../../dev.sh codegen <task_name>
 ```
 
-Visit [localhost:4000](http://localhost:4000) to access the application.
-The agent service runs on [localhost:8000](http://localhost:8000).
+### 服务端口
+
+| 服务 | 地址 |
+|------|------|
+| 后端 (Backend - Phoenix) | http://localhost:4000 |
+| 前端 (Frontend - Vite) | http://localhost:8081 |
+| AI Agent (.NET) | http://localhost:5000 或 5001 |
 
 ## Key Development Commands
 
