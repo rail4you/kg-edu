@@ -58,7 +58,7 @@ defmodule KgEdu.Accounts.Organization do
       accept [:name]
     end
 
-    action :create_with_migrations do
+    action :create_with_migrations, :map do
       description "Create an organization and run tenant migrations"
 
       argument :name, :string do
@@ -67,12 +67,14 @@ defmodule KgEdu.Accounts.Organization do
 
       run fn input, context ->
         case KgEdu.AshMigrationManager.create_organization_with_migrations(input.arguments.name) do
-          {:ok, result} -> {:ok, result.organization}
-          {:error, reason} -> {:error, reason}
+          {:ok, result} ->
+            org = result.organization
+            {:ok, %{"id" => org.id, "name" => org.name, "schemaName" => org.schema_name}}
+
+          {:error, reason} ->
+            {:error, reason}
         end
       end
-
-      # Returns the created organization
     end
 
     action :create_verified_organization do
