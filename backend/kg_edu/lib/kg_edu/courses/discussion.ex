@@ -31,6 +31,7 @@ defmodule KgEdu.Courses.Discussion do
     define :get_discussion, action: :read, get_by: [:id]
     define :list_discussions, action: :read
     define :list_discussions_by_course, action: :by_course
+    define :increment_reply, action: :increment_reply
   end
 
   actions do
@@ -80,6 +81,12 @@ defmodule KgEdu.Courses.Discussion do
       description "Increment view count"
 
       change atomic_update(:view_count, expr(view_count + 1))
+    end
+
+    update :increment_reply do
+      description "Increment reply count"
+
+      change atomic_update(:reply_count, expr(reply_count + 1))
     end
   end
 

@@ -178,6 +178,11 @@ defmodule KgEdu.Courses do
       rpc_action(:close_discussion_session, :close)
       rpc_action(:delete_discussion_session, :destroy)
     end
+
+    resource KgEdu.Courses.DiscussionReply do
+      rpc_action(:create_reply, :create)
+      rpc_action(:list_replies_by_discussion, :by_discussion)
+    end
   end
 
   resources do
@@ -194,5 +199,6 @@ defmodule KgEdu.Courses do
     resource(KgEdu.Courses.CourseVideo)
     resource(KgEdu.Courses.Discussion)
     resource(KgEdu.Courses.DiscussionSession)
+    resource(KgEdu.Courses.DiscussionReply)
   end
 end
