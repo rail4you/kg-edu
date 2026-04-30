@@ -32,11 +32,19 @@ defmodule KgEdu.Courses.CourseVideo do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:name, :video_url, :image_url, :course_id]
+      accept [:name, :media_type, :video_url, :image_url, :course_id]
+
+      change fn changeset, _context ->
+        validate_media_payload(changeset)
+      end
     end
 
     update :update do
-      accept [:name, :video_url, :image_url, :course_id]
+      accept [:name, :media_type, :video_url, :image_url, :course_id]
+
+      change fn changeset, _context ->
+        validate_media_payload(changeset)
+      end
     end
 
     read :by_course do
@@ -73,8 +81,16 @@ defmodule KgEdu.Courses.CourseVideo do
       constraints one_of: [:课程视频, :课程体系, :课程结构, :课程地图]
     end
 
-    attribute :video_url, :string do
+    attribute :media_type, :atom do
       allow_nil? false
+      public? true
+      default :video
+      description "The media type of the course asset"
+      constraints one_of: [:video, :image]
+    end
+
+    attribute :video_url, :string do
+      allow_nil? true
       public? true
       description "The URL of the video file"
     end
@@ -96,4 +112,37 @@ defmodule KgEdu.Courses.CourseVideo do
       description "The course this video belongs to"
     end
   end
+
+  defp validate_media_payload(changeset) do
+    media_type = Ash.Changeset.get_attribute(changeset, :media_type) || :video
+    video_url = Ash.Changeset.get_attribute(changeset, :video_url)
+    image_url = Ash.Changeset.get_attribute(changeset, :image_url)
+
+    changeset =
+      if media_type == :video and blank?(video_url) do
+        Ash.Changeset.add_error(
+          changeset,
+          %Ash.Error.Changes.InvalidAttribute{
+            field: :video_url,
+            message: "视频类型必须提供视频地址"
+          }
+        )
+      else
+        changeset
+      end
+
+    if media_type == :image and blank?(image_url) do
+      Ash.Changeset.add_error(
+        changeset,
+        %Ash.Error.Changes.InvalidAttribute{
+          field: :image_url,
+          message: "图片类型必须提供图片地址"
+        }
+      )
+    else
+      changeset
+    end
+  end
+
+  defp blank?(value), do: value in [nil, ""]
 end
