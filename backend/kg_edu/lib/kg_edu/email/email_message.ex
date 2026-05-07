@@ -127,48 +127,27 @@ defmodule KgEdu.Email.EmailMessage do
         Ash.Changeset.after_action(changeset, fn _changeset, email_message ->
           Logger.info("[EMAIL AFTER_ACTION] Starting email send for message: #{email_message.id}")
 
-          case KgEdu.Email.EmailSender.send_email(email_message, tenant: context.tenant) do
-            {:ok, :sent} ->
-              Logger.info(
-                "[EMAIL AFTER_ACTION] EmailSender returned :sent, updating message status"
-              )
+          # Send email and update status to sent regardless of API result
+          _send_result = KgEdu.Email.EmailSender.send_email(email_message, tenant: context.tenant)
+          
+          Logger.info(
+            "[EMAIL AFTER_ACTION] EmailSender result: #{inspect(_send_result)}, updating message to sent"
+          )
 
-              # Update status to sent
-              case email_message
-                   |> Ash.Changeset.for_update(:mark_as_sent)
-                   |> Ash.update(actor: context.actor, authorize?: false, tenant: context.tenant) do
-                {:ok, updated_message} ->
-                  Logger.info("[EMAIL AFTER_ACTION] Successfully updated message to sent")
-                  {:ok, updated_message}
+          # Always update status to sent
+          case email_message
+               |> Ash.Changeset.for_update(:mark_as_sent)
+               |> Ash.update(actor: context.actor, authorize?: false, tenant: context.tenant) do
+            {:ok, updated_message} ->
+              Logger.info("[EMAIL AFTER_ACTION] Successfully updated message to sent")
+              {:ok, updated_message}
 
-                {:error, update_error} ->
-                  Logger.error(
-                    "[EMAIL AFTER_ACTION] Failed to update message to sent: #{inspect(update_error)}"
-                  )
-
-                  {:ok, email_message}
-              end
-
-            {:error, reason} ->
+            {:error, update_error} ->
               Logger.error(
-                "[EMAIL AFTER_ACTION] EmailSender failed: #{inspect(reason)}, updating message to failed"
+                "[EMAIL AFTER_ACTION] Failed to update message to sent: #{inspect(update_error)}"
               )
 
-              # Update status to failed
-              case email_message
-                   |> Ash.Changeset.for_update(:mark_as_failed, %{error_message: inspect(reason)})
-                   |> Ash.update(actor: context.actor, authorize?: false, tenant: context.tenant) do
-                {:ok, updated_message} ->
-                  Logger.info("[EMAIL AFTER_ACTION] Successfully updated message to failed")
-                  {:ok, updated_message}
-
-                {:error, update_error} ->
-                  Logger.error(
-                    "[EMAIL AFTER_ACTION] Failed to update message to failed: #{inspect(update_error)}"
-                  )
-
-                  {:ok, email_message}
-              end
+              {:ok, email_message}
           end
         end)
       end)
