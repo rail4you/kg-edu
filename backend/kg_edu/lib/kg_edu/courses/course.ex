@@ -117,7 +117,8 @@ defmodule KgEdu.Courses.Course do
         :publish_status,
         :subject_category_id,
         :teacher_id,
-        :browse_count
+        :browse_count,
+        :color_scheme
       ])
     end
 
@@ -251,7 +252,8 @@ defmodule KgEdu.Courses.Course do
         :publish_status,
         :subject_category_id,
         :teacher_id,
-        :browse_count
+        :browse_count,
+        :color_scheme
       ])
     end
 
@@ -954,6 +956,12 @@ defmodule KgEdu.Courses.Course do
       default(0)
       public?(true)
       description("Number of times the course has been viewed")
+    end
+
+    attribute :color_scheme, :string do
+      default("auto")
+      public?(true)
+      description("Front page color scheme: auto, pure, graphite_blue, sea_mist, pine_green, amber_brown, mist_purple, inkstone_gray, celadon_gray")
     end
 
     create_timestamp(:inserted_at)
