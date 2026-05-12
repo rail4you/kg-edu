@@ -58,6 +58,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
+      - QWEN_API_KEY=sk-f99eaa5ab16044f1a39aead070fb08e9
+      - QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/kg_edu_dev
     ports:
       - "5000:5000"
     depends_on:
@@ -76,7 +79,7 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       # AI Agent URL - 使用 Docker 内部网络地址
-      - AGENT_URL=http://kg-edu-ai-agent:5000
+      - AGENT_URL=http://kg-edu-ai-agent:5000/agui
     ports:
       - "3000:3000"
     depends_on:
