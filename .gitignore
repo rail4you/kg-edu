@@ -9,3 +9,12 @@ ai-agent/KgAgent
 ai-agent/
 kg-edu-vite-antd
 kg-edu-vite-antd
+
+# Runtime files
+.dev-logs/
+.dev-pids/
+
+# Node
+node_modules/
+package.json
+package-lock.json
