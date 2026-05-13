@@ -132,7 +132,9 @@ config :kg_edu,
     KgEdu.Utils,
     KgEdu.Activity,
     KgEdu.Email,
-    KgEdu.Attendance
+    KgEdu.Attendance,
+    KgEdu.GroupTask,
+    KgEdu.MajorAnalysis
   ]
 
 # Configures the endpoint

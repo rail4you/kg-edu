@@ -210,6 +210,12 @@ defmodule KgEdu.Knowledge do
       rpc_action(:get_weak_knowledge_points, :get_weak_points)
       rpc_action(:recalculate_mastery, :recalculate_mastery)
       rpc_action(:get_class_weakness, :class_weakness)
+      rpc_action(:get_student_profile_overview, :get_student_profile_overview)
+      rpc_action(:get_knowledge_radar, :get_knowledge_radar)
+      rpc_action(:get_learning_trend, :get_learning_trend)
+      rpc_action(:get_weak_knowledge_points_profile, :get_weak_knowledge_points)
+      rpc_action(:get_activity_distribution, :get_activity_distribution)
+      rpc_action(:get_ability_assessment, :get_ability_assessment)
     end
 
     resource KgEdu.Knowledge.LearningRecommendation do

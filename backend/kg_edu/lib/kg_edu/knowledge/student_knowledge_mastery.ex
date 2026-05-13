@@ -438,6 +438,94 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
         end
       end
     end
+
+
+    action :get_student_profile_overview, :map do
+      description "Get comprehensive student learning profile overview"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_student_profile_overview(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant
+        )
+      end
+    end
+
+    action :get_knowledge_radar, :map do
+      description "Get knowledge mastery radar chart data by ability dimensions"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_knowledge_radar(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant
+        )
+      end
+    end
+
+    action :get_learning_trend, :map do
+      description "Get learning activity trend data grouped by week"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_learning_trend(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant
+        )
+      end
+    end
+
+    action :get_weak_knowledge_points, :map do
+      description "Get student's weak knowledge points below threshold"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+      argument :threshold, :float, allow_nil?: true, default: 0.6
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_weak_knowledge_points(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant,
+          threshold: input.arguments.threshold
+        )
+      end
+    end
+
+    action :get_activity_distribution, :map do
+      description "Get learning activity distribution (pie chart data)"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_activity_distribution(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant
+        )
+      end
+    end
+
+    action :get_ability_assessment, :map do
+      description "Get ability dimension assessment data (bar chart)"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_ability_assessment(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant
+        )
+      end
+    end
+
   end
 
   policies do
