@@ -177,32 +177,55 @@ defmodule KgEdu.Knowledge.StudentProfile do
          {:ok, class_avg} <- get_class_ability_average(course_id, tenant) do
       
       data = Enum.flat_map(abilities, fn ability ->
-        sub_abilities = ability.sub_abilities || []
+        sub_abilities = case ability do
+          %{sub_abilities: subs} when is_list(subs) -> subs
+          _ -> []
+        end
+
         if length(sub_abilities) == 0 do
           []
         else
-          Enum.map(sub_abilities, fn sa ->
-            # Calculate mastery for this sub-ability
-            related_masteries = masteries
-            |> Enum.filter(fn m ->
-              kr = m.knowledge_resource
-              kr && kr.sub_ability_id == sa.id
-            end)
-
-            avg = if length(related_masteries) > 0 do
-              Enum.sum(Enum.map(related_masteries, &(&1.mastery_level || 0))) / length(related_masteries)
-            else
-              0.0
+          # Build a map from knowledge_resource_id to sub_ability for quick lookup
+          sub_kr_map = sub_abilities
+          |> Enum.flat_map(fn sa ->
+            case Ash.load(sa, :knowledge_resources, tenant: tenant, authorize?: false) do
+              {:ok, loaded} ->
+                (loaded.knowledge_resources || [])
+                |> Enum.map(fn kr -> {kr.id, sa} end)
+              _ -> []
             end
+          end)
+          |> Map.new()
 
-            class_val = Map.get(class_avg, sa.id, 0.0)
+          # Group masteries by sub_ability
+          mastery_by_sa = masteries
+          |> Enum.filter(fn m ->
+            Map.has_key?(sub_kr_map, m.knowledge_resource_id)
+          end)
+          |> Enum.group_by(fn m ->
+            case Map.get(sub_kr_map, m.knowledge_resource_id) do
+              nil -> nil
+              sa -> sa.id
+            end
+          end)
 
-            %{
-              ability: sa.name,
-              parentAbility: ability.name,
-              studentScore: Float.round(avg * 100, 1),
-              classAverage: Float.round(class_val * 100, 1)
-            }
+          sub_abilities
+          |> Enum.flat_map(fn sa ->
+            related_masteries = Map.get(mastery_by_sa, sa.id, [])
+
+            if length(related_masteries) == 0 do
+              []
+            else
+              avg = Enum.sum(Enum.map(related_masteries, &(&1.mastery_level || 0))) / length(related_masteries)
+              class_val = Map.get(class_avg, sa.id, 0.0)
+
+              [%{
+                ability: sa.name,
+                parentAbility: ability.name,
+                studentScore: Float.round(avg * 100, 1),
+                classAverage: Float.round(class_val * 100, 1)
+              }]
+            end
           end)
         end
       end)
@@ -277,16 +300,58 @@ defmodule KgEdu.Knowledge.StudentProfile do
     end
   end
 
-  defp get_student_course_logs(student_id, _course_id, tenant) do
+  defp get_student_course_logs(student_id, course_id, tenant) do
+    # Get activity logs for this student
+    # We join with knowledge resource / file / video to filter by course
+    # For now, get all student logs and filter by related resources
     query = KgEdu.Activity.ActivityLog
     |> Ash.Query.filter(user_id == ^student_id)
 
     query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
 
     case Ash.read(query, authorize?: false) do
-      {:ok, logs} -> logs
+      {:ok, logs} ->
+        # Filter logs to only those related to this course
+        # by checking if the resource belongs to the course
+        filter_logs_by_course(logs, course_id, tenant)
       _ -> []
     end
+  end
+
+  defp filter_logs_by_course(logs, nil, _tenant), do: logs
+  defp filter_logs_by_course(logs, course_id, tenant) do
+    # Get all knowledge resource IDs for this course
+    kr_ids = case KgEdu.Knowledge.Resource
+    |> Ash.Query.filter(course_id == ^course_id)
+    |> (fn q -> if tenant, do: Ash.Query.set_tenant(q, tenant), else: q end).()
+    |> Ash.read(authorize?: false) do
+      {:ok, resources} -> Enum.map(resources, & &1.id)
+      _ -> []
+    end
+
+    # Get file IDs for this course
+    file_ids = case KgEdu.Courses.File
+    |> Ash.Query.filter(course_id == ^course_id)
+    |> (fn q -> if tenant, do: Ash.Query.set_tenant(q, tenant), else: q end).()
+    |> Ash.read(authorize?: false) do
+      {:ok, files} -> Enum.map(files, & &1.id)
+      _ -> []
+    end
+
+    # Get video IDs for this course
+    video_ids = case KgEdu.Courses.Video
+    |> Ash.Query.filter(course_id == ^course_id)
+    |> (fn q -> if tenant, do: Ash.Query.set_tenant(q, tenant), else: q end).()
+    |> Ash.read(authorize?: false) do
+      {:ok, videos} -> Enum.map(videos, & &1.id)
+      _ -> []
+    end
+
+    course_resource_ids = MapSet.new(kr_ids ++ file_ids ++ video_ids)
+
+    Enum.filter(logs, fn log ->
+      MapSet.member?(course_resource_ids, log.resource_id)
+    end)
   end
 
   defp get_main_abilities(course_id, tenant) do
@@ -299,18 +364,99 @@ defmodule KgEdu.Knowledge.StudentProfile do
     Ash.read(query, authorize?: false)
   end
 
-  defp get_class_average_mastery(_course_id, _tenant) do
-    # Simplified - would need to aggregate across all students
-    {:ok, %{}}
+  defp get_class_average_mastery(course_id, tenant) do
+    # Get all student masteries for this course and compute per-knowledge-resource average
+    query = KgEdu.Knowledge.StudentKnowledgeMastery
+    |> Ash.Query.filter(knowledge_resource.course_id == ^course_id)
+    |> Ash.Query.load(:knowledge_resource)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, masteries} ->
+        averages = masteries
+        |> Enum.group_by(& &1.knowledge_resource_id)
+        |> Enum.map(fn {kr_id, ms} ->
+          avg = Enum.sum(Enum.map(ms, &(&1.mastery_level || 0))) / length(ms)
+          {kr_id, avg}
+        end)
+        |> Map.new()
+
+        {:ok, averages}
+
+      _ -> {:ok, %{}}
+    end
   end
 
-  defp get_class_ability_average(_course_id, _tenant) do
-    {:ok, %{}}
+  defp get_class_ability_average(course_id, tenant) do
+    with {:ok, abilities} <- get_main_abilities(course_id, tenant),
+         {:ok, all_masteries} <- get_all_course_masteries(course_id, tenant) do
+      sub_ability_kr_map = build_sub_ability_kr_map(abilities, tenant)
+
+      averages = sub_ability_kr_map
+      |> Enum.flat_map(fn {sub_ability_id, kr_ids} ->
+        related = all_masteries |> Enum.filter(&(&1.knowledge_resource_id in kr_ids))
+        if length(related) > 0 do
+          avg = Enum.sum(Enum.map(related, &(&1.mastery_level || 0))) / length(related)
+          [{sub_ability_id, avg}]
+        else
+          []
+        end
+      end)
+      |> Map.new()
+
+      {:ok, averages}
+    else
+      _ -> {:ok, %{}}
+    end
   end
 
-  defp get_ability_knowledge_ids(_ability, _tenant) do
-    # Simplified - would need to query knowledge resources linked to abilities
-    []
+  defp get_ability_knowledge_ids(ability, tenant) do
+    sub_abilities = case ability do
+      %{sub_abilities: subs} when is_list(subs) -> subs
+      _ ->
+        case Ash.load(ability, :sub_abilities, tenant: tenant, authorize?: false) do
+          {:ok, loaded} -> loaded.sub_abilities || []
+          _ -> []
+        end
+    end
+
+    sub_abilities
+    |> Enum.flat_map(fn sa ->
+      case Ash.load(sa, :knowledge_resources, tenant: tenant, authorize?: false) do
+        {:ok, loaded} -> (loaded.knowledge_resources || []) |> Enum.map(& &1.id)
+        _ -> []
+      end
+    end)
+    |> Enum.uniq()
+  end
+
+  defp get_all_course_masteries(course_id, tenant) do
+    query = KgEdu.Knowledge.StudentKnowledgeMastery
+    |> Ash.Query.filter(knowledge_resource.course_id == ^course_id)
+    |> Ash.Query.load(:knowledge_resource)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    Ash.read(query, authorize?: false)
+  end
+
+  defp build_sub_ability_kr_map(abilities, tenant) do
+    abilities
+    |> Enum.flat_map(fn ability ->
+      sub_abilities = case ability do
+        %{sub_abilities: subs} when is_list(subs) -> subs
+        _ -> []
+      end
+
+      Enum.map(sub_abilities, fn sa ->
+        kr_ids = case Ash.load(sa, :knowledge_resources, tenant: tenant, authorize?: false) do
+          {:ok, loaded} -> (loaded.knowledge_resources || []) |> Enum.map(& &1.id)
+          _ -> []
+        end
+        {sa.id, kr_ids}
+      end)
+    end)
   end
 
   defp calculate_overall_score(avg_mastery, activity_stats, exam_stats, attendance_rate) do
