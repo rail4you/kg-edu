@@ -83,6 +83,10 @@ defmodule KgEdu.GroupTask.Task do
       end
 
       change fn changeset, _context ->
+        validate_group_assignment(changeset, true)
+      end
+
+      change fn changeset, _context ->
         token = generate_unique_token()
         changeset
         |> Ash.Changeset.change_attribute(:token, token)
@@ -100,6 +104,10 @@ defmodule KgEdu.GroupTask.Task do
 
       argument :group_ids, {:array, :uuid} do
         allow_nil? true
+      end
+
+      change fn changeset, _context ->
+        validate_group_assignment(changeset, false)
       end
 
       change manage_relationship(:group_ids, :groups, type: :append_and_remove)
@@ -230,5 +238,20 @@ defmodule KgEdu.GroupTask.Task do
   defp generate_unique_token do
     :crypto.strong_rand_bytes(16)
     |> Base.url_encode64(padding: false)
+  end
+
+  defp validate_group_assignment(changeset, required?) do
+    group_ids = Ash.Changeset.get_argument(changeset, :group_ids)
+
+    cond do
+      required? and (!is_list(group_ids) or group_ids == []) ->
+        Ash.Changeset.add_error(changeset, :group_ids, "分组任务必须关联一个分组")
+
+      is_list(group_ids) and length(group_ids) > 1 ->
+        Ash.Changeset.add_error(changeset, :group_ids, "一个分组任务只能关联一个分组")
+
+      true ->
+        changeset
+    end
   end
 end

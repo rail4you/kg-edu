@@ -67,10 +67,38 @@ defmodule KgEdu.GroupTask.TaskSubmission do
       description "Student submits a task"
       accept [:task_id, :group_id, :student_id, :content, :file_url]
 
-      change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_attribute(:status, :submitted)
-        |> Ash.Changeset.change_attribute(:submitted_at, DateTime.utc_now())
+      change fn changeset, context ->
+        task_id = Ash.Changeset.get_attribute(changeset, :task_id)
+        group_id = Ash.Changeset.get_attribute(changeset, :group_id)
+        student_id = Ash.Changeset.get_attribute(changeset, :student_id)
+
+        case KgEdu.GroupTask.Task.get_task(%{id: task_id},
+               tenant: context.tenant,
+               authorize?: false,
+               load: [groups: [members: []]]
+             ) do
+          {:ok, task} ->
+            assigned_group = Enum.find(task.groups || [], &(&1.id == group_id))
+
+            cond do
+              task.status != :active ->
+                Ash.Changeset.add_error(changeset, message: "任务未发布或已结束")
+
+              is_nil(assigned_group) ->
+                Ash.Changeset.add_error(changeset, field: :group_id, message: "该任务未分配给当前分组")
+
+              not Enum.any?(assigned_group.members || [], &(&1.id == student_id)) ->
+                Ash.Changeset.add_error(changeset, field: :student_id, message: "只有分组内的学生才能参与该任务")
+
+              true ->
+                changeset
+                |> Ash.Changeset.change_attribute(:status, :submitted)
+                |> Ash.Changeset.change_attribute(:submitted_at, DateTime.utc_now())
+            end
+
+          {:error, _reason} ->
+            Ash.Changeset.add_error(changeset, field: :task_id, message: "任务不存在")
+        end
       end
     end
 

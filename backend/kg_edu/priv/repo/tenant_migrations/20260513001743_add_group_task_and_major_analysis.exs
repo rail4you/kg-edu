@@ -281,7 +281,7 @@ defmodule KgEdu.Repo.TenantMigrations.AddGroupTaskAndMajorAnalysis do
           )
     end
 
-    create table(:discussion_replies, primary_key: false, prefix: prefix()) do
+    create_if_not_exists table(:discussion_replies, primary_key: false, prefix: prefix()) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
       add :content, :text, null: false
 
@@ -362,7 +362,7 @@ defmodule KgEdu.Repo.TenantMigrations.AddGroupTaskAndMajorAnalysis do
     end
 
     alter table(:courses, prefix: prefix()) do
-      add :color_scheme, :text, default: "auto"
+      add_if_not_exists :color_scheme, :text, default: "auto"
     end
 
     create table(:job_positions, primary_key: false, prefix: prefix()) do
