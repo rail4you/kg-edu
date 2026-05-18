@@ -61,6 +61,8 @@ services:
       - QWEN_API_KEY=sk-f99eaa5ab16044f1a39aead070fb08e9
       - QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
       - DATABASE_URL=postgres://postgres:postgres@db:5432/kg_edu_dev
+      - OSS__AccessKeyId=LTAI5tA3M63FNf9qJPGwHGMU
+      - OSS__AccessKeySecret=Y481c9cjNvloxWTC0WOkLw8qWM9FMI
     ports:
       - "5000:5000"
     depends_on:
