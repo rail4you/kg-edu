@@ -78,6 +78,9 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
+      - ASSISTANT_AGENT_MODE=pi
+      - KG_EDU_BACKEND_URL=http://backend:4000
+      - KG_EDU_AGENT_API_BASE_URL=http://kg-edu-ai-agent:5000
       # AI Agent URL - 使用 Docker 内部网络地址
       - AGENT_URL=http://kg-edu-ai-agent:5000/agui
     ports:
