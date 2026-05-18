@@ -167,6 +167,199 @@ defmodule KgEdu.Knowledge.StudentProfile do
   end
 
   @doc """
+  获取学生分组任务评分统计
+  返回该学生在指定课程中参与的所有分组任务的提交和评分信息。
+  """
+  def get_group_task_stats(student_id, course_id, opts) do
+    tenant = Keyword.get(opts, :tenant)
+
+    # 1. 找到该学生在该课程中所在的小组
+    groups = get_student_groups_in_course(student_id, course_id, tenant)
+
+    # 2. 获取该课程的所有分组任务
+    tasks = get_course_group_tasks(course_id, tenant)
+
+    # 3. 获取该学生的所有提交记录
+    submissions = get_student_submissions(student_id, course_id, tenant)
+
+    # 4. 获取该课程所有学生的提交记录（用于计算班级平均）
+    all_submissions = get_all_course_submissions(course_id, tenant)
+
+    # 6. 汇总统计 - 使用每个任务的最好提交记录来计算分数
+    task_stats = build_task_stats(tasks, submissions, all_submissions)
+
+    scored_tasks = task_stats |> Enum.filter(fn t -> t.score != nil end)
+    total_scored = length(scored_tasks)
+    avg_score = if total_scored > 0 do
+      Float.round(Enum.sum(Enum.map(scored_tasks, & &1.score)) / total_scored, 1)
+    else
+      nil
+    end
+
+    # 班级平均分 - 按学生+任务去重，每个学生每个任务取最佳提交
+    best_by_student_task = all_submissions
+    |> Enum.group_by(fn s -> {s.student_id, s.task_id} end)
+    |> Enum.map(fn {_key, subs} -> pick_best_submission(subs) end)
+    |> Enum.filter(fn s -> s != nil and s.score != nil end)
+
+    class_avg = if length(best_by_student_task) > 0 do
+      Float.round(Enum.sum(Enum.map(best_by_student_task, &(&1.score || 0))) / length(best_by_student_task), 1)
+    else
+      nil
+    end
+
+    # 小组信息
+    group_info = case groups do
+      [g | _] -> %{groupId: g.id, groupName: g.name}
+      [] -> nil
+    end
+
+    # 任务类型分布
+    type_distribution = tasks
+    |> Enum.group_by(&(&1.task_type))
+    |> Enum.map(fn {type, ts} -> %{type: task_type_label(type), count: length(ts)} end)
+
+    summary = %{
+      totalTasks: length(tasks),
+      submittedCount: length(Enum.filter(task_stats, fn t -> t.submissionStatus in [:submitted, :graded] end)),
+      gradedCount: total_scored,
+      averageScore: avg_score,
+      classAverageScore: class_avg,
+      group: group_info,
+      typeDistribution: type_distribution
+    }
+
+    {:ok, %{summary: summary, tasks: task_stats}}
+  end
+
+  defp get_student_groups_in_course(student_id, course_id, tenant) do
+    query = KgEdu.GroupTask.Group
+    |> Ash.Query.filter(course_id == ^course_id)
+    |> Ash.Query.load(:members)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, groups} ->
+        Enum.filter(groups, fn g ->
+          Enum.any?(g.members || [], &(&1.id == student_id))
+        end)
+      _ -> []
+    end
+  end
+
+  defp get_course_group_tasks(course_id, tenant) do
+    query = KgEdu.GroupTask.Task
+    |> Ash.Query.filter(course_id == ^course_id)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, tasks} -> tasks
+      _ -> []
+    end
+  end
+
+  defp get_student_submissions(student_id, course_id, tenant) do
+    # Get all task submissions for this student in this course
+    query = KgEdu.GroupTask.TaskSubmission
+    |> Ash.Query.filter(student_id == ^student_id)
+    |> Ash.Query.load(:task)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, submissions} ->
+        # Filter to only those whose task belongs to the course
+        Enum.filter(submissions, fn s ->
+          s.task && s.task.course_id == course_id
+        end)
+      _ -> []
+    end
+  end
+
+  defp get_all_course_submissions(course_id, tenant) do
+    # Get all submissions for tasks in this course
+    task_ids = get_course_group_tasks(course_id, tenant)
+    |> Enum.map(& &1.id)
+
+    if length(task_ids) == 0 do
+      []
+    else
+      query = KgEdu.GroupTask.TaskSubmission
+      |> Ash.Query.filter(task_id in ^task_ids)
+
+      query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+      case Ash.read(query, authorize?: false) do
+        {:ok, submissions} -> submissions
+        _ -> []
+      end
+    end
+  end
+
+  defp build_task_stats(tasks, student_submissions, all_submissions) do
+    # Group student's submissions by task_id, pick best per task
+    submission_by_task = student_submissions
+    |> Enum.group_by(& &1.task_id)
+
+    # For class average: group ALL submissions by {student_id, task_id}, pick best per pair
+    best_by_student_task = all_submissions
+    |> Enum.group_by(fn s -> {s.student_id, s.task_id} end)
+    |> Enum.map(fn {_key, subs} -> pick_best_submission(subs) end)
+    |> Enum.filter(fn s -> s != nil end)
+    |> Enum.group_by(& &1.task_id)
+
+    tasks
+    |> Enum.map(fn task ->
+      task_subs = Map.get(submission_by_task, task.id, [])
+
+      # Pick the student's best (latest graded) submission for this task
+      my_sub = pick_best_submission(task_subs)
+
+      # Class average: use only the best submission per student per task
+      class_subs = Map.get(best_by_student_task, task.id, [])
+      scored_class = Enum.filter(class_subs, fn s -> s.score != nil end)
+      class_avg = if length(scored_class) > 0 do
+        Float.round(Enum.sum(Enum.map(scored_class, &(&1.score || 0))) / length(scored_class), 1)
+      else
+        nil
+      end
+
+      %{
+        taskId: task.id,
+        taskTitle: task.title,
+        taskType: task_type_label(task.task_type),
+        status: task.status,
+        dueDate: task.due_date,
+        submissionStatus: if(my_sub, do: my_sub.status, else: :not_submitted),
+        score: if(my_sub, do: my_sub.score),
+        classAverage: class_avg,
+        feedback: if(my_sub, do: my_sub.feedback),
+        submittedAt: if(my_sub, do: my_sub.submitted_at)
+      }
+    end)
+  end
+
+  # Pick the best submission: prefer latest graded, then latest submitted, then latest
+  # When a student submits multiple times, we want the most recent scored one.
+  defp pick_best_submission([]), do: nil
+  defp pick_best_submission([sub]), do: sub
+  defp pick_best_submission(subs) do
+    # Sort by updated_at descending to get the most recent first
+    sorted = Enum.sort_by(subs, &(&1.updated_at || &1.inserted_at), {:desc, DateTime})
+    Enum.find(sorted, & &1.status == :graded) ||
+    Enum.find(sorted, & &1.status == :submitted) ||
+    List.first(sorted)
+  end
+
+  defp task_type_label(:submission), do: "提交任务"
+  defp task_type_label(:discussion), do: "讨论任务"
+  defp task_type_label(:survey), do: "调查任务"
+  defp task_type_label(:file_upload), do: "文件上传"
+  defp task_type_label(other), do: to_string(other)
+
+  @doc """
   获取能力维度评估数据（柱状图）
   """
   def get_ability_assessment(student_id, course_id, opts) do

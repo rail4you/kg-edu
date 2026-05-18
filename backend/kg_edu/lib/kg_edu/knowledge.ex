@@ -216,6 +216,7 @@ defmodule KgEdu.Knowledge do
       rpc_action(:get_weak_knowledge_points_profile, :get_weak_knowledge_points)
       rpc_action(:get_activity_distribution, :get_activity_distribution)
       rpc_action(:get_ability_assessment, :get_ability_assessment)
+      rpc_action(:get_group_task_stats, :get_group_task_stats)
     end
 
     resource KgEdu.Knowledge.LearningRecommendation do

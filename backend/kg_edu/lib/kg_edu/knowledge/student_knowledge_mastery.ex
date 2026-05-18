@@ -526,6 +526,20 @@ defmodule KgEdu.Knowledge.StudentKnowledgeMastery do
       end
     end
 
+    action :get_group_task_stats, :map do
+      description "Get student's group task scoring statistics for a course"
+      argument :student_id, :uuid, allow_nil?: false
+      argument :course_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        KgEdu.Knowledge.StudentProfile.get_group_task_stats(
+          input.arguments.student_id,
+          input.arguments.course_id,
+          tenant: context.tenant
+        )
+      end
+    end
+
   end
 
   policies do
