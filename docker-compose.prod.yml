@@ -78,16 +78,27 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
-      - ASSISTANT_AGENT_MODE=pi
-      - KG_EDU_BACKEND_URL=http://backend:4000
-      - KG_EDU_AGENT_API_BASE_URL=http://kg-edu-ai-agent:5000
       # AI Agent URL - 使用 Docker 内部网络地址
       - AGENT_URL=http://kg-edu-ai-agent:5000/agui
+      # Backend URL for RPC calls
+      - KG_EDU_BACKEND_URL=http://backend:4000
+      # Agent API base URL for skill calls
+      - KG_EDU_AGENT_API_BASE_URL=http://kg-edu-ai-agent:5000
+      # Pi Agent mode
+      - ASSISTANT_AGENT_MODE=pi
+      # Pi Agent model configuration
+      - PI_AGENT_MODEL_PROVIDER=zai
+      - PI_AGENT_MODEL_ID=glm-5.1
+      # ZAI API Key (read by Pi SDK for provider "zai")
+      - ZAI_API_KEY=${ZAI_API_KEY}
     ports:
       - "3000:3000"
     depends_on:
       - backend
       - ai-agent
+    volumes:
+      # Mount Pi agent model config with API keys
+      - ./pi-config/models.json:/root/.pi/agent/models.json:ro
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
