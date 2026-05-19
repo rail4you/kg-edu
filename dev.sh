@@ -10,6 +10,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND_DIR="$PROJECT_ROOT/kg-edu-vite-antd"
 BACKEND_DIR="$PROJECT_ROOT/backend/kg_edu"
 AGENT_DIR="$PROJECT_ROOT/ai-agent/KgAgent"
+AGENT_SERVER_DIR="$PROJECT_ROOT/agent-server"
 
 # PID文件目录
 PID_DIR="$PROJECT_ROOT/.dev-pids"
@@ -317,26 +318,26 @@ start_backend() {
 
 # 启动 AI Agent 服务
 start_agent() {
-    log_info "启动 AI Agent 服务..."
+    log_info "启动 AI Agent 服务 (Pi SDK)..."
     if is_running $AGENT; then
         log_warn "AI Agent 服务已在运行中 (PID: $(get_pid $AGENT))"
         return 0
     fi
 
     init_dirs
-    cd "$AGENT_DIR"
+    cd "$AGENT_SERVER_DIR"
 
     # 清空日志
     > "$LOG_DIR/$AGENT.log"
 
-    nohup dotnet run --project KgAgent.csproj >> "$LOG_DIR/$AGENT.log" 2>&1 &
+    nohup bun run src/server.ts >> "$LOG_DIR/$AGENT.log" 2>&1 &
     local pid=$!
     echo $pid > "$PID_DIR/$AGENT.pid"
 
     sleep 3
     if is_running $AGENT; then
         log_success "AI Agent 服务已启动 (PID: $pid)"
-        log_info "  - Agent Server: http://localhost:5000 或 http://localhost:5001"
+        log_info "  - Agent Server: http://localhost:5050"
     else
         log_error "AI Agent 服务启动失败，请查看日志: $LOG_DIR/$AGENT.log"
         return 1

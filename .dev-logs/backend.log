@@ -2586,7 +2586,7 @@ warning: 0..-5 has a default step of -1, please write 0..-5//-1 instead
 Getting extensions in current project...
 Running migration for AshPostgres.DataLayer...
 
-09:41:59.754 [info] Migrations already up
+11:10:10.036 [info] Migrations already up
 warning: :warnings_as_errors is deprecated as part of Code.get_compiler_option/1
   (elixir 1.18.4) lib/code.ex:1597: Code.get_compiler_option/1
   (elixir 1.18.4) lib/code.ex:1572: anonymous fn/2 in Code.compiler_options/1
@@ -5175,18 +5175,18 @@ warning: 0..-5 has a default step of -1, please write 0..-5//-1 instead
 Getting extensions in current project...
 Running migration for AshPostgres.DataLayer...
 
-09:42:01.355 [debug] QUERY OK source="organizations" db=1.2ms decode=2.2ms queue=34.7ms idle=0.0ms
+11:10:13.105 [debug] QUERY OK source="organizations" db=0.4ms decode=4.1ms queue=25.4ms idle=0.0ms
 SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
 
-09:42:01.381 [info] Migrations already up
+11:10:13.145 [info] Migrations already up
 
-09:42:01.385 [info] Migrations already up
+11:10:13.149 [info] Migrations already up
 [info] GET /
 [debug] Processing with KgEduWeb.PageController.index/2
   Parameters: %{"path" => []}
   Pipelines: [:browser]
-[info] Sent 200 in 17ms
+[info] Sent 200 in 3ms
 warning: :warnings_as_errors is deprecated as part of Code.get_compiler_option/1
   (elixir 1.18.4) lib/code.ex:1597: Code.get_compiler_option/1
   (elixir 1.18.4) lib/code.ex:1572: anonymous fn/2 in Code.compiler_options/1
@@ -7898,230 +7898,107 @@ warning: 0..-5 has a default step of -1, please write 0..-5//-1 instead
 [notice] Application idna exited: :stopped
 [notice] Application unicode_util_compat exited: :stopped
 [notice] Application eex exited: :stopped
-[notice] Application runtime_tools exited: :stopped
 ** (Mix) Could not start application kg_edu: KgEdu.Application.start(:normal, []) returned an error: shutdown: failed to start child: KgEduWeb.Endpoint
     ** (EXIT) shutdown: failed to start child: {KgEduWeb.Endpoint, :http}
         ** (EXIT) shutdown: failed to start child: :listener
             ** (EXIT) :eaddrinuse
+[notice] Application runtime_tools exited: :stopped
 [info] POST /rpc/run
+[info] POST /rpc/run
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_positions_by_major", "fields" => ["id", "title"], "input" => %{"majorId" => "05619edc-83d0-4701-a7a5-93524dd8cb5a"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_competencies_by_major", "fields" => ["id", "name"], "input" => %{"majorId" => "05619edc-83d0-4701-a7a5-93524dd8cb5a"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
 [debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
   Parameters: %{"action" => "get_major", "fields" => ["id", "name", "code", "college"], "input" => %{"id" => "05619edc-83d0-4701-a7a5-93524dd8cb5a"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
   Pipelines: [:api]
 [info] POST /rpc/run
 [debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "get_positions_by_major", "fields" => ["id", "title"], "input" => %{"majorId" => "05619edc-83d0-4701-a7a5-93524dd8cb5a"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
   Parameters: %{"action" => "list_email_messages", "fields" => ["id", "parentMessageId"], "filter" => %{"readStatus" => %{"eq" => "unread"}}, "page" => %{"count" => true, "limit" => 100}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
   Pipelines: [:api]
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "get_competencies_by_major", "fields" => ["id", "name"], "input" => %{"majorId" => "05619edc-83d0-4701-a7a5-93524dd8cb5a"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[debug] QUERY OK source="users" db=5.0ms idle=255.4ms
+[debug] QUERY OK source="users" db=2.1ms idle=164.8ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=3.1ms queue=0.7ms idle=102.3ms
+[debug] QUERY OK source="users" db=2.4ms idle=228.5ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=17.2ms idle=102.5ms
+[debug] QUERY OK source="users" db=2.6ms idle=228.5ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=18.5ms idle=256.0ms
+[debug] QUERY OK source="users" db=2.7ms idle=164.7ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="tokens" db=5.0ms idle=129.5ms
+[debug] QUERY OK source="tokens" db=1.0ms queue=0.4ms idle=173.4ms
 SELECT TRUE FROM "tokens" AS t0 WHERE (t0."purpose"::text = $1::text) AND (t0."jti"::text = $2::text) LIMIT 1 ["revocation", "32o97tdte3047piki40003p2"]
 [90m↳ anonymous fn/5 in AshSql.AggregateQuery.add_single_aggs/5, at: lib/aggregate_query.ex:123[0m
-[debug] QUERY OK source="tokens" db=7.6ms queue=0.2ms idle=123.3ms
+[debug] QUERY OK source="tokens" db=1.6ms queue=0.2ms idle=173.4ms
 SELECT TRUE FROM "tokens" AS t0 WHERE (t0."purpose"::text = $1::text) AND (t0."jti"::text = $2::text) LIMIT 1 ["revocation", "32o97tdte3047piki40003p2"]
 [90m↳ anonymous fn/5 in AshSql.AggregateQuery.add_single_aggs/5, at: lib/aggregate_query.ex:123[0m
-[debug] QUERY OK source="tokens" db=8.8ms queue=0.5ms idle=130.4ms
+[debug] QUERY OK source="tokens" db=2.2ms idle=165.9ms
 SELECT TRUE FROM "tokens" AS t0 WHERE (t0."purpose"::text = $1::text) AND (t0."jti"::text = $2::text) LIMIT 1 ["revocation", "32o97tdte3047piki40003p2"]
 [90m↳ anonymous fn/5 in AshSql.AggregateQuery.add_single_aggs/5, at: lib/aggregate_query.ex:123[0m
-[debug] QUERY OK source="tokens" db=0.6ms idle=37.1ms
-SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 01:43:05.374920Z]]
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="tokens" db=10.2ms idle=120.4ms
+[debug] QUERY OK source="tokens" db=3.3ms idle=163.5ms
 SELECT TRUE FROM "tokens" AS t0 WHERE (t0."purpose"::text = $1::text) AND (t0."jti"::text = $2::text) LIMIT 1 ["revocation", "32o97tdte3047piki40003p2"]
 [90m↳ anonymous fn/5 in AshSql.AggregateQuery.add_single_aggs/5, at: lib/aggregate_query.ex:123[0m
-[debug] QUERY OK source="tokens" db=4.9ms idle=122.0ms
-SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 01:43:05.371168Z]]
+[debug] QUERY OK source="tokens" db=1.1ms idle=161.6ms
+SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 03:10:25.149953Z]]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="tokens" db=7.7ms queue=0.2ms idle=119.8ms
-SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 01:43:05.373921Z]]
+[debug] QUERY OK source="tokens" db=1.8ms idle=9.8ms
+SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 03:10:25.150337Z]]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=6.9ms idle=27.8ms
+[debug] QUERY OK source="users" db=0.4ms idle=11.8ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 WHERE (u0."id"::uuid = $1::uuid) ["c3d75e36-0cfe-44a9-8875-d7b560c2256b"]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="tokens" db=10.0ms idle=38.5ms
-SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 01:43:05.376448Z]]
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=8.4ms idle=27.6ms
+[debug] QUERY OK source="users" db=0.5ms idle=11.7ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 WHERE (u0."id"::uuid = $1::uuid) ["c3d75e36-0cfe-44a9-8875-d7b560c2256b"]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=7.0ms idle=14.0ms
+[debug] QUERY OK source="tokens" db=3.2ms idle=160.2ms
+SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 03:10:25.149904Z]]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="tokens" db=1.9ms idle=11.0ms
+SELECT t0."updated_at", t0."subject", t0."expires_at", t0."purpose", t0."extra_data", t0."created_at", t0."jti" FROM "tokens" AS t0 WHERE (t0."jti"::text = $1::text) AND (t0."purpose"::text = $2::text) AND (t0."expires_at"::timestamp > $3::timestamp::timestamp) ["32o97tdte3047piki40003p2", "user", ~U[2026-05-19 03:10:25.151603Z]]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="users" db=0.9ms idle=4.6ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 WHERE (u0."id"::uuid = $1::uuid) ["c3d75e36-0cfe-44a9-8875-d7b560c2256b"]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="users" db=7.8ms queue=0.2ms idle=17.8ms
+[debug] QUERY OK source="users" db=1.5ms idle=4.9ms
 SELECT u0."id", u0."major", u0."name", u0."role", u0."avatar_url", u0."email", u0."member_id", u0."phone", u0."school", u0."colledge", u0."class_id", u0."job_title", u0."bio", u0."hashed_password" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."users" AS u0 WHERE (u0."id"::uuid = $1::uuid) ["c3d75e36-0cfe-44a9-8875-d7b560c2256b"]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="majors" db=5.0ms idle=37.3ms
+[debug] QUERY OK source="majors" db=1.1ms queue=0.2ms idle=8.7ms
 SELECT m0."code", m0."id", m0."name", m0."college" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."majors" AS m0 WHERE (m0."id"::uuid = $1::uuid) ["05619edc-83d0-4701-a7a5-93524dd8cb5a"]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="major_competencies" db=8.0ms idle=37.4ms
-SELECT m0."id", m0."name" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."major_competencies" AS m0 WHERE (m0."major_id"::uuid = $1::uuid) ["05619edc-83d0-4701-a7a5-93524dd8cb5a"]
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 117ms
-[debug] QUERY OK source="job_positions" db=4.4ms idle=41.2ms
+[debug] QUERY OK source="job_positions" db=0.9ms idle=6.7ms
 SELECT j0."id", j0."title" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."job_positions" AS j0 WHERE (j0."major_id"::uuid = $1::uuid) ["05619edc-83d0-4701-a7a5-93524dd8cb5a"]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 94ms
-[info] Sent 200 in 109ms
-[debug] QUERY OK source="email_messages" db=4.6ms idle=37.9ms
+[info] Sent 200 in 24ms
+[info] Sent 200 in 24ms
+[debug] QUERY OK source="email_messages" db=1.1ms queue=0.1ms idle=7.6ms
 SELECT e0."id", e0."parent_message_id" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."email_messages" AS e0 WHERE (e0."read_status"::varchar = $1::varchar) ORDER BY e0."id" LIMIT $2 [:unread, 101]
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[debug] QUERY OK source="email_messages" db=5.1ms idle=43.1ms
+[debug] QUERY OK source="major_competencies" db=1.3ms idle=6.0ms
+SELECT m0."id", m0."name" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."major_competencies" AS m0 WHERE (m0."major_id"::uuid = $1::uuid) ["05619edc-83d0-4701-a7a5-93524dd8cb5a"]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="email_messages" db=1.7ms idle=7.7ms
 SELECT coalesce(count(*), $1::bigint)::bigint FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."email_messages" AS e0 WHERE (e0."read_status"::varchar = $2::varchar) [0, :unread]
 [90m↳ anonymous fn/5 in AshSql.AggregateQuery.add_single_aggs/5, at: lib/aggregate_query.ex:251[0m
-[info] Sent 200 in 109ms
-[info] GET /api/json/open_api
-[debug] Processing with KgEduWeb.AshJsonApiRouter
-  Parameters: %{}
-  Pipelines: [:api]
-[info] Sent 200 in 358ms
-[info] GET /api/json/open_api
-[debug] Processing with KgEduWeb.AshJsonApiRouter
-  Parameters: %{}
-  Pipelines: [:api]
-[info] Sent 200 in 159ms
-[info] GET /api/json/open_api
-[debug] Processing with KgEduWeb.AshJsonApiRouter
-  Parameters: %{}
-  Pipelines: [:api]
-[info] Sent 200 in 172ms
-[info] GET /api/json/open_api
-[debug] Processing with KgEduWeb.AshJsonApiRouter
-  Parameters: %{}
-  Pipelines: [:api]
-[info] Sent 200 in 171ms
-[info] GET /api/json/open_api
-[debug] Processing with KgEduWeb.AshJsonApiRouter
-  Parameters: %{}
-  Pipelines: [:api]
-[info] Sent 200 in 159ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 5}}
-  Pipelines: [:api]
-[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: nil, authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
-[info] COURSE LIST: actor is nil
-[info] COURSE LIST: No access for actor: nil
-[info] Sent 200 in 48ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 3}, "tenant" => "public"}
-  Pipelines: [:api]
-[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "public", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
-[info] COURSE LIST: actor is nil
-[info] COURSE LIST: No access for actor: nil
-[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
-
-[info] Sent 200 in 9ms
+[info] Sent 200 in 25ms
+[info] Sent 200 in 26ms
 [info] GET /api/json/organizations
 [debug] Processing with KgEduWeb.AshJsonApiRouter
   Parameters: %{}
   Pipelines: [:api]
-[debug] QUERY OK source="organizations" db=2.7ms queue=3.2ms idle=238.1ms
+[debug] QUERY OK source="organizations" db=4.7ms idle=894.2ms
 SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 43ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 3}, "tenant" => "org_education"}
-  Pipelines: [:api]
-[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_education", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
-[info] COURSE LIST: actor is nil
-[info] COURSE LIST: No access for actor: nil
-[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
-
-[info] Sent 200 in 3ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester", "publishStatus"], "page" => %{"limit" => 5}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_2af44c7b_081a_497a_9858_365fa90ad5d7", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
-[info] COURSE LIST: actor is nil
-[info] COURSE LIST: No access for actor: nil
-[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
-
 [info] Sent 200 in 10ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 5}, "tenant" => "org_c4517dff_c56e_4f12_a58d_f6e9393bd3bd"}
+[info] GET /api/json/organizations
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
   Pipelines: [:api]
-[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_c4517dff_c56e_4f12_a58d_f6e9393bd3bd", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
-[info] COURSE LIST: actor is nil
-[info] COURSE LIST: No access for actor: nil
-[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
-
-[info] Sent 200 in 4ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "major", "semester"], "tenant" => "org_852653ef_a34e_4c67_a7b3_42a760ab467a"}
-  Pipelines: [:api]
-[debug] QUERY ERROR source="courses" db=0.0ms queue=7.4ms idle=583.7ms
-SELECT c0."id", c0."major", c0."title", c0."semester" FROM "org_852653ef_a34e_4c67_a7b3_42a760ab467a"."courses" AS c0 []
+[debug] QUERY OK source="organizations" db=1.2ms idle=1532.9ms
+SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 15ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 5}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_2af44c7b_081a_497a_9858_365fa90ad5d7", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
-[info] COURSE LIST: actor is nil
-[info] COURSE LIST: No access for actor: nil
-[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
-
-[info] Sent 200 in 4ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "major", "semester", "publishStatus"], "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[debug] QUERY OK source="courses" db=2.9ms queue=6.5ms idle=1171.4ms
-SELECT c0."id", c0."major", c0."title", c0."semester", c0."publish_status" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."courses" AS c0 []
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 22ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "major", "semester", "publishStatus"], "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[debug] QUERY OK source="courses" db=3.2ms idle=1587.8ms
-SELECT c0."id", c0."major", c0."title", c0."semester", c0."publish_status" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."courses" AS c0 []
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 10ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_knowledges", "fields" => ["id", "name", "description", "courseId"], "page" => %{"limit" => 3}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[debug] QUERY OK source="knowledge_resources" db=4.4ms queue=6.2ms idle=1954.1ms
-SELECT k0."id", k0."name", k0."description", k0."course_id" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."knowledge_resources" AS k0 ORDER BY k0."id" LIMIT $1 [4]
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 19ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionType", "difficulty"], "page" => %{"limit" => 3}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[debug] QUERY OK source="exercises" db=4.2ms queue=6.8ms idle=1711.5ms
-SELECT e0."id", e0."title", e0."question_type", e0."difficulty" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 ORDER BY e0."id" LIMIT $1 [4]
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 17ms
-[info] POST /rpc/run
-[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
-  Parameters: %{"action" => "list_exams", "fields" => ["id", "title", "courseId"], "page" => %{"limit" => 3}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
-  Pipelines: [:api]
-[debug] QUERY OK source="exams" db=4.4ms queue=3.3ms idle=839.9ms
-SELECT e0."id", e0."title", e0."course_id", e0."inserted_at" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exams" AS e0 ORDER BY e0."inserted_at" DESC, e0."id" LIMIT $1 [4]
-[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
-[info] Sent 200 in 13ms
+[info] Sent 200 in 5ms

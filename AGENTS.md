@@ -23,10 +23,11 @@
 - **API 生成**: `mix ash.codegen <task>`
 
 ### 3. AI Agent
-- **路径**: `ai-agent/KgAgent/`
-- **技术栈**: .NET (C#)
-- **端口**: `http://localhost:5000` 或 `http://localhost:5001`
-- **启动命令**: `dotnet run --project KgAgent.csproj`
+- **路径**: `agent-server/`
+- **技术栈**: Node.js + Pi SDK (TypeScript) + Express
+- **端口**: `http://localhost:5050`
+- **启动命令**: `bun run src/server.ts`
+- **依赖**: Phoenix 后端 (RPC), .NET Agent (PPTX/DOCX 生成过渡期)
 
 ## 服务管理 (dev.sh)
 
