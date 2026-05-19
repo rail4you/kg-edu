@@ -76,7 +76,32 @@ export function getUserId(): string {
   return currentUserId;
 }
 
-// ---- 通用 RPC 请求 ----
+// ---- 通用 RPC 请求 (导出供其他模块使用) ----
+
+export async function callRpc(action: string, payload: Record<string, unknown>): Promise<any> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const tenant = payload.tenant as string || currentOrgSchema;
+
+  if (currentAuthToken) {
+    headers["Authorization"] = `Bearer ${currentAuthToken}`;
+  }
+
+  const response = await fetch(`${BACKEND_URL}/rpc/run`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ action, tenant, ...payload }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`RPC ${action} failed (${response.status}): ${text}`);
+  }
+
+  const data = await response.json();
+  return data?.data ?? data;
+}
 
 interface RpcOptions {
   filter?: Record<string, unknown>;
@@ -378,7 +403,30 @@ export async function generatePptx(params: {
   userRequirements?: string;
   userId?: string;
 }): Promise<{ success: boolean; fileUrl?: string; fileId?: string; error?: string }> {
-  return agentPost("/agent/skills/generate-pptx", params) as any;
+  // 使用本地 Node.js PPTX 生成 (不再依赖 .NET Agent)
+  const { generatePptxAndUpload } = await import("../lib/pptx.js");
+
+  // 如果有知识资源，获取知识资源列表来构建 slide
+  const knowledgePoints: string[] = [];
+  if (params.knowledgeName) {
+    knowledgePoints.push(params.knowledgeName);
+  }
+
+  // 默认使用 courseName 作为知识点
+  if (knowledgePoints.length === 0) {
+    knowledgePoints.push(params.courseName);
+  }
+
+  // 如果没有预设 slides，LLM 已经在 agent 工具中构建了，这里作为直接 API 调用 fallback
+  const slides = [{
+    title: params.courseName,
+    content: params.userRequirements || `关于${params.courseName}的教学内容`,
+  }];
+
+  return generatePptxAndUpload(
+    { courseName: params.courseName, knowledgePoints, slides, author: params.author },
+    params.orgSchema, params.userId, params.courseId, params.knowledgeResourceId
+  );
 }
 
 export async function generateDocx(params: {
@@ -389,7 +437,17 @@ export async function generateDocx(params: {
   userId?: string;
   knowledgeResourceId?: string;
 }): Promise<{ success: boolean; fileUrl?: string; fileId?: string; error?: string }> {
-  return agentPost("/agent/skills/generate-docx", params) as any;
+  // 使用本地 Node.js DOCX 生成 (不再依赖 .NET Agent)
+  const { generateDocxAndUpload } = await import("../lib/docx.js");
+
+  return generateDocxAndUpload(
+    params.content,
+    params.orgSchema,
+    params.courseId,
+    params.fileName,
+    params.userId,
+    params.knowledgeResourceId
+  );
 }
 
 export async function generateExercises(params: {
@@ -403,5 +461,7 @@ export async function generateExercises(params: {
     difficulty: number;
   };
 }): Promise<{ success: boolean; data?: unknown; message?: string; error?: string }> {
+  // TODO: 迁移练习生成到 Node.js
+  // 暂时仍调用 .NET Agent
   return agentPost("/agent/generate_ai_exercise", params) as any;
 }

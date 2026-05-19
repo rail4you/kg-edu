@@ -8002,3 +8002,13 @@ SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
 SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
 [90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
 [info] Sent 200 in 5ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_file", "fields" => ["id"], "input" => %{"createdById" => "test", "fileType" => "pptx", "filename" => "设计表现基础_色彩理论_幻灯片.pptx", "path" => "https://kg-edu.oss-cn-beijing.aliyuncs.com/uploads/20260519033824/设计表现基础_色彩理论_幻灯片.pptx", "purpose" => "ai_generated", "size" => 59905, "source" => "ai_generated"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[info] Sent 200 in 98ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_file", "fields" => ["id"], "input" => %{"courseId" => "test-course", "fileType" => "docx", "filename" => "test_教案.docx", "path" => "https://kg-edu.oss-cn-beijing.aliyuncs.com/uploads/20260519033825/e96be948-9dd3-4f8e-94cc-39b21b48e0bc.docx", "purpose" => "ai_generated", "size" => 10776, "source" => "ai_generated"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[info] Sent 200 in 4ms

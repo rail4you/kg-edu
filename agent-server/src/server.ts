@@ -259,20 +259,17 @@ app.post("/api/skills/generate-pptx", async (req, res) => {
 
   setTenantContext(effectiveSchema, body.userId);
   try {
-    const result = await (await import("./tools/index.js")).generatePptxTool;
-    // 直接调用 .NET Agent 后端的 PPTX 生成
-    const { generatePptx } = await import("./lib/api-client.js");
-    const pptxResult = await generatePptx({
-      orgSchema: effectiveSchema,
-      courseName: body.courseName,
-      knowledgeName: body.knowledgeName,
-      courseId: body.courseId,
-      knowledgeResourceId: body.knowledgeResourceId,
-      author: body.author,
-      userRequirements: body.userRequirements,
-      userId: body.userId,
-    });
-    res.json(pptxResult);
+    const { generatePptxAndUpload } = await import("./lib/pptx.js");
+    const result = await generatePptxAndUpload(
+      {
+        courseName: body.courseName,
+        knowledgePoints: body.knowledgeName ? [body.knowledgeName] : [body.courseName],
+        slides: [{ title: body.courseName, content: body.userRequirements || `关于${body.courseName}的教学内容` }],
+        author: body.author,
+      },
+      effectiveSchema, body.userId, body.courseId, body.knowledgeResourceId
+    );
+    res.json(result);
   } catch (err: any) {
     console.error("[agent-server] PPTX error:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -302,15 +299,10 @@ app.post("/api/skills/generate-docx", async (req, res) => {
 
   setTenantContext(effectiveSchema, body.userId);
   try {
-    const { generateDocx } = await import("./lib/api-client.js");
-    const result = await generateDocx({
-      orgSchema: effectiveSchema,
-      content: body.content,
-      courseId: body.courseId,
-      fileName: body.fileName,
-      userId: body.userId,
-      knowledgeResourceId: body.knowledgeResourceId,
-    });
+    const { generateDocxAndUpload } = await import("./lib/docx.js");
+    const result = await generateDocxAndUpload(
+      body.content, effectiveSchema, body.courseId, body.fileName, body.userId, body.knowledgeResourceId
+    );
     res.json(result);
   } catch (err: any) {
     console.error("[agent-server] DOCX error:", err);

@@ -32,3 +32,47 @@ error: Failed to start server. Is port 3000 in use?
 [CopilotKit] Handling POST /api/copilotkit/
 [handleCopilotKitWithStreams] Storing header for forwarding: authorization
 [handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema
+11:29:29 AM [vite] vite.config.ts changed, restarting server...
+11:29:29 AM [vite] server restarted.
+[Agent Config] AGENT_URL env: (not set)
+[Agent Config] Default agent URL: http://127.0.0.1:5050/agui
+[Agent Config] CSHARP_AGENT_URL: http://127.0.0.1:8000
+[Agent Config] ASSISTANT_AGENT_MODE: pi
+[Agent Config] AGENT_URL env: (not set)
+[Agent Config] Default agent URL: http://127.0.0.1:5050/agui
+[Agent Config] CSHARP_AGENT_URL: http://127.0.0.1:8000
+[Agent Config] ASSISTANT_AGENT_MODE: pi
+Server running on http://127.0.0.1:3000
+Server running on http://127.0.0.1:3000
+Started development server: http://localhost:3000
+20 | } else if (typeof entryNamespace?.default?.fetch === 'function' || entryNamespace?.default?.app != undefined) {
+21 |    var server = globalThis[hmrSymbol];
+22 |    if (server) {
+23 |       server.reload(entryNamespace.default);
+24 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+25 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+               ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:25:49
+[Agent Config] AGENT_URL env: (not set)
+[Agent Config] Default agent URL: http://127.0.0.1:5050/agui
+[Agent Config] CSHARP_AGENT_URL: http://127.0.0.1:8000
+[Agent Config] ASSISTANT_AGENT_MODE: pi
+Server running on http://127.0.0.1:3000
+20 | } else if (typeof entryNamespace?.default?.fetch === 'function' || entryNamespace?.default?.app != undefined) {
+21 |    var server = globalThis[hmrSymbol];
+22 |    if (server) {
+23 |       server.reload(entryNamespace.default);
+24 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+25 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+               ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:25:49
