@@ -8144,3 +8144,55 @@ SELECT e0."id", e0."position" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."e
 INSERT INTO "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" ("id","position","options","title","course_id","inserted_at","updated_at","question_content","answer","question_type","ai_type","difficulty","answer_explanation") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "created_by_id","course_id","knowledge_resource_id","updated_at","inserted_at","answer_explanation","position","difficulty","ai_type","options","question_type","answer","question_content","title","id" ["9a3b0603-834b-47be-b87c-96cb26dd33b3", 1, %{"choices" => ["A. 绿色", "B. 蓝色", "C. 橙色", "D. 紫色"]}, "传统RYB色轮中红色的互补色识别", "00000000-0000-0000-0000-000000000001", ~U[2026-05-19 07:39:47.608809Z], ~U[2026-05-19 07:39:47.608809Z], "在传统的红黄蓝（RYB）色彩模型中，红色的互补色（对比色）是以下哪种颜色？", "A", :multiple_choice, :ai_generated, 2, "在传统的红黄蓝（RYB）色彩模型（常用于传统美术和绘画）的色相环中，红色和绿色处于直径两端相对的位置，互为互补色。互补色并置时会产生最强烈的视觉对比。选项B的互补色是橙色，选项C的互补色是紫色。"]
 [90m↳ AshPostgres.DataLayer.bulk_create/3, at: lib/data_layer.ex:2040[0m
 [info] Sent 200 in 47ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=6.6ms idle=1677.9ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 41ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=1.6ms idle=757.9ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 9ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_exercise", "fields" => ["id", "title"], "input" => %{"ai_type" => "ai_generated", "answer" => "C", "answer_explanation" => "在减法混色系统（如绘画、印刷）中，色料三原色是青（Cyan）、品红（Magenta）、黄（Yellow），即CMY模型的基础。虽然红、黄、蓝常被通俗称为‘美术三原色’，但严格从科学色彩理论和实际色料混合效果看，红（尤其是大红）与蓝混合难以得到纯净紫，而品红+青才能实现更广色域；现代标准已明确采用CMY作为减法三原色。选项A（红、绿、蓝）是加法混色（光的三原色）；选项B（橙、绿、紫）为间色，非原色；选项D（黑、白、灰）属于无彩色系，不参与色相混合。", "course_id" => "00000000-0000-0000-0000-000000000001", "difficulty" => 2, "options" => "{\"choices\":[\"A. 红、绿、蓝\",\"B. 橙、绿、紫\",\"C. 青、品红、黄\",\"D. 黑、白、灰\"]}", "question_content" => "在传统美术（减法混色）色彩理论中，以下哪一组被公认为色料三原色？", "question_type" => "multiple_choice", "title" => "色彩理论中的三原色辨析"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=5.0ms idle=1717.7ms
+SELECT e0."id", e0."position", e0."options", e0."title", e0."course_id", e0."inserted_at", e0."updated_at", e0."created_by_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."ai_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="exercises" db=0.5ms idle=1724.7ms
+SELECT e0."id", e0."position" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."position" DESC LIMIT $2 ["00000000-0000-0000-0000-000000000001", 1]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY ERROR source="exercises" db=5.5ms idle=1726.6ms
+INSERT INTO "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" ("id","position","options","title","course_id","inserted_at","updated_at","question_content","answer","question_type","ai_type","difficulty","answer_explanation") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "created_by_id","course_id","knowledge_resource_id","updated_at","inserted_at","answer_explanation","position","difficulty","ai_type","options","question_type","answer","question_content","title","id" ["490e48d7-f709-49e9-ac02-34f5fbda9be3", 1, %{"choices" => ["A. 红、绿、蓝", "B. 橙、绿、紫", "C. 青、品红、黄", "D. 黑、白、灰"]}, "色彩理论中的三原色辨析", "00000000-0000-0000-0000-000000000001", ~U[2026-05-19 08:49:26.214789Z], ~U[2026-05-19 08:49:26.214789Z], "在传统美术（减法混色）色彩理论中，以下哪一组被公认为色料三原色？", "C", :multiple_choice, :ai_generated, 2, "在减法混色系统（如绘画、印刷）中，色料三原色是青（Cyan）、品红（Magenta）、黄（Yellow），即CMY模型的基础。虽然红、黄、蓝常被通俗称为‘美术三原色’，但严格从科学色彩理论和实际色料混合效果看，红（尤其是大红）与蓝混合难以得到纯净紫，而品红+青才能实现更广色域；现代标准已明确采用CMY作为减法三原色。选项A（红、绿、蓝）是加法混色（光的三原色）；选项B（橙、绿、紫）为间色，非原色；选项D（黑、白、灰）属于无彩色系，不参与色相混合。"]
+[90m↳ AshPostgres.DataLayer.bulk_create/3, at: lib/data_layer.ex:2040[0m
+[info] Sent 200 in 20ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=3.6ms idle=1461.5ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 21ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_exercise", "fields" => ["id", "title"], "input" => %{"ai_type" => "ai_generated", "answer" => "C", "answer_explanation" => "形式美法则是设计基础的核心内容之一，主要包括对称与均衡、对比与调和、节奏与韵律、比例与尺度等。'功能优先性'是现代主义设计原则（如‘形式追随功能’）的重要理念，属于设计哲学或方法论层面，而非形式美法则本身所涵盖的视觉组织规律。因此C选项不属于形式美法则的基本范畴。", "course_id" => "00000000-0000-0000-0000-000000000001", "difficulty" => 2, "options" => "{\"choices\":[\"A. 对称与均衡\",\"B. 节奏与韵律\",\"C. 功能优先性\",\"D. 比例与尺度\"]}", "question_content" => "在设计基础中，以下哪一项不属于形式美法则的基本范畴？", "question_type" => "multiple_choice", "title" => "设计基础中的形式美法则辨析"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=2.8ms idle=1124.4ms
+SELECT e0."id", e0."position", e0."options", e0."title", e0."course_id", e0."inserted_at", e0."updated_at", e0."created_by_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."ai_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="exercises" db=4.9ms idle=1128.5ms
+SELECT e0."id", e0."position" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."position" DESC LIMIT $2 ["00000000-0000-0000-0000-000000000001", 1]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY ERROR source="exercises" db=16.2ms queue=2.6ms idle=1134.7ms
+INSERT INTO "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" ("id","position","options","title","course_id","inserted_at","updated_at","question_content","answer","question_type","ai_type","difficulty","answer_explanation") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "created_by_id","course_id","knowledge_resource_id","updated_at","inserted_at","answer_explanation","position","difficulty","ai_type","options","question_type","answer","question_content","title","id" ["f1662044-6889-4aca-8d8f-23a527e1007e", 1, %{"choices" => ["A. 对称与均衡", "B. 节奏与韵律", "C. 功能优先性", "D. 比例与尺度"]}, "设计基础中的形式美法则辨析", "00000000-0000-0000-0000-000000000001", ~U[2026-05-19 08:50:00.622659Z], ~U[2026-05-19 08:50:00.622659Z], "在设计基础中，以下哪一项不属于形式美法则的基本范畴？", "C", :multiple_choice, :ai_generated, 2, "形式美法则是设计基础的核心内容之一，主要包括对称与均衡、对比与调和、节奏与韵律、比例与尺度等。'功能优先性'是现代主义设计原则（如‘形式追随功能’）的重要理念，属于设计哲学或方法论层面，而非形式美法则本身所涵盖的视觉组织规律。因此C选项不属于形式美法则的基本范畴。"]
+[90m↳ AshPostgres.DataLayer.bulk_create/3, at: lib/data_layer.ex:2040[0m
+[info] Sent 200 in 35ms

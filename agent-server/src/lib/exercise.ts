@@ -25,11 +25,12 @@ interface LlmConfig {
 }
 
 function getLlmConfig(): LlmConfig {
-  // 1. 环境变量优先
+  // 1. 环境变量
   const envKey = process.env.QWEN_API_KEY;
   const envUrl = process.env.QWEN_BASE_URL;
+  const envModel = process.env.QWEN_MODEL;
   if (envKey && envUrl) {
-    return { baseUrl: envUrl, apiKey: envKey, model: process.env.QWEN_MODEL || "qwen-plus" };
+    return { baseUrl: envUrl, apiKey: envKey, model: envModel || "qwen-plus" };
   }
 
   // 2. 读 Pi Agent models.json
@@ -37,14 +38,13 @@ function getLlmConfig(): LlmConfig {
   try {
     const raw = fs.readFileSync(modelsPath, "utf-8");
     const config = JSON.parse(raw);
-    const providers = ["zai", "minimax"];
-    for (const name of providers) {
-      const p = config.providers?.[name];
-      if (p?.apiKey && p?.baseUrl) {
-        const model = p.models?.[0]?.id;
+    for (const [name, p] of Object.entries(config.providers || {})) {
+      const prov = p as any;
+      if (prov?.apiKey && prov?.baseUrl) {
+        const model = prov.models?.[0]?.id;
         if (model) {
           console.log(`[exercise] Using LLM: ${name}/${model}`);
-          return { baseUrl: p.baseUrl, apiKey: p.apiKey, model };
+          return { baseUrl: prov.baseUrl, apiKey: prov.apiKey, model };
         }
       }
     }
