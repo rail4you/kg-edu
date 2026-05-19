@@ -7986,3 +7986,142 @@ SELECT e0."id", e0."parent_message_id" FROM "org_2af44c7b_081a_497a_9858_365fa90
 SELECT coalesce(count(*), $1::bigint)::bigint FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."email_messages" AS e0 WHERE (e0."read_status"::varchar = $2::varchar) [0, :unread]
 [90m↳ anonymous fn/5 in AshSql.AggregateQuery.add_single_aggs/5, at: lib/aggregate_query.ex:251[0m
 [info] Sent 200 in 109ms
+[info] GET /api/json/open_api
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
+  Pipelines: [:api]
+[info] Sent 200 in 358ms
+[info] GET /api/json/open_api
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
+  Pipelines: [:api]
+[info] Sent 200 in 159ms
+[info] GET /api/json/open_api
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
+  Pipelines: [:api]
+[info] Sent 200 in 172ms
+[info] GET /api/json/open_api
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
+  Pipelines: [:api]
+[info] Sent 200 in 171ms
+[info] GET /api/json/open_api
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
+  Pipelines: [:api]
+[info] Sent 200 in 159ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 5}}
+  Pipelines: [:api]
+[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: nil, authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
+[info] COURSE LIST: actor is nil
+[info] COURSE LIST: No access for actor: nil
+[info] Sent 200 in 48ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 3}, "tenant" => "public"}
+  Pipelines: [:api]
+[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "public", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
+[info] COURSE LIST: actor is nil
+[info] COURSE LIST: No access for actor: nil
+[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
+
+[info] Sent 200 in 9ms
+[info] GET /api/json/organizations
+[debug] Processing with KgEduWeb.AshJsonApiRouter
+  Parameters: %{}
+  Pipelines: [:api]
+[debug] QUERY OK source="organizations" db=2.7ms queue=3.2ms idle=238.1ms
+SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 43ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 3}, "tenant" => "org_education"}
+  Pipelines: [:api]
+[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_education", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
+[info] COURSE LIST: actor is nil
+[info] COURSE LIST: No access for actor: nil
+[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
+
+[info] Sent 200 in 3ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester", "publishStatus"], "page" => %{"limit" => 5}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_2af44c7b_081a_497a_9858_365fa90ad5d7", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
+[info] COURSE LIST: actor is nil
+[info] COURSE LIST: No access for actor: nil
+[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
+
+[info] Sent 200 in 10ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 5}, "tenant" => "org_c4517dff_c56e_4f12_a58d_f6e9393bd3bd"}
+  Pipelines: [:api]
+[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_c4517dff_c56e_4f12_a58d_f6e9393bd3bd", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
+[info] COURSE LIST: actor is nil
+[info] COURSE LIST: No access for actor: nil
+[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
+
+[info] Sent 200 in 4ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "major", "semester"], "tenant" => "org_852653ef_a34e_4c67_a7b3_42a760ab467a"}
+  Pipelines: [:api]
+[debug] QUERY ERROR source="courses" db=0.0ms queue=7.4ms idle=583.7ms
+SELECT c0."id", c0."major", c0."title", c0."semester" FROM "org_852653ef_a34e_4c67_a7b3_42a760ab467a"."courses" AS c0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 15ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_courses", "fields" => ["id", "title", "major", "semester"], "page" => %{"limit" => 5}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[info] COURSE LIST: context is %Ash.Resource.Preparation.Context{actor: nil, tenant: "org_2af44c7b_081a_497a_9858_365fa90ad5d7", authorize?: true, tracer: nil, source_context: %{private: %{actor: nil, authorize?: true}}}
+[info] COURSE LIST: actor is nil
+[info] COURSE LIST: No access for actor: nil
+[debug] KgEdu.Courses.Course.read: skipped query run due to filter being false"
+
+[info] Sent 200 in 4ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "major", "semester", "publishStatus"], "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="courses" db=2.9ms queue=6.5ms idle=1171.4ms
+SELECT c0."id", c0."major", c0."title", c0."semester", c0."publish_status" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."courses" AS c0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 22ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "major", "semester", "publishStatus"], "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="courses" db=3.2ms idle=1587.8ms
+SELECT c0."id", c0."major", c0."title", c0."semester", c0."publish_status" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."courses" AS c0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 10ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_knowledges", "fields" => ["id", "name", "description", "courseId"], "page" => %{"limit" => 3}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="knowledge_resources" db=4.4ms queue=6.2ms idle=1954.1ms
+SELECT k0."id", k0."name", k0."description", k0."course_id" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."knowledge_resources" AS k0 ORDER BY k0."id" LIMIT $1 [4]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 19ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionType", "difficulty"], "page" => %{"limit" => 3}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=4.2ms queue=6.8ms idle=1711.5ms
+SELECT e0."id", e0."title", e0."question_type", e0."difficulty" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 ORDER BY e0."id" LIMIT $1 [4]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 17ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exams", "fields" => ["id", "title", "courseId"], "page" => %{"limit" => 3}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exams" db=4.4ms queue=3.3ms idle=839.9ms
+SELECT e0."id", e0."title", e0."course_id", e0."inserted_at" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exams" AS e0 ORDER BY e0."inserted_at" DESC, e0."id" LIMIT $1 [4]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 13ms
