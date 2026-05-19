@@ -1,1 +1,41 @@
-$ bun run dev & bun run dev:server
+
+  VITE v6.4.2  ready in 301 ms
+
+  ➜  Local:   http://localhost:8081/
+  ➜  Network: http://192.168.31.101:8081/
+  ➜  Network: http://192.168.0.109:8081/
+  ➜  Network: http://192.168.139.3:8081/
+  ➜  Network: http://192.168.215.0:8081/
+  ➜  Network: http://198.18.0.1:8081/
+  ➜  Network: http://172.16.0.165:8081/
+[Agent Config] AGENT_URL env: (not set)
+[Agent Config] Default agent URL: http://127.0.0.1:5001/agui
+[Agent Config] CSHARP_AGENT_URL: http://127.0.0.1:8000
+[Agent Config] ASSISTANT_AGENT_MODE: pi
+Server running on http://127.0.0.1:3000
+20 | } else if (typeof entryNamespace?.default?.fetch === 'function' || entryNamespace?.default?.app != undefined) {
+21 |    var server = globalThis[hmrSymbol];
+22 |    if (server) {
+23 |       server.reload(entryNamespace.default);
+24 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+25 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+               ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:25:49
+9:43:03 AM [vite] (client) warning: Duplicate key "excelFile" in object literal
+7256|  export const importExcelZodschema = z.object({
+7257|    excelFile: z.string().optional(),
+7258|    excelFile: z.string().optional(),
+   |    ^
+7259|    role: z.string().optional(),
+7260|    attributes: z.array(z.string()).optional(),
+
+  Plugin: vite:esbuild
+  File: /Users/bai/projects/kg-edu/kg-edu-vite-antd/src/lib/ash_rpc.ts
+[CopilotKit] Handling POST /api/copilotkit/
+[handleCopilotKitWithStreams] Storing header for forwarding: authorization
+[handleCopilotKitWithStreams] Storing header for forwarding: x-org-schema

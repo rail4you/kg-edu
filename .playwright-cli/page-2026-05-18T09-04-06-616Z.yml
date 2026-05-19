@@ -1,0 +1,348 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6] [cursor=pointer]:
+      - img "课堂星" [ref=e8]
+      - generic [ref=e9]: 智慧教学系统 · 教师端
+    - generic [ref=e10]:
+      - generic [ref=e11] [cursor=pointer]:
+        - img "search" [ref=e13]:
+          - img [ref=e14]
+        - textbox "搜索菜单..." [ref=e16]
+      - img "bell" [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+      - img "bell" [ref=e22]:
+        - img [ref=e23]
+      - generic [ref=e25] [cursor=pointer]:
+        - img "book" [ref=e26]:
+          - img [ref=e27]
+        - generic [ref=e29]: 用户手册
+      - generic [ref=e30] [cursor=pointer]:
+        - img "user" [ref=e32]:
+          - img [ref=e33]
+        - generic [ref=e35]: 用户
+  - generic [ref=e38]:
+    - complementary [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e44] [cursor=pointer]: 功能导航
+        - menu [ref=e46]:
+          - menuitem "home 教师工作台 star" [ref=e47] [cursor=pointer]:
+            - generic [ref=e49]:
+              - generic [ref=e51]:
+                - img "home" [ref=e53]:
+                  - img [ref=e54]
+                - generic [ref=e56]: 教师工作台
+              - img "star" [ref=e58]:
+                - img [ref=e59]
+          - menuitem "user 个人中心" [expanded] [ref=e61] [cursor=pointer]:
+            - generic [ref=e63]:
+              - img "user" [ref=e65]:
+                - img [ref=e66]
+              - generic [ref=e68]: 个人中心
+          - menu [ref=e69]:
+            - menuitem "虚拟教研室 star" [ref=e70] [cursor=pointer]:
+              - generic [ref=e72]:
+                - generic [ref=e75]: 虚拟教研室
+                - img "star" [ref=e77]:
+                  - img [ref=e78]
+          - menuitem "robot AI工作台" [expanded] [ref=e80] [cursor=pointer]:
+            - generic [ref=e82]:
+              - img "robot" [ref=e84]:
+                - img [ref=e85]
+              - generic [ref=e87]: AI工作台
+          - menu [ref=e88]:
+            - menuitem "AI智能体助手 star" [ref=e89] [cursor=pointer]:
+              - generic [ref=e91]:
+                - generic [ref=e94]: AI智能体助手
+                - img "star" [ref=e96]:
+                  - img [ref=e97]
+            - menuitem "AI生成试题 star" [ref=e99] [cursor=pointer]:
+              - generic [ref=e101]:
+                - generic [ref=e104]: AI生成试题
+                - img "star" [ref=e106]:
+                  - img [ref=e107]
+            - menuitem "AI文件 star" [ref=e109] [cursor=pointer]:
+              - generic [ref=e111]:
+                - generic [ref=e114]: AI文件
+                - img "star" [ref=e116]:
+                  - img [ref=e117]
+            - menuitem "AI命令中心 star" [ref=e119] [cursor=pointer]:
+              - generic [ref=e121]:
+                - generic [ref=e124]: AI命令中心
+                - img "star" [ref=e126]:
+                  - img [ref=e127]
+          - menuitem "folder 课程管理" [expanded] [ref=e129] [cursor=pointer]:
+            - generic [ref=e131]:
+              - img "folder" [ref=e133]:
+                - img [ref=e134]
+              - generic [ref=e136]: 课程管理
+          - menu [ref=e137]:
+            - menuitem "课程管理 star" [ref=e138] [cursor=pointer]:
+              - generic [ref=e140]:
+                - generic [ref=e143]: 课程管理
+                - img "star" [ref=e145]:
+                  - img [ref=e146]
+            - menuitem "学科分类 star" [ref=e148] [cursor=pointer]:
+              - generic [ref=e150]:
+                - generic [ref=e153]: 学科分类
+                - img "star" [ref=e155]:
+                  - img [ref=e156]
+            - menuitem "分配课程 star" [ref=e158] [cursor=pointer]:
+              - generic [ref=e160]:
+                - generic [ref=e163]: 分配课程
+                - img "star" [ref=e165]:
+                  - img [ref=e166]
+            - menuitem "学生选课 star" [ref=e168] [cursor=pointer]:
+              - generic [ref=e170]:
+                - generic [ref=e173]: 学生选课
+                - img "star" [ref=e175]:
+                  - img [ref=e176]
+            - menuitem "课程信息 star" [ref=e178] [cursor=pointer]:
+              - generic [ref=e180]:
+                - generic [ref=e183]: 课程信息
+                - img "star" [ref=e185]:
+                  - img [ref=e186]
+            - menuitem "教材管理 star" [ref=e188] [cursor=pointer]:
+              - generic [ref=e190]:
+                - generic [ref=e193]: 教材管理
+                - img "star" [ref=e195]:
+                  - img [ref=e196]
+            - menuitem "链接管理 star" [ref=e198] [cursor=pointer]:
+              - generic [ref=e200]:
+                - generic [ref=e203]: 链接管理
+                - img "star" [ref=e205]:
+                  - img [ref=e206]
+            - menuitem "课程视频 star" [ref=e208] [cursor=pointer]:
+              - generic [ref=e210]:
+                - generic [ref=e213]: 课程视频
+                - img "star" [ref=e215]:
+                  - img [ref=e216]
+            - menuitem "课程评价管理 star" [ref=e218] [cursor=pointer]:
+              - generic [ref=e220]:
+                - generic [ref=e223]: 课程评价管理
+                - img "star" [ref=e225]:
+                  - img [ref=e226]
+            - menuitem "实时课程讨论 star" [ref=e228] [cursor=pointer]:
+              - generic [ref=e230]:
+                - generic [ref=e233]: 实时课程讨论
+                - img "star" [ref=e235]:
+                  - img [ref=e236]
+          - menuitem "book 知识点管理" [expanded] [ref=e238] [cursor=pointer]:
+            - generic [ref=e240]:
+              - img "book" [ref=e242]:
+                - img [ref=e243]
+              - generic [ref=e245]: 知识点管理
+          - menu [ref=e246]:
+            - menuitem "知识点管理 star" [ref=e247] [cursor=pointer]:
+              - generic [ref=e249]:
+                - generic [ref=e252]: 知识点管理
+                - img "star" [ref=e254]:
+                  - img [ref=e255]
+            - menuitem "知识关系管理 star" [ref=e257] [cursor=pointer]:
+              - generic [ref=e259]:
+                - generic [ref=e262]: 知识关系管理
+                - img "star" [ref=e264]:
+                  - img [ref=e265]
+            - menuitem "认知目标管理 star" [ref=e267] [cursor=pointer]:
+              - generic [ref=e269]:
+                - generic [ref=e272]: 认知目标管理
+                - img "star" [ref=e274]:
+                  - img [ref=e275]
+            - menuitem "知识点课程资源 star" [ref=e277] [cursor=pointer]:
+              - generic [ref=e279]:
+                - generic [ref=e282]: 知识点课程资源
+                - img "star" [ref=e284]:
+                  - img [ref=e285]
+          - menuitem "apartment 图谱管理" [expanded] [ref=e287] [cursor=pointer]:
+            - generic [ref=e289]:
+              - img "apartment" [ref=e291]:
+                - img [ref=e292]
+              - generic [ref=e294]: 图谱管理
+          - menu [ref=e295]:
+            - menuitem "课程图谱 star" [ref=e296] [cursor=pointer]:
+              - generic [ref=e298]:
+                - generic [ref=e301]: 课程图谱
+                - img "star" [ref=e303]:
+                  - img [ref=e304]
+            - menuitem "思政图谱 star" [ref=e306] [cursor=pointer]:
+              - generic [ref=e308]:
+                - generic [ref=e311]: 思政图谱
+                - img "star" [ref=e313]:
+                  - img [ref=e314]
+            - menuitem "能力图谱 star" [ref=e316] [cursor=pointer]:
+              - generic [ref=e318]:
+                - generic [ref=e321]: 能力图谱
+                - img "star" [ref=e323]:
+                  - img [ref=e324]
+          - menuitem "edit 教学资源" [expanded] [ref=e326] [cursor=pointer]:
+            - generic [ref=e328]:
+              - img "edit" [ref=e330]:
+                - img [ref=e331]
+              - generic [ref=e333]: 教学资源
+          - menu [ref=e334]:
+            - menuitem "章节管理 star" [ref=e335] [cursor=pointer]:
+              - generic [ref=e337]:
+                - generic [ref=e340]: 章节管理
+                - img "star" [ref=e342]:
+                  - img [ref=e343]
+            - menuitem "资源管理 star" [ref=e345] [cursor=pointer]:
+              - generic [ref=e347]:
+                - generic [ref=e350]: 资源管理
+                - img "star" [ref=e352]:
+                  - img [ref=e353]
+            - menuitem "视频管理 star" [ref=e355] [cursor=pointer]:
+              - generic [ref=e357]:
+                - generic [ref=e360]: 视频管理
+                - img "star" [ref=e362]:
+                  - img [ref=e363]
+            - menuitem "题库管理 star" [ref=e365] [cursor=pointer]:
+              - generic [ref=e367]:
+                - generic [ref=e370]: 题库管理
+                - img "star" [ref=e372]:
+                  - img [ref=e373]
+            - menuitem "问题管理 star" [ref=e375] [cursor=pointer]:
+              - generic [ref=e377]:
+                - generic [ref=e380]: 问题管理
+                - img "star" [ref=e382]:
+                  - img [ref=e383]
+            - menuitem "作业管理 star" [ref=e385] [cursor=pointer]:
+              - generic [ref=e387]:
+                - generic [ref=e390]: 作业管理
+                - img "star" [ref=e392]:
+                  - img [ref=e393]
+            - menuitem "考试管理 star" [ref=e395] [cursor=pointer]:
+              - generic [ref=e397]:
+                - generic [ref=e400]: 考试管理
+                - img "star" [ref=e402]:
+                  - img [ref=e403]
+            - menuitem "分组管理 star" [ref=e405] [cursor=pointer]:
+              - generic [ref=e407]:
+                - generic [ref=e410]: 分组管理
+                - img "star" [ref=e412]:
+                  - img [ref=e413]
+            - menuitem "分组任务 star" [ref=e415] [cursor=pointer]:
+              - generic [ref=e417]:
+                - generic [ref=e420]: 分组任务
+                - img "star" [ref=e422]:
+                  - img [ref=e423]
+            - menuitem "签到管理 star" [ref=e425] [cursor=pointer]:
+              - generic [ref=e427]:
+                - generic [ref=e430]: 签到管理
+                - img "star" [ref=e432]:
+                  - img [ref=e433]
+            - menuitem "实验管理 star" [ref=e435] [cursor=pointer]:
+              - generic [ref=e437]:
+                - generic [ref=e440]: 实验管理
+                - img "star" [ref=e442]:
+                  - img [ref=e443]
+          - menuitem "bar-chart 统计分析" [expanded] [ref=e445] [cursor=pointer]:
+            - generic [ref=e447]:
+              - img "bar-chart" [ref=e449]:
+                - img [ref=e450]
+              - generic [ref=e452]: 统计分析
+          - menu [ref=e453]:
+            - menuitem "课程数据统计 star" [ref=e454] [cursor=pointer]:
+              - generic [ref=e456]:
+                - generic [ref=e459]: 课程数据统计
+                - img "star" [ref=e461]:
+                  - img [ref=e462]
+            - menuitem "学习数据统计 star" [ref=e464] [cursor=pointer]:
+              - generic [ref=e466]:
+                - generic [ref=e469]: 学习数据统计
+                - img "star" [ref=e471]:
+                  - img [ref=e472]
+            - menuitem "学生学情画像 star" [ref=e474] [cursor=pointer]:
+              - generic [ref=e476]:
+                - generic [ref=e479]: 学生学情画像
+                - img "star" [ref=e481]:
+                  - img [ref=e482]
+            - menuitem "学习推荐分析 star" [ref=e484] [cursor=pointer]:
+              - generic [ref=e486]:
+                - generic [ref=e489]: 学习推荐分析
+                - img "star" [ref=e491]:
+                  - img [ref=e492]
+            - menuitem "活动总结 star" [ref=e494] [cursor=pointer]:
+              - generic [ref=e496]:
+                - generic [ref=e499]: 活动总结
+                - img "star" [ref=e501]:
+                  - img [ref=e502]
+          - menuitem "mail 邮件管理" [expanded] [ref=e504] [cursor=pointer]:
+            - generic [ref=e506]:
+              - img "mail" [ref=e508]:
+                - img [ref=e509]
+              - generic [ref=e511]: 邮件管理
+          - menu [ref=e512]:
+            - menuitem "邮件配置 star" [ref=e513] [cursor=pointer]:
+              - generic [ref=e515]:
+                - generic [ref=e518]: 邮件配置
+                - img "star" [ref=e520]:
+                  - img [ref=e521]
+            - menuitem "邮件消息 star" [ref=e523] [cursor=pointer]:
+              - generic [ref=e525]:
+                - generic [ref=e528]: 邮件消息
+                - img "star" [ref=e530]:
+                  - img [ref=e531]
+          - menuitem "apartment 专业分析" [expanded] [ref=e533] [cursor=pointer]:
+            - generic [ref=e535]:
+              - img "apartment" [ref=e537]:
+                - img [ref=e538]
+              - generic [ref=e540]: 专业分析
+          - menu [ref=e541]:
+            - menuitem "专业管理 star" [ref=e542] [cursor=pointer]:
+              - generic [ref=e544]:
+                - generic [ref=e547]: 专业管理
+                - img "star" [ref=e549]:
+                  - img [ref=e550]
+          - menuitem "setting 系统设置" [expanded] [ref=e552] [cursor=pointer]:
+            - generic [ref=e554]:
+              - img "setting" [ref=e556]:
+                - img [ref=e557]
+              - generic [ref=e559]: 系统设置
+          - menu [ref=e560]:
+            - menuitem "系统设置 star" [ref=e561] [cursor=pointer]:
+              - generic [ref=e563]:
+                - generic [ref=e566]: 系统设置
+                - img "star" [ref=e568]:
+                  - img [ref=e569]
+        - img [ref=e572] [cursor=pointer]
+    - main [ref=e575]:
+      - generic [ref=e576]:
+        - button "arrow-left 返回专业管理" [ref=e578] [cursor=pointer]:
+          - img "arrow-left" [ref=e580]:
+            - img [ref=e581]
+          - generic [ref=e583]: 返回专业管理
+        - generic [ref=e584]:
+          - generic [ref=e585]:
+            - heading "课程体系设计" [level=4] [ref=e586]
+            - text: 基于专业、岗位和能力数据，AI 生成课程体系文档
+          - button "thunderbolt AI 生成课程体系" [ref=e587] [cursor=pointer]:
+            - img "thunderbolt" [ref=e589]:
+              - img [ref=e590]
+            - generic [ref=e592]: AI 生成课程体系
+        - generic [ref=e593]:
+          - generic [ref=e594]:
+            - generic [ref=e595]: 专业
+            - strong [ref=e597]: "-"
+          - generic [ref=e598]:
+            - generic [ref=e599]: 关联岗位
+            - strong [ref=e601]: 0 个
+          - generic [ref=e602]:
+            - generic [ref=e603]: 能力节点
+            - strong [ref=e605]: 0 个
+        - generic [ref=e608]:
+          - img "robot" [ref=e609]:
+            - img [ref=e610]
+          - generic [ref=e612]:
+            - generic [ref=e613]:
+              - strong [ref=e615]: 自定义生成要求
+              - text: （可选）
+            - generic [ref=e616]:
+              - textbox "例如：请按照工程教育认证标准设计，注重实践环节，参考互联网行业最新技术趋势..." [ref=e617]
+              - generic:
+                - generic: 0 / 1000
+            - generic [ref=e618]:
+              - generic [ref=e619] [cursor=pointer]: 工程认证标准
+              - generic [ref=e620] [cursor=pointer]: 项目驱动教学
+              - generic [ref=e621] [cursor=pointer]: 前沿技术融合
+        - generic [ref=e624]:
+          - img "暂无数据" [ref=e626]
+          - generic [ref=e634]: 点击上方「AI 生成课程体系」按钮，基于专业信息、岗位数据和能力图谱自动生成课程体系 Word 文档
