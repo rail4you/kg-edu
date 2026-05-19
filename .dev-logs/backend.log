@@ -8012,3 +8012,135 @@ SELECT o0."id", o0."name", o0."schema_name" FROM "organizations" AS o0 []
   Parameters: %{"action" => "create_file", "fields" => ["id"], "input" => %{"courseId" => "test-course", "fileType" => "docx", "filename" => "test_教案.docx", "path" => "https://kg-edu.oss-cn-beijing.aliyuncs.com/uploads/20260519033825/e96be948-9dd3-4f8e-94cc-39b21b48e0bc.docx", "purpose" => "ai_generated", "size" => 10776, "source" => "ai_generated"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
   Pipelines: [:api]
 [info] Sent 200 in 4ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_exercise", "fields" => ["id", "title"], "input" => %{"ai_type" => "ai_generated", "answer" => "A", "difficulty" => 2, "options" => "{\"choices\":[\"A. 选项1\",\"B. 选项2\",\"C. 选项3\",\"D. 选项4\"]}", "question_content" => "这是一个测试题目", "question_type" => "multiple_choice", "title" => "测试练习题_API"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=11.8ms queue=10.0ms idle=1709.0ms
+INSERT INTO "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" ("id","options","title","inserted_at","updated_at","question_content","answer","question_type","ai_type","difficulty") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING "created_by_id","course_id","knowledge_resource_id","updated_at","inserted_at","answer_explanation","position","difficulty","ai_type","options","question_type","answer","question_content","title","id" ["bb6116fe-4226-45d9-b1d4-b10ca5838bb7", %{"choices" => ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"]}, "测试练习题_API", ~U[2026-05-19 04:23:49.660146Z], ~U[2026-05-19 04:23:49.660146Z], "这是一个测试题目", "A", :multiple_choice, :ai_generated, 2]
+[90m↳ AshPostgres.DataLayer.bulk_create/3, at: lib/data_layer.ex:2040[0m
+[info] Sent 200 in 77ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "description", "imageUrl", "major", "semester", "publishStatus", "semesterHours", "credits", "knowledgeResourcesCount"], "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="courses" db=10.2ms idle=1476.9ms
+SELECT c0."id", c0."major", c0."description", c0."title", c0."image_url", c0."semester", c0."semester_hours", c0."credits", c0."publish_status", coalesce(s1."knowledge_resources_count"::bigint, $1::bigint)::bigint FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."courses" AS c0 LEFT OUTER JOIN LATERAL (SELECT sk0."course_id" AS "course_id", coalesce(count(*), $2::bigint)::bigint AS "knowledge_resources_count" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."knowledge_resources" AS sk0 WHERE (c0."id" = sk0."course_id") GROUP BY sk0."course_id") AS s1 ON TRUE [0, 0]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 36ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=7.8ms queue=9.2ms idle=1044.3ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 63ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=2.3ms idle=1864.2ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 12ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=4.7ms idle=287.2ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 15ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=7.9ms idle=284.9ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 11ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=11.6ms idle=1656.7ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 20ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_exercise", "fields" => ["id", "title"], "input" => %{"ai_type" => "ai_generated", "answer" => "A", "answer_explanation" => "色彩的三要素是色相、明度和纯度（也称饱和度或彩度）。色相是指色彩的相貌特征（如红、黄、蓝）；明度是指色彩的明暗、深浅程度；纯度是指色彩的鲜艳度或饱和程度。选项B和D分别指的是传统的颜料三原色和光的三原色，而选项C中的对比度不属于色彩的基础物理属性要素。因此正确答案是A。", "course_id" => "00000000-0000-0000-0000-000000000001", "difficulty" => 2, "options" => "{\"choices\":[\"A. 色相、明度、纯度\",\"B. 红、黄、蓝\",\"C. 色相、色调、对比度\",\"D. 红、绿、蓝\"]}", "question_content" => "在色彩理论中，色彩的三要素（或三属性）通常指的是以下哪一组？", "question_type" => "multiple_choice", "title" => "色彩理论：色彩三要素基础概念"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=3.9ms queue=1.4ms idle=1155.0ms
+SELECT e0."id", e0."position", e0."options", e0."title", e0."course_id", e0."inserted_at", e0."updated_at", e0."created_by_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."ai_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="exercises" db=1.2ms queue=6.5ms idle=155.9ms
+SELECT e0."id", e0."position" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."position" DESC LIMIT $2 ["00000000-0000-0000-0000-000000000001", 1]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY ERROR source="exercises" db=10.3ms queue=4.7ms idle=164.9ms
+INSERT INTO "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" ("id","position","options","title","course_id","inserted_at","updated_at","question_content","answer","question_type","ai_type","difficulty","answer_explanation") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "created_by_id","course_id","knowledge_resource_id","updated_at","inserted_at","answer_explanation","position","difficulty","ai_type","options","question_type","answer","question_content","title","id" ["24bfbcac-2a7b-4a82-95d0-bcf92b4edd62", 1, %{"choices" => ["A. 色相、明度、纯度", "B. 红、黄、蓝", "C. 色相、色调、对比度", "D. 红、绿、蓝"]}, "色彩理论：色彩三要素基础概念", "00000000-0000-0000-0000-000000000001", ~U[2026-05-19 07:36:57.336747Z], ~U[2026-05-19 07:36:57.336747Z], "在色彩理论中，色彩的三要素（或三属性）通常指的是以下哪一组？", "A", :multiple_choice, :ai_generated, 2, "色彩的三要素是色相、明度和纯度（也称饱和度或彩度）。色相是指色彩的相貌特征（如红、黄、蓝）；明度是指色彩的明暗、深浅程度；纯度是指色彩的鲜艳度或饱和程度。选项B和D分别指的是传统的颜料三原色和光的三原色，而选项C中的对比度不属于色彩的基础物理属性要素。因此正确答案是A。"]
+[90m↳ AshPostgres.DataLayer.bulk_create/3, at: lib/data_layer.ex:2040[0m
+[info] Sent 200 in 41ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionType", "difficulty"], "filter" => %{"title" => %{"contains" => "色彩三要素"}}, "page" => %{"limit" => 5}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=4.5ms queue=14.8ms idle=1275.7ms
+SELECT e0."id", e0."title", e0."question_type", e0."difficulty" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."title"::text LIKE $1) ORDER BY e0."id" LIMIT $2 ["%色彩三要素%", 6]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 51ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionType"], "page" => %{"limit" => 5, "offset" => 0}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=5.0ms queue=11.5ms idle=1636.6ms
+SELECT e0."id", e0."title", e0."question_type" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 ORDER BY e0."id" LIMIT $1 [6]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 37ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionType"], "page" => %{"limit" => 10}, "sort" => "-inserted_at", "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=2.6ms queue=1.3ms idle=1175.5ms
+SELECT e0."id", e0."title", e0."inserted_at", e0."question_type" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 ORDER BY e0."inserted_at" DESC, e0."id" LIMIT $1 [11]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 15ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "get_all_courses", "fields" => ["id", "title", "description", "imageUrl", "major", "semester", "publishStatus", "semesterHours", "credits", "knowledgeResourcesCount"], "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="courses" db=4.6ms idle=1283.2ms
+SELECT c0."id", c0."major", c0."description", c0."title", c0."image_url", c0."semester", c0."semester_hours", c0."credits", c0."publish_status", coalesce(s1."knowledge_resources_count"::bigint, $1::bigint)::bigint FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."courses" AS c0 LEFT OUTER JOIN LATERAL (SELECT sk0."course_id" AS "course_id", coalesce(count(*), $2::bigint)::bigint AS "knowledge_resources_count" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."knowledge_resources" AS sk0 WHERE (c0."id" = sk0."course_id") GROUP BY sk0."course_id") AS s1 ON TRUE [0, 0]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 11ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "a83923b0-158c-4e4f-98ae-2cf9ab1a4b5f"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=1.2ms idle=1259.5ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["a83923b0-158c-4e4f-98ae-2cf9ab1a4b5f", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 7ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "list_exercises", "fields" => ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "difficulty", "courseId", "knowledgeResourceId"], "filter" => %{"courseId" => %{"eq" => "00000000-0000-0000-0000-000000000001"}}, "page" => %{"limit" => 200}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=4.1ms idle=1878.5ms
+SELECT e0."id", e0."options", e0."title", e0."course_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."id" LIMIT $2 ["00000000-0000-0000-0000-000000000001", 201]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[info] Sent 200 in 11ms
+[info] POST /rpc/run
+[debug] Processing with KgEduWeb.AshTypescriptRpcController.run/2
+  Parameters: %{"action" => "create_exercise", "fields" => ["id", "title"], "input" => %{"ai_type" => "ai_generated", "answer" => "A", "answer_explanation" => "在传统的红黄蓝（RYB）色彩模型（常用于传统美术和绘画）的色相环中，红色和绿色处于直径两端相对的位置，互为互补色。互补色并置时会产生最强烈的视觉对比。选项B的互补色是橙色，选项C的互补色是紫色。", "course_id" => "00000000-0000-0000-0000-000000000001", "difficulty" => 2, "options" => "{\"choices\":[\"A. 绿色\",\"B. 蓝色\",\"C. 橙色\",\"D. 紫色\"]}", "question_content" => "在传统的红黄蓝（RYB）色彩模型中，红色的互补色（对比色）是以下哪种颜色？", "question_type" => "multiple_choice", "title" => "传统RYB色轮中红色的互补色识别"}, "tenant" => "org_2af44c7b_081a_497a_9858_365fa90ad5d7"}
+  Pipelines: [:api]
+[debug] QUERY OK source="exercises" db=14.4ms idle=1375.1ms
+SELECT e0."id", e0."position", e0."options", e0."title", e0."course_id", e0."inserted_at", e0."updated_at", e0."created_by_id", e0."knowledge_resource_id", e0."question_content", e0."answer", e0."question_type", e0."ai_type", e0."difficulty", e0."answer_explanation" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 []
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY OK source="exercises" db=12.9ms idle=1390.7ms
+SELECT e0."id", e0."position" FROM "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" AS e0 WHERE (e0."course_id"::uuid = $1::uuid) ORDER BY e0."position" DESC LIMIT $2 ["00000000-0000-0000-0000-000000000001", 1]
+[90m↳ anonymous fn/3 in AshPostgres.DataLayer.run_query/2, at: lib/data_layer.ex:835[0m
+[debug] QUERY ERROR source="exercises" db=11.7ms queue=0.6ms idle=1404.4ms
+INSERT INTO "org_2af44c7b_081a_497a_9858_365fa90ad5d7"."exercises" ("id","position","options","title","course_id","inserted_at","updated_at","question_content","answer","question_type","ai_type","difficulty","answer_explanation") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "created_by_id","course_id","knowledge_resource_id","updated_at","inserted_at","answer_explanation","position","difficulty","ai_type","options","question_type","answer","question_content","title","id" ["9a3b0603-834b-47be-b87c-96cb26dd33b3", 1, %{"choices" => ["A. 绿色", "B. 蓝色", "C. 橙色", "D. 紫色"]}, "传统RYB色轮中红色的互补色识别", "00000000-0000-0000-0000-000000000001", ~U[2026-05-19 07:39:47.608809Z], ~U[2026-05-19 07:39:47.608809Z], "在传统的红黄蓝（RYB）色彩模型中，红色的互补色（对比色）是以下哪种颜色？", "A", :multiple_choice, :ai_generated, 2, "在传统的红黄蓝（RYB）色彩模型（常用于传统美术和绘画）的色相环中，红色和绿色处于直径两端相对的位置，互为互补色。互补色并置时会产生最强烈的视觉对比。选项B的互补色是橙色，选项C的互补色是紫色。"]
+[90m↳ AshPostgres.DataLayer.bulk_create/3, at: lib/data_layer.ex:2040[0m
+[info] Sent 200 in 47ms

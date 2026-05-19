@@ -460,8 +460,8 @@ export async function generateExercises(params: {
     number: number;
     difficulty: number;
   };
-}): Promise<{ success: boolean; data?: unknown; message?: string; error?: string }> {
-  // TODO: 迁移练习生成到 Node.js
-  // 暂时仍调用 .NET Agent
-  return agentPost("/agent/generate_ai_exercise", params) as any;
+}): Promise<{ success: boolean; data?: unknown; message?: string; error?: string; exercises?: any[] }> {
+  // 使用本地 Node.js 练习题生成（不再依赖 .NET Agent）
+  const { generateExercises: generateExercisesLocal } = await import("../lib/exercise.js");
+  return generateExercisesLocal(params.input, params.tenant);
 }

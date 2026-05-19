@@ -316,10 +316,11 @@ app.post("/api/skills/generate-docx", async (req, res) => {
 
 app.post("/api/generate_ai_exercise", async (req, res) => {
   const { orgSchema } = extractTenantContext(req as any);
-  setTenantContext(orgSchema);
+  const tenant = req.body.tenant || orgSchema;
+  setTenantContext(tenant);
   try {
-    const { generateExercises } = await import("./lib/api-client.js");
-    const result = await generateExercises(req.body);
+    const { generateExercises } = await import("./lib/exercise.js");
+    const result = await generateExercises(req.body.input, tenant);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
