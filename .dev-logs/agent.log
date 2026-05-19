@@ -1,7 +1,0 @@
-🚀 KgEdu Agent Server running on http://localhost:5050
-   Backend: http://localhost:4000
-   Endpoints:
-     POST /api/chat              - SSE 流式聊天
-     POST /api/skills/generate-pptx - 生成 PPT
-     POST /api/skills/generate-docx - 生成 DOCX
-     GET  /health                - 健康检查
