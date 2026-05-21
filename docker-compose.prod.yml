@@ -50,24 +50,41 @@ services:
     networks:
       - kg-edu-network
 
-  # AI Agent Service (F# / .NET)
+  # AI Agent Service (Bun + Pi SDK)
   ai-agent:
-    image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_ai:latest
+    build:
+      context: ./agent-server
+      dockerfile: Dockerfile
     container_name: kg-edu-ai-agent
     restart: unless-stopped
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:5000
-      - QWEN_API_KEY=sk-f99eaa5ab16044f1a39aead070fb08e9
-      - QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/kg_edu_dev
-      - OSS__AccessKeyId=LTAI5tA3M63FNf9qJPGwHGMU
-      - OSS__AccessKeySecret=Y481c9cjNvloxWTC0WOkLw8qWM9FMI
+      - NODE_ENV=production
+      - AGENT_PORT=5050
+      - KG_EDU_BACKEND_URL=http://backend:4000
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - QWEN_BASE_URL=${QWEN_BASE_URL}
+      - QWEN_MODEL=${QWEN_MODEL:-qwen-plus}
+      # Pi Agent model configuration (for exercise generation via Pi SDK)
+      - PI_AGENT_MODEL_PROVIDER=${PI_AGENT_MODEL_PROVIDER:-zai}
+      - PI_AGENT_MODEL_ID=${PI_AGENT_MODEL_ID:-glm-5.1}
+      # OSS
+      - OSS_BUCKET=${OSS_BUCKET:-kg-edu}
+      - OSS_REGION=${OSS_REGION:-cn-beijing}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-oss-cn-beijing.aliyuncs.com}
+      - OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}
+      - OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}
     ports:
-      - "5000:5000"
+      - "5050:5050"
     depends_on:
       - backend
-      - db
+    volumes:
+      # Mount Pi agent model config with API keys
+      - ./pi-config/models.json:/root/.pi/agent/models.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - kg-edu-network
 
@@ -81,11 +98,11 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       # AI Agent URL - 使用 Docker 内部网络地址
-      - AGENT_URL=http://kg-edu-ai-agent:5000/agui
+      - AGENT_URL=http://kg-edu-ai-agent:5050/agui
       # Backend URL for RPC calls
       - KG_EDU_BACKEND_URL=http://backend:4000
-      # Agent API base URL for skill calls
-      - KG_EDU_AGENT_API_BASE_URL=http://kg-edu-ai-agent:5000
+      # Agent API base URL for skill calls (exercise generation etc.)
+      - KG_EDU_AGENT_API_BASE_URL=http://kg-edu-ai-agent:5050
       # Pi Agent mode
       - ASSISTANT_AGENT_MODE=pi
       # Pi Agent model configuration

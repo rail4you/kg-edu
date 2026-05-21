@@ -9,7 +9,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND_DIR="$PROJECT_ROOT/kg-edu-vite-antd"
 BACKEND_DIR="$PROJECT_ROOT/backend/kg_edu"
-AGENT_DIR="$PROJECT_ROOT/ai-agent/KgAgent"
+AGENT_DIR="$PROJECT_ROOT/agent-server"
 AGENT_SERVER_DIR="$PROJECT_ROOT/agent-server"
 
 # PID文件目录
@@ -104,7 +104,7 @@ cleanup_orphan_processes() {
 
     # 2. 清理占用开发端口的进程
     local port_pids=""
-    for port in 8081 3000 4000 5000 5001; do
+    for port in 8081 3000 4000 5000 5001 5050; do
         local pids=$(lsof -ti :$port 2>/dev/null || true)
         if [ -n "$pids" ]; then
             port_pids="$port_pids $pids"
@@ -188,8 +188,8 @@ stop_backend() {
 
 stop_agent() {
     stop_service $AGENT "AI Agent"
-    local dotnet_pids=$(ps aux | grep "dotnet.*KgAgent" | grep -v grep | awk '{print $2}')
-    [ -n "$dotnet_pids" ] && echo "$dotnet_pids" | xargs kill -9 2>/dev/null || true
+    local bun_agent_pids=$(ps aux | grep "bun.*server\.ts" | grep "$AGENT_DIR" | grep -v grep | awk '{print $2}')
+    [ -n "$bun_agent_pids" ] && echo "$bun_agent_pids" | xargs kill -9 2>/dev/null || true
 }
 
 stop_all() {
@@ -219,11 +219,13 @@ start_frontend() {
     > "$LOG_DIR/$FRONTEND.log"
 
     # 启动 API Server (bun --watch server.ts) 在后台
-    nohup bun --watch server.ts >> "$LOG_DIR/$FRONTEND.log" 2>&1 &
+    bun --watch server.ts >> "$LOG_DIR/$FRONTEND.log" 2>&1 &
+    disown $!
     local api_pid=$!
 
     # 使用 npx vite 而不是 bun run dev，避免 bun 导致的僵尸进程问题
-    nohup npx vite --port 8081 >> "$LOG_DIR/$FRONTEND.log" 2>&1 &
+    npx vite --port 8081 >> "$LOG_DIR/$FRONTEND.log" 2>&1 &
+    disown $!
     local vite_pid=$!
 
     # 记录主 PID（vite 进程）
@@ -290,7 +292,8 @@ start_backend() {
     mix ash.migrate --tenants >> "$LOG_DIR/$BACKEND.log" 2>&1 || true
 
     # 启动 Phoenix 服务器
-    nohup mix phx.server >> "$LOG_DIR/$BACKEND.log" 2>&1 &
+    mix phx.server >> "$LOG_DIR/$BACKEND.log" 2>&1 &
+    disown $!
     local pid=$!
     echo $pid > "$PID_DIR/$BACKEND.pid"
 
@@ -330,7 +333,8 @@ start_agent() {
     # 清空日志
     > "$LOG_DIR/$AGENT.log"
 
-    nohup bun run src/server.ts >> "$LOG_DIR/$AGENT.log" 2>&1 &
+    bun run src/server.ts >> "$LOG_DIR/$AGENT.log" 2>&1 &
+    disown $!
     local pid=$!
     echo $pid > "$PID_DIR/$AGENT.pid"
 
@@ -462,7 +466,7 @@ show_help() {
     echo "服务名称:"
     echo "  frontend  - 前端服务 (Vite + API Server)"
     echo "  backend   - 后端服务 (Phoenix)"
-    echo "  agent     - AI Agent 服务 (.NET)"
+    echo "  agent     - AI Agent 服务 (Bun + Express)"
     echo "  all       - 所有服务"
     echo ""
     echo "示例:"

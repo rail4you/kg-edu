@@ -10,87 +10,86 @@
  */
 
 import { getExercises, callRpc, getOrgSchema } from "./api-client.js";
-import fs from "node:fs";
-import path from "node:path";
-import os from "node:os";
+import {
+  AuthStorage,
+  createAgentSession,
+  DefaultResourceLoader,
+  ModelRegistry,
+  SessionManager,
+} from "@mariozechner/pi-coding-agent";
 
 // ============================================================
-// LLM 配置 — 复用 Pi Agent 的 models.json
+// Pi SDK LLM 调用（复用 Pi Agent 的模型配置和认证）
 // ============================================================
 
-interface LlmConfig {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-}
+let _exerciseSession: any = null;
 
-function getLlmConfig(): LlmConfig {
-  // 1. 环境变量
-  const envKey = process.env.QWEN_API_KEY;
-  const envUrl = process.env.QWEN_BASE_URL;
-  const envModel = process.env.QWEN_MODEL;
-  if (envKey && envUrl) {
-    return { baseUrl: envUrl, apiKey: envKey, model: envModel || "qwen-plus" };
+async function getExerciseSession() {
+  if (_exerciseSession) return _exerciseSession;
+
+  const loader = new DefaultResourceLoader({
+    systemPromptOverride: () => "你是练习题生成专家，只返回 JSON 格式的练习题数据。",
+  });
+  await loader.reload();
+
+  const authStorage = AuthStorage.create();
+  const modelRegistry = ModelRegistry.create(authStorage);
+  await modelRegistry.refresh();
+
+  // 与 pi-agent-gateway 保持一致：优先环境变量，fallback 到 qwen
+  const provider = process.env.PI_AGENT_MODEL_PROVIDER || "qwen";
+  const modelId = process.env.PI_AGENT_MODEL_ID || "qwen-plus";
+  const model = modelRegistry.find(provider, modelId);
+  if (!model) {
+    throw new Error(`[exercise] Model ${provider}/${modelId} not found in Pi SDK registry`);
   }
+  console.log(`[exercise] Using model: ${model.id} (provider: ${model.provider})`);
 
-  // 2. 读 Pi Agent models.json
-  const modelsPath = path.join(os.homedir(), ".pi/agent/models.json");
-  try {
-    const raw = fs.readFileSync(modelsPath, "utf-8");
-    const config = JSON.parse(raw);
-    for (const [name, p] of Object.entries(config.providers || {})) {
-      const prov = p as any;
-      if (prov?.apiKey && prov?.baseUrl) {
-        const model = prov.models?.[0]?.id;
-        if (model) {
-          console.log(`[exercise] Using LLM: ${name}/${model}`);
-          return { baseUrl: prov.baseUrl, apiKey: prov.apiKey, model };
-        }
-      }
-    }
-  } catch {
-    // models.json not found
-  }
-
-  throw new Error("No LLM config found. Set QWEN_API_KEY+QWEN_BASE_URL or configure ~/.pi/agent/models.json");
-}
-
-let _llmConfig: LlmConfig | null = null;
-function llmConfig(): LlmConfig {
-  if (!_llmConfig) _llmConfig = getLlmConfig();
-  return _llmConfig;
-}
-
-// ============================================================
-// LLM 调用
-// ============================================================
-
-async function callLLM(systemPrompt: string, userPrompt: string): Promise<string> {
-  const cfg = llmConfig();
-  console.log(`[exercise] Calling LLM: ${cfg.baseUrl}/chat/completions, model=${cfg.model}`);
-
-  const response = await fetch(`${cfg.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${cfg.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: cfg.model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
+  const { session } = await createAgentSession({
+    authStorage,
+    modelRegistry,
+    sessionManager: SessionManager.inMemory(),
+    resourceLoader: loader,
+    model,
+    noTools: true,
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`LLM call failed (${response.status}): ${text}`);
+  _exerciseSession = session;
+  return session;
+}
+
+async function callLLM(systemPrompt: string, userPrompt: string): Promise<string> {
+  const session = await getExerciseSession();
+
+  const fullPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
+  console.log(`[exercise] Calling LLM via Pi SDK`);
+
+  // 收集 assistant 响应
+  let result = "";
+  session.subscribe((event: any) => {
+    if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
+      result += event.assistantMessageEvent.delta || "";
+    }
+  });
+
+  await session.prompt(fullPrompt, { source: "user" });
+  await session.agent.waitForIdle();
+
+  // 从 session state 取最终 assistant 消息作为 fallback
+  if (!result) {
+    const messages = session.agent.state?.messages || [];
+    const lastAssistant = [...messages].reverse().find((m: any) => m.role === "assistant");
+    if (lastAssistant?.content) {
+      result = typeof lastAssistant.content === "string"
+        ? lastAssistant.content
+        : Array.isArray(lastAssistant.content)
+          ? lastAssistant.content.filter((p: any) => p.type === "text").map((p: any) => p.text).join("")
+          : "";
+    }
   }
 
-  const data = (await response.json()) as any;
-  return data.choices?.[0]?.message?.content || "";
+  console.log(`[exercise] LLM response length: ${result.length}`);
+  return result;
 }
 
 // ============================================================
