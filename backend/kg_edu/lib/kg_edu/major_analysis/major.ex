@@ -142,5 +142,9 @@ defmodule KgEdu.MajorAnalysis.Major do
     has_many :reports, KgEdu.MajorAnalysis.AnalysisReport do
       public? true
     end
+
+    has_many :enrollments, KgEdu.MajorAnalysis.MajorEnrollment do
+      public? true
+    end
   end
 end

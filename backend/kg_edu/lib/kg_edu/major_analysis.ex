@@ -116,6 +116,14 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :generate_report, :generate_report
       rpc_action :get_report, :by_id
     end
+
+    resource KgEdu.MajorAnalysis.MajorEnrollment do
+      rpc_action :assign_major_student, :create
+      rpc_action :remove_major_student, :destroy
+      rpc_action :list_major_enrollments_by_major, :by_major
+      rpc_action :my_major_enrollments, :my_enrollments
+      rpc_action :bulk_assign_major_students, :bulk_assign
+    end
   end
 
   resources do
@@ -124,5 +132,6 @@ defmodule KgEdu.MajorAnalysis do
     resource KgEdu.MajorAnalysis.MajorCompetency
     resource KgEdu.MajorAnalysis.CurriculumDesign
     resource KgEdu.MajorAnalysis.AnalysisReport
+    resource KgEdu.MajorAnalysis.MajorEnrollment
   end
 end

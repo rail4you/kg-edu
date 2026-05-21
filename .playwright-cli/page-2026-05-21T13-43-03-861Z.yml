@@ -1,0 +1,35 @@
+- generic [ref=e438]:
+  - banner [ref=e439]:
+    - generic [ref=e440] [cursor=pointer]:
+      - img "课堂星" [ref=e441]
+      - generic [ref=e442]: 智慧教学系统
+    - link "返回首页" [ref=e444] [cursor=pointer]:
+      - /url: /
+  - main [ref=e445]:
+    - generic [ref=e620]:
+      - img "education" [ref=e622]
+      - generic [ref=e623]:
+        - heading "选择登录角色" [level=3] [ref=e624]
+        - generic [ref=e625]: 请选择您的身份进入对应的登录页面
+        - generic [ref=e626]:
+          - generic [ref=e627] [cursor=pointer]:
+            - img "team" [ref=e629]:
+              - img [ref=e630]
+            - generic [ref=e632]:
+              - heading "学生登录" [level=5] [ref=e633]
+              - text: 输入学号和密码，开始学习之旅
+          - generic [ref=e634] [cursor=pointer]:
+            - img "team" [ref=e636]:
+              - img [ref=e637]
+            - generic [ref=e639]:
+              - heading "教师登录" [level=5] [ref=e640]
+              - text: 输入教职工号和密码，进入教学管理
+          - generic [ref=e641] [cursor=pointer]:
+            - img "team" [ref=e643]:
+              - img [ref=e644]
+            - generic [ref=e646]:
+              - heading "管理员登录" [level=5] [ref=e647]
+              - text: 输入管理员账号和密码，进入系统管理
+  - generic [ref=e475]:
+    - generic [ref=e476]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e477]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台

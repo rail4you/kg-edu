@@ -1,0 +1,170 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - img "课堂星" [ref=e9]
+          - generic [ref=e10]: 智慧教学系统
+        - generic [ref=e11]:
+          - button "首页" [ref=e12] [cursor=pointer]:
+            - generic [ref=e13]: 首页
+          - button "课程" [ref=e14] [cursor=pointer]:
+            - generic [ref=e15]: 课程
+          - button "教学资源库" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]: 教学资源库
+          - button "示范教学包" [ref=e18] [cursor=pointer]:
+            - generic [ref=e19]: 示范教学包
+          - button "数字教材" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]: 数字教材
+          - button "合作单位" [ref=e22] [cursor=pointer]:
+            - generic [ref=e23]: 合作单位
+          - button "关于我们" [ref=e24] [cursor=pointer]:
+            - generic [ref=e25]: 关于我们
+      - generic [ref=e26]:
+        - button "登 录" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]: 登 录
+        - button "进入平台" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: 进入平台
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e33]: AI
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - heading "智慧教学系统 课程首页重新聚焦课程展示" [level=1] [ref=e37]:
+            - text: 智慧教学系统
+            - strong [ref=e38]: 课程首页重新聚焦课程展示
+          - generic [ref=e39]: 首页仅保留推荐课程与新开课程两个核心栏目，每栏展示前 5 门课程。完整课程检索、标准学科筛选与分页浏览统一收敛到课程列表页。
+          - generic [ref=e40]:
+            - button "浏览课程资源库 right" [ref=e41] [cursor=pointer]:
+              - generic [ref=e42]: 浏览课程资源库
+              - img "right" [ref=e43]:
+                - img [ref=e44]
+            - button "查看新开课程" [ref=e46] [cursor=pointer]:
+              - generic [ref=e47]: 查看新开课程
+        - generic [ref=e49]:
+          - generic [ref=e50]: 平台概览
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - generic [ref=e53]:
+                - strong [ref=e54]: 0 门课程
+                - text: 多学校课程统一展示与访问
+              - img "rocket" [ref=e55]:
+                - img [ref=e56]
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - strong [ref=e60]: 35 个标准学科模板
+                - text: 用户自建学科可映射到固定模板
+              - img "fire" [ref=e61]:
+                - img [ref=e62]
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - strong [ref=e66]: 0 个热门学科
+                - text: 暂无热门学科
+              - img "book" [ref=e67]:
+                - img [ref=e68]
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - img "fire" [ref=e76]:
+              - img [ref=e77]
+            - heading "推荐课程" [level=2] [ref=e79]
+          - button "查看更多 right" [ref=e80] [cursor=pointer]:
+            - text: 查看更多
+            - img "right" [ref=e81]:
+              - img [ref=e82]
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - img "Image placeholder" [ref=e88]
+            - generic [ref=e92]:
+              - heading [level=3] [ref=e93]
+              - list [ref=e94]:
+                - listitem [ref=e95]
+                - listitem [ref=e96]
+                - listitem [ref=e97]
+          - generic [ref=e98]:
+            - img "Image placeholder" [ref=e101]
+            - generic [ref=e105]:
+              - heading [level=3] [ref=e106]
+              - list [ref=e107]:
+                - listitem [ref=e108]
+                - listitem [ref=e109]
+                - listitem [ref=e110]
+          - generic [ref=e111]:
+            - img "Image placeholder" [ref=e114]
+            - generic [ref=e118]:
+              - heading [level=3] [ref=e119]
+              - list [ref=e120]:
+                - listitem [ref=e121]
+                - listitem [ref=e122]
+                - listitem [ref=e123]
+          - generic [ref=e124]:
+            - img "Image placeholder" [ref=e127]
+            - generic [ref=e131]:
+              - heading [level=3] [ref=e132]
+              - list [ref=e133]:
+                - listitem [ref=e134]
+                - listitem [ref=e135]
+                - listitem [ref=e136]
+          - generic [ref=e137]:
+            - img "Image placeholder" [ref=e140]
+            - generic [ref=e144]:
+              - heading [level=3] [ref=e145]
+              - list [ref=e146]:
+                - listitem [ref=e147]
+                - listitem [ref=e148]
+                - listitem [ref=e149]
+      - generic [ref=e150]:
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - img "book" [ref=e154]:
+              - img [ref=e155]
+            - heading "新开课程" [level=2] [ref=e157]
+          - button "查看更多 right" [ref=e158] [cursor=pointer]:
+            - text: 查看更多
+            - img "right" [ref=e159]:
+              - img [ref=e160]
+        - generic [ref=e162]:
+          - generic [ref=e163]:
+            - img "Image placeholder" [ref=e166]
+            - generic [ref=e170]:
+              - heading [level=3] [ref=e171]
+              - list [ref=e172]:
+                - listitem [ref=e173]
+                - listitem [ref=e174]
+                - listitem [ref=e175]
+          - generic [ref=e176]:
+            - img "Image placeholder" [ref=e179]
+            - generic [ref=e183]:
+              - heading [level=3] [ref=e184]
+              - list [ref=e185]:
+                - listitem [ref=e186]
+                - listitem [ref=e187]
+                - listitem [ref=e188]
+          - generic [ref=e189]:
+            - img "Image placeholder" [ref=e192]
+            - generic [ref=e196]:
+              - heading [level=3] [ref=e197]
+              - list [ref=e198]:
+                - listitem [ref=e199]
+                - listitem [ref=e200]
+                - listitem [ref=e201]
+          - generic [ref=e202]:
+            - img "Image placeholder" [ref=e205]
+            - generic [ref=e209]:
+              - heading [level=3] [ref=e210]
+              - list [ref=e211]:
+                - listitem [ref=e212]
+                - listitem [ref=e213]
+                - listitem [ref=e214]
+          - generic [ref=e215]:
+            - img "Image placeholder" [ref=e218]
+            - generic [ref=e222]:
+              - heading [level=3] [ref=e223]
+              - list [ref=e224]:
+                - listitem [ref=e225]
+                - listitem [ref=e226]
+                - listitem [ref=e227]
+  - generic [ref=e229]:
+    - generic [ref=e230]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e231]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台

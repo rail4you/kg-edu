@@ -22,7 +22,8 @@ defmodule KgEduWeb.Plug.SetTenantFromToken do
                 # Set tenant and user info in connection
                 conn
                 |> put_private(:ash_tenant, tenant)
-                # Set user for set_actor plug
+                # Set user for actor (both assigns and private for compatibility)
+                |> assign(:actor, user)
                 |> assign(:current_user, user)
                 |> put_private(:ash_context, %{tenant: tenant, actor: user})
                 |> put_private(:ash, %{tenant: tenant, actor: user, context: %{tenant: tenant}})

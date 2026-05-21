@@ -6,36 +6,50 @@ defmodule KgEduWeb.Plugs.LoadActor do
 
   def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, tenant} <- verify_token(token) do
+         {:ok, %{"tenant" => tenant, "sub" => subject}} <- verify_and_extract_claims(token),
+         {:ok, user} <- load_user(subject, tenant) do
       conn
-      # |> assign(:actor, user)
+      |> put_private(:ash_actor, user)
+      |> assign(:actor, user)
       |> assign(:tenant, tenant)
-
-      # |> assign(:current_user, user)
+      |> assign(:current_user, user)
     else
       _ ->
         conn
-        |> assign(:tenant, nil)
     end
   end
 
-  defp verify_token(token) do
-    # Use AshAuthentication.Jwt to verify the token
+  defp verify_and_extract_claims(token) do
     case AshAuthentication.Jwt.peek(token) do
-      {:ok, %{"sub" => subject, "tenant" => tenant}} ->
-        # Load the user from the subject (usually user_id)
-        # user = KgEdu.Accounts.User
-        # |> Ash.get(subject)
-
-        case tenant do
-          nil -> {:error, :tenant_not_found}
-          _ -> {:ok, tenant}
-        end
-
+      {:ok, %{"tenant" => tenant, "sub" => subject}} when not is_nil(tenant) and not is_nil(subject) ->
+        {:ok, %{"tenant" => tenant, "sub" => subject}}
+      {:ok, claims} ->
+        {:error, :missing_fields}
       {:error, _} = error ->
         error
     end
   end
+
+  defp load_user(nil, _), do: {:error, :no_subject}
+  defp load_user(subject, tenant) do
+    # Extract user ID from subject (format: "user?id=<uuid>" or just uuid)
+    user_id = extract_user_id(subject)
+    
+    case user_id do
+      nil -> {:error, :invalid_subject}
+      _ ->
+        case KgEdu.Accounts.User
+             |> Ash.Query.filter(id == ^user_id)
+             |> Ash.read_one(tenant: tenant) do
+          {:ok, nil} -> {:error, :user_not_found}
+          {:ok, user} -> {:ok, user}
+          {:error, reason} -> {:error, reason}
+        end
+    end
+  end
+
+  defp extract_user_id("user?id=" <> user_id), do: user_id
+  defp extract_user_id(other), do: other
 end
 
 defmodule KgEduWeb.Router do
