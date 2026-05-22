@@ -2,20 +2,19 @@
  * 课程体系生成服务
  *
  * 流程:
- * 1. 通过 RPC 获取专业信息 + 岗位数据 + 能力图谱 + 课程体系数据
+ * 1. 通过 RPC 获取专业信息 + 岗位数据 + 能力图谱
  * 2. 调 LLM 生成完整的课程体系设计
- * 3. 创建 CurriculumDesign 记录
- * 4. 生成 DOCX 文档
+ * 3. 生成 DOCX 文档并上传到 OSS
+ * 4. 创建 CurriculumDesign 记录
  * 5. 返回结果
  */
 
-import { callRpc, getOrgSchema } from "./api-client.js";
+import { callRpc } from "./api-client.js";
 import { convertMarkdownToDocx } from "./docx.js";
 import { uploadFileToOss } from "./oss.js";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
-import { randomUUID } from "node:crypto";
 import {
   AuthStorage,
   createAgentSession,
@@ -204,7 +203,7 @@ export async function generateCurriculumGraph(
   options: CurriculumGenerateOptions,
   tenant: string,
 ): Promise<CurriculumGenerateResult> {
-  const { orgSchema, majorId, customPrompt, userId } = options;
+  const { orgSchema, majorId, customPrompt } = options;
 
   console.log(`[curriculum-graph] Starting generation for major ${majorId} in tenant ${orgSchema || tenant}`);
 
@@ -255,7 +254,25 @@ export async function generateCurriculumGraph(
     // 5. 解析 LLM 返回的 Markdown，生成结构化数据
     const designData = parseCurriculumMarkdown(markdown);
 
-    // 6. 创建 CurriculumDesign 记录
+    // 6. 生成 DOCX 文件
+    const fileName = `${major.name || "课程体系"}_${Date.now()}.docx`;
+    const docxPath = path.join(tmpdir(), fileName);
+
+    await convertMarkdownToDocx(markdown, docxPath);
+
+    // 7. 上传到 OSS
+    const ossUrl = await uploadFileToOss(docxPath);
+
+    // 清理临时文件
+    await fs.promises.unlink(docxPath).catch(() => {});
+
+    if (!ossUrl) {
+      return { success: false, message: "文档生成失败：上传失败" };
+    }
+
+    console.log(`[curriculum-graph] Uploaded to OSS: ${ossUrl}`);
+
+    // 8. 创建 CurriculumDesign 记录
     const createResult = await callRpc("create_curriculum_design", {
       tenant: orgSchema || tenant,
       input: {
@@ -263,8 +280,10 @@ export async function generateCurriculumGraph(
         description: "AI 辅助生成的课程体系方案",
         major_id: majorId,
         design_data: JSON.stringify(designData),
+        file_url: ossUrl,
+        markdown_content: markdown,
       },
-      fields: ["id", "title", "description"],
+      fields: ["id", "title", "description", "file_url", "status"],
     });
 
     const curriculumData = createResult?.result || createResult?.data || createResult;
@@ -274,22 +293,6 @@ export async function generateCurriculumGraph(
 
     const curriculumId = curriculumData.id;
     console.log(`[curriculum-graph] Created curriculum design: ${curriculumId}`);
-
-    // 7. 生成 DOCX 文件
-    const fileName = `${major.name || "课程体系"}_${Date.now()}.docx`;
-    const docxPath = path.join(tmpdir(), fileName);
-
-    await convertMarkdownToDocx(markdown, docxPath);
-
-    // 8. 上传到 OSS
-    const ossUrl = await uploadFileToOss(docxPath);
-
-    // 清理临时文件
-    await fs.promises.unlink(docxPath).catch(() => {});
-
-    if (!ossUrl) {
-      return { success: false, message: "文档生成失败：上传失败" };
-    }
 
     console.log(`[curriculum-graph] Successfully generated curriculum for major ${majorId}`);
 

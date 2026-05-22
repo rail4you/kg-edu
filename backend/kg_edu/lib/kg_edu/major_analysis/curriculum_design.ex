@@ -52,7 +52,7 @@ defmodule KgEdu.MajorAnalysis.CurriculumDesign do
     end
 
     create :create do
-      accept [:title, :description, :major_id, :design_data]
+      accept [:title, :description, :major_id, :design_data, :file_url, :markdown_content]
       change fn changeset, _context ->
         Ash.Changeset.change_attribute(changeset, :version, 1)
         |> Ash.Changeset.change_attribute(:status, :draft)
@@ -60,7 +60,7 @@ defmodule KgEdu.MajorAnalysis.CurriculumDesign do
     end
 
     update :update_curriculum do
-      accept [:title, :description, :design_data]
+      accept [:title, :description, :design_data, :file_url, :markdown_content]
       require_atomic? false
     end
 
@@ -134,6 +134,18 @@ defmodule KgEdu.MajorAnalysis.CurriculumDesign do
       allow_nil? true
       public? true
       description "Structured curriculum data (JSON)"
+    end
+
+    attribute :file_url, :string do
+      allow_nil? true
+      public? true
+      description "DOCX file URL stored in OSS"
+    end
+
+    attribute :markdown_content, :string do
+      allow_nil? true
+      public? true
+      description "Full markdown content for preview"
     end
 
     attribute :ai_generated, :boolean do

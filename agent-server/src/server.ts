@@ -477,6 +477,84 @@ app.post("/api/generate_ai_exercise", async (req, res) => {
 });
 
 // ============================================================
+// POST /api/curriculum/upload - 上传课程体系文档
+// ============================================================
+
+app.post("/api/curriculum/upload", async (req, res) => {
+  const { orgSchema } = extractTenantContext(req as any);
+  
+  // Handle multipart form data
+  const tenant = req.body.tenant || orgSchema;
+  const id = req.body.id;
+  const file = req.files?.file || req.body.file;
+  
+  if (!id) {
+    res.status(400).json({ success: false, message: "缺少文档 ID" });
+    return;
+  }
+  
+  // Handle file - could be base64 or multipart
+  let fileBuffer: Buffer | null = null;
+  let fileName = "curriculum_document.docx";
+  
+  if (req.body.file_data) {
+    // Base64 encoded file
+    try {
+      const base64Data = req.body.file_data.replace(/^data:.*?;base64,/, "");
+      fileBuffer = Buffer.from(base64Data, "base64");
+      fileName = req.body.file_name || fileName;
+    } catch (err: any) {
+      res.status(400).json({ success: false, message: "文件解析失败" });
+      return;
+    }
+  } else if (file && typeof file === "object" && file.buffer) {
+    // Multipart file
+    fileBuffer = file.buffer;
+    fileName = file.name || fileName;
+  }
+  
+  if (!fileBuffer) {
+    res.status(400).json({ success: false, message: "缺少文件内容" });
+    return;
+  }
+  
+  setTenantContext(tenant);
+  
+  try {
+    const { uploadFileToOss } = await import("./lib/oss.js");
+    const { callRpc } = await import("./lib/api-client.js");
+    
+    // Save temp file
+    const tmpFileName = `${Date.now()}_${fileName}`;
+    const tmpPath = `/tmp/${tmpFileName}`;
+    await fs.promises.writeFile(tmpPath, fileBuffer);
+    
+    // Upload to OSS
+    const ossUrl = await uploadFileToOss(tmpPath);
+    
+    // Clean up temp file
+    await fs.promises.unlink(tmpPath).catch(() => {});
+    
+    if (!ossUrl) {
+      res.status(500).json({ success: false, message: "文件上传失败" });
+      return;
+    }
+    
+    // Update curriculum design record
+    const updateResult = await callRpc("update_curriculum_design", {
+      tenant,
+      input: { id, file_url: ossUrl },
+      fields: ["id", "file_url"],
+    });
+    
+    res.json({ success: true, message: "文档上传成功", data: { file_url: ossUrl } });
+  } catch (err: any) {
+    console.error("[agent-server] Curriculum upload error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================================
 // Start Server
 // ============================================================
 
