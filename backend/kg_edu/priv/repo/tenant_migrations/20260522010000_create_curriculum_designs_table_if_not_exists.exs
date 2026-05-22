@@ -39,6 +39,10 @@ defmodule KgEdu.Repo.TenantMigrations.CreateCurriculumDesignsTableIfNotExists do
       END $$;
     """, "Add foreign key constraint if not exists")
 
-    create index(:curriculum_designs, [:major_id], prefix: prefix(), if_not_exists: true)
+    # Create index separately with IF NOT EXISTS
+    execute("""
+      CREATE INDEX IF NOT EXISTS curriculum_designs_major_id_index 
+      ON curriculum_designs(major_id)
+    """, "Create index on major_id")
   end
 end
