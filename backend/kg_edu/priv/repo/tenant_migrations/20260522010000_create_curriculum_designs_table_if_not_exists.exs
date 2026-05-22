@@ -1,47 +1,31 @@
 defmodule KgEdu.Repo.TenantMigrations.CreateCurriculumDesignsTableIfNotExists do
   @moduledoc """
   Create curriculum_designs table only if it doesn't exist.
-  This handles the case where table was created in a different migration.
+  Uses Ecto DSL with tenant prefix.
   """
   use Ecto.Migration
 
   def change do
-    execute("""
-      CREATE TABLE IF NOT EXISTS curriculum_designs (
-        id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-        title text NOT NULL,
-        description text,
-        design_data text,
-        file_url text,
-        markdown_content text,
-        ai_generated boolean NOT NULL DEFAULT false,
-        version bigint NOT NULL DEFAULT 1,
-        status text NOT NULL DEFAULT 'draft',
-        major_id uuid NOT NULL,
-        inserted_at timestamptz NOT NULL DEFAULT NOW(),
-        updated_at timestamptz NOT NULL DEFAULT NOW()
-      )
-    """, "Create curriculum_designs table if not exists")
+    # Use IF NOT EXISTS pattern via create_if_not_exists
+    create_if_not_exists table(:curriculum_designs, primary_key: false, prefix: prefix()) do
+      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
+      add :title, :text, null: false
+      add :description, :text
+      add :design_data, :text
+      add :file_url, :text
+      add :markdown_content, :text
+      add :ai_generated, :boolean, null: false, default: false
+      add :version, :bigint, null: false, default: 1
+      add :status, :text, null: false, default: "draft"
+      add :major_id, references(:majors, type: :uuid, prefix: prefix()), null: false
 
-    execute("""
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM information_schema.table_constraints 
-          WHERE constraint_name = 'curriculum_designs_major_id_fkey'
-        ) THEN
-          ALTER TABLE curriculum_designs 
-          ADD CONSTRAINT curriculum_designs_major_id_fkey 
-          FOREIGN KEY (major_id) REFERENCES majors(id) ON DELETE CASCADE;
-        END IF;
-      EXCEPTION WHEN OTHERS THEN
-        NULL;
-      END $$;
-    """, "Add foreign key constraint if not exists")
+      add :inserted_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
 
-    execute("""
-      CREATE INDEX IF NOT EXISTS curriculum_designs_major_id_index 
-      ON curriculum_designs(major_id)
-    """, "Create index on major_id")
+      add :updated_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+    end
   end
 end
