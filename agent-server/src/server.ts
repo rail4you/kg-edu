@@ -311,6 +311,155 @@ app.post("/api/skills/generate-docx", async (req, res) => {
 });
 
 // ============================================================
+// POST /competency-graph/generate - AI 生成能力图谱
+// ============================================================
+
+app.post("/competency-graph/generate", async (req, res) => {
+  const { orgSchema } = extractTenantContext(req as any);
+  const body = req.body as {
+    orgSchema?: string;
+    majorId: string;
+    customPrompt?: string;
+  };
+
+  const effectiveSchema = body.orgSchema || orgSchema;
+  if (!effectiveSchema || !body.majorId) {
+    res.status(400).json({ success: false, message: "orgSchema and majorId are required" });
+    return;
+  }
+
+  setTenantContext(effectiveSchema);
+  try {
+    const { generateCompetencyGraph } = await import("./lib/competency-graph.js");
+    const result = await generateCompetencyGraph(
+      { orgSchema: effectiveSchema, majorId: body.majorId, customPrompt: body.customPrompt },
+      effectiveSchema,
+    );
+    res.json(result);
+  } catch (err: any) {
+    console.error("[agent-server] Competency graph error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================================
+// POST /api/curriculum/jobs - 创建课程体系生成任务
+// ============================================================
+
+app.post("/api/curriculum/jobs", async (req, res) => {
+  const { orgSchema } = extractTenantContext(req as any);
+  const body = req.body as {
+    orgSchema?: string;
+    majorId: string;
+    customPrompt?: string;
+    userId?: string;
+  };
+
+  const effectiveSchema = body.orgSchema || orgSchema;
+  if (!effectiveSchema || !body.majorId) {
+    res.status(400).json({ success: false, message: "orgSchema and majorId are required" });
+    return;
+  }
+
+  // 创建 Job
+  const { createJob } = await import("./lib/curriculum-job.js");
+  const jobId = createJob(effectiveSchema, body.majorId);
+
+  // 异步执行生成（不阻塞响应）
+  setTenantContext(effectiveSchema, body.userId);
+  const { generateCurriculumGraph } = await import("./lib/curriculum-graph.js");
+  const { updateJob } = await import("./lib/curriculum-job.js");
+  
+  // 更新状态为运行中
+  updateJob(jobId, { status: "running", message: "正在生成课程体系..." });
+  
+  // 异步执行
+  generateCurriculumGraph(
+    { orgSchema: effectiveSchema, majorId: body.majorId, customPrompt: body.customPrompt, userId: body.userId },
+    effectiveSchema,
+  ).then((result) => {
+    if (result.success && result.data) {
+      updateJob(jobId, {
+        status: "succeeded",
+        message: result.message || "课程体系生成成功",
+        result: result.data,
+      });
+    } else {
+      updateJob(jobId, {
+        status: "failed",
+        message: result.message || "生成失败",
+        error: result.message,
+      });
+    }
+  }).catch((err: any) => {
+    updateJob(jobId, {
+      status: "failed",
+      message: err.message || "生成失败",
+      error: err.message,
+    });
+  });
+
+  res.json({
+    success: true,
+    message: "课程体系生成任务已创建",
+    data: { jobId, status: "queued" },
+  });
+});
+
+// ============================================================
+// GET /api/curriculum/jobs/:jobId - 查询任务状态
+// ============================================================
+
+app.get("/api/curriculum/jobs/:jobId", async (req, res) => {
+  const { jobId } = req.params;
+  const { getJob } = await import("./lib/curriculum-job.js");
+  const job = getJob(jobId);
+
+  if (!job) {
+    res.status(404).json({ success: false, message: "任务不存在或已过期" });
+    return;
+  }
+
+  res.json({
+    success: true,
+    data: job,
+  });
+});
+
+// ============================================================
+// POST /curriculum/generate - 直接生成（同步，保留兼容性）
+// ============================================================
+
+app.post("/curriculum/generate", async (req, res) => {
+  const { orgSchema } = extractTenantContext(req as any);
+  const body = req.body as {
+    orgSchema?: string;
+    majorId: string;
+    customPrompt?: string;
+    userId?: string;
+  };
+
+  const effectiveSchema = body.orgSchema || orgSchema;
+  if (!effectiveSchema || !body.majorId) {
+    res.status(400).json({ success: false, message: "orgSchema and majorId are required" });
+    return;
+  }
+
+  setTenantContext(effectiveSchema, body.userId);
+  try {
+    const { generateCurriculumGraph } = await import("./lib/curriculum-graph.js");
+    const result = await generateCurriculumGraph(
+      { orgSchema: effectiveSchema, majorId: body.majorId, customPrompt: body.customPrompt, userId: body.userId },
+      effectiveSchema,
+    );
+    res.json(result);
+  } catch (err: any) {
+    console.error("[agent-server] Curriculum graph error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================================
 // 兼容旧 .NET Agent 的端点（透传）
 // ============================================================
 

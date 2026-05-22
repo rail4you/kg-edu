@@ -52,9 +52,7 @@ services:
 
   # AI Agent Service (Bun + Pi SDK)
   ai-agent:
-    build:
-      context: ./agent-server
-      dockerfile: Dockerfile
+    image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_agent:latest
     container_name: kg-edu-ai-agent
     restart: unless-stopped
     environment:

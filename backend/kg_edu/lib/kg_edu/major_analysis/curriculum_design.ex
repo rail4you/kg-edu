@@ -52,12 +52,10 @@ defmodule KgEdu.MajorAnalysis.CurriculumDesign do
     end
 
     create :create do
-      accept [:title, :description, :major_id, :design_data, :ai_generated]
+      accept [:title, :description, :major_id, :design_data]
       change fn changeset, _context ->
-        changeset
-        |> Ash.Changeset.change_default(:ai_generated, false)
-        |> Ash.Changeset.change_default(:version, 1)
-        |> Ash.Changeset.change_default(:status, :draft)
+        Ash.Changeset.change_attribute(changeset, :version, 1)
+        |> Ash.Changeset.change_attribute(:status, :draft)
       end
     end
 
@@ -157,8 +155,12 @@ defmodule KgEdu.MajorAnalysis.CurriculumDesign do
       constraints one_of: [:draft, :published]
     end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    create_timestamp :inserted_at do
+      public? true
+    end
+    update_timestamp :updated_at do
+      public? true
+    end
   end
 
   relationships do

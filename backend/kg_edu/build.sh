@@ -1,7 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PLATFORM="${PLATFORM:-linux/amd64}"
+IMAGE="${IMAGE:-registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest}"
+
 docker buildx build \
-  --platform linux/amd64 \
-  -t registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest \
+  --platform "${PLATFORM}" \
+  -t "${IMAGE}" \
   --load \
   .
 
-docker push registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest
+docker push "${IMAGE}"
