@@ -18,8 +18,8 @@ defmodule KgEdu.Repo.TenantMigrations.CreateCurriculumDesignsTableIfNotExists do
         version bigint NOT NULL DEFAULT 1,
         status text NOT NULL DEFAULT 'draft',
         major_id uuid NOT NULL,
-        inserted_at timestamp(0)::timestamp NOT NULL DEFAULT NOW(),
-        updated_at timestamp(0)::timestamp NOT NULL DEFAULT NOW()
+        inserted_at timestamptz NOT NULL DEFAULT NOW(),
+        updated_at timestamptz NOT NULL DEFAULT NOW()
       )
     """, "Create curriculum_designs table if not exists")
 
@@ -35,11 +35,10 @@ defmodule KgEdu.Repo.TenantMigrations.CreateCurriculumDesignsTableIfNotExists do
           FOREIGN KEY (major_id) REFERENCES majors(id) ON DELETE CASCADE;
         END IF;
       EXCEPTION WHEN OTHERS THEN
-        NULL; -- Ignore if constraint already exists or table doesn't exist
+        NULL;
       END $$;
     """, "Add foreign key constraint if not exists")
 
-    # Create index separately with IF NOT EXISTS
     execute("""
       CREATE INDEX IF NOT EXISTS curriculum_designs_major_id_index 
       ON curriculum_designs(major_id)
