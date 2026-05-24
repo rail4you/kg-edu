@@ -69,11 +69,13 @@ defmodule KgEdu.MajorAnalysis do
   typescript_rpc do
     resource KgEdu.MajorAnalysis.Major do
       rpc_action :list_majors, :read
+      rpc_action :list_public_micro_majors, :public_list
       rpc_action :get_majors_by_college, :by_college
       rpc_action :create_major, :create
       rpc_action :update_major, :update_major
       rpc_action :delete_major, :destroy
       rpc_action :get_major, :by_id
+      rpc_action :get_public_micro_major, :public_detail
     end
 
     resource KgEdu.MajorAnalysis.JobPosition do
@@ -123,6 +125,26 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :list_major_enrollments_by_major, :by_major
       rpc_action :my_major_enrollments, :my_enrollments
       rpc_action :bulk_assign_major_students, :bulk_assign
+      rpc_action :select_micro_major, :select_micro_major
+    end
+
+    resource KgEdu.MajorAnalysis.MajorCourse do
+      rpc_action :create_major_course, :create
+      rpc_action :update_major_course, :update_major_course
+      rpc_action :delete_major_course, :destroy
+      rpc_action :list_major_courses, :read
+      rpc_action :list_major_courses_by_major, :by_major
+      rpc_action :replace_major_courses, :replace_for_major
+    end
+
+    resource KgEdu.MajorAnalysis.CompetencyCourseSupport do
+      rpc_action :create_competency_course_support, :create
+      rpc_action :update_competency_course_support, :update_support
+      rpc_action :delete_competency_course_support, :destroy
+      rpc_action :list_competency_course_supports, :read
+      rpc_action :list_supports_by_competency, :by_competency
+      rpc_action :list_supports_by_course, :by_course
+      rpc_action :replace_competency_course_supports, :replace_for_competency
     end
   end
 
@@ -133,5 +155,7 @@ defmodule KgEdu.MajorAnalysis do
     resource KgEdu.MajorAnalysis.CurriculumDesign
     resource KgEdu.MajorAnalysis.AnalysisReport
     resource KgEdu.MajorAnalysis.MajorEnrollment
+    resource KgEdu.MajorAnalysis.MajorCourse
+    resource KgEdu.MajorAnalysis.CompetencyCourseSupport
   end
 end

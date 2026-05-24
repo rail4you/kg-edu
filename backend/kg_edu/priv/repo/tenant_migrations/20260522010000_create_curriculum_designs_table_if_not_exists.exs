@@ -6,7 +6,6 @@ defmodule KgEdu.Repo.TenantMigrations.CreateCurriculumDesignsTableIfNotExists do
   use Ecto.Migration
 
   def change do
-    # Use IF NOT EXISTS pattern via create_if_not_exists
     create_if_not_exists table(:curriculum_designs, primary_key: false, prefix: prefix()) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
       add :title, :text, null: false

@@ -240,6 +240,18 @@ export async function generateCurriculumGraph(
     const competencies = competenciesResult?.results || competenciesResult?.data || (Array.isArray(competenciesResult) ? competenciesResult : []) || [];
     console.log(`[curriculum-graph] Got ${competencies.length} competencies`);
 
+    // 3.1 获取微专业关联课程
+    const coursesResult = await callRpc("list_major_courses_by_major", {
+      tenant: orgSchema || tenant,
+      input: { major_id: majorId },
+      fields: ["id", "courseId", "courseType", "supportRole", "credit", { course: ["id", "title"] }],
+    });
+    const courses = coursesResult?.results || coursesResult?.data || (Array.isArray(coursesResult) ? coursesResult : []) || [];
+    console.log(`[curriculum-graph] Got ${courses.length} courses for major`);
+
+    // 3.2 获取能力-课程支撑关系
+    const courseCompetencyMatrix = await buildCourseCompetencyMatrix(competencies, courses, tenant || (orgSchema || ""));
+
     // 4. 调用 LLM 生成课程体系
     const userPrompt = buildUserPrompt(
       major.name,
@@ -251,14 +263,17 @@ export async function generateCurriculumGraph(
 
     const markdown = await callLLM(SYSTEM_PROMPT, userPrompt);
 
+    // 4.1 在 Markdown 末尾添加课程-能力支撑矩阵
+    const enhancedMarkdown = addCourseCompetencyMatrixToMarkdown(markdown, courseCompetencyMatrix, courses, competencies);
+
     // 5. 解析 LLM 返回的 Markdown，生成结构化数据
-    const designData = parseCurriculumMarkdown(markdown);
+    const designData = parseCurriculumMarkdown(enhancedMarkdown);
 
     // 6. 生成 DOCX 文件
     const fileName = `${major.name || "课程体系"}_${Date.now()}.docx`;
     const docxPath = path.join(tmpdir(), fileName);
 
-    await convertMarkdownToDocx(markdown, docxPath);
+    await convertMarkdownToDocx(enhancedMarkdown, docxPath);
 
     // 7. 上传到 OSS
     const ossUrl = await uploadFileToOss(docxPath);
@@ -272,16 +287,19 @@ export async function generateCurriculumGraph(
 
     console.log(`[curriculum-graph] Uploaded to OSS: ${ossUrl}`);
 
-    // 8. 创建 CurriculumDesign 记录
+    // 8. 创建 CurriculumDesign 记录（包含课程-能力矩阵）
     const createResult = await callRpc("create_curriculum_design", {
       tenant: orgSchema || tenant,
       input: {
         title: `${major.name} - 课程体系设计`,
         description: "AI 辅助生成的课程体系方案",
         major_id: majorId,
-        design_data: JSON.stringify(designData),
+        design_data: JSON.stringify({
+          ...designData,
+          courseCompetencyMatrix: courseCompetencyMatrix,
+        }),
         file_url: ossUrl,
-        markdown_content: markdown,
+        markdown_content: enhancedMarkdown,
       },
       fields: ["id", "title", "description", "file_url", "status"],
     });
@@ -339,4 +357,149 @@ function parseCurriculumMarkdown(markdown: string): any {
       generated_at: new Date().toISOString(),
     };
   }
+}
+
+// ============================================================
+// 课程-能力支撑矩阵构建
+// ============================================================
+
+interface CourseInfo {
+  id: string;
+  courseId: string;
+  courseType: string;
+  supportRole: string;
+  credit?: number;
+  course?: { id: string; title: string };
+}
+
+interface CompetencyInfo {
+  id: string;
+  name: string;
+  category: string;
+  level: number;
+}
+
+interface CourseCompetencyEntry {
+  courseId: string;
+  courseName: string;
+  competencyId: string;
+  competencyName: string;
+  supportLevel: string;
+  supportDescription: string;
+}
+
+async function buildCourseCompetencyMatrix(
+  competencies: CompetencyInfo[],
+  courses: CourseInfo[],
+  tenant: string
+): Promise<CourseCompetencyEntry[]> {
+  const matrix: CourseCompetencyEntry[] = [];
+
+  for (const course of courses) {
+    const courseTitle = course.course?.title || `课程${course.courseId}`;
+    const courseId = course.courseId;
+
+    // 获取该课程已关联的能力支撑关系
+    const supports = await getCourseCompetencySupports(courseId, tenant);
+
+    // 为每个相关能力创建矩阵条目
+    for (const support of supports) {
+      matrix.push({
+        courseId,
+        courseName: courseTitle,
+        competencyId: support.competencyId,
+        competencyName: support.competencyName,
+        supportLevel: support.supportLevel,
+        supportDescription: support.description || "",
+      });
+    }
+  }
+
+  return matrix;
+}
+
+async function getCourseCompetencySupports(
+  courseId: string,
+  tenant: string
+): Promise<Array<{ competencyId: string; competencyName: string; supportLevel: string; description?: string }>> {
+  try {
+    // 使用新添加的 by_course 查询获取该课程的所有能力支撑关系
+    const result = await callRpc("list_supports_by_course", {
+      tenant,
+      input: { course_id: courseId },
+      fields: ["id", "majorCompetencyId", "courseId", "supportLevel", "description", { majorCompetency: ["id", "name"] }],
+    });
+
+    const supports = result?.results || result?.data || (Array.isArray(result) ? result : []) || [];
+
+    return supports.map((s: any) => ({
+      competencyId: s.majorCompetencyId || s.major_competency_id || s.majorCompetency?.id,
+      competencyName: s.majorCompetency?.name || "",
+      supportLevel: s.supportLevel || s.support_level || "secondary",
+      description: s.description,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function addCourseCompetencyMatrixToMarkdown(
+  markdown: string,
+  matrix: CourseCompetencyEntry[],
+  courses: CourseInfo[],
+  competencies: CompetencyInfo[]
+): string {
+  if (matrix.length === 0) {
+    return markdown;
+  }
+
+  // 按课程分组
+  const byCourse = new Map<string, CourseCompetencyEntry[]>();
+  for (const entry of matrix) {
+    const existing = byCourse.get(entry.courseId) || [];
+    existing.push(entry);
+    byCourse.set(entry.courseId, existing);
+  }
+
+  // 生成 Markdown 表格
+  const tableLines = [
+    "\n\n## 六、课程-能力支撑矩阵\n",
+    "| 课程名称 | 支撑能力 | 支撑级别 | 说明 |",
+    "|---------|---------|---------|------|",
+  ];
+
+  for (const course of courses) {
+    const courseId = course.courseId;
+    const courseTitle = course.course?.title || `课程${courseId}`;
+    const supports = byCourse.get(courseId) || [];
+
+    if (supports.length === 0) {
+      // 课程没有已知的支撑关系
+      tableLines.push(`| ${courseTitle} | - | - | 暂无支撑关系 |`);
+    } else {
+      // 第一行显示课程名和第一个能力
+      const first = supports[0];
+      tableLines.push(`| ${courseTitle} | ${first.competencyName} | ${getSupportLevelLabel(first.supportLevel)} | ${first.supportDescription || ""} |`);
+
+      // 后续行只显示支撑关系
+      for (let i = 1; i < supports.length; i++) {
+        const s = supports[i];
+        tableLines.push(`| | ${s.competencyName} | ${getSupportLevelLabel(s.supportLevel)} | ${s.supportDescription || ""} |`);
+      }
+    }
+  }
+
+  return markdown + tableLines.join("\n");
+}
+
+function getSupportLevelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    "primary": "主要支撑",
+    "secondary": "辅助支撑",
+    "practice": "实践支撑",
+    "core": "核心课程",
+    "supporting": "支撑课程",
+    "practice_course": "实践课程",
+  };
+  return labels[level] || level;
 }

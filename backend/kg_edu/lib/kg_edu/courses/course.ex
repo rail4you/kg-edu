@@ -11,51 +11,51 @@ defmodule KgEdu.Courses.Course do
   require Ash.Query
 
   postgres do
-    table("courses")
-    repo(KgEdu.Repo)
+    table "courses"
+    repo KgEdu.Repo
   end
 
   json_api do
-    type("course")
+    type "course"
   end
 
   typescript do
     # Choose appropriate name
-    type_name("Course")
+    type_name "Course"
   end
 
   code_interface do
-    define(:create_course, action: :create)
-    define(:update_course, action: :update)
-    define(:delete_course, action: :destroy)
-    define(:get_course, action: :read, get_by: [:id])
-    define(:list_courses, action: :read)
-    define(:list_courses_by_teacher, action: :by_teacher)
-    define(:list_courses_by_student, action: :by_student)
-    define(:get_course_by_title, action: :by_title)
-    define(:get_all_courses, action: :get_all_courses)
-    define(:get_course_by_guest, action: :get_course_by_guest)
-    define(:calculate_course_statistics, action: :calculate_course_statistics)
-    define(:course_overview, action: :course_overview)
-    define(:create_course_with_primary_teacher, action: :create_with_primary_teacher)
-    define(:get_courses_for_teacher, action: :get_courses_for_teacher)
-    define(:my_courses, action: :my_courses)
+    define :create_course, action: :create
+    define :update_course, action: :update
+    define :delete_course, action: :destroy
+    define :get_course, action: :read, get_by: [:id]
+    define :list_courses, action: :read
+    define :list_courses_by_teacher, action: :by_teacher
+    define :list_courses_by_student, action: :by_student
+    define :get_course_by_title, action: :by_title
+    define :get_all_courses, action: :get_all_courses
+    define :get_course_by_guest, action: :get_course_by_guest
+    define :calculate_course_statistics, action: :calculate_course_statistics
+    define :course_overview, action: :course_overview
+    define :create_course_with_primary_teacher, action: :create_with_primary_teacher
+    define :get_courses_for_teacher, action: :get_courses_for_teacher
+    define :my_courses, action: :my_courses
   end
 
   actions do
-    defaults([:destroy])
+    defaults [:destroy]
 
     read :read do
-      primary?(true)
+      primary? true
 
       pagination do
-        required?(false)
-        offset?(true)
-        keyset?(true)
-        countable(true)
+        required? false
+        offset? true
+        keyset? true
+        countable true
       end
 
-      prepare(fn query, context ->
+      prepare fn query, context ->
         # Teachers see only their courses, students see only enrolled courses
         # Only users see published courses
         Logger.info("COURSE LIST: context is #{inspect(context)}")
@@ -96,16 +96,16 @@ defmodule KgEdu.Courses.Course do
           end
 
         query |> Ash.Query.load(:subject_category)
-      end)
+      end
     end
 
     read :get do
-      description("Get a course by ID")
-      get?(true)
+      description "Get a course by ID"
+      get? true
     end
 
     create :create do
-      accept([
+      accept [
         :title,
         :description,
         :image_url,
@@ -119,69 +119,69 @@ defmodule KgEdu.Courses.Course do
         :teacher_id,
         :browse_count,
         :color_scheme
-      ])
+      ]
     end
 
     action :create_with_primary_teacher, :map do
-      description("Create a course with a primary teacher assignment")
+      description "Create a course with a primary teacher assignment"
 
       argument :title, :string do
-        description("The course title")
-        allow_nil?(false)
+        description "The course title"
+        allow_nil? false
       end
 
       argument :description, :string do
-        description("The course description")
-        allow_nil?(true)
+        description "The course description"
+        allow_nil? true
       end
 
       argument :image_url, :string do
-        description("The course image URL")
-        allow_nil?(true)
+        description "The course image URL"
+        allow_nil? true
       end
 
       argument :major, :string do
-        description("The course major")
-        allow_nil?(true)
+        description "The course major"
+        allow_nil? true
       end
 
       argument :semester, :string do
-        description("The course semester")
-        allow_nil?(true)
+        description "The course semester"
+        allow_nil? true
       end
 
       argument :semester_hours, :integer do
-        description("The course semester hours")
-        allow_nil?(true)
+        description "The course semester hours"
+        allow_nil? true
       end
 
       argument :credits, :integer do
-        description("The course credits")
-        allow_nil?(true)
+        description "The course credits"
+        allow_nil? true
       end
 
       argument :book_id, :uuid do
-        description("The course book ID")
-        allow_nil?(true)
+        description "The course book ID"
+        allow_nil? true
       end
 
       argument :publish_status, :boolean do
-        description("Whether the course is published")
-        allow_nil?(true)
-        default(true)
+        description "Whether the course is published"
+        allow_nil? true
+        default true
       end
 
       argument :subject_category_id, :uuid do
-        description("The course subject category ID")
-        allow_nil?(true)
+        description "The course subject category ID"
+        allow_nil? true
       end
 
       argument :primary_teacher_id, :uuid do
-        description("ID of the primary teacher for this course")
-        allow_nil?(false)
+        description "ID of the primary teacher for this course"
+        allow_nil? false
       end
 
-      run(fn input, context ->
+      run fn input, context ->
         course_attrs = %{
           title: input.arguments.title,
           description: input.arguments.description,
@@ -236,11 +236,11 @@ defmodule KgEdu.Courses.Course do
           error ->
             {:error, "Failed to create course with primary teacher: #{inspect(error)}"}
         end
-      end)
+      end
     end
 
     update :update do
-      accept([
+      accept [
         :title,
         :description,
         :image_url,
@@ -254,50 +254,40 @@ defmodule KgEdu.Courses.Course do
         :teacher_id,
         :browse_count,
         :color_scheme
-      ])
+      ]
     end
 
     read :by_teacher do
-      description(
-        "Get courses taught by a specific teacher (primary teacher or through assignments)"
-      )
+      description "Get courses taught by a specific teacher (primary teacher or through assignments)"
 
       argument :teacher_id, :uuid do
-        allow_nil?(false)
+        allow_nil? false
       end
 
-      filter(
-        expr(
-          teacher_id == ^arg(:teacher_id) or
-            course_assignments.teacher_id == ^arg(:teacher_id)
-        )
-      )
+      filter expr(
+               teacher_id == ^arg(:teacher_id) or
+                 course_assignments.teacher_id == ^arg(:teacher_id)
+             )
     end
 
     read :get_courses_for_teacher do
-      description(
-        "Get all courses that a teacher has access to (as primary teacher, assistant, or guest)"
-      )
+      description "Get all courses that a teacher has access to (as primary teacher, assistant, or guest)"
 
       argument :teacher_id, :uuid do
-        description("The teacher ID to get courses for")
-        allow_nil?(false)
+        description "The teacher ID to get courses for"
+        allow_nil? false
       end
 
-      filter(
-        expr(
-          teacher_id == ^arg(:teacher_id) or
-            course_assignments.teacher_id == ^arg(:teacher_id)
-        )
-      )
+      filter expr(
+               teacher_id == ^arg(:teacher_id) or
+                 course_assignments.teacher_id == ^arg(:teacher_id)
+             )
     end
 
     read :my_courses do
-      description(
-        "Get courses for the current user (teachers get their created and assigned courses, students/users get their enrolled courses)"
-      )
+      description "Get courses for the current user (teachers get their created and assigned courses, students/users get their enrolled courses)"
 
-      prepare(fn query, context ->
+      prepare fn query, context ->
         case context.actor do
           %{role: :teacher, id: teacher_id} ->
             query
@@ -314,54 +304,52 @@ defmodule KgEdu.Courses.Course do
           _ ->
             Ash.Query.filter(query, false)
         end
-      end)
+      end
     end
 
     read :by_student do
-      description("Get courses assigned to a specific student")
+      description "Get courses assigned to a specific student"
 
       argument :member_id, :uuid do
-        allow_nil?(false)
+        allow_nil? false
       end
 
-      filter(expr(course_enrollments.member_id == ^arg(:member_id)))
+      filter expr(course_enrollments.member_id == ^arg(:member_id))
     end
 
     read :by_title do
-      description("Get a course by title")
-      get?(true)
-      argument(:title, :string, allow_nil?: false)
-      filter(expr(title == ^arg(:title)))
+      description "Get a course by title"
+      get? true
+      argument :title, :string, allow_nil?: false
+      filter expr(title == ^arg(:title))
     end
 
     read :get_all_courses do
-      description("Get all courses from tenant")
+      description "Get all courses from tenant"
       # No actor filtering - returns all courses in the tenant
     end
 
     read :get_course_by_guest do
-      description("Get a course by ID for guest access (no authentication required)")
-      get?(true)
+      description "Get a course by ID for guest access (no authentication required)"
+      get? true
 
       argument :course_id, :uuid do
-        allow_nil?(false)
-        description("The course ID to retrieve")
+        allow_nil? false
+        description "The course ID to retrieve"
       end
 
-      filter(expr(id == ^arg(:course_id)))
+      filter expr(id == ^arg(:course_id))
     end
 
     action :calculate_course_statistics, :map do
-      description(
-        "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
-      )
+      description "Calculate comprehensive statistics for a course including knowledge hierarchy and media counts"
 
       argument :course_id, :uuid do
-        allow_nil?(false)
-        description("The course ID to calculate statistics for")
+        allow_nil? false
+        description "The course ID to calculate statistics for"
       end
 
-      run(fn input, context ->
+      run fn input, context ->
         course_id = input.arguments.course_id
 
         try do
@@ -448,20 +436,18 @@ defmodule KgEdu.Courses.Course do
           error ->
             {:error, "Failed to calculate course statistics: #{inspect(error)}"}
         end
-      end)
+      end
     end
 
     action :course_overview, :map do
-      description(
-        "Get comprehensive overview for a specific course including users, resources, and activities"
-      )
+      description "Get comprehensive overview for a specific course including users, resources, and activities"
 
       argument :course_id, :uuid do
-        allow_nil?(false)
-        description("The course ID to get overview for")
+        allow_nil? false
+        description "The course ID to get overview for"
       end
 
-      run(fn input, context ->
+      run fn input, context ->
         course_id = input.arguments.course_id
 
         try do
@@ -787,15 +773,13 @@ defmodule KgEdu.Courses.Course do
           error ->
             {:error, "Failed to get course overview: #{inspect(error)}"}
         end
-      end)
+      end
     end
 
     action :get_dashboard_stats, :map do
-      description(
-        "Get dashboard statistics for teacher workbench (student count, knowledge count, homework count)"
-      )
+      description "Get dashboard statistics for teacher workbench (student count, knowledge count, homework count)"
 
-      run(fn _input, context ->
+      run fn _input, context ->
         try do
           tenant = context.tenant
           Logger.info("get_dashboard_stats called with tenant: #{inspect(tenant)}")
@@ -858,7 +842,7 @@ defmodule KgEdu.Courses.Course do
             Logger.error("Failed to get dashboard stats: #{Exception.message(error)}")
             {:error, "Failed to get dashboard stats: #{inspect(error)}"}
         end
-      end)
+      end
     end
   end
 
@@ -883,168 +867,182 @@ defmodule KgEdu.Courses.Course do
 
     # Default policy - forbid everything else
     policy always() do
-      authorize_if(always())
+      authorize_if always()
     end
   end
 
   multitenancy do
-    strategy(:context)
+    strategy :context
   end
 
   attributes do
     uuid_primary_key :id do
-      public?(true)
+      public? true
     end
 
     attribute :title, :string do
-      allow_nil?(false)
-      public?(true)
+      allow_nil? false
+      public? true
     end
 
     attribute :description, :string do
-      allow_nil?(true)
-      public?(true)
+      allow_nil? true
+      public? true
     end
 
     attribute :image_url, :string do
-      allow_nil?(true)
-      public?(true)
+      allow_nil? true
+      public? true
     end
 
     attribute :teacher_id, :uuid do
-      allow_nil?(false)
-      public?(true)
+      allow_nil? false
+      public? true
     end
 
     attribute :major, :string do
-      allow_nil?(true)
-      public?(true)
-      description("专业 (Major)")
+      allow_nil? true
+      public? true
+      description "专业 (Major)"
     end
 
     attribute :semester, :string do
-      allow_nil?(true)
-      public?(true)
-      description("学期 (Semester)")
+      allow_nil? true
+      public? true
+      description "学期 (Semester)"
     end
 
     attribute :semester_hours, :integer do
-      allow_nil?(true)
-      public?(true)
-      description("学时 (Credit Hours)")
+      allow_nil? true
+      public? true
+      description "学时 (Credit Hours)"
     end
 
     attribute :credits, :integer do
-      allow_nil?(true)
-      public?(true)
-      description("学分 (Credits)")
+      allow_nil? true
+      public? true
+      description "学分 (Credits)"
     end
 
     attribute :book_id, :uuid do
-      allow_nil?(true)
-      public?(true)
-      description("Associated book ID")
+      allow_nil? true
+      public? true
+      description "Associated book ID"
     end
 
     attribute :publish_status, :boolean do
-      default(true)
-      public?(true)
-      description("Whether the course is published")
+      default true
+      public? true
+      description "Whether the course is published"
     end
 
     attribute :browse_count, :integer do
-      default(0)
-      public?(true)
-      description("Number of times the course has been viewed")
+      default 0
+      public? true
+      description "Number of times the course has been viewed"
     end
 
     attribute :color_scheme, :string do
-      default("auto")
-      public?(true)
-      description("Front page color scheme: auto, pure, graphite_blue, sea_mist, pine_green, amber_brown, mist_purple, inkstone_gray, celadon_gray")
+      default "auto"
+      public? true
+
+      description "Front page color scheme: auto, pure, graphite_blue, sea_mist, pine_green, amber_brown, mist_purple, inkstone_gray, celadon_gray"
     end
 
-    create_timestamp(:inserted_at)
-    update_timestamp(:updated_at)
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
   end
 
   relationships do
     has_many :course_assignments, KgEdu.Courses.CourseAssignment do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Teacher assignments for this course")
+      public? true
+      destination_attribute :course_id
+      description "Teacher assignments for this course"
     end
 
     has_many :course_enrollments, KgEdu.Courses.CourseEnrollment do
-      public?(true)
-      destination_attribute(:course_id)
+      public? true
+      destination_attribute :course_id
     end
 
     has_many :knowledge_resources, KgEdu.Knowledge.Resource do
-      public?(true)
-      destination_attribute(:course_id)
+      public? true
+      destination_attribute :course_id
     end
 
     has_many :chapters, KgEdu.Courses.Chapter do
-      public?(true)
-      destination_attribute(:course_id)
+      public? true
+      destination_attribute :course_id
     end
 
     has_many :homeworks, KgEdu.Knowledge.Homework do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Homeworks for this course")
+      public? true
+      destination_attribute :course_id
+      description "Homeworks for this course"
     end
 
     has_one :course_info, KgEdu.Courses.CourseInfo do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Course information")
+      public? true
+      destination_attribute :course_id
+      description "Course information"
     end
 
     belongs_to :book, KgEdu.Courses.Book do
-      allow_nil?(true)
-      public?(true)
-      description("Associated textbook for this course")
+      allow_nil? true
+      public? true
+      description "Associated textbook for this course"
     end
 
     belongs_to :subject_category, KgEdu.Courses.SubjectCategory do
-      allow_nil?(true)
-      public?(true)
-      description("Subject category for this course")
+      allow_nil? true
+      public? true
+      description "Subject category for this course"
     end
 
     has_many :links, KgEdu.Courses.Link do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Course-related links")
+      public? true
+      destination_attribute :course_id
+      description "Course-related links"
     end
 
     has_many :course_videos, KgEdu.Courses.CourseVideo do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Course videos")
+      public? true
+      destination_attribute :course_id
+      description "Course videos"
     end
 
     has_many :main_abilities, KgEdu.Knowledge.MainAbility do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Main abilities for this course")
+      public? true
+      destination_attribute :course_id
+      description "Main abilities for this course"
     end
 
     has_many :experiments, KgEdu.Knowledge.Experiment do
-      public?(true)
-      destination_attribute(:course_id)
-      description("Experiments for this course")
+      public? true
+      destination_attribute :course_id
+      description "Experiments for this course"
+    end
+
+    has_many :major_courses, KgEdu.MajorAnalysis.MajorCourse do
+      public? true
+      destination_attribute :course_id
+      description "Micro major links for this course"
+    end
+
+    many_to_many :micro_majors, KgEdu.MajorAnalysis.Major do
+      through KgEdu.MajorAnalysis.MajorCourse
+      source_attribute_on_join_resource :course_id
+      destination_attribute_on_join_resource :major_id
+      public? true
     end
   end
 
   aggregates do
     # Count videos through chapters
-    count(:videos_count, [:chapters, :videos])
+    count :videos_count, [:chapters, :videos]
 
     count :knowledge_resources_count, :knowledge_resources do
-      public?(true)
+      public? true
     end
   end
 end

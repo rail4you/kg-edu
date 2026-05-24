@@ -97,8 +97,16 @@ defmodule KgEdu.MajorAnalysis.JobPosition do
   end
 
   policies do
-    policy always() do
+    # 公开读取岗位信息
+    policy [action(:read), action(:by_id), action(:by_major)] do
       authorize_if always()
+    end
+
+    # 教师/管理员可创建、更新、删除岗位
+    policy [action(:create), action(:update_job_position), action(:destroy), action(:trigger_ai_analysis)] do
+      authorize_if expr(:teacher == ^actor(:role))
+      authorize_if expr(:admin == ^actor(:role))
+      authorize_if expr(:super_admin == ^actor(:role))
     end
   end
 

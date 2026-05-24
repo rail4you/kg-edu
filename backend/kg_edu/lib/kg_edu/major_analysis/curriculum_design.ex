@@ -108,8 +108,16 @@ defmodule KgEdu.MajorAnalysis.CurriculumDesign do
   end
 
   policies do
-    policy always() do
+    # 公开读取课程体系设计
+    policy [action(:read), action(:by_id), action(:by_major)] do
       authorize_if always()
+    end
+
+    # 教师/管理员可管理课程体系
+    policy [action(:create), action(:update_curriculum), action(:destroy), action(:ai_generate), action(:publish)] do
+      authorize_if expr(:teacher == ^actor(:role))
+      authorize_if expr(:admin == ^actor(:role))
+      authorize_if expr(:super_admin == ^actor(:role))
     end
   end
 

@@ -311,6 +311,14 @@ ${jobsText}${existingText}${customPromptSection}
 
     console.log(`[competency-graph] Saved ${savedNodes.length}/${nodes.length} nodes`);
 
+    // 9. 自动生成能力-课程支撑关系（仅当微专业有关联课程时）
+    try {
+      await generateCompetencyCourseSupports(params.majorId, savedNodes, tenant || orgSchema);
+    } catch (err: any) {
+      console.warn("[competency-graph] Failed to generate course supports:", err?.message);
+      // 不影响主流程，仅警告
+    }
+
     return {
       success: true,
       message: `能力图谱生成成功，共生成 ${savedNodes.length} 个能力节点`,
@@ -326,6 +334,118 @@ ${jobsText}${existingText}${customPromptSection}
       message: err?.message || "能力图谱生成失败",
     };
   }
+}
+
+// ============================================================
+// 能力-课程支撑关系自动生成
+// ============================================================
+
+interface CompetencyCourseSupport {
+  competencyId: string;
+  competencyName: string;
+  courseId: string;
+  courseName: string;
+  supportLevel: "primary" | "secondary" | "practice";
+  weight: number;
+  description: string;
+}
+
+async function generateCompetencyCourseSupports(
+  majorId: string,
+  competencies: CompetencyNodeInput[],
+  tenant: string
+): Promise<void> {
+  // 1. 获取微专业关联的课程
+  const coursesResult = await callRpc("list_major_courses_by_major", {
+    tenant,
+    input: { major_id: majorId },
+    fields: ["id", "majorId", "courseId", "courseType", "supportRole", "sortOrder", "credit"],
+  });
+  
+  const courses = coursesResult?.results || coursesResult?.data || [];
+  if (!Array.isArray(courses) || courses.length === 0) {
+    console.log("[competency-graph] No courses linked to major, skipping course supports generation");
+    return;
+  }
+  
+  console.log(`[competency-graph] Found ${courses.length} courses for major ${majorId}`);
+
+  // 2. 构建能力与课程的支撑关系
+  // 策略：
+  // - 核心课程 (supportRole=core) 主要支撑专业能力 (category=professional)
+  // - 实践课程 (supportRole=practice) 主要支撑实践能力 (category=practical)
+  // - 支撑课程 (supportRole=supporting) 支撑各类能力
+  const supports: CompetencyCourseSupport[] = [];
+
+  for (const competency of competencies) {
+    // 跳过一级节点（不直接支撑课程）
+    if (competency.level === 0) continue;
+
+    // 按能力类别分配课程
+    const matchingCourses = courses.filter((course: any) => {
+      switch (competency.category) {
+        case "professional":
+          return course.supportRole === "core" || course.supportRole === "supporting";
+        case "practical":
+          return course.supportRole === "practice" || course.supportRole === "supporting";
+        case "general":
+          return true; // 通用能力任何课程都可以支撑
+        default:
+          return false;
+      }
+    });
+
+    // 每个能力分配最多3门课程
+    const selectedCourses = matchingCourses.slice(0, 3);
+    
+    for (const course of selectedCourses) {
+      const supportLevel = course.supportRole === "core" ? "primary" : 
+                          course.supportRole === "practice" ? "practice" : "secondary";
+      const weight = course.supportRole === "core" ? 1.0 : 0.7;
+      
+      supports.push({
+        competencyId: nameToIdMap.get(competency.name) || "",
+        competencyName: competency.name,
+        courseId: course.courseId,
+        courseName: "",
+        supportLevel: supportLevel as any,
+        weight,
+        description: `${competency.name}由${course.supportRole === "core" ? "核心" : course.supportRole === "practice" ? "实践" : "支撑"}课程"${course.courseId}"支撑`,
+      });
+    }
+  }
+
+  console.log(`[competency-graph] Generated ${supports.length} course supports`);
+
+  // 3. 保存支撑关系
+  // 先获取能力节点 ID 映射
+  if (!nameToIdMap || nameToIdMap.size === 0) {
+    console.log("[competency-graph] No competency ID map, cannot create supports");
+    return;
+  }
+
+  for (const support of supports) {
+    const competencyId = nameToIdMap.get(support.competencyName);
+    if (!competencyId) continue;
+
+    try {
+      await callRpc("create_competency_course_support", {
+        tenant,
+        input: {
+          major_competency_id: competencyId,
+          course_id: support.courseId,
+          support_level: support.supportLevel,
+          description: support.description,
+          weight: support.weight,
+        },
+        fields: ["id", "majorCompetencyId", "courseId"],
+      });
+    } catch (err: any) {
+      console.warn(`[competency-graph] Failed to create course support:`, err?.message);
+    }
+  }
+
+  console.log(`[competency-graph] Created ${supports.length} competency-course support records`);
 }
 
 // ============================================================

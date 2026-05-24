@@ -85,8 +85,16 @@ defmodule KgEdu.MajorAnalysis.AnalysisReport do
   end
 
   policies do
-    policy always() do
+    # 公开读取分析报告
+    policy [action(:read), action(:by_id), action(:by_major), action(:by_type)] do
       authorize_if always()
+    end
+
+    # 教师/管理员可管理报告
+    policy [action(:create), action(:destroy), action(:generate_report)] do
+      authorize_if expr(:teacher == ^actor(:role))
+      authorize_if expr(:admin == ^actor(:role))
+      authorize_if expr(:super_admin == ^actor(:role))
     end
   end
 

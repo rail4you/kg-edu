@@ -48,6 +48,7 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
       get? true
       argument :id, :uuid, allow_nil?: false
       filter expr(id == ^arg(:id))
+
       prepare fn query, _ ->
         Ash.Query.load(query, [:children])
       end
@@ -57,6 +58,7 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
       description "Get all competencies for a major"
       argument :major_id, :uuid, allow_nil?: false
       filter expr(major_id == ^arg(:major_id))
+
       prepare fn query, _ ->
         Ash.Query.load(query, [:children])
       end
@@ -66,6 +68,7 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
       description "Get root-level competencies for a major"
       argument :major_id, :uuid, allow_nil?: false
       filter expr(major_id == ^arg(:major_id) and is_nil(parent_id))
+
       prepare fn query, _ ->
         Ash.Query.load(query, [:children])
       end
@@ -73,7 +76,18 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
 
     create :create do
       description "Create a new competency"
-      accept [:name, :category, :level, :description, :weight, :major_id, :parent_id, :ai_generated]
+
+      accept [
+        :name,
+        :category,
+        :level,
+        :description,
+        :weight,
+        :major_id,
+        :parent_id,
+        :ai_generated
+      ]
+
       change fn changeset, _context ->
         if is_nil(Ash.Changeset.get_attribute(changeset, :ai_generated)) do
           Ash.Changeset.change_attribute(changeset, :ai_generated, false)
@@ -91,8 +105,16 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
   end
 
   policies do
-    policy always() do
+    # 公开读取能力图谱
+    policy [action(:read), action(:by_id), action(:by_major), action(:root_competencies)] do
       authorize_if always()
+    end
+
+    # 教师/管理员可管理能力节点
+    policy [action(:create), action(:update_competency), action(:destroy)] do
+      authorize_if expr(:teacher == ^actor(:role))
+      authorize_if expr(:admin == ^actor(:role))
+      authorize_if expr(:super_admin == ^actor(:role))
     end
   end
 
@@ -167,6 +189,18 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
     has_many :children, __MODULE__ do
       public? true
       destination_attribute :parent_id
+    end
+
+    has_many :course_supports, KgEdu.MajorAnalysis.CompetencyCourseSupport do
+      public? true
+      destination_attribute :major_competency_id
+    end
+
+    many_to_many :courses, KgEdu.Courses.Course do
+      through KgEdu.MajorAnalysis.CompetencyCourseSupport
+      source_attribute_on_join_resource :major_competency_id
+      destination_attribute_on_join_resource :course_id
+      public? true
     end
   end
 end

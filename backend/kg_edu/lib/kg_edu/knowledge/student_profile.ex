@@ -660,4 +660,276 @@ defmodule KgEdu.Knowledge.StudentProfile do
 
     Float.round(mastery_score + activity_score + exam_score + attendance_score, 1)
   end
+
+  # ============================================================
+  # 微专业维度学习统计
+  # ============================================================
+
+  @doc """
+  获取学生在微专业维度的学习总览
+  聚合该学生在其微专业所有关联课程中的学习数据
+  """
+  def get_micro_major_profile_overview(student_id, major_id, opts) do
+    tenant = Keyword.get(opts, :tenant)
+
+    with {:ok, enrollments} <- get_student_major_enrollment(student_id, major_id, tenant),
+         {:ok, course_ids} <- get_major_course_ids(major_id, tenant),
+         {:ok, activity_stats} <- get_micro_major_activity_stats(student_id, course_ids, tenant),
+         {:ok, mastery_stats} <- get_micro_major_mastery_stats(student_id, course_ids, tenant) do
+      
+      total_courses = length(course_ids)
+      enrolled_courses = enrollments
+      |> Enum.map(& &1.major_id)
+      |> Enum.uniq()
+      |> length()
+
+      {:ok, %{
+        studentId: student_id,
+        majorId: major_id,
+        totalCourses: total_courses,
+        enrolledCourses: enrolled_courses,
+        activity: activity_stats,
+        knowledge: mastery_stats,
+        completionRate: calculate_completion_rate(enrolled_courses, total_courses)
+      }}
+    end
+  end
+
+  @doc """
+  获取微专业学习趋势数据
+  聚合该学生在微专业所有关联课程中的活动日志，按周统计
+  """
+  def get_micro_major_learning_trend(student_id, major_id, opts) do
+    tenant = Keyword.get(opts, :tenant)
+
+    with {:ok, course_ids} <- get_major_course_ids(major_id, tenant),
+         {:ok, logs} <- get_micro_major_logs(student_id, course_ids, tenant) do
+      
+      weekly_data = logs
+      |> Enum.group_by(fn log ->
+        date = log.inserted_at || DateTime.utc_now()
+        week_start = Date.beginning_of_week(Date.new!(date.year, date.month, date.day))
+        "#{week_start.year}-W#{String.pad_leading(to_string(Date.day_of_week(week_start)), 2, "0")}"
+      end)
+      |> Enum.map(fn {week, week_logs} ->
+        video_count = Enum.count(week_logs, &(&1.action_type in [:video_view, :view]))
+        file_count = Enum.count(week_logs, &(&1.action_type in [:file_view, :view, :download]))
+        exercise_count = Enum.count(week_logs, &(&1.action_type in [:exercise_submit, :submit]))
+        
+        # 按课程分组统计
+        by_course = week_logs
+        |> Enum.group_by(& &1.metadata["course_id"])
+        |> Enum.map(fn {course_id, logs} ->
+          %{courseId: course_id, count: length(logs)}
+        end)
+        
+        %{week: week, videos: video_count, files: file_count, exercises: exercise_count, 
+          total: length(week_logs), byCourse: by_course}
+      end)
+      |> Enum.sort_by(& &1.week)
+
+      {:ok, weekly_data}
+    end
+  end
+
+  @doc """
+  获取微专业学生在各课程的进度
+  """
+  def get_micro_major_student_progress(major_id, opts) do
+    tenant = Keyword.get(opts, :tenant)
+
+    with {:ok, course_ids} <- get_major_course_ids(major_id, tenant),
+         {:ok, enrollments} <- get_major_enrollments(major_id, tenant) do
+      
+      student_progress = Enum.map(enrollments, fn enrollment ->
+        student_id = enrollment.student_id
+        
+        # 获取该学生在各课程的学习进度
+        course_progress = course_ids
+        |> Enum.map(fn course_id ->
+          case get_course_progress(student_id, course_id, tenant) do
+            {:ok, progress} -> %{courseId: course_id, progress: progress}
+            _ -> %{courseId: course_id, progress: 0}
+          end
+        end)
+        
+        avg_progress = if length(course_progress) > 0 do
+          Enum.sum(Enum.map(course_progress, & &1.progress)) / length(course_progress)
+        else
+          0
+        end
+        
+        # 获取学生信息（只返回必要字段）
+        student_info = case KgEdu.Accounts.User
+        |> Ash.Query.filter(id == ^student_id)
+        |> (fn q -> if tenant, do: Ash.Query.set_tenant(q, tenant), else: q end).()
+        |> Ash.read_one(authorize?: false) do
+          {:ok, user} when user != nil -> %{id: user.id, name: user.name, avatarUrl: user.avatar_url}
+          _ -> %{id: student_id, name: nil}
+        end
+        
+        Map.put(enrollment, :student, student_info)
+        |> Map.put(:courseProgress, course_progress)
+        |> Map.put(:avgProgress, Float.round(avg_progress, 1))
+        |> Map.take([:id, :student_id, :status, :assigned_at, :student, :courseProgress, :avgProgress])
+      end)
+
+      {:ok, student_progress}
+    end
+  end
+
+  # 私有辅助函数
+
+  defp get_student_major_enrollment(student_id, major_id, tenant) do
+    query = KgEdu.MajorAnalysis.MajorEnrollment
+    |> Ash.Query.filter(student_id == ^student_id and major_id == ^major_id and status == :active)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    Ash.read(query, authorize?: false)
+  end
+
+  defp get_major_enrollments(major_id, tenant) do
+    query = KgEdu.MajorAnalysis.MajorEnrollment
+    |> Ash.Query.filter(major_id == ^major_id and status == :active)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    Ash.read(query, authorize?: false)
+  end
+
+  defp get_major_course_ids(major_id, tenant) do
+    query = KgEdu.MajorAnalysis.MajorCourse
+    |> Ash.Query.filter(major_id == ^major_id)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, courses} -> {:ok, Enum.map(courses, & &1.course_id)}
+      error -> error
+    end
+  end
+
+  defp get_micro_major_activity_stats(student_id, course_ids, tenant) when is_list(course_ids) do
+    # 获取活动日志并按 course_id 过滤
+    query = KgEdu.Activity.ActivityLog
+    |> Ash.Query.filter(user_id == ^student_id)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, logs} ->
+        # 过滤出属于微专业课程的日志
+        filtered_logs = Enum.filter(logs, fn log ->
+          metadata_course_id = log.metadata && log.metadata["course_id"]
+          metadata_course_id in course_ids or log.resource_id in course_ids
+        end)
+        
+        video_count = Enum.count(filtered_logs, &(&1.action_type in [:video_view, :view]))
+        file_count = Enum.count(filtered_logs, &(&1.action_type in [:file_view, :view, :download]))
+        exercise_count = Enum.count(filtered_logs, &(&1.action_type in [:exercise_submit, :submit]))
+        
+        # 计算活动指数（简化计算）
+        activity_index = min((video_count * 1 + file_count * 0.5 + exercise_count * 2) / 10 * 100, 100)
+        
+        {:ok, %{
+          videoViews: video_count,
+          fileViews: file_count,
+          exercises: exercise_count,
+          activityIndex: Float.round(activity_index, 1)
+        }}
+      
+      _ -> {:ok, %{videoViews: 0, fileViews: 0, exercises: 0, activityIndex: 0}}
+    end
+  end
+
+  defp get_micro_major_mastery_stats(student_id, course_ids, tenant) when is_list(course_ids) do
+    query = KgEdu.Knowledge.StudentKnowledgeMastery
+    |> Ash.Query.filter(student_id == ^student_id)
+    |> Ash.Query.load(:knowledge_resource)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, masteries} ->
+        # 只统计属于微专业课程的知识点
+        relevant_masteries = Enum.filter(masteries, fn m ->
+          m.knowledge_resource && m.knowledge_resource.course_id in course_ids
+        end)
+        
+        total = length(relevant_masteries)
+        mastered = Enum.count(relevant_masteries, &((&1.mastery_level || 0) >= 0.7))
+        weak = Enum.count(relevant_masteries, &((&1.mastery_level || 0) < 0.6))
+        avg = if total > 0 do
+          Enum.sum(Enum.map(relevant_masteries, &(&1.mastery_level || 0))) / total
+        else
+          0
+        end
+        
+        {:ok, %{
+          total: total,
+          mastered: mastered,
+          weak: weak,
+          averageMastery: Float.round(avg * 100, 1)
+        }}
+      
+      _ -> {:ok, %{total: 0, mastered: 0, weak: 0, averageMastery: 0}}
+    end
+  end
+
+  defp get_micro_major_logs(student_id, course_ids, tenant) when is_list(course_ids) do
+    query = KgEdu.Activity.ActivityLog
+    |> Ash.Query.filter(user_id == ^student_id)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    Ash.read(query, authorize?: false)
+  end
+
+  defp get_course_progress(student_id, course_id, tenant) do
+    # 计算单门课程的学习进度
+    # 优先使用 metadata 中的 major_id 识别，否则按 course_id 匹配
+    query = KgEdu.Activity.ActivityLog
+    |> Ash.Query.filter(user_id == ^student_id)
+
+    query = if tenant, do: Ash.Query.set_tenant(query, tenant), else: query
+
+    case Ash.read(query, authorize?: false) do
+      {:ok, logs} ->
+        # 获取课程知识点总数
+        kr_count = case KgEdu.Knowledge.Resource
+        |> Ash.Query.filter(course_id == ^course_id)
+        |> (fn q -> if tenant, do: Ash.Query.set_tenant(q, tenant), else: q end).()
+        |> Ash.read(authorize?: false) do
+          {:ok, resources} -> length(resources)
+          _ -> 0
+        end
+        
+        # 过滤出该课程的活动
+        relevant_logs = Enum.filter(logs, fn log ->
+          metadata_course_id = log.metadata && log.metadata["course_id"]
+          metadata_course_id == course_id or log.resource_id == course_id
+        end)
+        
+        # 简单进度计算：已学习的知识点 / 总知识点
+        progress = if kr_count > 0 do
+          min(length(relevant_logs) / kr_count * 50, 100)
+        else
+          # 如果没有知识点数据，按活动数估算
+          min(length(relevant_logs) * 2, 100)
+        end
+        
+        {:ok, Float.round(progress, 1)}
+      
+      _ -> {:ok, 0}
+    end
+  end
+
+  defp calculate_completion_rate(enrolled, total) do
+    if total > 0 do
+      Float.round(enrolled / total * 100, 1)
+    else
+      0
+    end
+  end
 end

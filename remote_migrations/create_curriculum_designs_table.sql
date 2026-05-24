@@ -1,5 +1,5 @@
 -- 为所有租户创建 curriculum_designs 表
--- 执行方式: psql -U postgres -d kg_edu -f this_script.sql
+-- 执行方式: psql -U postgres -d kg_edu -f create_curriculum_designs_table.sql
 
 DO $$
 DECLARE
@@ -27,10 +27,10 @@ BEGIN
           markdown_content text,
           ai_generated boolean DEFAULT false NOT NULL,
           version integer DEFAULT 1 NOT NULL,
-          status varchar DEFAULT 'draft',
+          status varchar DEFAULT ''draft'',
           major_id uuid NOT NULL,
-          inserted_at timestamp(0)::timestamp NOT NULL DEFAULT NOW(),
-          updated_at timestamp(0)::timestamp NOT NULL DEFAULT NOW()
+          inserted_at timestamp NOT NULL DEFAULT NOW(),
+          updated_at timestamp NOT NULL DEFAULT NOW()
         )', tenant_schema);
       
       -- 添加外键约束
@@ -55,4 +55,4 @@ SELECT
 FROM information_schema.columns
 WHERE table_name = 'curriculum_designs'
 GROUP BY table_schema
-ORDER BY table_schema;
+ORDER BY schema_name;
