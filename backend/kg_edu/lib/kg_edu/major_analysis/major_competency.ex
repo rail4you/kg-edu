@@ -105,16 +105,14 @@ defmodule KgEdu.MajorAnalysis.MajorCompetency do
   end
 
   policies do
-    # 公开读取能力图谱
-    policy [action(:read), action(:by_id), action(:by_major), action(:root_competencies)] do
-      authorize_if always()
-    end
-
-    # 教师/管理员可管理能力节点
-    policy [action(:create), action(:update_competency), action(:destroy)] do
-      authorize_if expr(:teacher == ^actor(:role))
-      authorize_if expr(:admin == ^actor(:role))
-      authorize_if expr(:super_admin == ^actor(:role))
+    policy always() do
+      authorize_if action(:read)
+      authorize_if action(:by_id)
+      authorize_if action(:by_major)
+      authorize_if action(:root_competencies)
+      authorize_if action(:create)
+      authorize_if action(:update_competency)
+      authorize_if action(:destroy)
     end
   end
 

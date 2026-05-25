@@ -139,30 +139,15 @@ defmodule KgEdu.MajorAnalysis.Major do
 
   policies do
     # 公开读取已发布的微专业列表和详情
-    bypass action(:public_list) do
-      authorize_if always()
-    end
-
-    bypass action(:public_detail) do
-      authorize_if always()
-    end
-
-    # 其他读取操作 - bypass actor 检查
-    bypass action(:read) do
-      authorize_if always()
-    end
-
-    bypass action(:by_id) do
-      authorize_if always()
-    end
-
-    bypass action(:by_college) do
-      authorize_if always()
-    end
-
-    # 教师/管理员可管理专业 - bypass actor 检查
-    bypass [action(:create), action(:update_major), action(:destroy)] do
-      authorize_if always()
+    policy always() do
+      authorize_if action(:public_list)
+      authorize_if action(:public_detail)
+      authorize_if action(:read)
+      authorize_if action(:by_id)
+      authorize_if action(:by_college)
+      authorize_if action(:create)
+      authorize_if action(:update_major)
+      authorize_if action(:destroy)
     end
   end
 

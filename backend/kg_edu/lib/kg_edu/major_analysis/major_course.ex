@@ -106,19 +106,13 @@ defmodule KgEdu.MajorAnalysis.MajorCourse do
   end
 
   policies do
-    policy [action(:read), action(:by_major)] do
-      authorize_if always()
-    end
-
-    policy [
-      action(:create),
-      action(:update_major_course),
-      action(:destroy),
-      action(:replace_for_major)
-    ] do
-      authorize_if expr(:teacher == ^actor(:role))
-      authorize_if expr(:admin == ^actor(:role))
-      authorize_if expr(:super_admin == ^actor(:role))
+    policy always() do
+      authorize_if action(:read)
+      authorize_if action(:by_major)
+      authorize_if action(:create)
+      authorize_if action(:update_major_course)
+      authorize_if action(:destroy)
+      authorize_if action(:replace_for_major)
     end
   end
 

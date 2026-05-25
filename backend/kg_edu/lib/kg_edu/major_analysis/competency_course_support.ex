@@ -105,19 +105,14 @@ defmodule KgEdu.MajorAnalysis.CompetencyCourseSupport do
   end
 
   policies do
-    policy [action(:read), action(:by_competency), action(:by_course)] do
-      authorize_if always()
-    end
-
-    policy [
-      action(:create),
-      action(:update_support),
-      action(:destroy),
-      action(:replace_for_competency)
-    ] do
-      authorize_if expr(:teacher == ^actor(:role))
-      authorize_if expr(:admin == ^actor(:role))
-      authorize_if expr(:super_admin == ^actor(:role))
+    policy always() do
+      authorize_if action(:read)
+      authorize_if action(:by_competency)
+      authorize_if action(:by_course)
+      authorize_if action(:create)
+      authorize_if action(:update_support)
+      authorize_if action(:destroy)
+      authorize_if action(:replace_for_competency)
     end
   end
 
