@@ -67,6 +67,37 @@ defmodule KgEdu.MajorAnalysis do
   end
 
   typescript_rpc do
+    resource KgEdu.MajorAnalysis.MicroMajor do
+      rpc_action :create_micro_major, :create
+      rpc_action :update_micro_major, :update
+      rpc_action :delete_micro_major, :destroy
+      rpc_action :get_micro_major, :by_id
+      rpc_action :list_micro_majors, :read
+      rpc_action :list_micro_majors_by_teacher, :by_teacher
+      rpc_action :publish_micro_major, :publish
+      rpc_action :unpublish_micro_major, :unpublish
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorCourse do
+      rpc_action :create_micro_major_course, :create
+      rpc_action :update_micro_major_course, :update
+      rpc_action :delete_micro_major_course, :destroy
+      rpc_action :list_micro_major_courses, :read
+      rpc_action :list_courses_by_micro_major, :by_micro_major
+      rpc_action :replace_micro_major_courses, :replace_for_micro_major
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorEnrollment do
+      rpc_action :assign_student_to_micro_major, :create
+      rpc_action :remove_student_from_micro_major, :destroy
+      rpc_action :list_micro_major_enrollments, :read
+      rpc_action :list_enrollments_by_micro_major, :by_micro_major
+      rpc_action :get_micro_major_enrollments_by_student, :by_student
+      rpc_action :my_micro_major_enrollments, :my_enrollments
+      rpc_action :bulk_assign_students_to_micro_major, :bulk_assign
+      rpc_action :update_enrollment, :update
+    end
+
     resource KgEdu.MajorAnalysis.Major do
       rpc_action :list_majors, :read
       rpc_action :list_public_micro_majors, :public_list
@@ -149,6 +180,9 @@ defmodule KgEdu.MajorAnalysis do
   end
 
   resources do
+    resource KgEdu.MajorAnalysis.MicroMajor
+    resource KgEdu.MajorAnalysis.MicroMajorCourse
+    resource KgEdu.MajorAnalysis.MicroMajorEnrollment
     resource KgEdu.MajorAnalysis.Major
     resource KgEdu.MajorAnalysis.JobPosition
     resource KgEdu.MajorAnalysis.MajorCompetency
