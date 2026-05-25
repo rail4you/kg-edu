@@ -126,8 +126,8 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
                upsert_fields: [:micro_major_id, :student_id, :assigned_by_id, :status],
                tenant: context.tenant
              ) do
-          %Ash.BulkResult{records: records, errors: []} ->
-            {:ok, %{created: length(records), records: records}}
+          %Ash.BulkResult{records: _records, errors: []} ->
+            :ok
 
           %Ash.BulkResult{errors: [error | _]} ->
             {:error, error}
