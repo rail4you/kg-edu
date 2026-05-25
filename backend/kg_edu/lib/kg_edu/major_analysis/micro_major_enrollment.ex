@@ -107,8 +107,6 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
       end
 
       run fn input, context ->
-        now = DateTime.utc_now()
-
         records =
           input.arguments.student_ids
           |> Enum.uniq()
@@ -117,8 +115,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
               micro_major_id: input.arguments.micro_major_id,
               student_id: student_id,
               assigned_by_id: context.actor && context.actor.id,
-              status: :active,
-              assigned_at: now
+              status: :active
             }
           end)
 
@@ -126,7 +123,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
                return_records?: true,
                upsert?: true,
                upsert_identity: :unique_micro_major_student,
-               upsert_fields: [:micro_major_id, :student_id, :assigned_by_id, :status, :assigned_at],
+               upsert_fields: [:micro_major_id, :student_id, :assigned_by_id, :status],
                tenant: context.tenant
              ) do
           %Ash.BulkResult{records: records, errors: []} ->
