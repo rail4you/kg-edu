@@ -1,0 +1,138 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7] [cursor=pointer]:
+        - img "课堂星" [ref=e9]
+        - generic [ref=e10]: 智慧教学系统
+      - generic [ref=e11]:
+        - generic [ref=e12] [cursor=pointer]:
+          - img "search" [ref=e13]:
+            - img [ref=e14]
+          - generic [ref=e16]: 搜索
+          - generic [ref=e17]: ⌘K
+        - img "bell" [ref=e20] [cursor=pointer]:
+          - img [ref=e21]
+        - img "bell" [ref=e23]:
+          - img [ref=e24]
+        - button "测试通知" [ref=e26] [cursor=pointer]:
+          - generic [ref=e27]: 测试通知
+        - generic [ref=e28] [cursor=pointer]:
+          - img "book" [ref=e29]:
+            - img [ref=e30]
+          - generic [ref=e32]: 用户手册
+        - generic [ref=e33] [cursor=pointer]:
+          - img "user" [ref=e35]:
+            - img [ref=e36]
+          - generic [ref=e38]: 用户
+    - generic [ref=e40]:
+      - generic [ref=e41] [cursor=pointer]:
+        - img "book" [ref=e43]:
+          - img [ref=e44]
+        - text: 课程概述
+      - generic [ref=e46] [cursor=pointer]:
+        - img "read" [ref=e48]:
+          - img [ref=e49]
+        - text: 课程概览
+      - generic [ref=e51] [cursor=pointer]:
+        - img "partition" [ref=e53]:
+          - img [ref=e54]
+        - text: 图谱总览
+      - generic [ref=e57] [cursor=pointer]:
+        - img "video-camera" [ref=e59]:
+          - img [ref=e60]
+        - text: 课程视频
+      - generic [ref=e62] [cursor=pointer]:
+        - img "bar-chart" [ref=e64]:
+          - img [ref=e65]
+        - text: 认知目标
+      - generic [ref=e67] [cursor=pointer]:
+        - img "file" [ref=e69]:
+          - img [ref=e70]
+        - text: 教学资源
+      - generic [ref=e72] [cursor=pointer]:
+        - img "bulb" [ref=e74]:
+          - img [ref=e75]
+        - text: 学习推荐
+      - generic [ref=e78] [cursor=pointer]:
+        - img "interaction" [ref=e80]:
+          - img [ref=e81]
+        - text: 互动课堂
+      - generic [ref=e84] [cursor=pointer]:
+        - img "schedule" [ref=e86]:
+          - img [ref=e87]
+        - text: 考试系统
+      - generic [ref=e89] [cursor=pointer]:
+        - img "experiment" [ref=e91]:
+          - img [ref=e92]
+        - text: 实验系统
+      - generic [ref=e95] [cursor=pointer]:
+        - img "team" [ref=e97]:
+          - img [ref=e98]
+        - text: 教师团队
+      - generic [ref=e100] [cursor=pointer]:
+        - img "mail" [ref=e102]:
+          - img [ref=e103]
+        - text: 邮件问答
+  - generic [ref=e107]:
+    - button "arrow-left 返回微专业详情" [ref=e109] [cursor=pointer]:
+      - img "arrow-left" [ref=e111]:
+        - img [ref=e112]
+      - generic [ref=e114]: 返回微专业详情
+    - generic [ref=e119]:
+      - heading "123" [level=4] [ref=e120]
+      - generic [ref=e121]: "123"
+      - generic [ref=e122]:
+        - generic [ref=e124]:
+          - img "apartment" [ref=e125]:
+            - img [ref=e126]
+          - text: 计算机
+        - generic [ref=e129]:
+          - img "clock-circle" [ref=e130]:
+            - img [ref=e131]
+          - text: "2"
+        - generic [ref=e135]: 2 学分
+        - generic [ref=e137]: 2 学时
+    - generic [ref=e138]:
+      - button "book 课程介绍" [ref=e139] [cursor=pointer]:
+        - img "book" [ref=e141]:
+          - img [ref=e142]
+        - generic [ref=e144]: 课程介绍
+      - button "video-camera 视频学习" [ref=e145] [cursor=pointer]:
+        - img "video-camera" [ref=e147]:
+          - img [ref=e148]
+        - generic [ref=e150]: 视频学习
+      - button "file-text 习题练习" [ref=e151] [cursor=pointer]:
+        - img "file-text" [ref=e153]:
+          - img [ref=e154]
+        - generic [ref=e156]: 习题练习
+      - button "file 资源下载" [ref=e157] [cursor=pointer]:
+        - img "file" [ref=e159]:
+          - img [ref=e160]
+        - generic [ref=e162]: 资源下载
+    - generic [ref=e164]:
+      - generic [ref=e165]: 课程概述
+      - generic [ref=e166]: "123"
+      - generic [ref=e167]: 课程章节
+      - generic [ref=e168]:
+        - img "folder" [ref=e169]:
+          - img [ref=e170]
+        - generic [ref=e172]: 第一章 概述
+      - generic [ref=e173]:
+        - img "folder" [ref=e174]:
+          - img [ref=e175]
+        - generic [ref=e177]: 1.1 课程介绍
+      - generic [ref=e178]:
+        - img "folder" [ref=e179]:
+          - img [ref=e180]
+        - generic [ref=e182]: 1.2 基础知识
+      - generic [ref=e183]:
+        - img "folder" [ref=e184]:
+          - img [ref=e185]
+        - generic [ref=e187]: 第二章 实战
+      - generic [ref=e188]:
+        - img "folder" [ref=e189]:
+          - img [ref=e190]
+        - generic [ref=e192]: 2.1 案例一
+  - generic [ref=e194]:
+    - generic [ref=e195]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e196]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台
