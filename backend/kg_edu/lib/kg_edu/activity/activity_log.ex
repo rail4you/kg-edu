@@ -26,6 +26,9 @@ defmodule KgEdu.Activity.ActivityLog do
     define :log_video_view, action: :log_video_view
     define :log_exercise_submit, action: :log_exercise_submit
     define :log_homework_submit, action: :log_homework_submit
+    define :log_mm_video_view, action: :log_mm_video_view
+    define :log_mm_exercise_submit, action: :log_mm_exercise_submit
+    define :log_mm_resource_download, action: :log_mm_resource_download
     define :get_activity_log, action: :by_id
     define :list_activity_logs, action: :read
     define :list_activity_logs_by_user, action: :by_user
@@ -74,7 +77,7 @@ defmodule KgEdu.Activity.ActivityLog do
     read :view_count_distribution do
       description "Get view count distribution by resource type"
 
-      filter expr(action_type in [:file_view, :video_view])
+      filter expr(action_type in [:file_view, :video_view, :mm_video_view, :mm_resource_download])
     end
 
     create :log_file_view do
@@ -246,6 +249,187 @@ defmodule KgEdu.Activity.ActivityLog do
         changeset
       end
     end
+
+    # ===== Micro Major Activity Actions =====
+
+    create :log_mm_video_view do
+      description "Log when a student views a micro major video"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who viewed the video"
+      end
+
+      argument :video_id, :uuid do
+        allow_nil? false
+        description "MicroMajorVideo ID that was viewed"
+      end
+
+      argument :micro_major_course_id, :uuid do
+        allow_nil? false
+        description "MicroMajorCourse ID"
+      end
+
+      argument :micro_major_course_title, :string do
+        allow_nil? true
+        default nil
+        description "MicroMajorCourse title"
+      end
+
+      argument :micro_major_id, :uuid do
+        allow_nil? false
+        description "MicroMajor ID"
+      end
+
+      argument :micro_major_name, :string do
+        allow_nil? true
+        default nil
+        description "MicroMajor name"
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+        description "Additional metadata (watch time, etc.)"
+      end
+
+      change set_attribute(:action_type, :mm_video_view)
+      change set_attribute(:resource_type, "MicroMajorVideo")
+      change set_attribute(:resource_id, arg(:video_id))
+      change set_attribute(:user_id, arg(:user_id))
+      change set_attribute(:micro_major_course_id, arg(:micro_major_course_id))
+      change set_attribute(:micro_major_course_title, arg(:micro_major_course_title))
+      change set_attribute(:micro_major_id, arg(:micro_major_id))
+      change set_attribute(:micro_major_name, arg(:micro_major_name))
+      change set_attribute(:metadata, arg(:metadata))
+
+      change fn changeset, _context ->
+        user_id = Ash.Changeset.get_attribute(changeset, :user_id)
+        video_id = Ash.Changeset.get_attribute(changeset, :resource_id)
+        Logger.info("MM video view logged: user_id=#{user_id}, video_id=#{video_id}")
+        changeset
+      end
+    end
+
+    create :log_mm_exercise_submit do
+      description "Log when a student submits a micro major exercise"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who submitted the exercise"
+      end
+
+      argument :exercise_id, :uuid do
+        allow_nil? false
+        description "MicroMajorExercise ID that was submitted"
+      end
+
+      argument :answer, :string do
+        allow_nil? true
+        default nil
+        description "The answer submitted by the user"
+      end
+
+      argument :is_correct, :boolean do
+        allow_nil? true
+        default nil
+        description "Whether the answer is correct"
+      end
+
+      argument :micro_major_course_id, :uuid do
+        allow_nil? false
+        description "MicroMajorCourse ID"
+      end
+
+      argument :micro_major_course_title, :string do
+        allow_nil? true
+        default nil
+      end
+
+      argument :micro_major_id, :uuid do
+        allow_nil? false
+        description "MicroMajor ID"
+      end
+
+      argument :micro_major_name, :string do
+        allow_nil? true
+        default nil
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+      end
+
+      change set_attribute(:action_type, :mm_exercise_submit)
+      change set_attribute(:resource_type, "MicroMajorExercise")
+      change set_attribute(:resource_id, arg(:exercise_id))
+      change set_attribute(:user_id, arg(:user_id))
+      change set_attribute(:micro_major_course_id, arg(:micro_major_course_id))
+      change set_attribute(:micro_major_course_title, arg(:micro_major_course_title))
+      change set_attribute(:micro_major_id, arg(:micro_major_id))
+      change set_attribute(:micro_major_name, arg(:micro_major_name))
+
+      change fn changeset, _context ->
+        answer = Ash.Changeset.get_argument(changeset, :answer)
+        is_correct = Ash.Changeset.get_argument(changeset, :is_correct)
+        metadata = Ash.Changeset.get_argument(changeset, :metadata) || %{}
+
+        updated_metadata = metadata
+          |> Map.put("answer", answer)
+          |> Map.put("is_correct", is_correct)
+
+        changeset
+        |> Ash.Changeset.change_attribute(:metadata, updated_metadata)
+      end
+    end
+
+    create :log_mm_resource_download do
+      description "Log when a student downloads a micro major resource"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "User ID who downloaded the resource"
+      end
+
+      argument :resource_id, :uuid do
+        allow_nil? false
+        description "MicroMajorResource ID that was downloaded"
+      end
+
+      argument :micro_major_course_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :micro_major_course_title, :string do
+        allow_nil? true
+        default nil
+      end
+
+      argument :micro_major_id, :uuid do
+        allow_nil? false
+      end
+
+      argument :micro_major_name, :string do
+        allow_nil? true
+        default nil
+      end
+
+      argument :metadata, :map do
+        allow_nil? true
+        default %{}
+      end
+
+      change set_attribute(:action_type, :mm_resource_download)
+      change set_attribute(:resource_type, "MicroMajorResource")
+      change set_attribute(:resource_id, arg(:resource_id))
+      change set_attribute(:user_id, arg(:user_id))
+      change set_attribute(:micro_major_course_id, arg(:micro_major_course_id))
+      change set_attribute(:micro_major_course_title, arg(:micro_major_course_title))
+      change set_attribute(:micro_major_id, arg(:micro_major_id))
+      change set_attribute(:micro_major_name, arg(:micro_major_name))
+      change set_attribute(:metadata, arg(:metadata))
+    end
   end
 
   policies do
@@ -270,7 +454,7 @@ defmodule KgEdu.Activity.ActivityLog do
     attribute :action_type, :atom do
       allow_nil? false
       public? true
-      constraints one_of: [:file_view, :video_view, :exercise_submit, :homework_submit]
+      constraints one_of: [:file_view, :video_view, :exercise_submit, :homework_submit, :mm_video_view, :mm_exercise_submit, :mm_resource_download]
       description "Type of action performed"
     end
 
@@ -291,6 +475,30 @@ defmodule KgEdu.Activity.ActivityLog do
       default %{}
       public? true
       description "Additional metadata (answers, timestamps, etc.)"
+    end
+
+    attribute :micro_major_course_id, :uuid do
+      allow_nil? true
+      public? true
+      description "微专业课程ID"
+    end
+
+    attribute :micro_major_course_title, :string do
+      allow_nil? true
+      public? true
+      description "微专业课程标题"
+    end
+
+    attribute :micro_major_id, :uuid do
+      allow_nil? true
+      public? true
+      description "微专业ID"
+    end
+
+    attribute :micro_major_name, :string do
+      allow_nil? true
+      public? true
+      description "微专业名称"
     end
 
     create_timestamp :inserted_at do
@@ -314,6 +522,9 @@ defmodule KgEdu.Activity.ActivityLog do
                       action_type == :video_view -> "Viewed video"
                       action_type == :exercise_submit -> "Submitted exercise"
                       action_type == :homework_submit -> "Submitted homework"
+                      action_type == :mm_video_view -> "Watched micro major video"
+                      action_type == :mm_exercise_submit -> "Submitted micro major exercise"
+                      action_type == :mm_resource_download -> "Downloaded micro major resource"
                       true -> "Unknown action"
                     end
                   )

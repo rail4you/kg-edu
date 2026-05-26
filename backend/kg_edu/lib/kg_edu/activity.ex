@@ -31,6 +31,9 @@ defmodule KgEdu.Activity do
       rpc_action :log_video_view, :log_video_view
       rpc_action :log_exercise_submit, :log_exercise_submit
       rpc_action :log_homework_submit, :log_homework_submit
+      rpc_action :log_mm_video_view, :log_mm_video_view
+      rpc_action :log_mm_exercise_submit, :log_mm_exercise_submit
+      rpc_action :log_mm_resource_download, :log_mm_resource_download
       rpc_action :list_activity_logs, :read
       rpc_action :get_activity_log, :by_id
       rpc_action :list_activity_logs_by_user, :by_user
