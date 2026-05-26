@@ -89,8 +89,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
         Ash.Query.filter(query, student_id == ^actor(:id))
         |> Ash.Query.load([
           :micro_major,
-          :micro_major_courses,
-          courses: [:micro_major_courses]
+          :micro_major_courses
         ])
       end
     end

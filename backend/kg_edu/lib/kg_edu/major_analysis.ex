@@ -82,9 +82,54 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :create_micro_major_course, :create
       rpc_action :update_micro_major_course, :update
       rpc_action :delete_micro_major_course, :destroy
+      rpc_action :get_micro_major_course, :by_id
       rpc_action :list_micro_major_courses, :read
       rpc_action :list_courses_by_micro_major, :by_micro_major
-      rpc_action :replace_micro_major_courses, :replace_for_micro_major
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorChapter do
+      rpc_action :create_mm_chapter, :create
+      rpc_action :update_mm_chapter, :update
+      rpc_action :delete_mm_chapter, :destroy
+      rpc_action :get_mm_chapter, :by_id
+      rpc_action :list_mm_chapters, :read
+      rpc_action :list_mm_chapters_by_course, :by_course
+      rpc_action :list_mm_root_chapters, :root_chapters
+      rpc_action :list_mm_subchapters, :subchapters
+      rpc_action :get_mm_course_full_hierarchy, :course_full_hierarchy
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorVideo do
+      rpc_action :create_mm_video, :create
+      rpc_action :update_mm_video, :update
+      rpc_action :delete_mm_video, :destroy
+      rpc_action :get_mm_video, :by_id
+      rpc_action :list_mm_videos, :read
+      rpc_action :list_mm_videos_by_course, :by_course
+      rpc_action :list_mm_videos_by_chapter, :by_chapter
+      rpc_action :import_mm_videos_from_course, :import_from_course
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorExercise do
+      rpc_action :create_mm_exercise, :create
+      rpc_action :update_mm_exercise, :update
+      rpc_action :delete_mm_exercise, :destroy
+      rpc_action :get_mm_exercise, :by_id
+      rpc_action :list_mm_exercises, :read
+      rpc_action :list_mm_exercises_by_course, :by_course
+      rpc_action :list_mm_exercises_by_chapter, :by_chapter
+      rpc_action :import_mm_exercises_from_course, :import_from_course
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorResource do
+      rpc_action :create_mm_resource, :create
+      rpc_action :update_mm_resource, :update
+      rpc_action :delete_mm_resource, :destroy
+      rpc_action :get_mm_resource, :by_id
+      rpc_action :list_mm_resources, :read
+      rpc_action :list_mm_resources_by_course, :by_course
+      rpc_action :list_mm_resources_by_chapter, :by_chapter
+      rpc_action :import_mm_resources_from_course, :import_from_course
     end
 
     resource KgEdu.MajorAnalysis.MicroMajorEnrollment do
@@ -182,6 +227,10 @@ defmodule KgEdu.MajorAnalysis do
   resources do
     resource KgEdu.MajorAnalysis.MicroMajor
     resource KgEdu.MajorAnalysis.MicroMajorCourse
+    resource KgEdu.MajorAnalysis.MicroMajorChapter
+    resource KgEdu.MajorAnalysis.MicroMajorVideo
+    resource KgEdu.MajorAnalysis.MicroMajorExercise
+    resource KgEdu.MajorAnalysis.MicroMajorResource
     resource KgEdu.MajorAnalysis.MicroMajorEnrollment
     resource KgEdu.MajorAnalysis.Major
     resource KgEdu.MajorAnalysis.JobPosition

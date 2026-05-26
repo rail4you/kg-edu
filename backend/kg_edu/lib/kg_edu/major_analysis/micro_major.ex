@@ -49,8 +49,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajor do
         Ash.Query.load(query, [
           :responsible_teacher,
           :consultant_teacher,
-          :micro_major_courses,
-          :courses
+          :micro_major_courses
         ])
       end
     end
@@ -279,13 +278,6 @@ defmodule KgEdu.MajorAnalysis.MicroMajor do
     has_many :micro_major_courses, KgEdu.MajorAnalysis.MicroMajorCourse do
       public? true
       destination_attribute :micro_major_id
-    end
-
-    many_to_many :courses, KgEdu.Courses.Course do
-      through KgEdu.MajorAnalysis.MicroMajorCourse
-      source_attribute_on_join_resource :micro_major_id
-      destination_attribute_on_join_resource :course_id
-      public? true
     end
 
     has_many :enrollments, KgEdu.MajorAnalysis.MicroMajorEnrollment do
