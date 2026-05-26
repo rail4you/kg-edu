@@ -195,7 +195,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorExercise do
     end
 
     attribute :answer, :string do
-      allow_nil? false
+      allow_nil? true
       public? true
       description "答案"
     end
