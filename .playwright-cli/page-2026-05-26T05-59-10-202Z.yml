@@ -1,0 +1,65 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - img "book" [ref=e6]:
+      - img [ref=e7]
+    - heading "课程学习" [level=4] [ref=e9]
+  - generic [ref=e10]:
+    - button "arrow-left 返回微专业详情" [ref=e12] [cursor=pointer]:
+      - img "arrow-left" [ref=e14]:
+        - img [ref=e15]
+      - generic [ref=e17]: 返回微专业详情
+    - generic [ref=e22]:
+      - heading "123" [level=4] [ref=e23]
+      - generic [ref=e24]: "123"
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - img "apartment" [ref=e28]:
+            - img [ref=e29]
+          - text: 计算机
+        - generic [ref=e32]:
+          - img "clock-circle" [ref=e33]:
+            - img [ref=e34]
+          - text: "2"
+        - generic [ref=e38]: 2 学分
+        - generic [ref=e40]: 2 学时
+    - generic [ref=e41]:
+      - button "book 课程介绍" [ref=e42] [cursor=pointer]:
+        - img "book" [ref=e44]:
+          - img [ref=e45]
+        - generic [ref=e47]: 课程介绍
+      - button "video-camera 视频学习" [ref=e48] [cursor=pointer]:
+        - img "video-camera" [ref=e50]:
+          - img [ref=e51]
+        - generic [ref=e53]: 视频学习
+      - button "file-text 习题练习" [ref=e54] [cursor=pointer]:
+        - img "file-text" [ref=e56]:
+          - img [ref=e57]
+        - generic [ref=e59]: 习题练习
+      - button "file 资源下载" [ref=e60] [cursor=pointer]:
+        - img "file" [ref=e62]:
+          - img [ref=e63]
+        - generic [ref=e65]: 资源下载
+    - generic [ref=e67]:
+      - generic [ref=e68]: 课程概述
+      - generic [ref=e69]: "123"
+      - generic [ref=e70]: 课程章节
+      - generic [ref=e71]:
+        - img "folder" [ref=e72]:
+          - img [ref=e73]
+        - generic [ref=e75]: 第一章 概述
+      - generic [ref=e76]:
+        - img "folder" [ref=e77]:
+          - img [ref=e78]
+        - generic [ref=e80]: 1.1 课程介绍
+      - generic [ref=e81]:
+        - img "folder" [ref=e82]:
+          - img [ref=e83]
+        - generic [ref=e85]: 1.2 基础知识
+      - generic [ref=e86]:
+        - img "folder" [ref=e87]:
+          - img [ref=e88]
+        - generic [ref=e90]: 第二章 实战
+      - generic [ref=e91]:
+        - img "folder" [ref=e92]:
+          - img [ref=e93]
+        - generic [ref=e95]: 2.1 案例一
