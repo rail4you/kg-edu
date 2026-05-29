@@ -104,6 +104,92 @@
 3. **数据库迁移** - 资源变更后执行 `./dev.sh migrate` 更新数据库
 4. **查看日志排错** - 服务异常时使用 `./dev.sh logs <service>` 查看日志
 
+## 网络架构与端口映射
+
+### 开发环境
+
+开发环境通过 Vite proxy 做路径分发，所有前端请求经过 `:8081`：
+
+```
+Browser → :8081 (Vite) → proxy 分发
+  ├─ /rpc                  → :4000 (Phoenix Backend)
+  ├─ /api                  → :4000 (Phoenix Backend)
+  ├─ /api/upload           → :3000 (Express API Server)
+  ├─ /api/sts-token        → :3000
+  ├─ /api/ag-ui            → :3000
+  ├─ /api/assistant        → :3000 → Pi Agent (port 5050)
+  ├─ /api/copilotkit       → :3000 (已废弃)
+  ├─ /agent  [rewrite]     → :5050 (Pi Agent, 去掉 /agent 前缀)
+  ├─ /competency-graph     → :5050
+  └─ /curriculum           → :5050
+```
+
+**关键**: `/agent` 路径通过 `rewrite` 去掉前缀再转发：
+- 前端请求: `/agent/api/chat`
+- Vite 重写为: `/api/chat`
+- 转发到 Pi Agent: `http://localhost:5050/api/chat`
+
+### 生产环境
+
+生产环境通过 Nginx 反向代理分发到 Docker 容器：
+
+```
+Browser → :80 (Nginx) → Docker 内部路由
+  ├─ /agent/  [rewrite]    → ai-agent:5050 (Pi Agent, 路径去 /agent/ 前缀)
+  ├─ /api/                 → frontend:3000 (Express API Server)
+  ├─ /rpc/                 → backend:4000 (Phoenix)
+  └─ /                     → frontend:3000 (Vite SPA)
+```
+
+**Nginx 关键配置** (`/root/kg_edu/nginx.conf`):
+
+```nginx
+# 上游定义
+upstream ai-agent {
+    server ai-agent:5050;   # Pi Agent 容器端口
+}
+
+# Agent 路由 — 去掉 /agent/ 前缀
+location /agent/ {
+    proxy_pass http://ai-agent/;   # ← 此处末尾的 / 表示去掉 /agent/
+    proxy_http_version 1.1;
+    proxy_buffering off;           # SSE 流式支持
+    proxy_read_timeout 300s;
+}
+```
+
+**关键**: `proxy_pass http://ai-agent/;` 末尾 `/` 会让 Nginx 把 `/agent/api/chat` 重写为 `/api/chat` 再转发。
+
+### 服务端口对照表
+
+| 服务 | 开发端口 | 生产容器 | 生产端口 |
+|------|----------|----------|----------|
+| Vite Dev Server | 8081 | frontend | 3000 (Vite preview) |
+| Express API Server | 3000 | frontend | 3000 |
+| Phoenix Backend | 4000 | backend | 4000 |
+| Pi Agent Server | 5050 | ai-agent | 5050 |
+| PostgreSQL | 5432 | db | 5432 |
+| Nginx | - | nginx | 80 |
+
+### 验证端点连通性
+
+```bash
+# 开发环境 — 检查 Pi Agent 是否可达
+curl http://localhost:5050/health
+
+# 开发环境 — 通过 Vite proxy 验证
+curl http://localhost:8081/agent/health
+
+# 生产环境 — 服务器上检查
+curl http://localhost/agent/health
+# 预期: {"status":"ok","service":"kg-edu-agent-server"}
+
+# 生产环境 — 检查 AI 练习 API
+curl -X POST http://localhost/agent/api/generate_ai_exercise \
+  -H 'Content-Type: application/json' -d '{}'
+# 预期: {"success":false,"error":"未设置租户上下文"}  (非 502)
+```
+
 ## 快速启动开发环境
 
 ```bash
