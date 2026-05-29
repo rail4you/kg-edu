@@ -98,8 +98,14 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
       description "Get current student's micro major enrollments"
 
       prepare fn query, context ->
-        Ash.Query.filter(query, student_id == ^actor(:id))
-        |> Ash.Query.load([
+        actor_id = context.actor && context.actor.id
+        query = if actor_id do
+          Ash.Query.filter(query, student_id == ^actor_id)
+        else
+          query
+        end
+
+        Ash.Query.load(query, [
           :micro_major,
           :micro_major_courses
         ])
@@ -203,8 +209,14 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
       description "Get current student's application history"
 
       prepare fn query, context ->
-        Ash.Query.filter(query, student_id == ^actor(:id))
-        |> Ash.Query.load(:micro_major)
+        actor_id = context.actor && context.actor.id
+        query = if actor_id do
+          Ash.Query.filter(query, student_id == ^actor_id)
+        else
+          query
+        end
+
+        Ash.Query.load(query, :micro_major)
       end
     end
 

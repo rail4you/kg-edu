@@ -92,7 +92,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorChapter do
       prepare fn query, _context ->
         query
         |> Ash.Query.sort(sort_order: :asc, title: :asc)
-        |> Ash.Query.load(subchapters: [:subchapters])
+        |> Ash.Query.load(subchapters: [subchapters: []])
       end
     end
 
@@ -101,8 +101,8 @@ defmodule KgEdu.MajorAnalysis.MicroMajorChapter do
       accept [:title, :description, :micro_major_course_id, :parent_chapter_id, :sort_order]
 
       change fn changeset, _context ->
-        # Set default sort_order if not provided
-        case Ash.Changeset.get_argument(changeset, :sort_order) do
+        # Set default sort_order if not provided (RPC passes via attribute, not argument)
+        case Ash.Changeset.get_attribute(changeset, :sort_order) do
           nil ->
             Ash.Changeset.change_attribute(changeset, :sort_order, 0)
           _ ->
@@ -188,6 +188,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorChapter do
       public? true
       destination_attribute :parent_chapter_id
       description "子章节"
+      sort sort_order: :asc
     end
 
     has_many :videos, KgEdu.MajorAnalysis.MicroMajorVideo do
