@@ -8,62 +8,122 @@ defmodule KgEdu.Repo.TenantMigrations.MicroMajorNewResources do
   use Ecto.Migration
 
   def up do
-    create table(:micro_major_resources, primary_key: false, prefix: prefix()) do
-      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
-      add :filename, :text, null: false
-      add :path, :text, null: false
-      add :size, :bigint, null: false
-      add :file_type, :text, null: false
-      add :description, :text
-      add :source_file_id, :uuid
+    # Use IF NOT EXISTS for idempotency in case of re-run after partial failure
+    execute """
+      CREATE TABLE IF NOT EXISTS #{prefix()}.micro_major_resources (
+        id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        filename text NOT NULL,
+        path text NOT NULL,
+        size bigint NOT NULL,
+        file_type text NOT NULL,
+        description text,
+        source_file_id uuid,
+        inserted_at timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+        updated_at timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+        micro_major_course_id uuid NOT NULL REFERENCES #{prefix()}.micro_major_courses(id) ON DELETE CASCADE,
+        micro_major_chapter_id uuid
+      );
+    """
 
-      add :inserted_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
+    # Create FK constraint if it doesn't exist (idempotent)
+    execute """
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints
+          WHERE constraint_name = 'micro_major_resources_micro_major_course_id_fkey'
+          AND table_schema = '#{prefix()}'
+          AND table_name = 'micro_major_resources'
+        ) THEN
+          ALTER TABLE #{prefix()}.micro_major_resources
+          ADD CONSTRAINT micro_major_resources_micro_major_course_id_fkey
+          FOREIGN KEY (micro_major_course_id)
+          REFERENCES #{prefix()}.micro_major_courses(id)
+          ON DELETE CASCADE;
+        END IF;
+      END $$;
+    """
 
-      add :updated_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
+    # Clean up any stale rows from the old join table that have null course_id (if column exists)
+    # Use DO block to avoid parse-time validation of course_id column reference
+    execute """
+      DO $$
+      DECLARE
+        _column_exists boolean;
+      BEGIN
+        SELECT EXISTS(
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = '#{prefix()}'
+          AND table_name = 'micro_major_courses'
+          AND column_name = 'course_id'
+        ) INTO _column_exists;
 
-      add :micro_major_course_id,
-          references(:micro_major_courses,
-            column: :id,
-            name: "micro_major_resources_micro_major_course_id_fkey",
-            type: :uuid,
-            prefix: prefix(),
-            on_delete: :delete_all
-          ),
-          null: false
+        IF _column_exists THEN
+          EXECUTE 'DELETE FROM #{prefix()}.micro_major_courses WHERE course_id IS NULL';
+        END IF;
+      END $$;
+    """
 
-      add :micro_major_chapter_id, :uuid
-    end
-
-    # Clean up any stale rows from the old join table that have null course_id
-    execute "DELETE FROM #{prefix()}.micro_major_courses WHERE course_id IS NULL"
-
-    alter table(:micro_major_courses, prefix: prefix()) do
-      remove :course_type
-      remove :semester
-      remove :period
-      remove :credit
-      remove :course_id
-    end
+    # Check if old columns exist before removing
+    execute """
+      DO $$
+      DECLARE
+        _course_id_exists boolean;
+        _course_type_exists boolean;
+        _semester_exists boolean;
+        _period_exists boolean;
+        _credit_exists boolean;
+      BEGIN
+        SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = '#{prefix()}' AND table_name = 'micro_major_courses' AND column_name = 'course_id') INTO _course_id_exists;
+        SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = '#{prefix()}' AND table_name = 'micro_major_courses' AND column_name = 'course_type') INTO _course_type_exists;
+        SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = '#{prefix()}' AND table_name = 'micro_major_courses' AND column_name = 'semester') INTO _semester_exists;
+        SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = '#{prefix()}' AND table_name = 'micro_major_courses' AND column_name = 'period') INTO _period_exists;
+        SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = '#{prefix()}' AND table_name = 'micro_major_courses' AND column_name = 'credit') INTO _credit_exists;
+        
+        IF _course_type_exists THEN
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses DROP COLUMN course_type';
+        END IF;
+        IF _semester_exists THEN
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses DROP COLUMN semester';
+        END IF;
+        IF _period_exists THEN
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses DROP COLUMN period';
+        END IF;
+        IF _credit_exists THEN
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses DROP COLUMN credit';
+        END IF;
+        IF _course_id_exists THEN
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses DROP COLUMN course_id';
+        END IF;
+      END $$;
+    """
 
     # Add title with default using raw SQL to avoid null check issue
     execute """
       ALTER TABLE #{prefix()}.micro_major_courses
-      ADD COLUMN title text NOT NULL DEFAULT ''
+      ADD COLUMN IF NOT EXISTS title text NOT NULL DEFAULT ''
     """
 
-    alter table(:micro_major_courses, prefix: prefix()) do
-      add :cover_url, :text
-      add :teacher_id, :uuid
-      add :status, :text, null: false, default: "draft"
-      add :source_course_id, :uuid
-    end
+    # Add new columns using IF NOT EXISTS for idempotency
+    execute """
+      ALTER TABLE #{prefix()}.micro_major_courses
+      ADD COLUMN IF NOT EXISTS cover_url text
+    """
 
-    # Now delete stale rows (title column exists)
-    execute "DELETE FROM #{prefix()}.micro_major_courses WHERE course_id IS NULL"
+    execute """
+      ALTER TABLE #{prefix()}.micro_major_courses
+      ADD COLUMN IF NOT EXISTS teacher_id uuid
+    """
+
+    execute """
+      ALTER TABLE #{prefix()}.micro_major_courses
+      ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'draft'
+    """
+
+    execute """
+      ALTER TABLE #{prefix()}.micro_major_courses
+      ADD COLUMN IF NOT EXISTS source_course_id uuid
+    """
 
     create table(:micro_major_videos, primary_key: false, prefix: prefix()) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
@@ -236,32 +296,41 @@ defmodule KgEdu.Repo.TenantMigrations.MicroMajorNewResources do
 
     drop table(:micro_major_videos, prefix: prefix())
 
-    create unique_index(:micro_major_courses, [:micro_major_id, :course_id],
-             name: "micro_major_courses_unique"
-           )
+    # Drop unique index if exists
+    execute """
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = '#{prefix()}' AND tablename = 'micro_major_courses' AND indexname = 'micro_major_courses_unique') THEN
+          EXECUTE 'DROP INDEX #{prefix()}.micro_major_courses_unique';
+        END IF;
+      END $$;
+    """
 
     alter table(:micro_major_courses, prefix: prefix()) do
-      remove :source_course_id
-      remove :status
-      remove :teacher_id
-      remove :cover_url
-      remove :title
-
-      add :course_id,
-          references(:courses,
-            column: :id,
-            name: "micro_major_courses_course_id_fkey",
-            type: :uuid,
-            prefix: prefix(),
-            on_delete: :delete_all
-          ),
-          null: false
-
-      add :credit, :float
-      add :period, :bigint
-      add :semester, :text
-      add :course_type, :text, null: false, default: "required"
+      remove_if_exists :source_course_id
+      remove_if_exists :status
+      remove_if_exists :teacher_id
+      remove_if_exists :cover_url
+      remove_if_exists :title
     end
+
+    # Check if old columns exist before adding
+    execute """
+      DO $$
+      DECLARE
+        _course_id_exists boolean;
+      BEGIN
+        SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = '#{prefix()}' AND table_name = 'micro_major_courses' AND column_name = 'course_id') INTO _course_id_exists;
+        
+        IF NOT _course_id_exists THEN
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses ADD COLUMN course_id uuid';
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses ADD COLUMN credit double precision';
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses ADD COLUMN period integer';
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses ADD COLUMN semester varchar(255)';
+          EXECUTE 'ALTER TABLE #{prefix()}.micro_major_courses ADD COLUMN course_type varchar(255) NOT NULL DEFAULT ''required''';
+        END IF;
+      END $$;
+    """
 
     drop constraint(:micro_major_resources, "micro_major_resources_micro_major_course_id_fkey")
 

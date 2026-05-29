@@ -132,6 +132,28 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :import_mm_resources_from_course, :import_from_course
     end
 
+    resource KgEdu.MajorAnalysis.MicroMajorHomework do
+      rpc_action :create_mm_homework, :create
+      rpc_action :update_mm_homework, :update
+      rpc_action :delete_mm_homework, :destroy
+      rpc_action :get_mm_homework, :by_id
+      rpc_action :list_mm_homeworks, :read
+      rpc_action :list_mm_homeworks_by_course, :by_course
+      rpc_action :list_mm_homeworks_by_chapter, :by_chapter
+      rpc_action :import_mm_homeworks_from_course, :import_from_course
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorHomeworkSubmission do
+      rpc_action :submit_mm_homework, :submit
+      rpc_action :grade_mm_homework, :grade
+      rpc_action :get_mm_homework_submission, :by_id
+      rpc_action :list_mm_homework_submissions, :read
+      rpc_action :list_mm_homework_submissions_by_homework, :by_homework
+      rpc_action :list_mm_homework_submissions_by_student, :by_student
+      rpc_action :list_mm_homework_submissions_by_course, :by_course
+      rpc_action :destroy_mm_homework_submission, :destroy
+    end
+
     resource KgEdu.MajorAnalysis.MicroMajorEnrollment do
       rpc_action :assign_student_to_micro_major, :create
       rpc_action :remove_student_from_micro_major, :destroy
@@ -140,6 +162,14 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :get_micro_major_enrollments_by_student, :by_student
       rpc_action :my_micro_major_enrollments, :my_enrollments
       rpc_action :bulk_assign_students_to_micro_major, :bulk_assign
+
+      # 学生报名审批
+      rpc_action :apply_to_micro_major, :apply
+      rpc_action :approve_enrollment, :approve
+      rpc_action :reject_enrollment, :reject
+      rpc_action :reapply_to_micro_major, :reapply
+      rpc_action :list_pending_enrollments, :list_pending
+      rpc_action :my_applications, :my_applications
       rpc_action :update_enrollment, :update
     end
 
@@ -231,6 +261,8 @@ defmodule KgEdu.MajorAnalysis do
     resource KgEdu.MajorAnalysis.MicroMajorVideo
     resource KgEdu.MajorAnalysis.MicroMajorExercise
     resource KgEdu.MajorAnalysis.MicroMajorResource
+    resource KgEdu.MajorAnalysis.MicroMajorHomework
+    resource KgEdu.MajorAnalysis.MicroMajorHomeworkSubmission
     resource KgEdu.MajorAnalysis.MicroMajorEnrollment
     resource KgEdu.MajorAnalysis.Major
     resource KgEdu.MajorAnalysis.JobPosition

@@ -8,12 +8,26 @@ defmodule KgEdu.Repo.TenantMigrations.ExtendActivityLogMm do
   use Ecto.Migration
 
   def up do
-    alter table(:activity_logs, prefix: prefix()) do
-      add :micro_major_course_id, :uuid
-      add :micro_major_course_title, :text
-      add :micro_major_id, :uuid
-      add :micro_major_name, :text
-    end
+    # Use raw SQL with IF NOT EXISTS for idempotency
+    execute """
+      ALTER TABLE #{prefix()}.activity_logs
+      ADD COLUMN IF NOT EXISTS micro_major_course_id uuid
+    """
+
+    execute """
+      ALTER TABLE #{prefix()}.activity_logs
+      ADD COLUMN IF NOT EXISTS micro_major_course_title text
+    """
+
+    execute """
+      ALTER TABLE #{prefix()}.activity_logs
+      ADD COLUMN IF NOT EXISTS micro_major_id uuid
+    """
+
+    execute """
+      ALTER TABLE #{prefix()}.activity_logs
+      ADD COLUMN IF NOT EXISTS micro_major_name text
+    """
   end
 
   def down do

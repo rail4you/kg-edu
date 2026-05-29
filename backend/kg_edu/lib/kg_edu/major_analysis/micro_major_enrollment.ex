@@ -2,7 +2,8 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
   @moduledoc """
   学生微专业选课记录。
 
-  教师端负责为学生分配微专业；学生端只能通过 `my_enrollments` 读取自己的微专业数据。
+  教师端负责为学生分配微专业或审批学生自主报名；
+  学生端可通过 `my_enrollments` / `my_applications` 查看自己的微专业数据和报名记录。
   """
   use Ash.Resource,
     otp_app: :kg_edu,
@@ -39,6 +40,13 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
     define :my_micro_major_enrollments, action: :my_enrollments
     define :bulk_assign_students, action: :bulk_assign
     define :update_enrollment, action: :update
+    # 学生报名审批
+    define :apply_to_micro_major, action: :apply
+    define :approve_enrollment, action: :approve
+    define :reject_enrollment, action: :reject
+    define :reapply_to_micro_major, action: :reapply
+    define :list_pending_enrollments, action: :list_pending
+    define :my_applications, action: :my_applications
   end
 
   actions do
@@ -63,9 +71,13 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
     end
 
     read :by_micro_major do
-      description "Get student enrollments for a micro major"
+      description "Get student enrollments for a micro major, optionally filtered by status"
       argument :micro_major_id, :uuid, allow_nil?: false
-      filter expr(micro_major_id == ^arg(:micro_major_id))
+      argument :status, :atom, allow_nil?: true
+      filter expr(
+        micro_major_id == ^arg(:micro_major_id) and
+        (is_nil(^arg(:status)) or status == ^arg(:status))
+      )
 
       prepare fn query, _context ->
         Ash.Query.load(query, :student)
@@ -91,6 +103,108 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
           :micro_major,
           :micro_major_courses
         ])
+      end
+    end
+
+    # ── 学生报名 ──
+    create :apply do
+      description "Student applies to a micro major (micro_major must be :active)"
+      accept [:micro_major_id]
+
+      change set_attribute(:student_id, actor(:id))
+      change set_attribute(:status, :pending)
+      change set_attribute(:assigned_at, &DateTime.utc_now/0)
+
+      # 验证微专业状态为 active，禁止报名 draft/archived 微专业
+      change fn changeset, context ->
+        mm_id = Ash.Changeset.get_attribute(changeset, :micro_major_id)
+        tenant = changeset.tenant
+
+        mm = if mm_id do
+          Ash.get!(KgEdu.MajorAnalysis.MicroMajor, mm_id,
+            tenant: tenant,
+            actor: Map.get(context, :actor)
+          )
+        else
+          nil
+        end
+
+        if mm == nil || mm.status != :active do
+          Ash.Changeset.add_error(changeset, Ash.Error.Changes.InvalidAttribute.exception(
+            field: :micro_major_id,
+            message: "该微专业暂未开放报名"
+          ))
+        else
+          changeset
+        end
+      end
+    end
+
+    # ── 审核通过 ──
+    update :approve do
+      description "Approve a student's micro major application"
+      accept [:notes]
+      require_atomic? false
+
+      change set_attribute(:status, :active)
+      change set_attribute(:reviewed_by_id, actor(:id))
+      change set_attribute(:reviewed_at, &DateTime.utc_now/0)
+    end
+
+    # ── 审核拒绝 ──
+    update :reject do
+      description "Reject a student's micro major application"
+      accept [:rejected_reason, :notes]
+      require_atomic? false
+
+      change set_attribute(:status, :rejected)
+      change set_attribute(:reviewed_by_id, actor(:id))
+      change set_attribute(:reviewed_at, &DateTime.utc_now/0)
+    end
+
+    # ── 重新报名（被拒后）──
+    update :reapply do
+      description "Re-apply after rejection"
+      accept []
+      require_atomic? false
+
+      change set_attribute(:status, :pending)
+      change set_attribute(:rejected_reason, nil)
+      change set_attribute(:assigned_at, &DateTime.utc_now/0)
+
+      # 验证当前状态必须是 rejected（使用 changeset.data 获取原始值，而非 changeset 中即将设置的新值）
+      change fn changeset, _ ->
+        original_status = changeset.data.status
+
+        if original_status == :rejected do
+          changeset
+        else
+          Ash.Changeset.add_error(changeset, Ash.Error.Changes.InvalidAttribute.exception(
+            field: :status,
+            message: "只能对已拒绝的报名重新申请"
+          ))
+        end
+      end
+    end
+
+    # ── 教师端待审批列表 ──
+    read :list_pending do
+      description "List pending enrollments for a micro major"
+      argument :micro_major_id, :uuid, allow_nil?: false
+      filter expr(micro_major_id == ^arg(:micro_major_id) and status == :pending)
+
+      prepare fn query, _context ->
+        Ash.Query.load(query, :student)
+      end
+    end
+
+    # ── 学生端查看报名记录 ──
+    read :my_applications do
+      description "Get current student's application history"
+
+      prepare fn query, context ->
+        Ash.Query.filter(query, student_id == ^actor(:id))
+        |> Ash.Query.load(:micro_major)
       end
     end
 
@@ -164,12 +278,30 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
       public? true
     end
 
+    attribute :reviewed_by_id, :uuid do
+      allow_nil? true
+      public? true
+      description "审核人 ID"
+    end
+
     attribute :status, :atom do
       allow_nil? false
       public? true
       default :active
-      constraints one_of: [:active, :completed, :removed]
-      description "状态"
+      constraints one_of: [:pending, :active, :rejected, :completed, :removed]
+      description "状态：pending(报名待审), active(已批准/已分配), rejected(已拒绝), completed(已完成), removed(已移除)"
+    end
+
+    attribute :rejected_reason, :string do
+      allow_nil? true
+      public? true
+      description "审批拒绝原因"
+    end
+
+    attribute :reviewed_at, :utc_datetime do
+      allow_nil? true
+      public? true
+      description "审核时间（批准或拒绝时置为当前时间）"
     end
 
     attribute :progress, :float do
@@ -183,7 +315,7 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
     attribute :notes, :string do
       allow_nil? true
       public? true
-      description "备注"
+      description "备注（可用于记录审核备注等）"
     end
 
     attribute :assigned_at, :utc_datetime do
