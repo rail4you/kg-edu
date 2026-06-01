@@ -481,6 +481,177 @@ app.post("/api/generate_ai_exercise", async (req, res) => {
 });
 
 // ============================================================
+// POST /import-chapters - 导入章节 Excel 文件
+// ============================================================
+
+// ============================================================
+// POST /import-chapters - 导入章节 Excel 文件
+// 支持两种格式:
+// 1. multipart/form-data (FormData with File + tenant + courseId)
+// 2. JSON with base64 file_data
+// ============================================================
+
+app.post("/import-chapters", async (req, res) => {
+  const { orgSchema } = extractTenantContext(req as any);
+  
+  // 支持 FormData 或 JSON body
+  let tenant: string;
+  let courseId: string;
+  let fileBuffer: Buffer | null = null;
+  let fileName = "chapters.xlsx";
+  
+  // 1. multipart/form-data 格式 — 兼容 express 解析后的 req.body
+  // 前端发送的是 Schema / CourseId (PascalCase)，也兼容 tenant / course_id
+  if (req.body && (req.body.tenant || req.body.Schema || req.body.courseId)) {
+    tenant = req.body.tenant || req.body.Schema || "";
+    courseId = req.body.course_id || req.body.courseId || req.body.CourseId || "";
+    // 文件可能在 req.files 或 req.body.file
+    const file = (req as any).files?.file || req.body.file;
+    if (file && typeof file === "object" && file.buffer) {
+      fileBuffer = file.buffer;
+      fileName = file.name || fileName;
+    } else if (file && file.data) {
+      fileBuffer = Buffer.from(file.data);
+      fileName = file.name || fileName;
+    }
+  }
+  // 2. JSON 格式 with base64
+  else {
+    tenant = req.body?.tenant || orgSchema || (req.body as any)?.Schema;
+    courseId = req.body?.course_id || (req.body as any)?.courseId || (req.body as any)?.CourseId;
+    
+    if (req.body?.file_data) {
+      try {
+        const base64Data = (req.body as any).file_data.replace(/^data:.*?;base64,/, "");
+        fileBuffer = Buffer.from(base64Data, "base64");
+        fileName = (req.body as any).file_name || fileName;
+      } catch (err: any) {
+        res.status(400).json({ success: false, error: "文件解析失败" });
+        return;
+      }
+    }
+  }
+  
+  if (!tenant) {
+    res.status(400).json({ success: false, error: "未设置租户上下文" });
+    return;
+  }
+  
+  if (!courseId) {
+    res.status(400).json({ success: false, error: "缺少 course_id 参数" });
+    return;
+  }
+  
+  if (!fileBuffer || fileBuffer.length === 0) {
+    res.status(400).json({ success: false, error: "缺少文件内容" });
+    return;
+  }
+  
+  try {
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null }) as any[][];
+    
+    // 解析 Excel 数据
+    const chapters: any[] = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] as string[];
+      const hasAny = row?.some((v: string) => v && v.trim());
+      if (!hasAny) continue;
+      chapters.push({
+        level1: (row[0] || "").trim(),
+        level2: (row[1] || "").trim(),
+        level3: (row[2] || "").trim(),
+        level4: (row[3] || "").trim(),
+        level5: (row[4] || "").trim(),
+        description: (row[5] || "").trim(),
+      });
+    }
+    
+    if (chapters.length === 0) {
+      res.json({ success: true, message: "没有可导入的章节数据", importedResources: 0 });
+      return;
+    }
+    
+    // 通过 RPC 创建章节
+    const errors: string[] = [];
+    let imported = 0;
+    const chapterStack: { level: number; id: string }[] = [];
+    let nextSortOrder = 0;
+    
+    for (const row of chapters) {
+      const levels = [
+        { idx: 1, title: row.level1 },
+        { idx: 2, title: row.level2 },
+        { idx: 3, title: row.level3 },
+        { idx: 4, title: row.level4 },
+        { idx: 5, title: row.level5 },
+      ];
+      const desc = row.description || null;
+      
+      for (const level of levels) {
+        const t = level.title;
+        if (!t) continue;
+        
+        // 清理栈中 >= 当前层级的旧章节
+        while (chapterStack.length > 0 && chapterStack[chapterStack.length - 1].level >= level.idx) {
+          chapterStack.pop();
+        }
+        
+        const parentId = chapterStack.length > 0 ? chapterStack[chapterStack.length - 1].id : null;
+        
+        // RPC 调用创建章节
+        const rpcResult = await fetch(`${BACKEND_URL}/rpc/run`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-tenant": tenant,
+          },
+          body: JSON.stringify({
+            action: "create_chapter",
+            tenant,
+            input: {
+              title: t,
+              description: desc,
+              course_id: courseId,
+              parent_chapter_id: parentId,
+              sort_order: nextSortOrder++,
+            },
+            fields: ["id"],
+          }),
+        });
+        
+        const result = await rpcResult.json();
+        
+        if (result.success && result.data?.id) {
+          chapterStack.push({ level: level.idx, id: result.data.id });
+          imported++;
+        } else {
+          const errMsg = result.errors?.[0]?.message || result.message || "创建失败";
+          errors.push(`"${t}": ${errMsg}`);
+        }
+        
+        break; // 每行只创建一个章节
+      }
+    }
+    
+    res.json({
+      success: errors.length === 0,
+      message: errors.length === 0 
+        ? `导入成功，共导入 ${imported} 个章节` 
+        : `导入完成，成功 ${imported} 个，失败 ${errors.length} 个`,
+      importedResources: imported,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (err: any) {
+    console.error("[agent-server] Import chapters error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================
 // POST /import - 导入知识点 Excel 文件
 // ============================================================
 
