@@ -14,6 +14,8 @@
  */
 
 import express from "express";
+import * as fs from "node:fs";
+import Busboy from "busboy";
 import {
   AuthStorage,
   createAgentSession,
@@ -52,7 +54,9 @@ const SYSTEM_PROMPT = `你是KgEdu平台的教育AI助手。
 // ============================================================
 
 const app = express();
-app.use(express.json({ limit: "10mb" }));
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // CORS
 app.use((_req, res, next) => {
@@ -477,6 +481,79 @@ app.post("/api/generate_ai_exercise", async (req, res) => {
 });
 
 // ============================================================
+// POST /import - 导入知识点 Excel 文件
+// ============================================================
+
+app.post("/import", async (req, res) => {
+  const { orgSchema } = extractTenantContext(req as any);
+  const tenant = req.body?.tenant || orgSchema;
+  const courseId = req.body?.course_id;
+  
+  if (!tenant) {
+    res.status(400).json({ success: false, error: "未设置租户上下文" });
+    return;
+  }
+  
+  if (!courseId) {
+    res.status(400).json({ success: false, error: "缺少 course_id 参数" });
+    return;
+  }
+  
+  let fileBuffer: Buffer | null = null;
+  let fileName = "knowledge.xlsx";
+  
+  // 解析 base64 文件数据
+  if (req.body?.file_data) {
+    try {
+      const base64Data = (req.body as any).file_data.replace(/^data:.*?;base64,/, "");
+      fileBuffer = Buffer.from(base64Data, "base64");
+      fileName = (req.body as any).file_name || fileName;
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: "文件解析失败" });
+      return;
+    }
+  }
+  
+  if (!fileBuffer || fileBuffer.length === 0) {
+    res.status(400).json({ success: false, error: "缺少文件内容，请使用 base64 编码的文件数据" });
+    return;
+  }
+  
+  try {
+    // 使用 Node.js 直接解析 Excel
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null }) as any[][];
+    
+    console.log(`[agent-server] Parsed Excel: ${data.length} rows`);
+    console.log(`[agent-server] First row: ${JSON.stringify(data[0])}`);
+    
+    // 发送 JSON 格式的请求
+    const backendResponse = await fetch(`${BACKEND_URL}/api/files/import-excel`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "x-tenant": tenant 
+      },
+      body: JSON.stringify({
+        // 转换数据为 JSON 格式的 sheet 数据
+        sheet_data: data,
+        course_id: courseId,
+        tenant: tenant
+      }),
+    });
+    
+    const result = await backendResponse.json();
+    res.status(backendResponse.status).json(result);
+  } catch (err: any) {
+    console.error("[agent-server] Import error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================
 // POST /api/curriculum/upload - 上传课程体系文档
 // ============================================================
 
@@ -565,5 +642,6 @@ app.listen(PORT, () => {
   console.log(`     POST /api/chat              - SSE 流式聊天`);
   console.log(`     POST /api/skills/generate-pptx - 生成 PPT`);
   console.log(`     POST /api/skills/generate-docx - 生成 DOCX`);
+  console.log(`     POST /import                - 导入知识点 Excel`);
   console.log(`     GET  /health                - 健康检查`);
 });

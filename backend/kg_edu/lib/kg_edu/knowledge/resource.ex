@@ -2027,113 +2027,571 @@ defmodule KgEdu.Knowledge.Resource do
   def import_kg_from_excel(excel_base64, course_id, context) do
     case KgEdu.ExcelParser.parse_from_base64(excel_base64) do
       {:ok, %{sheet1: knowledge_data}} ->
-        process_knowledge_import(knowledge_data, course_id, context)
+        process_knowledge_import(knowledge_data, course_id, context.tenant)
 
       {:error, reason} ->
         {:error, "Failed to parse Excel file: #{reason}"}
     end
   end
 
+  # ============================================================
+  # Excel 导入核心函数 - 正确的层级映射
+  # ============================================================
+  # 层级映射：
+  # - level 0 (A列，一级知识点) → knowledge_type: :subject
+  # - level 1 (B列，二级知识点) → knowledge_type: :knowledge_unit，parent_subject_id
+  # - level 2 (C列，三级知识点) → knowledge_type: :knowledge_cell，parent_subject_id + parent_unit_id
+  # - level 3+ (D-G列，四级知识点) → parent_knowledge_resource_id = 上一级 cell id
+  # ============================================================
+
   def process_knowledge_import(knowledge_data, course_id, tenant) do
-    # Track created subjects and units for parent relationships
     subjects = %{}
     units = %{}
+    knowledge_cells = %{}
 
-    # Process each row of knowledge data
-    result =
-      Enum.reduce_while(
-        knowledge_data,
-        {:ok, %{subjects: subjects, units: units, tenant: tenant}},
-        fn row, {:ok, acc} ->
-          case process_knowledge_row(row, course_id, acc) do
-            {:ok, new_acc} -> {:cont, {:ok, new_acc}}
-            {:error, reason} -> {:halt, {:error, reason}}
-          end
-        end
-      )
+    # 注意：knowledge_data 已经是处理过的数据，跳过了表头行（前4行）
+    data_rows = knowledge_data |> Enum.filter(fn row -> length(row) >= 1 end)
+
+    IO.inspect("Processing #{length(data_rows)} data rows")
+    IO.inspect("Tenant: #{tenant}, Course ID: #{course_id}")
+
+    # 初始化累加器，追踪每一层级的当前父级 ID
+    initial_acc = %{
+      subjects: subjects, 
+      units: units, 
+      knowledge_cells: knowledge_cells, 
+      tenant: tenant, 
+      course_id: course_id, 
+      current_subject_id: nil, 
+      current_unit_id: nil, 
+      level_3_id: nil, 
+      level_4_id: nil, 
+      level_5_id: nil, 
+      level_6_id: nil, 
+      level_7_id: nil
+    }
+
+    result = Enum.reduce_while(data_rows, {:ok, initial_acc}, fn row, {:ok, acc} ->
+      case process_import_row(row, acc) do
+        {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
 
     case result do
       {:ok, _} ->
-        {:ok, "Successfully imported #{length(knowledge_data)} knowledge resources"}
-
-      # IO.inspect("Successfully imported #{length(knowledge_data)} knowledge resources")
-      # {:ok, :ok}
-
+        {:ok, "Successfully imported #{length(data_rows)} knowledge resources"}
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp process_knowledge_row(row, course_id, acc) when length(row) >= 5 do
-    # Extract row data: course, subject, unit, name, description, important_level, knowledge_type (optional)
-    [
-      _course_name,
-      subject_name,
-      unit_name,
-      knowledge_name,
-      description
-      # importance_level
-      # _knowledge_type_rest
-    ] = row
+  # 处理导入行 - 决定知识点类型和层级关系
+  defp process_import_row(row, acc) do
+    col0 = safe_get(row, 0)  # A列 - 一级知识点
+    col1 = safe_get(row, 1)  # B列 - 二级知识点
+    col2 = safe_get(row, 2)  # C列 - 三级知识点
+    col3 = safe_get(row, 3)  # D列 - 四级知识点
+    col4 = safe_get(row, 4)  # E列 - 五级知识点
+    col5 = safe_get(row, 5)  # F列 - 六级知识点
+    col6 = safe_get(row, 6)  # G列 - 七级知识点
+    col7 = safe_get(row, 7)  # H列 - 前置知识点
+    col8 = safe_get(row, 8)  # I列 - 后置知识点
+    col9 = safe_get(row, 9)  # J列 - 关联知识点
+    col10 = safe_get(row, 10) # K列 - 标签
+    col11 = safe_get(row, 11) # L列 - 认知维度
+    col12 = safe_get(row, 12) # M列 - 分类
+    col13 = safe_get(row, 13) # N列 - 教学目标
+    col14 = safe_get(row, 14) # O列 - 知识点说明
 
-    # _knowledge_type = List.first(knowledge_type_rest) || nil
+    levels = [col0, col1, col2, col3, col4, col5, col6]
+    {knowledge_name, level_index} = find_deepest_level(levels)
 
-    # Skip row if knowledge name is missing
     if is_nil(knowledge_name) or knowledge_name == "" do
       {:ok, acc}
     else
-      # Process or create subject if needed
-      with {:ok, subject_id, _} = create_or_get_subject(subject_name, course_id, acc),
-           {:ok, unit_id, _} = create_or_get_unit(unit_name, course_id, subject_id, acc) do
-        # Create the knowledge resource
+      IO.inspect("Processing: #{knowledge_name} at level #{level_index}")
 
-        # Create the knowledge resource
-        knowledge_attrs = %{
-          subject: subject_name,
-          unit: unit_name,
-          name: knowledge_name,
-          description: description,
-          # importance_level: parse_importance_level(importance_level),
-          knowledge_type: :knowledge_cell,
-          course_id: course_id,
-          parent_subject_id: subject_id,
-          parent_unit_id: unit_id
-        }
+      case level_index do
+        0 -> create_subject_level(row, col0, acc)
+        1 -> create_unit_level(row, col1, acc)
+        level when level >= 2 -> create_cell_level(row, knowledge_name, level_index, acc)
+      end
+    end
+  end
 
-        # Check if knowledge resource already exists
-        case get_by_name_and_course(
-               %{
-                 name: knowledge_name,
-                 knowledge_type: :knowledge_cell,
-                 course_id: course_id
-               },
-               tenant: acc.tenant
-             ) do
-          {:ok, _existing} ->
-            # Resource already exists, skip it
-            {:ok, acc}
+  # 创建一级知识点 (subject)
+  defp create_subject_level(row, col0, acc) do
+    name = safe_strip(col0)
+    if is_nil(name) or name == "" do
+      {:ok, acc}
+    else
+      # 重置所有子层级 ID
+      acc = %{acc | 
+        current_subject_id: nil, 
+        current_unit_id: nil, 
+        level_3_id: nil, level_4_id: nil, level_5_id: nil, 
+        level_6_id: nil, level_7_id: nil
+      }
 
-          {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
-            # Resource doesn't exist, create it
-            case create_resource_record(knowledge_attrs, acc.tenant) do
-              {:ok, _knowledge} ->
-                {:ok, acc}
+      attrs = %{
+        course_id: acc.course_id,
+        name: name
+      }
 
-              {:error, _reason} ->
-                # Resource likely already exists or there's another issue, skip it
-                {:ok, acc}
+      case find_or_create_resource(name, :subject, attrs, acc) do
+        {:ok, resource_id, new_acc} when not is_nil(resource_id) ->
+          {:ok, %{new_acc | current_subject_id: resource_id}}
+        _ ->
+          {:ok, acc}
+      end
+    end
+  end
+
+  # 创建二级知识点 (knowledge_unit)，挂到 subject 下
+  defp create_unit_level(row, col1, acc) do
+    name = safe_strip(col1)
+    if is_nil(name) or name == "" or is_nil(acc.current_subject_id) do
+      {:ok, acc}
+    else
+      # 重置四级及以下层级 ID（level_3 会在创建后被 create_cell_level 更新）
+      acc = %{acc | 
+        current_unit_id: nil, 
+        level_4_id: nil, level_5_id: nil, 
+        level_6_id: nil, level_7_id: nil
+      }
+
+      # 传入 name 作为独立的参数
+      attrs = %{
+        course_id: acc.course_id,
+        parent_subject_id: acc.current_subject_id
+      }
+
+      case find_or_create_resource(name, :knowledge_unit, attrs, acc) do
+        {:ok, resource_id, new_acc} when not is_nil(resource_id) ->
+          {:ok, %{new_acc | current_unit_id: resource_id}}
+        _ ->
+          {:ok, acc}
+      end
+    end
+  end
+
+  # 创建知识点单元格 (knowledge_cell)，支持多级嵌套
+  defp create_cell_level(row, name, level_index, acc) do
+    name = safe_strip(name)
+    if is_nil(name) or name == "" do
+      {:ok, acc}
+    else
+      # 确保有 subject_id 才能创建
+      if is_nil(acc.current_subject_id) do
+        IO.puts("WARN: Skipping '#{name}' - no subject context")
+        {:ok, acc}
+      else
+        # 确定父级 ID
+        # knowledge_cell 只能有一个父级：subject, unit, 或上一个 cell
+        {parent_id, attrs_extra} = case level_index do
+          2 -> 
+            # 三级知识点 - 如果有 current_unit_id 就挂到 unit 下，否则挂到 subject 下
+            if acc.current_unit_id do
+              {acc.current_unit_id, %{
+                parent_unit_id: acc.current_unit_id,
+                parent_subject_id: nil  # 不能同时设置
+              }}
+            else
+              {acc.current_subject_id, %{
+                parent_subject_id: acc.current_subject_id,
+                parent_unit_id: nil  # 不能同时设置
+              }}
             end
+          3 ->
+            # 四级知识点 - 挂到三级 cell 下
+            {acc.level_3_id, %{
+              parent_subject_id: nil,
+              parent_unit_id: nil,
+              parent_knowledge_resource_id: acc.level_3_id
+            }}
+          4 ->
+            # 五级知识点 - 挂到四级 cell 下
+            {acc.level_4_id, %{
+              parent_subject_id: nil,
+              parent_unit_id: nil,
+              parent_knowledge_resource_id: acc.level_4_id
+            }}
+          5 ->
+            # 六级知识点 - 挂到五级 cell 下
+            {acc.level_5_id, %{
+              parent_subject_id: nil,
+              parent_unit_id: nil,
+              parent_knowledge_resource_id: acc.level_5_id
+            }}
+          6 ->
+            # 七级知识点 - 挂到六级 cell 下
+            {acc.level_6_id, %{
+              parent_subject_id: nil,
+              parent_unit_id: nil,
+              parent_knowledge_resource_id: acc.level_6_id
+            }}
+          _ ->
+            {nil, %{}}
+        end
 
-          {:error, _reason} ->
-            # Error checking existing resource, skip it
-            {:ok, acc}
+        if is_nil(parent_id) do
+          IO.puts("WARN: Cannot create nested cell '#{name}' at level #{level_index} - no parent")
+          {:ok, acc}
+        else
+          attrs = %{
+            course_id: acc.course_id,
+            description: safe_strip(safe_get(row, 14)),
+            tag: safe_strip(safe_get(row, 10)),
+            dimension: safe_strip(safe_get(row, 11)),
+            category: safe_strip(safe_get(row, 12)),
+            teaching_goal: safe_strip(safe_get(row, 13))
+          } |> Map.merge(attrs_extra)
+
+          # 对于 level 2 (直接挂到 unit 的 cell)，先尝试按 parent_unit_id + name 查找
+          # 这样可以避免不同 unit 下同名 cell 被错误复用
+          case find_or_create_resource(name, :knowledge_cell, attrs, acc, level_index) do
+            {:ok, resource_id, new_acc} when not is_nil(resource_id) ->
+              # 更新对应层级的 ID 供下一行使用
+              new_acc = case level_index do
+                2 -> %{new_acc | level_3_id: resource_id}
+                3 -> %{new_acc | level_4_id: resource_id}
+                4 -> %{new_acc | level_5_id: resource_id}
+                5 -> %{new_acc | level_6_id: resource_id}
+                6 -> %{new_acc | level_7_id: resource_id}
+                _ -> new_acc
+              end
+              {:ok, new_acc}
+            _ ->
+              {:ok, acc}
+          end
         end
       end
     end
   end
 
-  defp process_knowledge_row(row, _course_id, _acc) do
-    {:error, "Invalid row format: #{inspect(row)}. Expected at least 6 columns."}
+  # 通用查找或创建资源
+  # level_index 用于在 level 2 时增加 parent_unit_id 过滤条件，避免不同单元下同名 cell 被复用
+  defp find_or_create_resource(name, knowledge_type, attrs, acc, level_index \\ nil) do
+    trimmed_name = name |> safe_strip()
+    if trimmed_name == "" or is_nil(trimmed_name) do
+      {:ok, nil, acc}
+    else
+      course_id = Map.get(attrs, :course_id) || acc.course_id
+      parent_unit_id = Map.get(attrs, :parent_unit_id)
+
+      # 构建查询条件
+      # 对于 level 2 的 cell，需要同时匹配 parent_unit_id，避免不同单元下同名 cell 被复用
+      query = case level_index do
+        2 when knowledge_type == :knowledge_cell and not is_nil(parent_unit_id) ->
+          __MODULE__
+          |> Ash.Query.filter(
+            name == ^trimmed_name and 
+            knowledge_type == ^knowledge_type and 
+            course_id == ^course_id and
+            parent_unit_id == ^parent_unit_id
+          )
+        _ ->
+          __MODULE__
+          |> Ash.Query.filter(
+            name == ^trimmed_name and 
+            knowledge_type == ^knowledge_type and 
+            course_id == ^course_id
+          )
+      end
+      
+      case Ash.read_one(query, tenant: acc.tenant, authorize?: false) do
+        {:ok, existing} when not is_nil(existing) ->
+          IO.puts("DEBUG Found existing #{knowledge_type}: #{existing.name} (id: #{existing.id})")
+          {:ok, existing.id, acc}
+
+        _ ->
+          # 创建新资源
+          importance_level = parse_importance_from_tags(Map.get(attrs, :tag))
+
+          resource_attrs = %{
+            name: trimmed_name,
+            knowledge_type: knowledge_type,
+            course_id: course_id,
+            parent_subject_id: Map.get(attrs, :parent_subject_id),
+            parent_unit_id: Map.get(attrs, :parent_unit_id),
+            parent_knowledge_resource_id: Map.get(attrs, :parent_knowledge_resource_id),
+            importance_level: importance_level,
+            tag: Map.get(attrs, :tag),
+            dimension: Map.get(attrs, :dimension),
+            category: Map.get(attrs, :category),
+            teaching_goal: Map.get(attrs, :teaching_goal),
+            description: Map.get(attrs, :description)
+          }
+
+          case create_resource_record(resource_attrs, acc.tenant, authorize?: false) do
+            {:ok, resource} ->
+              IO.puts("DEBUG Created #{knowledge_type}: #{resource.name} (id: #{resource.id})")
+              {:ok, resource.id, acc}
+
+            {:error, reason} ->
+              IO.puts("DEBUG Create #{knowledge_type} error: #{inspect(reason)}")
+              {:ok, nil, acc}
+          end
+      end
+    end
+  end
+
+  # 辅助函数
+  defp safe_get(list, index) do
+    if index < length(list), do: Enum.at(list, index), else: nil
+  end
+
+  defp safe_strip(nil), do: nil
+  defp safe_strip(val) when is_binary(val), do: String.trim(val)
+  defp safe_strip(val), do: val
+
+  defp find_deepest_level(levels) do
+    filled_levels =
+      levels
+      |> Enum.with_index()
+      |> Enum.filter(fn {name, _idx} ->
+        name = safe_strip(name)
+        name != nil and name != ""
+      end)
+
+    case filled_levels do
+      [] -> {nil, -1}
+      [{last, idx}] -> 
+        {safe_strip(last), idx}
+      multiple ->
+        {last, idx} = List.last(multiple)
+        {safe_strip(last), idx}
+    end
+  end
+
+  defp parse_importance_from_tags(nil), do: :normal
+  defp parse_importance_from_tags(tags) do
+    tags = String.downcase(tags || "")
+    cond do
+      String.contains?(tags, "难点") -> :hard
+      String.contains?(tags, "重点") or String.contains?(tags, "考点") -> :important
+      true -> :normal
+    end
+  end
+
+  # 处理关系 (后续可以扩展)
+  defp process_relations(_knowledge_id, nil, nil, nil, acc), do: acc
+  defp process_relations(_knowledge_id, _, _, _, acc) do
+    acc
+  end
+
+  defp safe_get(list, index) do
+    if index < length(list), do: Enum.at(list, index), else: nil
+  end
+
+  defp safe_strip(nil), do: nil
+  defp safe_strip(val) when is_binary(val), do: String.trim(val)
+  defp safe_strip(val), do: val
+
+  defp find_deepest_level(levels) do
+    filled_levels =
+      levels
+      |> Enum.with_index()
+      |> Enum.filter(fn {name, _idx} ->
+        name = safe_strip(name)
+        name != nil and name != ""
+      end)
+
+    case filled_levels do
+      [] -> {nil, -1}
+      [_last] = one -> 
+        last = elem(List.first(one), 0)
+        idx = elem(List.first(one), 1)
+        {safe_strip(last), idx}
+      multiple ->
+        last = elem(List.last(multiple), 0)
+        idx = elem(List.last(multiple), 1)
+        {safe_strip(last), idx}
+    end
+  end
+
+  defp get_or_create_subject_for_level(nil, acc), do: {:ok, nil, acc}
+  defp get_or_create_subject_for_level(subject_name, acc) do
+    subject_name = safe_strip(subject_name)
+    if subject_name == "" or is_nil(subject_name), do: {:ok, nil, acc}, else: do_get_or_create_subject(subject_name, acc)
+  end
+
+  defp do_get_or_create_subject(subject_name, acc) do
+    course_id = acc.course_id
+    
+    # 确保 subject_name 被正确 trim
+    trimmed_name = subject_name |> safe_strip()
+    
+    IO.puts("DEBUG do_get_or_create_subject: trimmed_name=#{trimmed_name}, tenant=#{acc.tenant}, course_id=#{course_id}")
+    
+    # Use Ash.read with tenant instead of get_by_name_and_course
+    read_result = __MODULE__ |> Ash.read(tenant: acc.tenant, authorize?: false)
+    IO.puts("DEBUG Ash.read result: #{inspect(read_result)}")
+    
+    case read_result do
+      {:ok, resources} ->
+        found = Enum.find(resources, fn r ->
+          String.trim(r.name) == trimmed_name and r.knowledge_type == :subject and r.course_id == course_id
+        end)
+        IO.puts("DEBUG found subject: #{inspect(found)}")
+        
+        case found do
+          nil ->
+            # Subject doesn't exist, create it
+            subject_attrs = %{
+              name: trimmed_name,
+              subject: trimmed_name,
+              knowledge_type: :subject,
+              course_id: course_id,
+              importance_level: :normal
+            }
+            IO.puts("DEBUG Creating subject: #{inspect(subject_attrs)}")
+
+            case create_resource_record(subject_attrs, acc.tenant, authorize?: false) do
+              {:ok, subject} ->
+                IO.puts("DEBUG Created subject: #{subject.id}")
+                new_acc = %{acc | subjects: Map.put(acc.subjects, trimmed_name, subject.id)}
+                {:ok, subject.id, new_acc}
+
+              {:error, reason} ->
+                IO.puts("DEBUG Create subject error: #{inspect(reason)}")
+                {:ok, nil, acc}  # Skip on error
+            end
+
+          subject ->
+            IO.puts("DEBUG Found existing subject: #{subject.id}")
+            {:ok, subject.id, acc}
+        end
+      {:error, err} ->
+        IO.puts("DEBUG Ash.read error: #{inspect(err)}")
+        {:ok, nil, acc}
+    end
+  end
+
+  defp get_or_create_unit(nil, _subject_id, acc), do: {:ok, nil, acc}
+  defp get_or_create_unit("", _subject_id, acc), do: {:ok, nil, acc}
+  defp get_or_create_unit(nil, _subject_id, acc), do: {:ok, nil, acc}
+  defp get_or_create_unit(unit_name, subject_id, acc) when is_binary(unit_name) do
+    # 确保 unit_name 被正确 trim
+    trimmed_name = unit_name |> safe_strip()
+    
+    # 如果 trim 后为空，返回 nil
+    if trimmed_name == "" do
+      {:ok, nil, acc}
+    else
+      unit_key = {trimmed_name, subject_id}
+
+      if Map.has_key?(acc.units, unit_key) do
+        {:ok, Map.get(acc.units, unit_key), acc}
+      else
+        unit_attrs = %{
+          name: trimmed_name,
+          unit: trimmed_name,
+          knowledge_type: :knowledge_unit,
+          course_id: acc.course_id,
+          parent_subject_id: subject_id,
+          importance_level: :normal
+        }
+
+
+        case create_resource_record(unit_attrs, acc.tenant, authorize?: false) do
+          {:ok, unit} ->
+            new_acc = %{acc | units: Map.put(acc.units, unit_key, unit.id)}
+            {:ok, unit.id, new_acc}
+          {:error, _reason} ->
+            {:ok, nil, acc}
+        end
+      end
+    end
+  end
+  defp get_or_create_unit(_, _, acc), do: {:ok, nil, acc}
+
+  defp create_or_update_knowledge_resource(
+         name,
+         description,
+         tags,
+         cognitive_dimension,
+         classification,
+         teaching_objective,
+         level_index,
+         subject_id,
+         unit_id,
+         acc
+       ) do
+    name = safe_strip(name)
+    description = safe_strip(description)
+
+    # Parse importance level from tags
+    importance_level = parse_importance_from_tags(safe_strip(tags))
+
+    # 根据 level_index 决定使用哪个 parent
+    # level 0 (A列，一级知识点): 作为 knowledge_cell 创建，直接关联到 subject
+    # level 1 (B列，二级知识点): parent_subject_id = subject_id, parent_unit_id = nil
+    # level >=2 (C列及以下，三级知识点): parent_subject_id = subject_id, parent_unit_id = nil
+    {parent_subject_id, parent_unit_id, parent_knowledge_id} = cond do
+      level_index == 0 -> {subject_id, nil, nil}  # 一级知识点也作为 cell 创建
+      level_index == 1 -> {subject_id, nil, nil}  # 二级知识点
+      level_index >= 2 -> {subject_id, nil, nil}  # 三级及以上
+      true -> {nil, nil, nil}
+    end
+
+    knowledge_attrs = %{
+      name: name,
+      description: description,
+      subject: "",
+      unit: nil,
+      knowledge_type: :knowledge_cell,
+      course_id: acc.course_id,
+      parent_subject_id: parent_subject_id,
+      parent_unit_id: parent_unit_id,
+      parent_knowledge_resource_id: parent_knowledge_id,
+      importance_level: importance_level,
+      tag: tags,
+      dimension: cognitive_dimension,
+      category: classification,
+      teaching_goal: teaching_objective
+    }
+
+    # Check if exists
+    case get_by_name_and_course(
+           %{name: name, knowledge_type: :knowledge_cell, course_id: acc.course_id},
+           tenant: acc.tenant
+         ) do
+      {:ok, existing} ->
+        {:ok, existing.id, acc}
+
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+        case create_resource_record(knowledge_attrs, acc.tenant) do
+          {:ok, knowledge} ->
+            {:ok, knowledge.id, acc}
+
+          {:error, reason} ->
+            IO.inspect("Failed to create knowledge: #{inspect(reason)}")
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        IO.inspect("Error checking knowledge existence: #{inspect(reason)}")
+        {:ok, nil, acc}
+    end
+  end
+
+  defp parse_importance_from_tags(nil), do: :normal
+  defp parse_importance_from_tags(tags) do
+    tags = String.downcase(tags)
+    cond do
+      String.contains?(tags, "难点") -> :hard
+      String.contains?(tags, "重点") -> :important
+      true -> :normal
+    end
+  end
+
+  defp process_relations(_knowledge_id, nil, nil, nil, acc), do: acc
+  defp process_relations(_knowledge_id, _, _, _, acc) do
+    # TODO: Implement relation creation after knowledge resources are created
+    # This requires a two-pass approach or deferred relation processing
+    acc
   end
 
   defp create_or_get_subject(subject_name, course_id, acc) do

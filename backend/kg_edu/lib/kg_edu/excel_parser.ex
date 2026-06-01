@@ -47,7 +47,6 @@ defmodule KgEdu.ExcelParser do
   """
   def parse_excel_file(file_path, index) do
     with {:ok, sheet_data} <- parse_sheet(file_path, index) do
-      #  {:ok, sheet2_data} <- parse_sheet(file_path,  1) do
       {:ok, %{sheet: sheet_data}}
     else
       {:error, reason} -> {:error, reason}
@@ -63,12 +62,9 @@ defmodule KgEdu.ExcelParser do
 
       case Xlsxir.multi_extract(file_path, sheet_name) do
         {:ok, table_id} ->
-          # Get all rows
-          # IO.inspect("table id #{table_id}")
           rows = Xlsxir.get_list(table_id)
           Xlsxir.close(table_id)
 
-          # Skip header row (first row) and process remaining rows
           case rows do
             [_header | data_rows] ->
               processed_rows = Enum.map(data_rows, &process_row/1)
@@ -88,6 +84,23 @@ defmodule KgEdu.ExcelParser do
       e ->
         {:error, "Error parsing sheet '#{sheet_name}': #{Exception.message(e)}"}
     end
+  end
+
+  @doc """
+  Process raw sheet data (array of rows) directly.
+  Used when data comes from Node.js parsing instead of xlsxir.
+  """
+  def process_sheet_data(rows) when is_list(rows) do
+    # Skip header rows (first 4 rows)
+    data_rows = Enum.drop(rows, 4)
+    
+    # Process each row
+    processed_rows = Enum.map(data_rows, &process_row/1)
+    
+    # Filter out empty rows
+    processed_rows |> Enum.filter(fn row -> 
+      row |> Enum.any?(fn v -> v != nil end)
+    end)
   end
 
   @doc """
