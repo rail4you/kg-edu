@@ -2068,7 +2068,9 @@ defmodule KgEdu.Knowledge.Resource do
       level_4_id: nil, 
       level_5_id: nil, 
       level_6_id: nil, 
-      level_7_id: nil
+      level_7_id: nil,
+      # 新增：用于存储每个知识点名称到ID的映射，便于后续处理关系
+      name_to_id: %{}
     }
 
     result = Enum.reduce_while(data_rows, {:ok, initial_acc}, fn row, {:ok, acc} ->
@@ -2078,9 +2080,17 @@ defmodule KgEdu.Knowledge.Resource do
       end
     end)
 
+
     case result do
-      {:ok, _} ->
-        {:ok, "Successfully imported #{length(data_rows)} knowledge resources"}
+      {:ok, acc_after_create} ->
+        # 知识点创建完成后，处理关系（前置/后置/关联）
+        IO.inspect("Processing relations after all knowledge resources created...")
+        case process_all_relations(data_rows, acc_after_create) do
+          {:ok, _} ->
+            {:ok, "Successfully imported #{length(data_rows)} knowledge resources"}
+          {:error, reason} ->
+            {:error, reason}
+        end
       {:error, reason} ->
         {:error, reason}
     end
@@ -2141,7 +2151,13 @@ defmodule KgEdu.Knowledge.Resource do
 
       case find_or_create_resource(name, :subject, attrs, acc) do
         {:ok, resource_id, new_acc} when not is_nil(resource_id) ->
-          {:ok, %{new_acc | current_subject_id: resource_id}}
+          # 更新 name_to_id 映射
+          trimmed_name = name |> safe_strip()
+          new_acc = %{new_acc | 
+            current_subject_id: resource_id,
+            name_to_id: Map.put(new_acc.name_to_id, trimmed_name, resource_id)
+          }
+          {:ok, new_acc}
         _ ->
           {:ok, acc}
       end
@@ -2169,7 +2185,13 @@ defmodule KgEdu.Knowledge.Resource do
 
       case find_or_create_resource(name, :knowledge_unit, attrs, acc) do
         {:ok, resource_id, new_acc} when not is_nil(resource_id) ->
-          {:ok, %{new_acc | current_unit_id: resource_id}}
+          # 更新 name_to_id 映射
+          trimmed_name = name |> safe_strip()
+          new_acc = %{new_acc | 
+            current_unit_id: resource_id,
+            name_to_id: Map.put(new_acc.name_to_id, trimmed_name, resource_id)
+          }
+          {:ok, new_acc}
         _ ->
           {:ok, acc}
       end
@@ -2261,6 +2283,9 @@ defmodule KgEdu.Knowledge.Resource do
                 6 -> %{new_acc | level_7_id: resource_id}
                 _ -> new_acc
               end
+              # 更新 name_to_id 映射（用 trim 后的 name 作为 key）
+              trimmed_name = name |> safe_strip()
+              new_acc = %{new_acc | name_to_id: Map.put(new_acc.name_to_id, trimmed_name, resource_id)}
               {:ok, new_acc}
             _ ->
               {:ok, acc}
@@ -2268,6 +2293,146 @@ defmodule KgEdu.Knowledge.Resource do
         end
       end
     end
+  end
+
+  # ============================================================
+  # 知识点关系导入处理
+  # ============================================================
+  
+  # 处理所有行的关系数据
+  defp process_all_relations(data_rows, acc) do
+    name_to_id = acc.name_to_id
+    tenant = acc.tenant
+    course_id = acc.course_id
+    
+    IO.inspect("Name to ID mapping: #{inspect(Map.keys(name_to_id))}")
+    
+    # 确保 relation_types 存在
+    ensure_relation_types_exist(tenant)
+    
+    # 收集所有关系
+    relations_to_create = []
+    
+    Enum.each(data_rows, fn row ->
+      col0 = safe_get(row, 0)
+      col1 = safe_get(row, 1)
+      col2 = safe_get(row, 2)
+      col3 = safe_get(row, 3)
+      col4 = safe_get(row, 4)
+      col5 = safe_get(row, 5)
+      col6 = safe_get(row, 6)
+      col7 = safe_get(row, 7)  # H列 - 前置知识点
+      col8 = safe_get(row, 8)  # I列 - 后置知识点
+      col9 = safe_get(row, 9)  # J列 - 关联知识点
+      
+      levels = [col0, col1, col2, col3, col4, col5, col6]
+      {knowledge_name, _level_index} = find_deepest_level(levels)
+      
+      unless is_nil(knowledge_name) or knowledge_name == "" do
+        current_name = safe_strip(knowledge_name)
+        current_id = Map.get(name_to_id, current_name)
+        
+        unless is_nil(current_id) do
+          # 处理前置知识点 (H列) - 作为 source，前置是 target，关系类型: prerequisite
+          unless is_nil(col7) or col7 == "" do
+            process_relation_column(col7, current_id, "prerequisite", name_to_id, tenant)
+          end
+          
+          # 处理后置知识点 (I列) - 作为 source，后置是 target，关系类型: postrequisite
+          unless is_nil(col8) or col8 == "" do
+            process_relation_column(col8, current_id, "postrequisite", name_to_id, tenant)
+          end
+          
+          # 处理关联知识点 (J列) - 关系类型: related
+          unless is_nil(col9) or col9 == "" do
+            process_relation_column(col9, current_id, "related", name_to_id, tenant)
+          end
+        end
+      end
+    end)
+    
+    {:ok, "Relations processed successfully"}
+  end
+  
+  # 处理单列关系数据（可能有多个知识点，用分号分隔）
+  defp process_relation_column(column_value, source_id, relation_type_name, name_to_id, tenant) do
+    # 分割多个知识点（支持中英文分号）
+    names = String.split(column_value, ~r{[;；]})
+    |> Enum.map(&String.trim/1)
+    |> Enum.filter(fn n -> n != "" end)
+    
+    Enum.each(names, fn target_name ->
+      target_name = String.trim(target_name)
+      target_id = Map.get(name_to_id, target_name)
+      
+      unless is_nil(target_id) or target_id == source_id do
+        # 获取 relation_type
+        case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name}, tenant: tenant) do
+          {:ok, relation_type} ->
+            create_knowledge_relation_if_not_exists(source_id, target_id, relation_type.id, tenant)
+          {:error, _} ->
+            # 如果找不到 relation_type，跳过
+            IO.puts("WARN: Relation type '#{relation_type_name}' not found, skipping relation")
+            :ok
+        end
+      end
+    end)
+    
+    :ok
+  end
+  
+  # 创建知识点关系（如果不存在）
+  defp create_knowledge_relation_if_not_exists(source_id, target_id, relation_type_id, tenant) do
+    # 检查是否已存在
+    case KgEdu.Knowledge.Relation
+    |> Ash.Query.filter(
+      source_knowledge_id == ^source_id and
+      target_knowledge_id == ^target_id and
+      relation_type_id == ^relation_type_id
+    )
+    |> Ash.read_one(tenant: tenant, authorize?: false) do
+      {:ok, nil} ->
+        # 不存在，创建新关系
+        case KgEdu.Knowledge.Relation.create_relation_import(
+          %{source_knowledge_id: source_id, target_knowledge_id: target_id, relation_type_id: relation_type_id},
+          tenant: tenant,
+          authorize?: false
+        ) do
+          {:ok, _} ->
+            IO.puts("INFO: Created relation #{source_id} -> #{target_id}")
+            :ok
+          {:error, reason} ->
+            IO.puts("WARN: Failed to create relation: #{inspect(reason)}")
+            :ok
+        end
+      {:ok, _existing} ->
+        # 已存在，跳过
+        :ok
+      {:error, reason} ->
+        IO.puts("WARN: Error checking relation existence: #{inspect(reason)}")
+        :ok
+    end
+  end
+  
+  # 确保必要的 relation_types 存在（使用 upsert 方案）
+  defp ensure_relation_types_exist(tenant) do
+    relation_types = [
+      %{name: "prerequisite", display_name: "前置知识点", description: "学习本知识点前需要掌握的知识"},
+      %{name: "postrequisite", display_name: "后置知识点", description: "学习本知识点后会自然掌握的下一阶段知识"},
+      %{name: "related", display_name: "关联知识点", description: "与本知识点有密切联系的知识"}
+    ]
+    
+    Enum.each(relation_types, fn rt ->
+      # 直接使用 upsert，Ash 会自动处理：如果 name 已存在则更新，不存在则创建
+      case KgEdu.Knowledge.RelationType.upsert_relation_type(rt, tenant: tenant, authorize?: false) do
+        {:ok, _relation_type} ->
+          IO.puts("INFO: Upserted relation type '#{rt.name}'")
+        {:error, reason} ->
+          IO.puts("WARN: Failed to upsert relation type '#{rt.name}': #{inspect(reason)}")
+      end
+    end)
+    
+    :ok
   end
 
   # 通用查找或创建资源
