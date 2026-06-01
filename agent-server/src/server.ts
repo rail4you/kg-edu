@@ -55,8 +55,17 @@ const SYSTEM_PROMPT = `你是KgEdu平台的教育AI助手。
 
 const app = express();
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+// 只对 JSON 请求启用 body 解析，multipart 由 Busboy 单独处理
+app.use((req, _res, next) => {
+  const ct = req.headers["content-type"] || "";
+  if (ct.includes("application/json") || ct.includes("text/plain")) {
+    express.json({ limit: "50mb" })(req, _res, next);
+  } else if (ct.includes("application/x-www-form-urlencoded")) {
+    express.urlencoded({ extended: true, limit: "50mb" })(req, _res, next);
+  } else {
+    next();
+  }
+});
 
 // CORS
 app.use((_req, res, next) => {
@@ -491,34 +500,107 @@ app.post("/api/generate_ai_exercise", async (req, res) => {
 // 2. JSON with base64 file_data
 // ============================================================
 
+
 app.post("/import-chapters", async (req, res) => {
   const { orgSchema } = extractTenantContext(req as any);
   
-  // 支持 FormData 或 JSON body
-  let tenant: string;
-  let courseId: string;
+  let tenant = "";
+  let courseId = "";
   let fileBuffer: Buffer | null = null;
   let fileName = "chapters.xlsx";
   
-  // 1. multipart/form-data 格式 — 兼容 express 解析后的 req.body
-  // 前端发送的是 Schema / CourseId (PascalCase)，也兼容 tenant / course_id
-  if (req.body && (req.body.tenant || req.body.Schema || req.body.courseId)) {
-    tenant = req.body.tenant || req.body.Schema || "";
-    courseId = req.body.course_id || req.body.courseId || req.body.CourseId || "";
-    // 文件可能在 req.files 或 req.body.file
-    const file = (req as any).files?.file || req.body.file;
-    if (file && typeof file === "object" && file.buffer) {
-      fileBuffer = file.buffer;
-      fileName = file.name || fileName;
-    } else if (file && file.data) {
-      fileBuffer = Buffer.from(file.data);
-      fileName = file.name || fileName;
+  const contentType = req.headers["content-type"] || "";
+  
+  if (contentType.includes("multipart/form-data")) {
+    // 解析 multipart/form-data
+    const boundaryMatch = contentType.match(/boundary=(.+)$/);
+    if (!boundaryMatch) {
+      res.status(400).json({ success: false, error: "缺少 boundary" });
+      return;
     }
-  }
-  // 2. JSON 格式 with base64
-  else {
-    tenant = req.body?.tenant || orgSchema || (req.body as any)?.Schema;
-    courseId = req.body?.course_id || (req.body as any)?.courseId || (req.body as any)?.CourseId;
+    const boundary = boundaryMatch[1];
+    
+    // 读取整个请求体
+    const body = await new Promise<Buffer>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      req.on("data", (chunk: Buffer) => chunks.push(chunk));
+      req.on("end", () => resolve(Buffer.concat(chunks)));
+      req.on("error", reject);
+    });
+    
+    const bodyStr = body.toString("binary");
+    const boundaryBuffer = Buffer.from(`--${boundary}`, "binary");
+    
+    // 分割 multipart
+    const parts: { headers: Record<string, string>; data: Buffer }[] = [];
+    let pos = 0;
+    
+    const nextBoundary = (startPos: number): { start: number; end: number } | null => {
+      let idx = body.indexOf(boundaryBuffer, startPos);
+      if (idx === -1) return null;
+      return { start: idx, end: idx + boundaryBuffer.length };
+    };
+    
+    // 找到第一个 boundary 后的内容开始位置
+    const firstBoundary = nextBoundary(0);
+    if (!firstBoundary) {
+      res.status(400).json({ success: false, error: "无效的 multipart 数据" });
+      return;
+    }
+    pos = firstBoundary.end;
+    // 跳过 --\r\n 或 --\n
+    if (bodyStr.slice(pos, pos + 2) === "\r\n") pos += 2;
+    else if (bodyStr[pos] === "-" && bodyStr[pos + 1] === "-") pos += 2;
+    
+    while (true) {
+      const boundaryEnd = nextBoundary(pos);
+      if (!boundaryEnd) break;
+      
+      const partData = body.slice(pos, boundaryEnd.start - 2); // 去掉 \r\n
+      const partStr = partData.toString("binary");
+      
+      const headerEndIdx = partStr.indexOf("\r\n\r\n");
+      if (headerEndIdx === -1) { pos = boundaryEnd.end; continue; }
+      
+      const headerStr = partStr.slice(0, headerEndIdx);
+      const dataStr = partStr.slice(headerEndIdx + 4);
+      const data = Buffer.from(dataStr, "binary");
+      
+      // 解析 header
+      const headers: Record<string, string> = {};
+      for (const line of headerStr.split("\r\n")) {
+        const [key, ...valueParts] = line.split(":");
+        if (key && valueParts.length > 0) {
+          headers[key.toLowerCase()] = valueParts.join(":").trim();
+        }
+      }
+      
+      const contentDisposition = headers["content-disposition"] || "";
+      const nameMatch = contentDisposition.match(/name="([^"]+)"/);
+      const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+      const fieldName = nameMatch?.[1] || "";
+      const filename = filenameMatch?.[1] || "";
+      
+      if (filename) {
+        fileName = filename;
+        fileBuffer = data;
+      } else if (fieldName === "tenant" || fieldName === "Schema" || fieldName === "Tenant") {
+        tenant = data.toString("utf8").trim();
+      } else if (fieldName === "courseId" || fieldName === "CourseId" || fieldName === "course_id") {
+        courseId = data.toString("utf8").trim();
+      }
+      
+      pos = boundaryEnd.end;
+      // 检查结束标记
+      if (bodyStr.slice(pos, pos + 2) === "--") break;
+      // 跳过 \r\n
+      if (bodyStr[pos] === "\r") pos++;
+      if (bodyStr[pos] === "\n") pos++;
+    }
+  } else {
+    // JSON 格式 with base64
+    tenant = req.body?.tenant || orgSchema || (req.body as any)?.Schema || "";
+    courseId = req.body?.course_id || (req.body as any)?.courseId || (req.body as any)?.CourseId || "";
     
     if (req.body?.file_data) {
       try {
