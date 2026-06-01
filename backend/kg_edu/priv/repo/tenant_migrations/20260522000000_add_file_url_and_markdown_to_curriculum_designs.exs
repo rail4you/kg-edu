@@ -4,10 +4,17 @@ defmodule KgEdu.Repo.TenantMigrations.AddFileUrlAndMarkdownToCurriculumDesigns d
   """
   use Ecto.Migration
 
-  def change do
+  def up do
     alter table(:curriculum_designs, prefix: prefix()) do
       add :file_url, :string
       add :markdown_content, :text
+    end
+  end
+
+  def down do
+    alter table(:curriculum_designs, prefix: prefix()) do
+      remove :file_url
+      remove :markdown_content
     end
   end
 end

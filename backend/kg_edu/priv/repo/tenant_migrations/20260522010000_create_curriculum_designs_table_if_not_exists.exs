@@ -1,30 +1,31 @@
 defmodule KgEdu.Repo.TenantMigrations.CreateCurriculumDesignsTableIfNotExists do
   @moduledoc """
   Create curriculum_designs table only if it doesn't exist.
-  Uses Ecto DSL with tenant prefix.
+  Uses raw SQL for cross-database compatibility.
   """
   use Ecto.Migration
 
-  def change do
-    create_if_not_exists table(:curriculum_designs, primary_key: false, prefix: prefix()) do
-      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
-      add :title, :text, null: false
-      add :description, :text
-      add :design_data, :text
-      add :file_url, :text
-      add :markdown_content, :text
-      add :ai_generated, :boolean, null: false, default: false
-      add :version, :bigint, null: false, default: 1
-      add :status, :text, null: false, default: "draft"
-      add :major_id, references(:majors, type: :uuid, prefix: prefix()), null: false
+  def up do
+    execute("""
+      CREATE TABLE IF NOT EXISTS curriculum_designs (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        design_data TEXT,
+        file_url TEXT,
+        markdown_content TEXT,
+        ai_generated BOOLEAN NOT NULL DEFAULT false,
+        version BIGINT NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'draft',
+        major_id UUID NOT NULL,
+        inserted_at TIMESTAMP(6) NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+        updated_at TIMESTAMP(6) NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+      );
+    """, "DROP TABLE IF EXISTS curriculum_designs;")
+  end
 
-      add :inserted_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
-
-      add :updated_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
-    end
+  def down do
+    # No-op - we don't want to drop the table on rollback
+    :ok
   end
 end
