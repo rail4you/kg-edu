@@ -13,6 +13,21 @@
           "maxTokens": 131072
         }
       ]
+    },
+    "qwen": {
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "apiKey": "sk-f99eaa5ab16044f1a39aead070fb08e9",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "qwen-plus",
+          "name": "Qwen Plus",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "contextWindow": 131072,
+          "maxTokens": 16384
+        }
+      ]
     }
   }
 }

@@ -63,8 +63,8 @@ services:
       - QWEN_BASE_URL=${QWEN_BASE_URL}
       - QWEN_MODEL=${QWEN_MODEL:-qwen-plus}
       # Pi Agent model configuration (for exercise generation via Pi SDK)
-      - PI_AGENT_MODEL_PROVIDER=${PI_AGENT_MODEL_PROVIDER:-zai}
-      - PI_AGENT_MODEL_ID=${PI_AGENT_MODEL_ID:-glm-5.1}
+      - PI_AGENT_MODEL_PROVIDER=${PI_AGENT_MODEL_PROVIDER:-qwen}
+      - PI_AGENT_MODEL_ID=${PI_AGENT_MODEL_ID:-qwen-plus}
       # OSS
       - OSS_BUCKET=${OSS_BUCKET:-kg-edu}
       - OSS_REGION=${OSS_REGION:-cn-beijing}

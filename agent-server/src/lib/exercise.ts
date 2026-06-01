@@ -92,6 +92,10 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
   return result;
 }
 
+  console.log(`[exercise] LLM response length: ${result.length}`);
+  return result;
+}
+
 // ============================================================
 // Exercise 生成指令
 // ============================================================
