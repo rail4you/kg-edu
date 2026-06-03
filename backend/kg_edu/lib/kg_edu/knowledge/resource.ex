@@ -2183,7 +2183,7 @@ defmodule KgEdu.Knowledge.Resource do
         parent_subject_id: acc.current_subject_id
       }
 
-      case find_or_create_resource(name, :knowledge_unit, attrs, acc) do
+      case find_or_create_resource(name, :knowledge_unit, attrs, acc, 1) do
         {:ok, resource_id, new_acc} when not is_nil(resource_id) ->
           # 更新 name_to_id 映射
           trimmed_name = name |> safe_strip()
@@ -2491,47 +2491,74 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   # 通用查找或创建资源
-  # level_index 用于在 level 2 时增加 parent_unit_id 过滤条件，避免不同单元下同名 cell 被复用
+  # 每个层级需要匹配对应父级 ID，避免不同分支下同名知识点互相串用
+  # - level 0 (subject): 按 course_id + name 查重（同一课程内主题名唯一）
+  # - level 1 (knowledge_unit): 匹配 parent_subject_id，避免不同主题下同名单元被合并
+  # - level 2 (knowledge_cell): 优先匹配 parent_unit_id，否则匹配 parent_subject_id
+  # - level 3+ (knowledge_cell): 匹配 parent_knowledge_resource_id
   defp find_or_create_resource(name, knowledge_type, attrs, acc, level_index \\ nil) do
     trimmed_name = name |> safe_strip()
     if trimmed_name == "" or is_nil(trimmed_name) do
       {:ok, nil, acc}
     else
       course_id = Map.get(attrs, :course_id) || acc.course_id
+      parent_subject_id = Map.get(attrs, :parent_subject_id)
       parent_unit_id = Map.get(attrs, :parent_unit_id)
-
-      # 构建查询条件
-      # - level 2 的 cell 需要同时匹配 parent_unit_id，避免不同单元下同名 cell 被复用
-      # - level 3+ 的 cell 需要同时匹配 parent_knowledge_resource_id，避免不同父级下同名 cell 被复用
       parent_knowledge_resource_id = Map.get(attrs, :parent_knowledge_resource_id)
 
-      query = cond do
-        level_index == 2 and knowledge_type == :knowledge_cell and not is_nil(parent_unit_id) ->
-          __MODULE__
-          |> Ash.Query.filter(
-            name == ^trimmed_name and
-            knowledge_type == ^knowledge_type and
-            course_id == ^course_id and
-            parent_unit_id == ^parent_unit_id
-          )
+      query =
+        cond do
+          # level 1 (knowledge_unit): 按 parent_subject_id 隔离
+          level_index == 1 and knowledge_type == :knowledge_unit and not is_nil(parent_subject_id) ->
+            __MODULE__
+            |> Ash.Query.filter(
+              name == ^trimmed_name and
+              knowledge_type == ^knowledge_type and
+              course_id == ^course_id and
+              parent_subject_id == ^parent_subject_id
+            )
 
-        level_index != nil and level_index >= 3 and knowledge_type == :knowledge_cell and not is_nil(parent_knowledge_resource_id) ->
-          __MODULE__
-          |> Ash.Query.filter(
-            name == ^trimmed_name and
-            knowledge_type == ^knowledge_type and
-            course_id == ^course_id and
-            parent_knowledge_resource_id == ^parent_knowledge_resource_id
-          )
+          # level 2 (knowledge_cell) 有 unit 父级：按 parent_unit_id 隔离
+          level_index == 2 and knowledge_type == :knowledge_cell and not is_nil(parent_unit_id) ->
+            __MODULE__
+            |> Ash.Query.filter(
+              name == ^trimmed_name and
+              knowledge_type == ^knowledge_type and
+              course_id == ^course_id and
+              parent_unit_id == ^parent_unit_id
+            )
 
-        true ->
-          __MODULE__
-          |> Ash.Query.filter(
-            name == ^trimmed_name and
-            knowledge_type == ^knowledge_type and
-            course_id == ^course_id
-          )
-      end
+          # level 2 (knowledge_cell) 只有 subject 父级（无 unit 时）：按 parent_subject_id 隔离
+          level_index == 2 and knowledge_type == :knowledge_cell and is_nil(parent_unit_id) and
+              not is_nil(parent_subject_id) ->
+            __MODULE__
+            |> Ash.Query.filter(
+              name == ^trimmed_name and
+              knowledge_type == ^knowledge_type and
+              course_id == ^course_id and
+              parent_subject_id == ^parent_subject_id
+            )
+
+          # level 3+ (knowledge_cell) 有 cell 父级：按 parent_knowledge_resource_id 隔离
+          level_index != nil and level_index >= 3 and knowledge_type == :knowledge_cell and
+              not is_nil(parent_knowledge_resource_id) ->
+            __MODULE__
+            |> Ash.Query.filter(
+              name == ^trimmed_name and
+              knowledge_type == ^knowledge_type and
+              course_id == ^course_id and
+              parent_knowledge_resource_id == ^parent_knowledge_resource_id
+            )
+
+          # 默认：按 name + type + course_id 查重（仅用于 level 0 subject）
+          true ->
+            __MODULE__
+            |> Ash.Query.filter(
+              name == ^trimmed_name and
+              knowledge_type == ^knowledge_type and
+              course_id == ^course_id
+            )
+        end
       
       case Ash.read_one(query, tenant: acc.tenant, authorize?: false) do
         {:ok, existing} when not is_nil(existing) ->
