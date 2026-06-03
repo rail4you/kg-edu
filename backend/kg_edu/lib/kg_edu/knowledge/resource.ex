@@ -2501,21 +2501,34 @@ defmodule KgEdu.Knowledge.Resource do
       parent_unit_id = Map.get(attrs, :parent_unit_id)
 
       # 构建查询条件
-      # 对于 level 2 的 cell，需要同时匹配 parent_unit_id，避免不同单元下同名 cell 被复用
-      query = case level_index do
-        2 when knowledge_type == :knowledge_cell and not is_nil(parent_unit_id) ->
+      # - level 2 的 cell 需要同时匹配 parent_unit_id，避免不同单元下同名 cell 被复用
+      # - level 3+ 的 cell 需要同时匹配 parent_knowledge_resource_id，避免不同父级下同名 cell 被复用
+      parent_knowledge_resource_id = Map.get(attrs, :parent_knowledge_resource_id)
+
+      query = cond do
+        level_index == 2 and knowledge_type == :knowledge_cell and not is_nil(parent_unit_id) ->
           __MODULE__
           |> Ash.Query.filter(
-            name == ^trimmed_name and 
-            knowledge_type == ^knowledge_type and 
+            name == ^trimmed_name and
+            knowledge_type == ^knowledge_type and
             course_id == ^course_id and
             parent_unit_id == ^parent_unit_id
           )
-        _ ->
+
+        level_index != nil and level_index >= 3 and knowledge_type == :knowledge_cell and not is_nil(parent_knowledge_resource_id) ->
           __MODULE__
           |> Ash.Query.filter(
-            name == ^trimmed_name and 
-            knowledge_type == ^knowledge_type and 
+            name == ^trimmed_name and
+            knowledge_type == ^knowledge_type and
+            course_id == ^course_id and
+            parent_knowledge_resource_id == ^parent_knowledge_resource_id
+          )
+
+        true ->
+          __MODULE__
+          |> Ash.Query.filter(
+            name == ^trimmed_name and
+            knowledge_type == ^knowledge_type and
             course_id == ^course_id
           )
       end
