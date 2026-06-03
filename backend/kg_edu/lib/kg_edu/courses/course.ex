@@ -301,6 +301,12 @@ defmodule KgEdu.Courses.Course do
             |> Ash.Query.filter(course_enrollments.member_id == ^user_id)
             |> Ash.Query.load(:subject_category)
 
+          %{role: :admin} ->
+            query |> Ash.Query.load(:subject_category)
+
+          %{role: :super_admin} ->
+            query |> Ash.Query.load(:subject_category)
+
           _ ->
             Ash.Query.filter(query, false)
         end
