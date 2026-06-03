@@ -4,6 +4,9 @@ defmodule KgEdu.ExcelParser do
   Handles two sheets: "1" for knowledge resources and "2" for knowledge relations.
   """
 
+  @knowledge_header_markers ["一级知识点", "二级知识点", "三级知识点"]
+  @default_header_rows_to_skip 4
+
   @doc """
   Parse Excel file from base64 encoded string.
 
@@ -65,17 +68,7 @@ defmodule KgEdu.ExcelParser do
           rows = Xlsxir.get_list(table_id)
           Xlsxir.close(table_id)
 
-          case rows do
-            [_header | data_rows] ->
-              processed_rows = Enum.map(data_rows, &process_row/1)
-              {:ok, processed_rows}
-
-            [] ->
-              {:ok, []}
-
-            _ ->
-              {:error, "Sheet '#{sheet_name}' has no header row"}
-          end
+          {:ok, process_sheet_data(rows)}
 
         {:error, reason} ->
           {:error, "Failed to extract sheet '#{sheet_name}': #{reason}"}
@@ -91,15 +84,23 @@ defmodule KgEdu.ExcelParser do
   Used when data comes from Node.js parsing instead of xlsxir.
   """
   def process_sheet_data(rows) when is_list(rows) do
-    # Skip header rows (first 4 rows)
-    data_rows = Enum.drop(rows, 4)
-    
+    header_index = find_knowledge_header_index(rows)
+
+    data_rows =
+      if is_integer(header_index) do
+        Enum.drop(rows, header_index + 1)
+      else
+        # Backward-compatible fallback for older templates with four fixed header rows.
+        Enum.drop(rows, @default_header_rows_to_skip)
+      end
+
     # Process each row
     processed_rows = Enum.map(data_rows, &process_row/1)
-    
+
     # Filter out empty rows
-    processed_rows |> Enum.filter(fn row -> 
-      row |> Enum.any?(fn v -> v != nil end)
+    processed_rows
+    |> Enum.filter(fn row ->
+      row |> Enum.any?(fn v -> not blank?(v) end)
     end)
   end
 
@@ -109,8 +110,35 @@ defmodule KgEdu.ExcelParser do
   def process_row(row) when is_list(row) do
     row
     |> Enum.map(fn
-      "" -> nil
-      value -> value
+      "" ->
+        nil
+
+      value when is_binary(value) ->
+        case String.trim(value) do
+          "" -> nil
+          trimmed -> trimmed
+        end
+
+      value ->
+        value
     end)
   end
+
+  defp find_knowledge_header_index(rows) do
+    Enum.find_index(rows, fn row ->
+      normalized =
+        row
+        |> Enum.take(7)
+        |> Enum.map(fn
+          value when is_binary(value) -> String.trim(value)
+          value -> value
+        end)
+
+      Enum.all?(@knowledge_header_markers, fn marker -> marker in normalized end)
+    end)
+  end
+
+  defp blank?(nil), do: true
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(_), do: false
 end

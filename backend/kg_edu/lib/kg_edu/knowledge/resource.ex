@@ -2335,17 +2335,17 @@ defmodule KgEdu.Knowledge.Resource do
         unless is_nil(current_id) do
           # 处理前置知识点 (H列) - 作为 source，前置是 target，关系类型: prerequisite
           unless is_nil(col7) or col7 == "" do
-            process_relation_column(col7, current_id, "prerequisite", name_to_id, tenant)
+            process_relation_column(col7, current_id, "prerequisite", name_to_id, tenant, course_id)
           end
           
           # 处理后置知识点 (I列) - 作为 source，后置是 target，关系类型: postrequisite
           unless is_nil(col8) or col8 == "" do
-            process_relation_column(col8, current_id, "postrequisite", name_to_id, tenant)
+            process_relation_column(col8, current_id, "postrequisite", name_to_id, tenant, course_id)
           end
           
           # 处理关联知识点 (J列) - 关系类型: related
           unless is_nil(col9) or col9 == "" do
-            process_relation_column(col9, current_id, "related", name_to_id, tenant)
+            process_relation_column(col9, current_id, "related", name_to_id, tenant, course_id)
           end
         end
       end
@@ -2354,31 +2354,86 @@ defmodule KgEdu.Knowledge.Resource do
     {:ok, "Relations processed successfully"}
   end
   
-  # 处理单列关系数据（可能有多个知识点，用分号分隔）
-  defp process_relation_column(column_value, source_id, relation_type_name, name_to_id, tenant) do
-    # 分割多个知识点（支持中英文分号）
-    names = String.split(column_value, ~r{[;；]})
-    |> Enum.map(&String.trim/1)
-    |> Enum.filter(fn n -> n != "" end)
+  # 处理单列关系数据（支持分号、逗号、顿号、换行和 {[名称]:关系}）
+  defp process_relation_column(column_value, source_id, relation_type_name, name_to_id, tenant, course_id) do
+    names = parse_relation_names(column_value)
     
     Enum.each(names, fn target_name ->
-      target_name = String.trim(target_name)
-      target_id = Map.get(name_to_id, target_name)
+      target_id = resolve_relation_target_id(target_name, name_to_id, tenant, course_id)
       
-      unless is_nil(target_id) or target_id == source_id do
+      cond do
+        is_nil(target_id) ->
+          IO.puts("WARN: Relation target '#{target_name}' not found, skipping relation")
+
+        target_id == source_id ->
+          :ok
+
+        true ->
         # 获取 relation_type
-        case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name}, tenant: tenant) do
-          {:ok, relation_type} ->
-            create_knowledge_relation_if_not_exists(source_id, target_id, relation_type.id, tenant)
-          {:error, _} ->
-            # 如果找不到 relation_type，跳过
-            IO.puts("WARN: Relation type '#{relation_type_name}' not found, skipping relation")
-            :ok
-        end
+          case KgEdu.Knowledge.RelationType.get_relation_type_by_name(%{name: relation_type_name}, tenant: tenant) do
+            {:ok, relation_type} ->
+              create_knowledge_relation_if_not_exists(source_id, target_id, relation_type.id, tenant)
+            {:error, _} ->
+              # 如果找不到 relation_type，跳过
+              IO.puts("WARN: Relation type '#{relation_type_name}' not found, skipping relation")
+              :ok
+          end
       end
     end)
     
     :ok
+  end
+
+  defp parse_relation_names(nil), do: []
+
+  defp parse_relation_names(column_value) do
+    text = column_value |> to_string()
+
+    formatted_names =
+      ~r/\{\s*\[([^\]]+)\]\s*(?::[^}]*)?\}/u
+      |> Regex.scan(text)
+      |> Enum.map(fn [_match, name] -> normalize_relation_name(name) end)
+
+    plain_text = Regex.replace(~r/\{\s*\[[^\]]+\]\s*(?::[^}]*)?\}/u, text, ";")
+
+    plain_names =
+      plain_text
+      |> String.split(~r/[;；,，、\n\r]+/u)
+      |> Enum.map(&normalize_relation_name/1)
+
+    (formatted_names ++ plain_names)
+    |> Enum.filter(fn name -> name != "" end)
+    |> Enum.uniq()
+  end
+
+  defp normalize_relation_name(name) do
+    name
+    |> to_string()
+    |> String.trim()
+    |> String.trim_leading("[")
+    |> String.trim_trailing("]")
+    |> String.trim_trailing("。")
+    |> String.trim_trailing(".")
+    |> String.trim()
+  end
+
+  defp resolve_relation_target_id(target_name, name_to_id, tenant, course_id) do
+    case Map.get(name_to_id, target_name) do
+      nil -> find_existing_resource_id_by_name(target_name, tenant, course_id)
+      id -> id
+    end
+  end
+
+  defp find_existing_resource_id_by_name(target_name, tenant, course_id) do
+    case __MODULE__
+    |> Ash.Query.filter(name == ^target_name and course_id == ^course_id)
+    |> Ash.read(tenant: tenant, authorize?: false) do
+      {:ok, [resource | _]} -> resource.id
+      {:ok, []} -> nil
+      {:error, reason} ->
+        IO.puts("WARN: Error finding relation target '#{target_name}': #{inspect(reason)}")
+        nil
+    end
   end
   
   # 创建知识点关系（如果不存在）
