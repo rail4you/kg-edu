@@ -333,6 +333,13 @@ start_agent() {
     # 清空日志
     > "$LOG_DIR/$AGENT.log"
 
+    # 加载 .env 文件中的环境变量（覆盖可能存在的 shell 环境变量，避免旧 key 干扰）
+    if [ -f "$AGENT_SERVER_DIR/.env" ]; then
+      set -a
+      source "$AGENT_SERVER_DIR/.env"
+      set +a
+    fi
+
     bun run src/server.ts >> "$LOG_DIR/$AGENT.log" 2>&1 &
     disown $!
     local pid=$!

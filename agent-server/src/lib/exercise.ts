@@ -10,90 +10,45 @@
  */
 
 import { getExercises, callRpc, getOrgSchema } from "./api-client.js";
-import {
-  AuthStorage,
-  createAgentSession,
-  DefaultResourceLoader,
-  ModelRegistry,
-  SessionManager,
-} from "@mariozechner/pi-coding-agent";
 
 // ============================================================
-// Pi SDK LLM 调用（复用 Pi Agent 的模型配置和认证）
+// 直接调用 DashScope (Qwen) API - 不使用 Pi SDK
+// Pi SDK 的模型注册表与 Qwen 兼容性存在问题，改用原生 fetch 直接调用
 // ============================================================
-
-let _exerciseSession: any = null;
-
-async function getExerciseSession() {
-  if (_exerciseSession) return _exerciseSession;
-
-  const loader = new DefaultResourceLoader({
-    systemPromptOverride: () => "你是练习题生成专家，只返回 JSON 格式的练习题数据。",
-  });
-  await loader.reload();
-
-  const authStorage = AuthStorage.create();
-  const modelRegistry = ModelRegistry.create(authStorage);
-  await modelRegistry.refresh();
-
-  // 与 pi-agent-gateway 保持一致：优先环境变量，fallback 到 qwen
-  const provider = process.env.PI_AGENT_MODEL_PROVIDER || "qwen";
-  const modelId = process.env.PI_AGENT_MODEL_ID || "qwen-plus";
-  const model = modelRegistry.find(provider, modelId);
-  if (!model) {
-    throw new Error(`[exercise] Model ${provider}/${modelId} not found in Pi SDK registry`);
-  }
-  console.log(`[exercise] Using model: ${model.id} (provider: ${model.provider})`);
-
-  const { session } = await createAgentSession({
-    authStorage,
-    modelRegistry,
-    sessionManager: SessionManager.inMemory(),
-    resourceLoader: loader,
-    model,
-    noTools: true,
-  });
-
-  _exerciseSession = session;
-  return session;
-}
 
 async function callLLM(systemPrompt: string, userPrompt: string): Promise<string> {
-  const session = await getExerciseSession();
+  const apiKey = process.env.QWEN_API_KEY || "sk-f99eaa5ab16044f1a39aead070fb08e9";
+  const baseUrl = process.env.QWEN_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1";
+  const model = process.env.QWEN_MODEL || "qwen-plus";
 
-  const fullPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-  console.log(`[exercise] Calling LLM via Pi SDK`);
+  console.log(`[exercise] Calling Qwen API directly (model: ${model})`);
 
-  // 收集 assistant 响应
-  let result = "";
-  session.subscribe((event: any) => {
-    if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
-      result += event.assistantMessageEvent.delta || "";
-    }
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 16384,
+      temperature: 0.7,
+    }),
   });
 
-  await session.prompt(fullPrompt, { source: "user" });
-  await session.agent.waitForIdle();
-
-  // 从 session state 取最终 assistant 消息作为 fallback
-  if (!result) {
-    const messages = session.agent.state?.messages || [];
-    const lastAssistant = [...messages].reverse().find((m: any) => m.role === "assistant");
-    if (lastAssistant?.content) {
-      result = typeof lastAssistant.content === "string"
-        ? lastAssistant.content
-        : Array.isArray(lastAssistant.content)
-          ? lastAssistant.content.filter((p: any) => p.type === "text").map((p: any) => p.text).join("")
-          : "";
-    }
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    throw new Error(`Qwen API error (${response.status}): ${errorBody}`);
   }
 
-  console.log(`[exercise] LLM response length: ${result.length}`);
-  return result;
-}
-
-  console.log(`[exercise] LLM response length: ${result.length}`);
-  return result;
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content || "";
+  console.log(`[exercise] Qwen response length: ${content.length}`);
+  return content.trim();
 }
 
 // ============================================================

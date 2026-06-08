@@ -76,6 +76,17 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Debug env
+app.get("/debug-env", (_req, res) => {
+  const qwenKey = process.env.QWEN_API_KEY;
+  res.json({
+    QWEN_API_KEY: qwenKey ? `${qwenKey.slice(0, 8)}...${qwenKey.slice(-4)}` : "NOT SET",
+    QWEN_BASE_URL: process.env.QWEN_BASE_URL || "NOT SET",
+    QWEN_MODEL: process.env.QWEN_MODEL || "NOT SET",
+    hasFallback: !!"sk-f99eaa5ab16044f1a39aead070fb08e9",
+  });
+});
+
 // Health check
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "kg-edu-agent-server", version: "0.1.0" });
@@ -485,7 +496,9 @@ app.post("/api/generate_ai_exercise", async (req, res) => {
     const result = await generateExercises(req.body.input, tenant);
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[agent-server] generate_ai_exercise error:', err?.message || err);
+    console.error('[agent-server] generate_ai_exercise stack:', err?.stack);
+    res.status(500).json({ success: false, error: err?.message || String(err) });
   }
 });
 
