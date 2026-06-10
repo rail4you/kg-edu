@@ -60,6 +60,7 @@ defmodule KgEdu.Accounts do
     resource KgEdu.Accounts.User do
       rpc_action :sign_in, :sign_in_with_password, show_metadata: [:token]
       rpc_action :sign_in_tenant, :sign_in_tenant, show_metadata: [:token]
+      rpc_action :refresh_session, :refresh_session, show_metadata: [:token]
       rpc_action :super_admin_sign_in, :super_admin_sign_in, show_metadata: [:token]
       rpc_action :register, :register_with_password, show_metadata: [:token]
       rpc_action :register_in_tenant, :register_user_in_tenant, show_metadata: [:token]

@@ -429,6 +429,70 @@ defmodule KgEdu.Accounts.User do
       end)
     end
 
+    action :refresh_session, :map do
+      description("Refresh an expiring or recently expired session token")
+
+      argument :token, :string do
+        description("The current access token")
+        allow_nil?(false)
+        sensitive?(true)
+      end
+
+      run(fn input, _context ->
+        token = input.arguments.token
+
+        # Peek at the token claims without enforcing expiry (allow grace period for refresh)
+        case AshAuthentication.Jwt.peek(token) do
+          {:ok, %{"sub" => subject, "tenant" => tenant} = _claims}
+          when not is_nil(subject) and not is_nil(tenant) ->
+            user_id = extract_user_id_from_subject(subject)
+
+            if is_nil(user_id) do
+              {:error, Ash.Error.to_error(
+                AshAuthentication.Errors.AuthenticationFailed.exception(
+                  strategy: nil,
+                  caused_by: %{message: "Invalid token subject"}
+                )
+              )}
+            else
+              case Ash.get(KgEdu.Accounts.User, user_id, tenant: tenant) do
+                {:ok, user} when not is_nil(user) ->
+                  # Generate a fresh token for the user
+                  case AshAuthentication.Jwt.token_for_user(user) do
+                    {:ok, new_token, _claims} ->
+                      {:ok, %{token: new_token, user: user}}
+
+                    {:error, reason} ->
+                      {:error, reason}
+                  end
+
+                {:ok, nil} ->
+                  {:error, Ash.Error.to_error(
+                    AshAuthentication.Errors.AuthenticationFailed.exception(
+                      strategy: nil,
+                      caused_by: %{message: "User not found"}
+                    )
+                  )}
+
+                {:error, reason} ->
+                  {:error, reason}
+              end
+            end
+
+          {:ok, _claims} ->
+            {:error, Ash.Error.to_error(
+              AshAuthentication.Errors.AuthenticationFailed.exception(
+                strategy: nil,
+                caused_by: %{message: "Token missing required claims"}
+              )
+            )}
+
+          {:error, _reason} = error ->
+            error
+        end
+      end)
+    end
+
     update :internal_change_password_direct do
       description("Internal action for actual password change")
       require_atomic?(false)
@@ -1250,4 +1314,8 @@ defmodule KgEdu.Accounts.User do
   identities do
     identity(:unique_member_id, [:member_id])
   end
+
+  # Private helpers
+  defp extract_user_id_from_subject("user?id=" <> user_id), do: user_id
+  defp extract_user_id_from_subject(other), do: other
 end
