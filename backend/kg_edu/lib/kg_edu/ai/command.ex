@@ -31,9 +31,13 @@ defmodule KgEdu.AI.Command do
     defaults [:destroy]
 
     read :read do
-      description "List AI commands"
+      description "List AI commands (filtered by current user)"
       pagination offset?: true, keyset?: true, required?: false
       primary? true
+
+      prepare build(filter: [
+        created_by_id: actor(:id)
+      ])
     end
 
     read :by_id do
@@ -46,6 +50,8 @@ defmodule KgEdu.AI.Command do
     create :create do
       description "Create a new AI command"
       accept [:title, :user, :system, :assistant]
+
+      change set_attribute(:created_by_id, actor(:id))
 
       validate fn changeset, _context ->
         user = Ash.Changeset.get_attribute(changeset, :user)
@@ -69,7 +75,11 @@ defmodule KgEdu.AI.Command do
   end
 
   policies do
-    policy always() do
+    policy action_type([:read, :update, :destroy]) do
+      authorize_if expr(created_by_id == ^actor(:id))
+    end
+
+    policy action_type(:create) do
       authorize_if always()
     end
   end
@@ -105,10 +115,16 @@ defmodule KgEdu.AI.Command do
       description "Assistant-generated response or command"
     end
 
+    attribute :created_by_id, :uuid do
+      allow_nil? true
+      public? true
+      description "The user who created this command"
+    end
+
     timestamps()
   end
 
   identities do
-    identity :unique_user_system_assistant_trio, [:user, :system, :assistant]
+    identity :unique_user_system_assistant_trio, [:user, :system, :assistant, :created_by_id]
   end
 end
