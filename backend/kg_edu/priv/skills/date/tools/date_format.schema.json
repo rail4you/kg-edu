@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Date in YYYY-MM-DD format"
+    },
+    "format": {
+      "type": "string",
+      "description": "Target format: cn (2025年6月15日), iso (2025-06-15), us (06/15/2025), eu (15/06/2025), week (2025年6月15日 周日)"
+    }
+  },
+  "required": ["date", "format"]
+}

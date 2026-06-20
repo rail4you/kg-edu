@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "date1": {
+      "type": "string",
+      "description": "First date in YYYY-MM-DD format"
+    },
+    "date2": {
+      "type": "string",
+      "description": "Second date in YYYY-MM-DD format"
+    }
+  },
+  "required": ["date1", "date2"]
+}

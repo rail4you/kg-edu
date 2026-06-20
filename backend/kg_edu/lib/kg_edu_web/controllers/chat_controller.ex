@@ -1,129 +1,144 @@
 defmodule KgEduWeb.ChatController do
   use KgEduWeb, :controller
 
+  alias Jido.AI.Reasoning.ReAct
+
+  @doc """
+  SSE streaming chat endpoint.
+
+  Accepts:
+    - `message` (required) — the user's message
+    - `agent` (optional, default "qa") — agent type: "qa", "math", "node_math"
+    - `ai_command_id` (optional) — AI command context ID
+
+  Returns a text/event-stream of ReAct events:
+    - `data: {"event":"llm_delta","content":"..."}`
+    - `data: {"event":"tool_start","tool":"add","call_id":"..."}`
+    - `data: {"event":"tool_complete","tool":"add","call_id":"..."}`
+    - `data: {"event":"done"}`
+    - `data: {"event":"error","message":"..."}`
+  """
   def stream_message(conn, %{"message" => message} = params) do
-    conn
-    |> put_resp_header("content-type", "text/event-stream")
-    |> put_resp_header("cache-control", "no-cache")
-    |> put_resp_header("connection", "keep-alive")
-    |> send_chunked(200)
-    |> stream_claude_response(message, params["ai_command_id"])
-  end
+    agent_type = Map.get(params, "agent", "qa")
+    ai_command_id = params["ai_command_id"]
 
-  defp stream_claude_response(conn, message, ai_command_id \\ nil) do
-    # ReqLLM.put_key(:openai_api_key, "sk-3e910c05b96a49f9aa0ea064bef50ceb")
-    ReqLLM.put_key(
-      :openrouter_api_key,
-      "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"
-    )
+    conn =
+      conn
+      |> put_resp_header("content-type", "text/event-stream")
+      |> put_resp_header("cache-control", "no-cache")
+      |> put_resp_header("x-accel-buffering", "no")
+      |> send_chunked(200)
 
-    context = build_context_from_ai_command(ai_command_id)
+    # Build system prompt with AI command context if provided
+    context_prompt = build_context_prompt(ai_command_id)
+    system_prompt = if context_prompt, do: context_prompt, else: nil
 
-    # Build messages with context
-    messages =
-      case context do
-        nil ->
-          [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
+    # Build agent config
+    opts = [system_prompt: system_prompt]
 
-        _ ->
-          context.messages ++
-            [%ReqLLM.Message{role: :user, content: [ReqLLM.Message.ContentPart.text(message)]}]
+    config =
+      case agent_type do
+        "math" -> KgEdu.Chat.math_config(opts)
+        "node_math" -> KgEdu.Chat.node_math_config(opts)
+        _ -> KgEdu.Chat.qa_config(opts)
       end
 
-    llm_context = ReqLLM.Context.new(messages)
+    # Stream ReAct events as SSE
+    events = KgEdu.Chat.stream_answer(message, config)
+    stream_react_events(conn, events)
+  end
 
-    {:ok, stream_response} = ReqLLM.stream_text("openrouter:z-ai/glm-4.5", llm_context)
-    # {:ok, stream_response} = ReqLLM.stream_text("openai:gpt-4", llm_context)
-    result =
-      stream_response
-      |> ReqLLM.StreamResponse.tokens()
-      |> Stream.each(fn token ->
-        chunk(conn, "data: #{token}\n\n")
+  # ── SSE streaming ───────────────────────────────────────────────────────
+
+  defp stream_react_events(conn, events) do
+    {conn, _final_text} =
+      Enum.reduce(events, {conn, ""}, fn event, {conn, text} ->
+        case event.kind do
+          :tool_started ->
+            {sse_event(conn, "tool_start", %{
+              tool: event.tool_name || "unknown",
+              call_id: event.tool_call_id
+            }), text}
+
+          :tool_completed ->
+            {sse_event(conn, "tool_complete", %{
+              tool: event.tool_name || "unknown",
+              call_id: event.tool_call_id
+            }), text}
+
+          :llm_delta ->
+            content = extract_delta(event.data)
+            if content != "" do
+              {sse_event(conn, "llm_delta", %{content: content}), text <> content}
+            else
+              {conn, text}
+            end
+
+          :request_completed ->
+            {sse_event(conn, "done", %{}), text}
+
+          :request_failed ->
+            error = Map.get(event.data, :error, "Unknown error")
+            {sse_event(conn, "error", %{message: inspect(error)}), text}
+
+          _ ->
+            {conn, text}
+        end
       end)
-      |> Stream.run()
 
-    chunk(conn, "data: [DONE]\n\n")
+    sse_event(conn, "done", %{})
+  end
+
+  defp extract_delta(data) do
+    cond do
+      is_binary(Map.get(data, :delta)) -> data.delta
+      is_binary(Map.get(data, :content)) -> data.content
+      true -> ""
+    end
+  end
+
+  defp sse_event(conn, event, payload) do
+    data = Jason.encode!(Map.put(payload, :event, event))
+    {:ok, conn} = chunk(conn, "data: #{data}\n\n")
     conn
   end
 
-  defp build_context_from_ai_command(nil), do: nil
+  # ── AI command context ──────────────────────────────────────────────────
 
-  defp build_context_from_ai_command(ai_command_id) when is_binary(ai_command_id) do
+  defp build_context_prompt(nil), do: nil
+
+  defp build_context_prompt(ai_command_id) when is_binary(ai_command_id) do
     case get_ai_command_context(ai_command_id) do
-      {:ok, context} -> context
+      {:ok, prompt} -> prompt
       {:error, _} -> nil
     end
   end
 
-  defp build_context_from_ai_command(_), do: nil
+  defp build_context_prompt(_), do: nil
 
   defp get_ai_command_context(ai_command_id) do
     with {:ok, command} <- KgEdu.AI.get_command(ai_command_id) do
-      # Build context from AI command
-      messages = []
+      parts =
+        []
+        |> maybe_add("System", command.system)
+        |> maybe_add("User", command.user)
+        |> maybe_add("Assistant", command.assistant)
 
-      # Add system message if present
-      messages =
-        if command.system do
-          messages ++
-            [
-              %ReqLLM.Message{
-                role: :system,
-                content: [ReqLLM.Message.ContentPart.text(command.system)]
-              }
-            ]
+      prompt =
+        if parts == [] do
+          nil
         else
-          messages
+          "## AI Command Context\n\n" <> Enum.join(parts, "\n\n")
         end
 
-      # Add user message if present
-      messages =
-        if command.user do
-          messages ++
-            [
-              %ReqLLM.Message{
-                role: :user,
-                content: [ReqLLM.Message.ContentPart.text(command.user)]
-              }
-            ]
-        else
-          messages
-        end
-
-      # Add assistant message if present
-      messages =
-        if command.assistant do
-          messages ++
-            [
-              %ReqLLM.Message{
-                role: :assistant,
-                content: [ReqLLM.Message.ContentPart.text(command.assistant)]
-              }
-            ]
-        else
-          messages
-        end
-
-      # Create multimodal message if title is present
-      messages =
-        if command.title do
-          # Example of creating a multimodal message with title context
-          context_message = %ReqLLM.Message{
-            role: :user,
-            content: [
-              ReqLLM.Message.ContentPart.text("Context: #{command.title}"),
-              ReqLLM.Message.ContentPart.text("Using this context, please respond to my message.")
-            ]
-          }
-
-          messages ++ [context_message]
-        else
-          messages
-        end
-
-      {:ok, ReqLLM.Context.new(messages)}
-    else
-      error -> error
+      {:ok, prompt}
     end
+  end
+
+  defp maybe_add(acc, _label, nil), do: acc
+  defp maybe_add(acc, _label, ""), do: acc
+
+  defp maybe_add(acc, label, value) do
+    acc ++ ["**#{label}:**\n\n#{value}"]
   end
 end

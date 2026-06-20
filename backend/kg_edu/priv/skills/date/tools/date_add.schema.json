@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Base date in YYYY-MM-DD format"
+    },
+    "days": {
+      "type": "integer",
+      "description": "Number of days to add (negative for subtract)"
+    }
+  },
+  "required": ["date", "days"]
+}

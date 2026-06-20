@@ -198,8 +198,29 @@ config :phoenix, :json_library, Jason
 config :kg_edu, :reqllm,
   api_key:
     System.get_env("OPENROUTER_API_KEY") ||
-      "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",
+      "*************************************************************************",
   model: "openrouter:z-ai/glm-4.5"
+
+# ReqLLM provider keys for Jido.AI agents
+# QWEN_API_KEY is loaded from agent-server/.env (or the OS env) by application.ex
+# and reused for both DashScope endpoints (international + China).
+config :req_llm,
+  openai_api_key: System.get_env("OPENAI_API_KEY"),
+  alibaba_cn_api_key: System.get_env("QWEN_API_KEY"),
+  alibaba_api_key: System.get_env("QWEN_API_KEY"),
+  anthropic_api_key: System.get_env("ANTHROPIC_API_KEY")
+
+# Jido.AI configuration
+# The :qwen alias points at DashScope via req_llm's built-in :alibaba provider.
+# Set :fast / :qwen in your own agents via `use Jido.AI.Agent, model: :qwen`.
+config :jido_ai,
+  react_token_secret:
+    System.get_env("REACT_TOKEN_SECRET", "kg-edu-local-react-token-secret-change-in-prod-32"),
+  model_aliases: %{
+    fast: "alibaba_cn:qwen-plus",
+    qwen: "alibaba_cn:qwen-plus",
+    capable: "alibaba_cn:qwen-max"
+  }
 
 # Email API endpoint configuration
 config :kg_edu, :email_api, endpoint: "http://localhost:5000/agent/email"
