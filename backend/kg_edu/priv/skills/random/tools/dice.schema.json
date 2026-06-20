@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "count": {
+      "type": "integer",
+      "description": "Number of dice to roll"
+    },
+    "sides": {
+      "type": "integer",
+      "description": "Number of sides per die (e.g., 6 for d6)"
+    }
+  },
+  "required": ["count", "sides"]
+}

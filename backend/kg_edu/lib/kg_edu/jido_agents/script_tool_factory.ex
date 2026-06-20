@@ -1,12 +1,13 @@
-defmodule KgEdu.JidoAgents.NodeToolFactory do
+defmodule KgEdu.JidoAgents.ScriptToolFactory do
   @moduledoc """
-  Dynamically creates Jido.Action modules for Node.js-backed tools.
+  Dynamically creates Jido.Action modules for script-backed tools.
 
-  Instead of writing one Elixir module per Node.js script (AddNode, MultiplyNode, etc.),
-  this factory generates the modules at runtime using `Module.create/3`.
+  Supports Node.js (.js), Python (.py), and other runtimes. Instead of writing
+  one Elixir module per script, this factory generates the modules at runtime
+  using `Module.create/3`.
 
   Each generated module satisfies the Jido.Action contract (name/0, description/0,
-  schema/0, run/2) and delegates execution to a Node.js script.
+  schema/0, run/2) and delegates execution to the script via `System.cmd/3`.
 
   ## Two Execution Modes
 
@@ -23,11 +24,11 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
   ## Usage
 
       # Generate action modules from a SKILL.md's allowed-tools
-      modules = NodeToolFactory.create_from_skill("priv/skills/math/SKILL.md")
+      modules = ScriptToolFactory.create_from_skill("priv/skills/math/SKILL.md")
       modules |> Enum.map(& &1.name())  # => ["add", "multiply"]
 
       # For date skill (JSON mode with string params):
-      modules = NodeToolFactory.create_from_skill("priv/skills/date/SKILL.md")
+      modules = ScriptToolFactory.create_from_skill("priv/skills/date/SKILL.md")
       {:ok, %{result: %{"days" => 30}}} = date_diff.run(%{date1: "2025-01-01", date2: "2025-01-31"}, %{})
   """
 
@@ -56,13 +57,16 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
   end
 
   @doc """
-  Creates a single Jido.Action module for a named Node.js tool.
+  Creates a single Jido.Action module for a named script tool.
+
+  Supports Node.js (`.js`) and Python (`.py`). The runtime is auto-detected
+  from the script extension. Falls back to Node.js for backward compat.
 
   The generated module:
   - Name: `Elixir.KgEdu.JidoAgents.Actions.Dynamic.<ToolName>`
   - Description: derived from tool metadata or default
   - Schema: from companion `.schema.json` file or default
-  - Run: delegates to Node.js script via `System.cmd/3`
+  - Run: delegates to the script via `System.cmd/3`
 
   Returns `{:ok, module}` or `{:error, reason}`.
   """
@@ -71,11 +75,12 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
       when is_binary(tool_name) and is_binary(tools_dir) do
     _skill_dir = skill_dir || tools_dir |> Path.dirname()
 
-    script_path = Path.join(tools_dir, "#{tool_name}.js")
+    # Auto-detect runtime from script extension
+    {script_path, runtime} = find_script(tools_dir, tool_name)
     schema_path = Path.join(tools_dir, "#{tool_name}.schema.json")
     has_schema = File.exists?(schema_path)
 
-    if File.exists?(script_path) do
+    if script_path do
       module_name = module_name_for(tool_name)
 
       # Skip if already created (idempotent)
@@ -91,21 +96,21 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
           {:module, mod, _binary, _exports} =
             Module.create(
               module_name,
-              generate_action_module(tool_name, description, schema_ast, tools_dir, json_mode),
+              generate_action_module(tool_name, description, schema_ast, tools_dir, json_mode, runtime),
               Macro.Env.location(__ENV__)
             )
 
           mode_label = if json_mode, do: "(JSON mode)", else: "(legacy mode)"
-          IO.puts("[NodeToolFactory] ✅ Created #{inspect(mod)} for '#{tool_name}' #{mode_label}")
+          IO.puts("[ScriptToolFactory] ✅ Created #{inspect(mod)} for '#{tool_name}' #{mode_label} [#{runtime}]")
           {:ok, mod}
         rescue
           e ->
-            IO.puts("[NodeToolFactory] ❌ Failed #{module_name} for '#{tool_name}': #{Exception.message(e)}")
+            IO.puts("[ScriptToolFactory] ❌ Failed #{module_name} for '#{tool_name}': #{Exception.message(e)}")
             {:error, e}
         end
       end
     else
-      IO.puts("[NodeToolFactory] ⚠️  Script not found for '#{tool_name}': #{script_path}")
+      IO.puts("[ScriptToolFactory] ⚠️  Script not found for '#{tool_name}' in #{tools_dir}")
       {:error, :script_not_found}
     end
   end
@@ -127,6 +132,16 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
   end
 
   # ── Private ────────────────────────────────────────────────────────────────
+
+  @runtime_map %{"js" => "node", "py" => "python3"}
+
+  # Finds the script file and returns {path, runtime_command}
+  defp find_script(tools_dir, tool_name) do
+    Enum.find_value(@runtime_map, fn {ext, runtime} ->
+      path = Path.join(tools_dir, "#{tool_name}.#{ext}")
+      if File.exists?(path), do: {path, runtime}
+    end)
+  end
 
   defp module_name_for(tool_name) do
     safe_name =
@@ -213,15 +228,20 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
 
   defp build_schema_from_json(_props, _required), do: @default_schema_ast
 
-  # Generate the full action module AST.
+    # Generate the full action module AST.
+  # runtime is the command to invoke: "node" or "python3"
   # json_mode=true → params as JSON argv[2], stdout parsed as JSON
   # json_mode=false → params as positional CLI args, stdout parsed as integer
-  defp generate_action_module(tool_name, description, schema_ast, tools_dir, json_mode) do
+  defp generate_action_module(tool_name, description, schema_ast, tools_dir, json_mode, runtime) do
+    # Determine script extension from runtime
+    ext = if runtime == "python3", do: "py", else: "js"
+    script_path = Path.join(tools_dir, "#{tool_name}.#{ext}")
+
     run_body =
       if json_mode do
-        json_mode_run_body(tool_name, tools_dir)
+        json_mode_run_body(tool_name, script_path, runtime)
       else
-        legacy_mode_run_body(tool_name, tools_dir)
+        legacy_mode_run_body(tool_name, script_path, runtime)
       end
 
     quote do
@@ -239,12 +259,11 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
 
   # ── JSON mode: params → JSON string → argv[2] → stdout JSON ──────────────
 
-  defp json_mode_run_body(tool_name, tools_dir) do
-    script_path = Path.join(tools_dir, "#{tool_name}.js")
-
+  defp json_mode_run_body(tool_name, script_path, runtime) do
     quote do
       require Logger
       script = unquote(script_path)
+      runtime_cmd = unquote(runtime)
 
       if File.exists?(script) do
         json_params =
@@ -252,11 +271,11 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
           |> Map.drop([:__struct__, :__meta__])
           |> Jason.encode!()
 
-        Logger.info("[JS Tool] #{unquote(tool_name)} called with #{json_params}")
+        Logger.info("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} called with #{json_params}")
         start_ms = System.monotonic_time(:millisecond)
 
         result =
-          case System.cmd("node", [script, json_params], stderr_to_stdout: true) do
+          case System.cmd(runtime_cmd, [script, json_params], stderr_to_stdout: true) do
             {output, 0} ->
               case Jason.decode(output) do
                 {:ok, result} -> {:ok, %{result: result}}
@@ -277,15 +296,15 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
 
         case result do
           {:ok, output} ->
-            Logger.info("[JS Tool] #{unquote(tool_name)} ✅ #{duration_ms}ms → #{inspect(output)}")
+            Logger.info("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} ✅ #{duration_ms}ms → #{inspect(output)}")
 
           {:error, reason} ->
-            Logger.error("[JS Tool] #{unquote(tool_name)} ❌ #{duration_ms}ms → #{reason}")
+            Logger.error("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} ❌ #{duration_ms}ms → #{reason}")
         end
 
         result
       else
-        Logger.error("[JS Tool] #{unquote(tool_name)} ❌ Script not found: #{script}")
+        Logger.error("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} ❌ Script not found: #{script}")
         {:error, "Script not found: #{script}"}
       end
     end
@@ -293,12 +312,11 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
 
   # ── Legacy mode: params → positional CLI args → stdout integer ──────────
 
-  defp legacy_mode_run_body(tool_name, tools_dir) do
-    script_path = Path.join(tools_dir, "#{tool_name}.js")
-
+  defp legacy_mode_run_body(tool_name, script_path, runtime) do
     quote do
       require Logger
       script = unquote(script_path)
+      runtime_cmd = unquote(runtime)
 
       if File.exists?(script) do
         args =
@@ -307,11 +325,11 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
           |> Enum.sort_by(fn {k, _} -> to_string(k) end)
           |> Enum.map(fn {_, v} -> to_string(v) end)
 
-        Logger.info("[JS Tool] #{unquote(tool_name)} called with args=#{inspect(args)}")
+        Logger.info("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} called with args=#{inspect(args)}")
         start_ms = System.monotonic_time(:millisecond)
 
         result =
-          case System.cmd("node", [script | args]) do
+          case System.cmd(runtime_cmd, [script | args]) do
             {output, 0} ->
               parsed =
                 output
@@ -331,15 +349,15 @@ defmodule KgEdu.JidoAgents.NodeToolFactory do
 
         case result do
           {:ok, output} ->
-            Logger.info("[JS Tool] #{unquote(tool_name)} ✅ #{duration_ms}ms → #{inspect(output)}")
+            Logger.info("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} ✅ #{duration_ms}ms → #{inspect(output)}")
 
           {:error, reason} ->
-            Logger.error("[JS Tool] #{unquote(tool_name)} ❌ #{duration_ms}ms → #{reason}")
+            Logger.error("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} ❌ #{duration_ms}ms → #{reason}")
         end
 
         result
       else
-        Logger.error("[JS Tool] #{unquote(tool_name)} ❌ Script not found: #{script}")
+        Logger.error("[#{String.upcase(runtime_cmd)} Tool] #{unquote(tool_name)} ❌ Script not found: #{script}")
         {:error, "Script not found: #{script}"}
       end
     end

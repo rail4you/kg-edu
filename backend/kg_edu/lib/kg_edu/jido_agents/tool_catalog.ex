@@ -3,8 +3,8 @@ defmodule KgEdu.JidoAgents.ToolCatalog do
   Maps skill `allowed-tools` names to Jido action modules.
 
   Supports two modes:
-  1. **Dynamic** (default) - Uses `NodeToolFactory` to auto-generate action modules
-     from `.js` scripts in `priv/skills/<skill>/tools/`. No per-tool `.ex` files needed.
+  1. **Dynamic** (default) - Uses `ScriptToolFactory` to auto-generate action modules
+     from scripts (`.js`, `.py`) in `priv/skills/<skill>/tools/`. No per-tool `.ex` files needed.
   2. **Static** - Falls back to manually registered Elixir-native action modules.
 
   ## Dynamic Mode
@@ -42,7 +42,7 @@ defmodule KgEdu.JidoAgents.ToolCatalog do
   Returns action modules for the given skill tool name strings.
 
   If a tool name has a `.js` script in the skills directory, it will be
-  dynamically generated via `NodeToolFactory`. Otherwise, falls back to
+  dynamically generated via `ScriptToolFactory`. Otherwise, falls back to
   static registered modules.
   """
   def for_skills(skill_names) when is_list(skill_names) do
@@ -56,7 +56,7 @@ defmodule KgEdu.JidoAgents.ToolCatalog do
 
   Resolution order:
   1. Check if a dynamic module has already been created (cached)
-  2. Try to create one from a `.js` script via `NodeToolFactory`
+  2. Try to create one from a script via `ScriptToolFactory`
   3. Fall back to static registry
   """
   def resolve(name) when is_binary(name) do
@@ -90,7 +90,7 @@ defmodule KgEdu.JidoAgents.ToolCatalog do
         skill_path = Path.join([skills_dir, skill_name, "SKILL.md"])
 
         if File.exists?(skill_path) do
-          case KgEdu.JidoAgents.NodeToolFactory.create_from_skill(skill_path) do
+          case KgEdu.JidoAgents.ScriptToolFactory.create_from_skill(skill_path) do
             results when is_list(results) -> results
             {:error, _} -> []
           end
@@ -118,7 +118,7 @@ defmodule KgEdu.JidoAgents.ToolCatalog do
           script = Path.join(tools_dir, "#{name}.js")
 
           if File.exists?(script) do
-            KgEdu.JidoAgents.NodeToolFactory.create_tool(name, tools_dir)
+            KgEdu.JidoAgents.ScriptToolFactory.create_tool(name, tools_dir)
           end
         end)
 

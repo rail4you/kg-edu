@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "a": {
+      "type": "integer",
+      "description": "Lower bound (inclusive)"
+    },
+    "b": {
+      "type": "integer",
+      "description": "Upper bound (inclusive)"
+    }
+  },
+  "required": ["a", "b"]
+}

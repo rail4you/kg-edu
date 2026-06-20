@@ -35,8 +35,8 @@ all_skill_specs = []
       :ok = Jido.AI.Skill.Registry.register(spec)
       IO.puts("[demo] ✅ Loaded skill: #{spec.name} (tools: #{inspect(spec.allowed_tools)})")
 
-      results = KgEdu.JidoAgents.NodeToolFactory.create_from_skill(skill_path)
-      new_tools = KgEdu.JidoAgents.NodeToolFactory.modules_for_agent(results)
+      results = KgEdu.JidoAgents.ScriptToolFactory.create_from_skill(skill_path)
+      new_tools = KgEdu.JidoAgents.ScriptToolFactory.modules_for_agent(results)
 
       if new_tools != [] do
         IO.puts("[demo]    → Auto-generated: #{Enum.map_join(new_tools, ", ", & &1.name())}")
@@ -127,7 +127,7 @@ IO.puts("""
 ══════════════════════════════════
  架构: 零包装 JS 工具调用
 ══════════════════════════════════
- priv/skills/*/SKILL.md  →  NodeToolFactory  →  Module.create/3  →  System.cmd(node)
+ priv/skills/*/SKILL.md  →  ScriptToolFactory  →  Module.create/3  →  System.cmd(runtime)
  每个 .js 工具自动生成 Action 模块，无需手写 .ex 包装文件
 ══════════════════════════════════
 """)
