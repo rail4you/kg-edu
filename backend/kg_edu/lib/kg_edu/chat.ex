@@ -170,7 +170,9 @@ defmodule KgEdu.Chat do
           KgEdu.Agent.Tools.GenerateExercises,
           KgEdu.Agent.Tools.GetExams,
           KgEdu.Agent.Tools.DocumentTools.PPTX,
-          KgEdu.Agent.Tools.DocumentTools.DOCX
+          KgEdu.Agent.Tools.DocumentTools.DOCX,
+          KgEdu.Agent.Tools.GenerateCompetencyGraph,
+          KgEdu.Agent.Tools.GenerateCurriculum
         ],
         max_iterations: 15
       ],

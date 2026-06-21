@@ -90,6 +90,14 @@ defmodule KgEduWeb.Router do
     post "/chat/stream", ChatController, :stream_message
     get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
     post "/session/find-tenants", SessionController, :find_tenants
+    post "/generate_ai_exercise", GenerationController, :generate_exercise
+  end
+
+  # Competency graph and curriculum generation endpoints
+  scope "/", KgEduWeb do
+    pipe_through :api
+    post "/competency-graph/generate", GenerationController, :generate_competency_graph
+    post "/curriculum/generate", GenerationController, :generate_curriculum
   end
 
   # CopilotKit/Pi SDK compatible chat endpoint
