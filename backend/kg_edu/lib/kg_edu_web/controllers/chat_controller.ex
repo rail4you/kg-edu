@@ -167,39 +167,36 @@ defmodule KgEduWeb.ChatController do
     GeneratePowerPointWithShapeCrawler SaveAsDocxAndUpload
   )
 
-  # Filter out tool call names from text output
+  # Filter out tool call names from text output.
+  # Qwen sometimes outputs function names as text before making the tool call.
+  # We suppress exact matches and only emit content that follows.
   defp filter_tool_names(delta, state) do
-    # Accumulate a buffer to detect tool names across fragments
     buffer = Map.get(state, :text_buffer, "")
     combined = buffer <> delta
 
-    # Check if combined text exactly matches a tool name (or starts with one)
-    match = Enum.find(@tool_names, fn name ->
-      String.starts_with?(combined, name)
-    end)
+    # Find the longest matching tool name prefix
+    match = Enum.find(@tool_names, fn name -> String.starts_with?(combined, name) end)
 
     if match do
+      # Strip the tool name prefix from the combined text
       remaining = String.replace_prefix(combined, match, "")
 
       if remaining != "" do
-        # Tool name matched, emit remaining text and clear buffer
+        # Tool name followed by real text in same fragment — emit only the real text
         {remaining, Map.put(state, :text_buffer, "")}
       else
-        # Full match, suppress entirely, keep buffer for next fragment
-        {"", Map.put(state, :text_buffer, combined)}
+        # Exact or partial match on tool name — suppress entirely
+        # (the tool call is already handled as TOOL_CALL_START event)
+        {"", Map.put(state, :text_buffer, "")}
       end
     else
-      # Check if any tool name could start with our buffer
-      possible = Enum.any?(@tool_names, fn name ->
-        String.starts_with?(name, combined)
-      end)
-
-      if possible do
-        # Could be partial match — buffer and suppress
-        {"", Map.put(state, :text_buffer, combined)}
-      else
-        # No match possible — emit combined, clear buffer
+      # No tool name match
+      if buffer != "" do
+        # Previous buffer wasn't a tool name — emit all accumulated text
         {combined, Map.put(state, :text_buffer, "")}
+      else
+        # Normal text — emit as-is
+        {delta, Map.put(state, :text_buffer, "")}
       end
     end
   end
