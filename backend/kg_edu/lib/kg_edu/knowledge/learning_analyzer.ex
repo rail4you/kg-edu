@@ -87,7 +87,7 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
         if exercise.knowledge_resource_id do
           # Update mastery based on this single exercise
           if auto_update do
-            case KgEdu.Knowledge.StudentKnowledgeMastery.update_from_exercise(
+            case KgEdu.Knowledge.StudentKnowledgeMastery.update_mastery_from_exercise(
                    student_id: student_id,
                    knowledge_resource_id: exercise.knowledge_resource_id,
                    is_correct: is_correct,
@@ -347,7 +347,7 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
         resource_ids = Enum.map(resources, & &1.id)
 
         # Get all mastery records for these resources
-        KgEdu.Knowledge.StudentKnowledgeMastery.read(
+        KgEdu.Knowledge.StudentKnowledgeMastery.list_masteries!(
           tenant: tenant,
           authorize?: false,
           actor: nil,
@@ -440,7 +440,7 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
   # Update mastery levels from exam results
   defp update_mastery_from_exam(knowledge_results, student_id, tenant) do
     Enum.each(knowledge_results, fn {knowledge_id, stats} ->
-      case KgEdu.Knowledge.StudentKnowledgeMastery.update_from_exam(
+      case KgEdu.Knowledge.StudentKnowledgeMastery.update_mastery_from_exam(
              student_id: student_id,
              knowledge_resource_id: knowledge_id,
              exam_result: %{correct: stats.correct, total: stats.total},
@@ -471,7 +471,7 @@ defmodule KgEdu.Knowledge.LearningAnalyzer do
       {:ok, mastery} ->
         # If mastery is low, generate new recommendations
         if mastery.mastery_level < 0.6 do
-          KgEdu.Knowledge.LearningRecommendation.generate_for_student(
+          KgEdu.Knowledge.LearningRecommendation.generate_recommendations(
             student_id: student_id,
             course_id: nil,
             tenant: tenant

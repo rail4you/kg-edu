@@ -2023,7 +2023,7 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   def import_kg_from_excel(excel_base64, course_id, context) do
-    case KgEdu.ExcelParser.parse_from_base64(excel_base64) do
+    case KgEdu.ExcelParser.parse_from_base64(excel_base64, 0) do
       {:ok, %{sheet1: knowledge_data}} ->
         process_knowledge_import(knowledge_data, course_id, context.tenant)
 

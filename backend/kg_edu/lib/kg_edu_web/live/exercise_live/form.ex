@@ -176,7 +176,7 @@ defmodule KgEduWeb.ExerciseLive.Form do
     page_title = action <> " " <> "Exercise"
 
     knowledge_ids =
-      KgEdu.Knowledge.Resource.list_knowledge_resources!() |> Enum.map(&{&1.name, &1.id})
+      KgEdu.Knowledge.Resource.list_knowledges!() |> Enum.map(&{&1.name, &1.id})
 
     course_list =
       KgEdu.Courses.Course.list_courses!(actor: socket.assigns.current_user)

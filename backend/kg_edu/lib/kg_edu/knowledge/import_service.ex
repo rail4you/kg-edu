@@ -74,7 +74,7 @@ defmodule KgEdu.Knowledge.ImportService do
   Validate Excel file format before import.
   """
   def validate_excel_format(excel_data) do
-    case KgEdu.ExcelParser.parse_from_base64(excel_data) do
+    case KgEdu.ExcelParser.parse_from_base64(excel_data, 0) do
       {:ok, %{sheet1: sheet1_data, sheet2: sheet2_data}} ->
         validation_result = %{
           sheet1_valid: validate_sheet1_format(sheet1_data),

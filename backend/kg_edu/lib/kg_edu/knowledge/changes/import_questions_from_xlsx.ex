@@ -17,10 +17,6 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
     end
   end
 
-  defp import_question_from_excel(nil, _attributes, _tenant) do
-    {:error, "Excel file is required"}
-  end
-
   defp import_question_from_excel(excel_file, attributes, course_id, tenant)
        when is_binary(excel_file) and is_list(attributes) do
     Logger.info("attributes are #{inspect(attributes)}")
@@ -33,10 +29,6 @@ defmodule KgEdu.Knowledge.Question.ImportFromExcel do
       {:error, reason} ->
         {:error, "Failed to import Excel file: #{reason}"}
     end
-  end
-
-  defp import_questions_from_excel(_, _) do
-    {:error, "Invalid parameters"}
   end
 
   defp create_question_from_data(question_data, course_id, tenant) when is_list(question_data) do

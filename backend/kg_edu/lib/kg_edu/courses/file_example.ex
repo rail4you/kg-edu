@@ -61,7 +61,7 @@ defmodule KgEdu.Courses.FileExample do
   defp create_example_file(attrs) do
     temp_path = System.tmp_dir!() |> Path.join(attrs.filename)
 
-    case File.write(temp_path, attrs.content) do
+    case Elixir.File.write(temp_path, attrs.content) do
       :ok ->
         # Create a fake Plug.Upload struct
         upload = %Plug.Upload{

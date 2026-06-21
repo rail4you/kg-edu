@@ -8,7 +8,6 @@ defmodule KgEdu.Knowledge.StudentExam do
 
   require Logger
   import Ash.Query
-  import Ash.Changeset
 
 
   postgres do

@@ -315,8 +315,8 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   end
 
   def create_exercise_records(changeset) do
-    case Ash.Changeset.fetch_context(changeset, :generated_exercises) do
-      {:ok, exercises} ->
+    case Map.get(changeset.context || %{}, :generated_exercises) do
+      exercises when is_list(exercises) ->
         # Create exercise records in the database
         case create_multiple_exercises(exercises) do
           {:ok, created_exercises} ->
