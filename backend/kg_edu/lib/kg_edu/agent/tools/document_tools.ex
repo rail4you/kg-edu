@@ -45,7 +45,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
       Logger.info("[DocumentTools] Generating PPTX for '#{course_name}' with #{length(slides)} slides")
 
-      case KgEdu.Agent.Tools.DocumentTools.run_python_script("generate_pptx.py", Jason.encode!(input)) do
+      case KgEdu.Agent.Tools.DocumentTools.run_js_script("generate_pptx.js", Jason.encode!(input)) do
         {:ok, %{"filePath" => file_path}} ->
           file_size = get_file_size(file_path)
 
@@ -68,22 +68,25 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
     end
 
     defp build_slides(course_name, knowledge_name, user_req) do
-      slides = [%{"title" => course_name, "content" => "课程概览", "bullets" => []}]
+      bullets = String.split(user_req || "", "\n") |> Enum.reject(&(&1 == ""))
 
-      slides =
-        if knowledge_name do
-          slides ++ [%{
+      slides = [
+        %{
+          "title" => "课程概览",
+          "content" => "#{course_name}课程知识体系与教学目标",
+          "bullets" => Enum.take(bullets, 5)
+        }
+      ]
+
+      if knowledge_name do
+        slides = slides ++ [
+          %{
             "title" => knowledge_name,
             "content" => user_req || "知识点详解",
-            "bullets" => String.split(user_req || "", "\n") |> Enum.reject(&(&1 == "")) |> Enum.take(8)
-          }]
-        else
-          slides ++ [%{
-            "title" => "课程内容",
-            "content" => user_req || "课程内容概述",
-            "bullets" => String.split(user_req || "", "\n") |> Enum.reject(&(&1 == "")) |> Enum.take(8)
-          }]
-        end
+            "bullets" => Enum.drop(bullets, 5) |> Enum.take(6)
+          }
+        ]
+      end
 
       slides
     end
@@ -190,6 +193,43 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
     KgEdu.Agent.OssUpload.upload(file_path)
   rescue
     e -> {:error, Exception.message(e)}
+  end
+
+  def run_js_script(script_name, json_input) do
+    tools_dir = Application.app_dir(:kg_edu, "priv/skills/document/tools")
+    script = Path.join(tools_dir, script_name)
+
+    if File.exists?(script) do
+      # Set NODE_PATH to include agent-server/node_modules for pptxgenjs
+      agent_node_modules =
+        :kg_edu
+        |> Application.app_dir()
+        |> Path.dirname()
+        |> Path.dirname()
+        |> Path.join("agent-server/node_modules")
+        |> Path.expand()
+
+      env = [{"NODE_PATH", agent_node_modules}]
+
+      case System.cmd("node", [script, json_input], env: env, stderr_to_stdout: true) do
+        {output, 0} ->
+          case Jason.decode(output) do
+            {:ok, result} -> {:ok, result}
+            {:error, _} -> {:ok, %{"raw" => String.trim(output)}}
+          end
+
+        {output, exit_code} ->
+          error_msg =
+            case Jason.decode(output) do
+              {:ok, %{"error" => msg}} -> msg
+              _ -> String.trim(output)
+            end
+
+          {:error, "JS script '#{script_name}' failed (exit #{exit_code}): #{error_msg}"}
+      end
+    else
+      {:error, "JS script not found: #{script}"}
+    end
   end
 
   def run_python_script(script_name, json_input) do

@@ -9,6 +9,10 @@
       "type": "string",
       "description": "JSON array of slides, each with: {title, content, bullets: [string]}"
     },
+    "knowledgePoints": {
+      "type": "string",
+      "description": "JSON array of knowledge point names"
+    },
     "author": {
       "type": "string",
       "description": "Author name for document metadata"
