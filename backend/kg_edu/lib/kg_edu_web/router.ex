@@ -92,6 +92,13 @@ defmodule KgEduWeb.Router do
     post "/session/find-tenants", SessionController, :find_tenants
   end
 
+  # CopilotKit/Pi SDK compatible chat endpoint
+  # Frontend calls POST /api/assistant/ag-ui via Vite proxy
+  scope "/api/assistant", KgEduWeb do
+    pipe_through :api
+    post "/ag-ui", ChatController, :stream_message
+  end
+
   scope "/live", KgEduWeb do
     pipe_through :browser
 

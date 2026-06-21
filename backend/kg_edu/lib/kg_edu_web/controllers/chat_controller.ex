@@ -4,23 +4,26 @@ defmodule KgEduWeb.ChatController do
   alias Jido.AI.Reasoning.ReAct
 
   @doc """
-  SSE streaming chat endpoint.
+  SSE streaming chat endpoint — Pi SDK compatible format.
+
+  POST /api/chat or POST /api/assistant/ag-ui
 
   Accepts:
-    - `message` (required) — the user's message
-    - `agent` (optional, default "qa") — agent type: "qa", "math", "node_math"
-    - `ai_command_id` (optional) — AI command context ID
+    - `message` — the user's message (required)
+    - `agent` — "qa", "math", "edu" (default: "edu")
+    - `threadId` — conversation thread ID
+    - `orgSchema` / `X-Org-Schema` header — tenant context
 
-  Returns a text/event-stream of ReAct events:
-    - `data: {"event":"llm_delta","content":"..."}`
-    - `data: {"event":"tool_start","tool":"add","call_id":"..."}`
-    - `data: {"event":"tool_complete","tool":"add","call_id":"..."}`
-    - `data: {"event":"done"}`
-    - `data: {"event":"error","message":"..."}`
+  SSE event types (Pi SDK / CopilotKit format):
+    - TEXT_MESSAGE_START / TEXT_MESSAGE_CONTENT / TEXT_MESSAGE_END
+    - TOOL_CALL_START / TOOL_CALL_ARGS / TOOL_CALL_END
+    - RUN_STARTED / RUN_FINISHED / RUN_ERROR
   """
   def stream_message(conn, %{"message" => message} = params) do
-    agent_type = Map.get(params, "agent", "qa")
-    ai_command_id = params["ai_command_id"]
+    agent_type = Map.get(params, "agent", "edu")
+
+    # Extract tenant from header or body
+    tenant = extract_tenant(conn, params)
 
     conn =
       conn
@@ -29,64 +32,93 @@ defmodule KgEduWeb.ChatController do
       |> put_resp_header("x-accel-buffering", "no")
       |> send_chunked(200)
 
-    # Build system prompt with AI command context if provided
-    context_prompt = build_context_prompt(ai_command_id)
-    system_prompt = if context_prompt, do: context_prompt, else: nil
+    # Tenant is passed to tools via _tenant param, not set globally
 
-    # Build agent config
-    opts = [system_prompt: system_prompt]
+    # Emit RUN_STARTED
+    sse_write(conn, "RUN_STARTED", %{threadId: params["threadId"]})
 
-    config =
-      case agent_type do
-        "math" -> KgEdu.Chat.math_config(opts)
-        "node_math" -> KgEdu.Chat.node_math_config(opts)
-        _ -> KgEdu.Chat.qa_config(opts)
-      end
+    # Build config
+    opts = build_opts(agent_type, tenant, params)
 
-    # Stream ReAct events as SSE
-    events = KgEdu.Chat.stream_answer(message, config)
-    stream_react_events(conn, events)
+    # Stream ReAct events → Pi SDK SSE format
+    events = KgEdu.Chat.stream_answer(message, opts)
+    {conn, _} = stream_pi_sdk_events(conn, events)
+
+    # Emit RUN_FINISHED
+    sse_write(conn, "RUN_FINISHED", %{})
+
+    conn
   end
 
-  # ── SSE streaming ───────────────────────────────────────────────────────
+  # ── Pi SDK SSE format adapter ───────────────────────────────────────────
 
-  defp stream_react_events(conn, events) do
-    {conn, _final_text} =
-      Enum.reduce(events, {conn, ""}, fn event, {conn, text} ->
-        case event.kind do
-          :tool_started ->
-            {sse_event(conn, "tool_start", %{
-              tool: event.tool_name || "unknown",
-              call_id: event.tool_call_id
-            }), text}
+  defp stream_pi_sdk_events(conn, events) do
+    Enum.reduce(events, {conn, %{}}, fn event, {conn, state} ->
+      case event.kind do
+        :tool_started ->
+          tool_name = Map.get(event.data, :tool_name) || "unknown"
+          tool_call_id = Map.get(event.data, :tool_call_id) || generate_id()
 
-          :tool_completed ->
-            {sse_event(conn, "tool_complete", %{
-              tool: event.tool_name || "unknown",
-              call_id: event.tool_call_id
-            }), text}
+          state = Map.put(state, :tool_name, tool_name)
 
-          :llm_delta ->
-            content = extract_delta(event.data)
-            if content != "" do
-              {sse_event(conn, "llm_delta", %{content: content}), text <> content}
-            else
-              {conn, text}
+          sse_write(conn, "TOOL_CALL_START", %{
+            toolCallId: tool_call_id,
+            toolCallName: tool_name
+          })
+
+          sse_write(conn, "TOOL_CALL_ARGS", %{
+            toolCallId: tool_call_id,
+            delta: Map.get(event.data, :arguments) |> inspect()
+          })
+
+          {conn, state}
+
+        :tool_completed ->
+          tool_call_id = Map.get(event.data, :tool_call_id) || generate_id()
+
+          sse_write(conn, "TOOL_CALL_END", %{
+            toolCallId: tool_call_id
+          })
+
+          {conn, state}
+
+        :llm_delta ->
+          delta = extract_delta(event.data)
+
+          if delta != "" do
+            # Emit TEXT_MESSAGE_START on first content
+            unless Map.get(state, :text_started) do
+              sse_write(conn, "TEXT_MESSAGE_START", %{})
+              state = Map.put(state, :text_started, true)
             end
 
-          :request_completed ->
-            {sse_event(conn, "done", %{}), text}
+            sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: delta})
+            {conn, state}
+          else
+            {conn, state}
+          end
 
-          :request_failed ->
-            error = Map.get(event.data, :error, "Unknown error")
-            {sse_event(conn, "error", %{message: inspect(error)}), text}
+        :request_completed ->
+          # Emit TEXT_MESSAGE_END if we started text
+          if Map.get(state, :text_started) do
+            sse_write(conn, "TEXT_MESSAGE_END", %{})
+          end
 
-          _ ->
-            {conn, text}
-        end
-      end)
+          {conn, state}
 
-    sse_event(conn, "done", %{})
+        :request_failed ->
+          error = Map.get(event.data, :error, "Unknown error")
+
+          sse_write(conn, "RUN_ERROR", %{
+            message: "Agent error: #{inspect(error)}"
+          })
+
+          {conn, state}
+
+        _ ->
+          {conn, state}
+      end
+    end)
   end
 
   defp extract_delta(data) do
@@ -97,48 +129,43 @@ defmodule KgEduWeb.ChatController do
     end
   end
 
-  defp sse_event(conn, event, payload) do
-    data = Jason.encode!(Map.put(payload, :event, event))
+  defp sse_write(conn, type, payload) when is_binary(type) do
+    data = Jason.encode!(Map.put(payload, :type, type))
     {:ok, conn} = chunk(conn, "data: #{data}\n\n")
     conn
   end
 
-  # ── AI command context ──────────────────────────────────────────────────
+  defp generate_id, do: "call_#{System.unique_integer([:positive])}"
 
-  defp build_context_prompt(nil), do: nil
+  # ── config / tenant ─────────────────────────────────────────────────────
 
-  defp build_context_prompt(ai_command_id) when is_binary(ai_command_id) do
-    case get_ai_command_context(ai_command_id) do
-      {:ok, prompt} -> prompt
-      {:error, _} -> nil
+  defp build_opts("math", _tenant, _params) do
+    KgEdu.Chat.math_config()
+  end
+
+  defp build_opts("qa", _tenant, _params) do
+    KgEdu.Chat.qa_config()
+  end
+
+  defp build_opts(_agent_type, tenant, _params) do
+    opts = KgEdu.Chat.edu_config()
+
+    if tenant do
+      original = Keyword.get(opts, :system_prompt, "")
+      opts
+      |> Keyword.put(:system_prompt, original <> "\n\n当前租户: #{tenant}")
+      |> Keyword.put(:tool_context, %{_tenant: tenant})
+    else
+      opts
     end
   end
 
-  defp build_context_prompt(_), do: nil
-
-  defp get_ai_command_context(ai_command_id) do
-    with {:ok, command} <- KgEdu.AI.get_command(ai_command_id) do
-      parts =
-        []
-        |> maybe_add("System", command.system)
-        |> maybe_add("User", command.user)
-        |> maybe_add("Assistant", command.assistant)
-
-      prompt =
-        if parts == [] do
-          nil
-        else
-          "## AI Command Context\n\n" <> Enum.join(parts, "\n\n")
-        end
-
-      {:ok, prompt}
-    end
-  end
-
-  defp maybe_add(acc, _label, nil), do: acc
-  defp maybe_add(acc, _label, ""), do: acc
-
-  defp maybe_add(acc, label, value) do
-    acc ++ ["**#{label}:**\n\n#{value}"]
+  defp extract_tenant(conn, params) do
+    # Priority: body > X-Org-Schema header > assigns
+    params["orgSchema"] ||
+      params["tenant"] ||
+      get_req_header(conn, "x-org-schema") |> List.first() ||
+      conn.assigns[:org_schema] ||
+      conn.assigns[:tenant]
   end
 end

@@ -75,6 +75,7 @@ defmodule KgEdu.Chat do
     emit_telemetry? = Keyword.get(opts, :emit_telemetry?, false)
     emit_signals? = Keyword.get(opts, :emit_signals?, false)
     tool_concurrency = Keyword.get(opts, :tool_concurrency, 4)
+    tool_context = Keyword.get(opts, :tool_context, %{})
 
     %{
       model: model,
@@ -85,7 +86,8 @@ defmodule KgEdu.Chat do
       capture_deltas?: capture_deltas?,
       emit_telemetry?: emit_telemetry?,
       emit_signals?: emit_signals?,
-      tool_concurrency: tool_concurrency
+      tool_concurrency: tool_concurrency,
+      tool_context: tool_context
     }
   end
 
@@ -146,6 +148,54 @@ defmodule KgEdu.Chat do
       ],
       opts
     )
+  end
+
+  @doc """
+  Returns the config for the Education agent (full tool set).
+
+  Includes tools for: courses, knowledge resources, exercises, exams,
+  exercise generation, PPTX and DOCX generation.
+  """
+  def edu_config(opts \\ []) do
+    Keyword.merge(
+      [
+        model: :qwen,
+        system_prompt: edu_system_prompt(),
+        tools: [
+          KgEdu.Agent.Tools.GetCourses,
+          KgEdu.Agent.Tools.GetCoursesByMajor,
+          KgEdu.Agent.Tools.GetCoursesBySemester,
+          KgEdu.Agent.Tools.GetKnowledgeResources,
+          KgEdu.Agent.Tools.GetExercises,
+          KgEdu.Agent.Tools.GenerateExercises,
+          KgEdu.Agent.Tools.GetExams,
+          KgEdu.Agent.Tools.DocumentTools.PPTX,
+          KgEdu.Agent.Tools.DocumentTools.DOCX
+        ],
+        max_iterations: 15
+      ],
+      opts
+    )
+  end
+
+  defp edu_system_prompt do
+    """
+    你是KgEdu平台的教育AI助手。
+
+    你的职责：
+    - 管理课程和教学资源
+    - 创建和管理练习题与试卷
+    - 生成教学材料（PPT/PPTX课件、DOCX教案文档）
+
+    重要规则：
+    1. 用户询问课程时，必须先调用GetCourses获取课程列表。
+    2. 创建文档（如教案）时，必须先获取courseId。没有courseId无法保存。
+    3. 用户提到PPT/PPTX/幻灯片/课件时，必须调用GeneratePowerPointWithShapeCrawler工具。绝不要只是文字描述PPT内容。
+    4. 如果用户没明确说课程名，先调用GetCourses获取列表后再操作。
+    5. 【禁止展示ID】内部工具返回的数据中包含id、courseId、parentKnowledgeResourceId等ID字段，这些是系统内部标识符。在向用户展示时，绝对不要显示任何ID字段（如UUID），只展示名称、描述等有意义的信息。你可以内部使用ID来调用其他工具，但回答用户时不要包含任何ID。
+    6. 回答简洁，直接给出结果，无需多余解释。
+    """
+    |> String.trim()
   end
 
   @doc """
