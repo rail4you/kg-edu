@@ -1,12 +1,17 @@
 defmodule KgEdu.Agent.Tools.DocumentTools do
   @moduledoc """
-  Agent tools for document generation (PPTX, DOCX).
+  Agent tools for PPTX and DOCX generation.
 
-  Stage 1: Placeholder stubs — full Python pipeline in Stage 2.
+  Uses Python scripts via ScriptToolFactory for actual file generation,
+  then uploads to OSS and returns the public URL.
   """
 
+  require Logger
+
+  # ── GeneratePowerPointWithShapeCrawler ──────────────────────────────────
+
   defmodule PPTX do
-    @moduledoc false
+    @moduledoc "Generate PPTX presentation from structured content."
 
     use Jido.Action,
       name: "GeneratePowerPointWithShapeCrawler",
@@ -23,13 +28,90 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     @impl true
     def run(params, _context) do
-      course = params[:courseName] || "未命名课程"
-      {:ok, %{result: "PPT课件「#{course}」生成请求已接收。Stage 2 将接入 Python 生成管道。"}}
+      course_name = params[:courseName] || "未命名课程"
+      author = params[:author] || "KgEdu"
+      user_req = params[:userRequirements] || ""
+
+      # Build slide content from params
+      slides = build_slides(course_name, params[:knowledgeName], user_req)
+      output_dir = System.tmp_dir!()
+
+      input = %{
+        courseName: course_name,
+        slides: Jason.encode!(slides),
+        author: author,
+        outputDir: output_dir
+      }
+
+      Logger.info("[DocumentTools] Generating PPTX for '#{course_name}' with #{length(slides)} slides")
+
+      case KgEdu.Agent.Tools.DocumentTools.run_python_script("generate_pptx.py", Jason.encode!(input)) do
+        {:ok, %{"filePath" => file_path}} ->
+          file_size = get_file_size(file_path)
+
+          case KgEdu.Agent.Tools.DocumentTools.safe_upload(file_path) do
+            {:ok, url} ->
+              save_record(params, Path.basename(file_path), url, file_size, "pptx")
+              {:ok, %{result: "PPT课件「#{course_name}」已生成！\n下载链接: #{url}", fileUrl: url}}
+
+            {:error, reason} ->
+              # Return file path on upload failure (still useful for debugging)
+              {:ok, %{result: "PPT课件已生成（本地: #{file_path}）。上传失败: #{reason}", localPath: file_path}}
+          end
+
+        {:ok, raw} ->
+          {:error, "PPT生成脚本返回异常: #{inspect(raw)}"}
+
+        {:error, reason} ->
+          {:error, "PPT生成失败: #{reason}"}
+      end
+    end
+
+    defp build_slides(course_name, knowledge_name, user_req) do
+      slides = [%{"title" => course_name, "content" => "课程概览", "bullets" => []}]
+
+      slides =
+        if knowledge_name do
+          slides ++ [%{
+            "title" => knowledge_name,
+            "content" => user_req || "知识点详解",
+            "bullets" => String.split(user_req || "", "\n") |> Enum.reject(&(&1 == "")) |> Enum.take(8)
+          }]
+        else
+          slides ++ [%{
+            "title" => "课程内容",
+            "content" => user_req || "课程内容概述",
+            "bullets" => String.split(user_req || "", "\n") |> Enum.reject(&(&1 == "")) |> Enum.take(8)
+          }]
+        end
+
+      slides
+    end
+
+    defp get_file_size(path) do
+      case File.stat(path) do
+        {:ok, stat} -> stat.size
+        _ -> 0
+      end
+    end
+
+    defp save_record(params, file_name, url, size, type) do
+      tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+
+      if tenant do
+        KgEdu.Agent.OssUpload.save_file_record(tenant, file_name, url, size, type,
+          user_id: KgEdu.Agent.SessionContext.get(:user_id),
+          course_id: params[:courseId],
+          knowledge_resource_id: params[:knowledgeResourceId]
+        )
+      end
     end
   end
 
+  # ── SaveAsDocxAndUpload ─────────────────────────────────────────────────
+
   defmodule DOCX do
-    @moduledoc false
+    @moduledoc "Generate DOCX document from Markdown content."
 
     use Jido.Action,
       name: "SaveAsDocxAndUpload",
@@ -44,7 +126,95 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     @impl true
     def run(params, _context) do
-      {:ok, %{result: "DOCX文档生成请求已接收。Stage 2 将接入 Python 生成管道。"}}
+      content = params[:content] || ""
+      course_id = params[:courseId]
+      file_name = params[:fileName] || "document"
+      output_dir = System.tmp_dir!()
+
+      if content == "" or is_nil(course_id) do
+        {:error, "content 和 courseId 是必需参数"}
+      else
+        input = %{
+          content: content,
+          fileName: file_name,
+          outputDir: output_dir
+        }
+
+        Logger.info("[DocumentTools] Generating DOCX '#{file_name}' (#{String.length(content)} chars)")
+
+        case KgEdu.Agent.Tools.DocumentTools.run_python_script("generate_docx.py", Jason.encode!(input)) do
+          {:ok, %{"filePath" => file_path}} ->
+            file_size = get_file_size(file_path)
+
+            case KgEdu.Agent.Tools.DocumentTools.safe_upload(file_path) do
+              {:ok, url} ->
+                save_record(params, Path.basename(file_path), url, file_size, "docx")
+                {:ok, %{result: "文档已生成！\n下载链接: #{url}", fileUrl: url}}
+
+              {:error, _reason} ->
+                {:ok, %{result: "文档已生成（本地: #{file_path}）", localPath: file_path}}
+            end
+
+          {:ok, raw} ->
+            {:error, "DOCX生成脚本返回异常: #{inspect(raw)}"}
+
+          {:error, reason} ->
+            {:error, "DOCX生成失败: #{reason}"}
+        end
+      end
+    end
+
+    defp get_file_size(path) do
+      case File.stat(path) do
+        {:ok, stat} -> stat.size
+        _ -> 0
+      end
+    end
+
+    defp save_record(params, file_name, url, size, type) do
+      tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+
+      if tenant do
+        KgEdu.Agent.OssUpload.save_file_record(tenant, file_name, url, size, type,
+          user_id: KgEdu.Agent.SessionContext.get(:user_id),
+          course_id: params[:courseId],
+          knowledge_resource_id: params[:knowledgeResourceId]
+        )
+      end
+    end
+  end
+
+  # ── Python script runner ────────────────────────────────────────────────
+
+  def safe_upload(file_path) do
+    KgEdu.Agent.OssUpload.upload(file_path)
+  rescue
+    e -> {:error, Exception.message(e)}
+  end
+
+  def run_python_script(script_name, json_input) do
+    tools_dir = Application.app_dir(:kg_edu, "priv/skills/document/tools")
+    script = Path.join(tools_dir, script_name)
+
+    if File.exists?(script) do
+      case System.cmd("python3", [script, json_input], stderr_to_stdout: true) do
+        {output, 0} ->
+          case Jason.decode(output) do
+            {:ok, result} -> {:ok, result}
+            {:error, _} -> {:ok, %{"raw" => String.trim(output)}}
+          end
+
+        {output, exit_code} ->
+          error_msg =
+            case Jason.decode(output) do
+              {:ok, %{"error" => msg}} -> msg
+              _ -> String.trim(output)
+            end
+
+          {:error, "Python script '#{script_name}' failed (exit #{exit_code}): #{error_msg}"}
+      end
+    else
+      {:error, "Python script not found: #{script}"}
     end
   end
 end

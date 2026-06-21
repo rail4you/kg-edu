@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "courseName": {
+      "type": "string",
+      "description": "Course/topic name for the presentation title slide"
+    },
+    "slides": {
+      "type": "string",
+      "description": "JSON array of slides, each with: {title, content, bullets: [string]}"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name for document metadata"
+    },
+    "outputDir": {
+      "type": "string",
+      "description": "Directory to write the output .pptx file"
+    }
+  },
+  "required": ["courseName", "slides", "outputDir"]
+}

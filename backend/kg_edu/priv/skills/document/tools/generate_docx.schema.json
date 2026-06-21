@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Markdown-formatted document content"
+    },
+    "fileName": {
+      "type": "string",
+      "description": "Output file name (without extension)"
+    },
+    "outputDir": {
+      "type": "string",
+      "description": "Directory to write the output .docx file"
+    }
+  },
+  "required": ["content", "fileName", "outputDir"]
+}
