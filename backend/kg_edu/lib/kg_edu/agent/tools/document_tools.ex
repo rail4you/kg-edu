@@ -84,6 +84,8 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       # Split userRequirements by paragraphs (double-newline) → each paragraph = one slide
       paragraphs = split_paragraphs(user_req || "")
 
+      Logger.debug("[DocumentTools.PPTX] paragraphs: #{length(paragraphs)}, knowledge_name=#{inspect(knowledge_name)}")
+
       # Supplementary: knowledge resource metadata
       knowledge_bullets = get_knowledge_content(knowledge_id)
 
@@ -97,58 +99,62 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       ]
 
       # Build content slides from paragraphs
-      if paragraphs != [] do
-        content_slides =
-          paragraphs
-          |> Enum.with_index()
-          |> Enum.map(fn {para, idx} ->
-            lines = String.split(para, "\n") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+      slides =
+        if paragraphs != [] do
+          content_slides =
+            paragraphs
+            |> Enum.with_index()
+            |> Enum.map(fn {para, _idx} ->
+              lines = String.split(para, "\n") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
 
-            case lines do
-              [title | body_lines] when body_lines != [] ->
-                %{
-                  "title" => title,
-                  "content" => title,
-                  "bullets" => Enum.take(body_lines, 6)
-                }
+              case lines do
+                [title | body_lines] when body_lines != [] ->
+                  %{
+                    "title" => title,
+                    "content" => title,
+                    "bullets" => Enum.take(body_lines, 6)
+                  }
 
-              [title] ->
-                %{
-                  "title" => title,
-                  "content" => title,
-                  "bullets" => []
-                }
+                [title] ->
+                  %{
+                    "title" => title,
+                    "content" => title,
+                    "bullets" => []
+                  }
 
-              [] ->
-                # Empty paragraph — skip
-                nil
-            end
-          end)
-          |> Enum.reject(&is_nil/1)
+                [] ->
+                  nil
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
 
-        slides = slides ++ content_slides
-
-      # If no paragraphs but knowledge_name exists, add a detail slide
-      else
-        if knowledge_name do
-          detail_bullets =
-            if knowledge_bullets != [] do
-              Enum.take(knowledge_bullets, 8)
-            else
-              ["请参考课程资料获取详细内容"]
-            end
-
-          slides = slides ++ [
-            %{
-              "title" => knowledge_name,
-              "content" => "知识点详解：#{knowledge_name}",
-              "bullets" => detail_bullets
-            }
-          ]
+          slides ++ content_slides
+        else
+          # No paragraphs — add detail slide from knowledge data
+          detail_slides = build_fallback_slides(knowledge_name, knowledge_bullets)
+          slides ++ detail_slides
         end
-      end
 
       slides
+    end
+
+    defp build_fallback_slides(nil, _bullets), do: []
+
+    defp build_fallback_slides(knowledge_name, knowledge_bullets) do
+      detail_bullets =
+        if knowledge_bullets != [] do
+          Enum.take(knowledge_bullets, 8)
+        else
+          ["请参考课程资料获取详细内容"]
+        end
+
+      [
+        %{
+          "title" => knowledge_name,
+          "content" => "知识点详解：#{knowledge_name}",
+          "bullets" => detail_bullets
+        }
+      ]
     end
 
     defp split_paragraphs(text) do
