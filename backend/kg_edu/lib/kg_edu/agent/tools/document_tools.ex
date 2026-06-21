@@ -15,18 +15,14 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     use Jido.Action,
       name: "GeneratePowerPointWithShapeCrawler",
-      description: "生成PPT/PPTX演示文稿课件。用户提到PPT、课件、幻灯片时必须调用。" <>
-        "请在userRequirements中按以下结构组织幻灯片内容（用真实换行分隔）：" <>
-        "第一行=课程概述(1句话)，后续每4-8行用空行分隔为一张幻灯片，" <>
-        "每张幻灯片格式：标题行\\n要点1\\n要点2\\n要点3（标题后换行写3-6个要点）。" <>
-        "示例：\\n平面构成概述\\n核心概念：二维空间组合\\n三大要素：点线面\\n基本原理：对称均衡\\n\\n点的形态\\n位置感与聚集性\\n作为最小视觉单位\\n在版式中的导向作用",
+      description: "生成PPT课件。请在userRequirements中用真实换行分隔内容：每段一个幻灯片，首行标题后续行要点。用空行分隔不同幻灯片。",
       schema:
         Zoi.object(%{
-          courseName: Zoi.string(description: "课程名称"),
+          courseName: Zoi.string(description: "课程名称") |> Zoi.optional(),
           knowledgeName: Zoi.string(description: "知识点名称") |> Zoi.optional(),
           courseId: Zoi.string(description: "课程ID") |> Zoi.optional(),
           knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional(),
-          userRequirements: Zoi.string(description: "详细的幻灯片内容，用\\n分隔每条要点") |> Zoi.optional(),
+          userRequirements: Zoi.string(description: "幻灯内容，每段一页，空行分页。首行标题，后续行要点") |> Zoi.optional(),
           author: Zoi.string(description: "作者") |> Zoi.optional()
         })
 

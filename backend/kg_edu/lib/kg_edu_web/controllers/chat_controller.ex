@@ -54,17 +54,91 @@ defmodule KgEduWeb.ChatController do
       |> put_resp_header("x-accel-buffering", "no")
       |> send_chunked(200)
 
-    # Tenant is passed to tools via _tenant param, not set globally
-
-    # Emit RUN_STARTED
     sse_write(conn, "RUN_STARTED", %{threadId: params["threadId"]})
 
+    # ── Pre-flight: knowledge point selection for doc generation ──────
+    # If user asks for PPTX/docx but hasn't selected knowledge points yet,
+    # and this is a new conversation (or the first doc gen request),
+    # intercept and emit CUSTOM_UI instead of running the agent.
+    if is_knowledge_selection_needed?(message, params, tenant) do
+      course_id = params["courseId"] || extract_course_id_from_context(params, tenant)
+      knowledge_list = fetch_knowledge_list(tenant, course_id, extract_search_term(message))
+
+      if knowledge_list != [] do
+        sse_write(conn, "CUSTOM_UI", %{
+          uiType: "knowledge_selector",
+          title: "📚 请选择要生成课件的知识点",
+          description: "勾选需要包含的知识点（支持多选），确认后将自动生成PPT课件",
+          items: knowledge_list,
+          metadata: %{courseId: course_id}
+        })
+
+        sse_write(conn, "TEXT_MESSAGE_START", %{})
+        sse_write(conn, "TEXT_MESSAGE_CONTENT", %{
+          delta: "请在上方选择知识点后点击「确认生成」，我将为您生成包含所选知识点的PPT课件。"
+        })
+        sse_write(conn, "TEXT_MESSAGE_END", %{})
+        sse_write(conn, "RUN_FINISHED", %{})
+
+        conn
+      else
+        # No knowledge points found — fall through to normal agent flow
+        _run_agent_stream(conn, params, message, agent_type, tenant)
+      end
+    else
+      _run_agent_stream(conn, params, message, agent_type, tenant)
+    end
+  end
+
+  # Check if this message needs knowledge point selection
+  defp is_knowledge_selection_needed?(message, params, tenant) do
+    is_doc_gen = is_document_generation_request?(message)
+    has_kp = params["knowledgePointIds"] || params["selectedKnowledgeIds"]
+    is_followup =
+      is_binary(message) and
+        String.match?(message, ~r/已选择知识点|确认生成|knowledgePointIds/)
+
+    is_doc_gen and !is_followup and is_nil(has_kp) and tenant != nil
+  end
+
+  # Extract course_id from conversation context (forwardedProps, previous messages, etc.)
+  defp extract_course_id_from_context(params, tenant) do
+    # Try forwardedProps first
+    fp = params["forwardedProps"] || %{}
+    fp["courseId"] ||
+      # Try direct param
+      params["courseId"] ||
+      # Try last user message for course ID pattern
+      extract_course_id_from_last_message(params)
+  end
+
+  defp extract_course_id_from_last_message(params) do
+    messages = params["messages"] || []
+    if is_list(messages) and messages != [] do
+      last = List.last(messages)
+      last["courseId"]
+    end
+  end
+
+  # Extract potential knowledge point name from user message for fuzzy matching
+  defp extract_search_term(message) when is_binary(message) do
+    # Remove common noise words, keep likely knowledge point names
+    stripped =
+      String.replace(message, ~r/(生成|创建|制作|给我|一份|一些|一个|PPT|课件|幻灯片|文档|教案|docx|word)/i, " ")
+      |> String.trim()
+
+    if stripped != "" and String.length(stripped) >= 2, do: stripped, else: nil
+  end
+
+  defp extract_search_term(_), do: nil
+
+  defp _run_agent_stream(conn, params, message, agent_type, tenant) do
     # Build config
     opts = build_opts(agent_type, tenant, params)
 
     # Stream ReAct events → Pi SDK SSE format
     events = KgEdu.Chat.stream_answer(message, opts)
-    {conn, _} = stream_pi_sdk_events(conn, events)
+    {conn, _} = stream_pi_sdk_events(conn, events, tenant, message)
 
     # Emit RUN_FINISHED
     sse_write(conn, "RUN_FINISHED", %{})
@@ -74,14 +148,13 @@ defmodule KgEduWeb.ChatController do
 
   # ── Pi SDK SSE format adapter ───────────────────────────────────────────
 
-  defp stream_pi_sdk_events(conn, events) do
+  defp stream_pi_sdk_events(conn, events, _tenant, _user_message) do
     Enum.reduce(events, {conn, %{text_buffer: ""}}, fn event, {conn, state} ->
       case event.kind do
         :tool_started ->
           tool_name = Map.get(event.data, :tool_name) || "unknown"
           tool_call_id = Map.get(event.data, :tool_call_id) || generate_id()
-
-          state = Map.put(state, :tool_name, tool_name)
+          args = Map.get(event.data, :arguments, %{})
 
           sse_write(conn, "TOOL_CALL_START", %{
             toolCallId: tool_call_id,
@@ -90,7 +163,7 @@ defmodule KgEduWeb.ChatController do
 
           sse_write(conn, "TOOL_CALL_ARGS", %{
             toolCallId: tool_call_id,
-            delta: Map.get(event.data, :arguments) |> inspect()
+            delta: args |> inspect()
           })
 
           {conn, state}
@@ -255,6 +328,60 @@ defmodule KgEduWeb.ChatController do
 
       true ->
         nil
+    end
+  end
+
+  # ── CUSTOM_UI helpers ───────────────────────────────────────────────────
+
+  @doc """
+  Detect if user message is a document generation request (PPTX/DOCX).
+  """
+  defp is_document_generation_request?(nil), do: false
+
+  defp is_document_generation_request?(message) when is_binary(message) do
+    String.match?(message, ~r/ppt|pptx|课件|幻灯片|演示文稿|文档|docx|教案|word/i)
+  end
+
+  # Also handle messages array
+  defp is_document_generation_request?(messages) when is_list(messages) do
+    last_user = Enum.reverse(messages) |> Enum.find_value(fn m -> m["role"] == "user" && m["content"] end)
+    is_document_generation_request?(last_user)
+  end
+
+  @doc """
+  Fetch knowledge resource list for a course from the database.
+  """
+  defp fetch_knowledge_list(tenant, course_id, search_term \\ nil) do
+    if not tenant do
+      []
+    else
+      try do
+        KgEdu.Knowledge.Resource
+        |> Ash.Query.sort(name: :asc)
+        |> Ash.Query.limit(100)
+        |> Ash.read!(tenant: tenant, authorize?: false)
+        |> Enum.filter(fn r ->
+          match_course = is_nil(course_id) || r.course_id == course_id
+          match_name =
+            is_nil(search_term) ||
+              String.contains?(
+                String.downcase(r.name || ""),
+                String.downcase(search_term)
+              )
+          match_course and match_name
+        end)
+        |> Enum.take(50)
+        |> Enum.map(fn r ->
+          %{
+            id: r.id,
+            name: r.name,
+            description: r.description || "",
+            importance_level: r.importance_level || "normal"
+          }
+        end)
+      rescue
+        _ -> []
+      end
     end
   end
 end
