@@ -1,7 +1,6 @@
 defmodule KgEduWeb.ChatController do
   use KgEduWeb, :controller
 
-  require Logger
   alias Jido.AI.Reasoning.ReAct
 
   @doc """
@@ -123,10 +122,10 @@ defmodule KgEduWeb.ChatController do
 
   # Extract potential knowledge point name from user message for fuzzy matching
   defp extract_search_term(message) when is_binary(message) do
-    # Remove common noise words, keep likely knowledge point names
     stripped =
-      String.replace(message, ~r/(生成|创建|制作|给我|一份|一些|一个|PPT|课件|幻灯片|文档|教案|docx|word)/i, " ")
+      String.replace(message, ~r/(pptx|docx|PPT|课件|幻灯片|演示文稿|文档|教案|word|生成|创建|制作|给我|一份|一些|一个)/i, " ")
       |> String.trim()
+      |> String.replace(~r/\s+/, " ")
 
     if stripped != "" and String.length(stripped) >= 2, do: stripped, else: nil
   end
@@ -350,7 +349,13 @@ defmodule KgEduWeb.ChatController do
   end
 
   @doc """
-  Fetch knowledge resource list for a course from the database.
+  Fetch relevant knowledge resources for document generation.
+
+  Strategy:
+  1. Search knowledge resources by name (using search_term from user message)
+  2. Group results by course_id, pick the course with most matches
+  3. Return top 10 items from that course (sorted by importance)
+  4. If no search_term, return items from specified course_id
   """
   defp fetch_knowledge_list(tenant, course_id, search_term \\ nil) do
     if is_nil(tenant) do
@@ -361,28 +366,42 @@ defmodule KgEduWeb.ChatController do
           KgEdu.Knowledge.Resource
           |> Ash.Query.new()
           |> Ash.Query.sort(name: :asc)
-          |> Ash.Query.limit(20)
           |> Ash.read!(tenant: tenant, authorize?: false)
 
-        resources
-        |> Enum.filter(fn r ->
-          match_course = is_nil(course_id) || r.course_id == course_id
-          match_name =
-            is_nil(search_term) ||
-              String.contains?(
-                String.downcase(r.name || ""),
-                String.downcase(search_term)
-              )
-          match_course && match_name
-        end)
+        # Filter by name (post-load) or course_id
+        filtered =
+          cond do
+            search_term ->
+              s = String.downcase(search_term)
+              Enum.filter(resources, fn r ->
+                String.contains?(String.downcase(r.name || ""), s)
+              end)
+
+            course_id ->
+              Enum.filter(resources, fn r -> r.course_id == course_id end)
+
+            true ->
+              # No filter: show meaningful items only
+              Enum.filter(resources, &is_relevant_item?/1)
+          end
+
+        # Determine the target course: from course_id, or by grouping search results
+        target_course_id =
+          course_id ||
+            (filtered
+             |> Enum.group_by(& &1.course_id)
+             |> Enum.max_by(fn {_cid, items} -> length(items) end, fn -> {nil, []} end)
+             |> elem(0))
+
+        filtered
+        |> Enum.filter(&(&1.course_id == target_course_id))
         |> Enum.sort_by(fn r ->
-          importance_order =
-            case r.importance_level do
-              "hard" -> 0
-              "important" -> 1
-              _ -> 2
-            end
-          {importance_order, r.name}
+          order = case r.importance_level do
+            "hard" -> 0
+            "important" -> 1
+            _ -> 2
+          end
+          {order, r.name}
         end)
         |> Enum.take(10)
         |> Enum.map(fn r ->
@@ -397,5 +416,9 @@ defmodule KgEduWeb.ChatController do
         _ -> []
       end
     end
+  end
+
+  defp is_relevant_item?(r) do
+    (r.description && r.description != "") or r.importance_level in ["important", "hard"]
   end
 end
