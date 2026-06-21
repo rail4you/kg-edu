@@ -100,6 +100,19 @@ defmodule KgEduWeb.Router do
     post "/curriculum/generate", GenerationController, :generate_curriculum
   end
 
+  # Excel import endpoints (compatible with agent-server format)
+  scope "/", KgEduWeb do
+    pipe_through :api
+    post "/import", ImportController, :import_knowledge
+    post "/import-chapters", ImportController, :import_chapters
+  end
+
+  # Curriculum document upload
+  scope "/api/curriculum", KgEduWeb do
+    pipe_through :api
+    post "/upload", GenerationController, :upload_curriculum_document
+  end
+
   # CopilotKit/Pi SDK compatible chat endpoint
   # Frontend calls POST /api/assistant/ag-ui via Vite proxy
   scope "/api/assistant", KgEduWeb do
