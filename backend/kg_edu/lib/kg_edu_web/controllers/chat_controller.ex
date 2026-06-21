@@ -19,9 +19,31 @@ defmodule KgEduWeb.ChatController do
     - TOOL_CALL_START / TOOL_CALL_ARGS / TOOL_CALL_END
     - RUN_STARTED / RUN_FINISHED / RUN_ERROR
   """
-  def stream_message(conn, %{"message" => message} = params) do
+  # Handle GET (browser preflight / direct access)
+  def stream_message(conn, %{"message" => _} = _params) do
+    stream_message(conn, %{})
+  end
+
+  def stream_message(conn, _params) when conn.method == "GET" do
+    conn |> json(%{status: "ok", endpoint: "POST /api/assistant/ag-ui"})
+  end
+
+  def stream_message(conn, params) do
     agent_type = Map.get(params, "agent", "edu")
 
+    # Extract user message — supports both "message" (string) and "messages" (array)
+    message = extract_user_message(params)
+
+    if is_nil(message) or message == "" do
+      conn
+      |> put_status(400)
+      |> json(%{error: "message is required"})
+    else
+      _stream_message(conn, params, message, agent_type)
+    end
+  end
+
+  defp _stream_message(conn, params, message, agent_type) do
     # Extract tenant from header or body
     tenant = extract_tenant(conn, params)
 
@@ -162,12 +184,27 @@ defmodule KgEduWeb.ChatController do
   end
 
   defp extract_tenant(conn, params) do
-    # Priority: body.orgSchema > forwardedProps.orgSchema > X-Org-Schema header > assigns
     params["orgSchema"] ||
       (params["forwardedProps"] || %{})["orgSchema"] ||
       params["tenant"] ||
       get_req_header(conn, "x-org-schema") |> List.first() ||
       conn.assigns[:org_schema] ||
       conn.assigns[:tenant]
+  end
+
+  # Extract the last user message from either "message" string or "messages" array
+  defp extract_user_message(params) do
+    cond do
+      is_binary(params["message"]) and params["message"] != "" ->
+        params["message"]
+
+      is_list(params["messages"]) ->
+        params["messages"]
+        |> Enum.reverse()
+        |> Enum.find_value(fn m -> m["role"] == "user" && m["content"] end)
+
+      true ->
+        nil
+    end
   end
 end
