@@ -50,6 +50,7 @@ defmodule KgEdu.Agent.DataAccess do
       end
 
     query
+    
     |> Ash.read!(tenant: tenant, authorize?: false)
     |> Enum.map(&resource_summary/1)
   end
@@ -74,6 +75,7 @@ defmodule KgEdu.Agent.DataAccess do
       end
 
     query
+    
     |> Ash.read!(tenant: tenant, authorize?: false)
     |> Enum.map(&exercise_summary/1)
   end
@@ -90,6 +92,7 @@ defmodule KgEdu.Agent.DataAccess do
       end
 
     query
+    
     |> Ash.read!(tenant: tenant, authorize?: false)
     |> Enum.map(&exam_summary/1)
   end
@@ -112,7 +115,7 @@ defmodule KgEdu.Agent.DataAccess do
       id: r.id,
       name: r.name,
       description: r.description,
-      importance: r.importance,
+      importance: r.importance_level,
       courseId: r.course_id,
       parentKnowledgeResourceId: r.parent_knowledge_resource_id
     }

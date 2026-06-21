@@ -75,7 +75,7 @@ defmodule KgEduWeb.ChatController do
   # ── Pi SDK SSE format adapter ───────────────────────────────────────────
 
   defp stream_pi_sdk_events(conn, events) do
-    Enum.reduce(events, {conn, %{}}, fn event, {conn, state} ->
+    Enum.reduce(events, {conn, %{text_buffer: ""}}, fn event, {conn, state} ->
       case event.kind do
         :tool_started ->
           tool_name = Map.get(event.data, :tool_name) || "unknown"
@@ -108,14 +108,22 @@ defmodule KgEduWeb.ChatController do
           delta = extract_delta(event.data)
 
           if delta != "" do
-            # Emit TEXT_MESSAGE_START on first content
-            unless Map.get(state, :text_started) do
-              sse_write(conn, "TEXT_MESSAGE_START", %{})
-              state = Map.put(state, :text_started, true)
-            end
+            # Filter out tool call names that Qwen sometimes outputs as text
+            # before actually making the function call
+            {clean_delta, state} = filter_tool_names(delta, state)
 
-            sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: delta})
-            {conn, state}
+            if clean_delta != "" do
+              # Emit TEXT_MESSAGE_START on first content
+              unless Map.get(state, :text_started) do
+                sse_write(conn, "TEXT_MESSAGE_START", %{})
+                state = Map.put(state, :text_started, true)
+              end
+
+              sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: clean_delta})
+              {conn, state}
+            else
+              {conn, state}
+            end
           else
             {conn, state}
           end
@@ -148,6 +156,51 @@ defmodule KgEduWeb.ChatController do
       is_binary(Map.get(data, :delta)) -> data.delta
       is_binary(Map.get(data, :content)) -> data.content
       true -> ""
+    end
+  end
+
+  # Tool names the LLM might accidentally output as text before calling
+  @tool_names ~w(
+    GetCourses GetCoursesByMajor GetCoursesBySemester
+    GetKnowledgeResources GetExercises GetExams
+    GenerateExercises GenerateCompetencyGraph GenerateCurriculum
+    GeneratePowerPointWithShapeCrawler SaveAsDocxAndUpload
+  )
+
+  # Filter out tool call names from text output
+  defp filter_tool_names(delta, state) do
+    # Accumulate a buffer to detect tool names across fragments
+    buffer = Map.get(state, :text_buffer, "")
+    combined = buffer <> delta
+
+    # Check if combined text exactly matches a tool name (or starts with one)
+    match = Enum.find(@tool_names, fn name ->
+      String.starts_with?(combined, name)
+    end)
+
+    if match do
+      remaining = String.replace_prefix(combined, match, "")
+
+      if remaining != "" do
+        # Tool name matched, emit remaining text and clear buffer
+        {remaining, Map.put(state, :text_buffer, "")}
+      else
+        # Full match, suppress entirely, keep buffer for next fragment
+        {"", Map.put(state, :text_buffer, combined)}
+      end
+    else
+      # Check if any tool name could start with our buffer
+      possible = Enum.any?(@tool_names, fn name ->
+        String.starts_with?(name, combined)
+      end)
+
+      if possible do
+        # Could be partial match — buffer and suppress
+        {"", Map.put(state, :text_buffer, combined)}
+      else
+        # No match possible — emit combined, clear buffer
+        {combined, Map.put(state, :text_buffer, "")}
+      end
     end
   end
 
