@@ -67,7 +67,7 @@ defmodule KgEdu.Agent.OssUpload do
   """
   def save_file_record(tenant, file_name, file_url, file_size, file_type, opts \\ []) do
     try do
-      {:ok, record} =
+      record =
         KgEdu.Courses.File
         |> Ash.Changeset.for_create(:create, %{
           filename: file_name,
@@ -75,12 +75,14 @@ defmodule KgEdu.Agent.OssUpload do
           size: file_size,
           file_type: file_type,
           purpose: "ai_generated",
+          source: "ai_generated",
           created_by_id: Keyword.get(opts, :user_id),
           course_id: Keyword.get(opts, :course_id),
           knowledge_resource_id: Keyword.get(opts, :knowledge_resource_id)
         })
         |> Ash.create!(tenant: tenant, authorize?: false)
 
+      Logger.info("[OssUpload] Saved file record: #{record.id} (#{file_name}) for course #{Keyword.get(opts, :course_id)}")
       record.id
     rescue
       e ->

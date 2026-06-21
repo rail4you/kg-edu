@@ -111,6 +111,7 @@ defmodule KgEdu.Courses.File do
         :size,
         :file_type,
         :purpose,
+        :source,
         :course_id,
         :knowledge_resource_id,
         :created_by_id
