@@ -18,7 +18,6 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
         exerciseType: Zoi.string(description: "题目类型"),
         number: Zoi.integer() |> Zoi.default(5) |> Zoi.nullish(),
         difficulty: Zoi.integer() |> Zoi.default(3) |> Zoi.nullish(),
-        _tenant: Zoi.string(description: "租户标识") |> Zoi.optional()
       })
 
   @exercise_system_prompt """
@@ -53,7 +52,7 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
 
   @impl true
   def run(params, _context) do
-    tenant = params[:_tenant]
+    tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
 
     if is_nil(tenant) do
       {:error, "未设置租户上下文"}
@@ -111,8 +110,9 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
     try do
       KgEdu.Knowledge.Question
       |> Ash.Query.new()
+      |> Ash.Query.for_read(:read)
       |> Ash.Query.filter(course_id == ^course_id)
-      |> Ash.read!(tenant: tenant, authorize?: false)
+      |> Ash.read!(tenant: tenant, authorize?: false, actor: nil)
       |> Enum.map(& &1.title)
       |> Enum.filter(&(not is_nil(&1)))
       |> MapSet.new()

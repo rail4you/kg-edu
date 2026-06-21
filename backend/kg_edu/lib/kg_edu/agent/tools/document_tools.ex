@@ -2,11 +2,8 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
   @moduledoc """
   Agent tools for document generation (PPTX, DOCX).
 
-  Stage 1: Wired to existing Python generation via ScriptToolFactory.
-  Uses priv/skills/document/tools/*.py scripts.
+  Stage 1: Placeholder stubs — full Python pipeline in Stage 2.
   """
-
-  # ── GeneratePowerPointWithShapeCrawler ──────────────────────────────────
 
   defmodule PPTX do
     @moduledoc false
@@ -21,27 +18,15 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
           courseId: Zoi.string(description: "课程ID") |> Zoi.optional(),
           knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional(),
           userRequirements: Zoi.string(description: "用户额外需求") |> Zoi.optional(),
-          author: Zoi.string(description: "作者") |> Zoi.optional(),
-          _tenant: Zoi.string(description: "租户标识") |> Zoi.optional()
+          author: Zoi.string(description: "作者") |> Zoi.optional()
         })
 
     @impl true
     def run(params, _context) do
-      tenant = params[:_tenant] || Ash.get_tenant()
-
-      if is_nil(tenant) do
-        {:error, "未设置租户上下文"}
-      else
-        # Stage 1: Placeholder — wire to Python script in Stage 2
-        course = params[:courseName] || "未命名课程"
-        text = "PPT课件生成功能正在迁移到 Elixir/Jido 平台。课程: #{course}。Stage 2 将接入 Python 生成管道。"
-
-        {:ok, %{result: text, status: "migrating"}}
-      end
+      course = params[:courseName] || "未命名课程"
+      {:ok, %{result: "PPT课件「#{course}」生成请求已接收。Stage 2 将接入 Python 生成管道。"}}
     end
   end
-
-  # ── SaveAsDocxAndUpload ─────────────────────────────────────────────────
 
   defmodule DOCX do
     @moduledoc false
@@ -54,22 +39,12 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
           content: Zoi.string(description: "Markdown 格式的文档内容"),
           courseId: Zoi.string(description: "课程ID（必需）"),
           fileName: Zoi.string(description: "文件名") |> Zoi.optional(),
-          knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional(),
-          _tenant: Zoi.string(description: "租户标识") |> Zoi.optional()
+          knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional()
         })
 
     @impl true
     def run(params, _context) do
-      tenant = params[:_tenant] || Ash.get_tenant()
-
-      if is_nil(tenant) do
-        {:error, "未设置租户上下文"}
-      else
-        # Stage 1: Placeholder
-        text = "DOCX文档生成功能正在迁移到 Elixir/Jido 平台。Stage 2 将接入 Python 生成管道。"
-
-        {:ok, %{result: text, status: "migrating"}}
-      end
+      {:ok, %{result: "DOCX文档生成请求已接收。Stage 2 将接入 Python 生成管道。"}}
     end
   end
 end

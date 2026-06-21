@@ -11,27 +11,37 @@ defmodule KgEdu.Agent.DataAccess do
   alias KgEdu.Courses.Course
   alias KgEdu.Knowledge.{Resource, Question, Exam}
 
-  @doc "List all courses for a tenant."
-  def list_courses(tenant) do
+  @doc "Resolve tenant from explicit param or SessionContext."
+  def resolve_tenant(tenant) do
+    tenant || KgEdu.Agent.SessionContext.get(:tenant)
+  end
+
+  @doc "List all courses for a tenant. Tenant auto-detected from ETS if nil."
+  def list_courses(tenant \\ nil) do
+    tenant = resolve_tenant(tenant)
+
     Course
+    |> Ash.Query.for_read(:get_all_courses)
     |> Ash.read!(tenant: tenant, authorize?: false)
     |> Enum.map(&course_summary/1)
   end
 
   @doc "List courses filtered by major name."
-  def list_courses_by_major(tenant, major) do
+  def list_courses_by_major(major, tenant \\ nil) do
     list_courses(tenant)
     |> Enum.filter(&(&1.major && String.contains?(&1.major, major)))
   end
 
   @doc "List courses filtered by semester."
-  def list_courses_by_semester(tenant, semester) do
+  def list_courses_by_semester(semester, tenant \\ nil) do
     list_courses(tenant)
     |> Enum.filter(&(&1.semester == semester))
   end
 
   @doc "List knowledge resources, optionally filtered by course_id."
-  def list_knowledge_resources(tenant, course_id \\ nil) do
+  def list_knowledge_resources(course_id \\ nil, tenant \\ nil) do
+    tenant = resolve_tenant(tenant)
+
     query =
       if course_id do
         Resource |> Ash.Query.filter(course_id == ^course_id)
@@ -45,7 +55,9 @@ defmodule KgEdu.Agent.DataAccess do
   end
 
   @doc "List exercises, optionally filtered by course_id and/or knowledge_resource_id."
-  def list_exercises(tenant, course_id \\ nil, knowledge_resource_id \\ nil) do
+  def list_exercises(course_id \\ nil, knowledge_resource_id \\ nil, tenant \\ nil) do
+    tenant = resolve_tenant(tenant)
+
     query =
       cond do
         course_id && knowledge_resource_id ->
@@ -67,7 +79,9 @@ defmodule KgEdu.Agent.DataAccess do
   end
 
   @doc "List exams, optionally filtered by course_id."
-  def list_exams(tenant, course_id \\ nil) do
+  def list_exams(course_id \\ nil, tenant \\ nil) do
+    tenant = resolve_tenant(tenant)
+
     query =
       if course_id do
         Exam |> Ash.Query.filter(course_id == ^course_id)

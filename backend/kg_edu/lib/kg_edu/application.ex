@@ -25,11 +25,10 @@ defmodule KgEdu.Application do
       KgEdu.Repo,
       {DNSCluster, query: Application.get_env(:kg_edu, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: KgEdu.PubSub},
-      # Start a worker by calling: KgEdu.Worker.start_link(arg)
-      # {KgEdu.Worker, arg},
-      # Start to serve requests, typically the last entry
       KgEduWeb.Endpoint,
-      {AshAuthentication.Supervisor, [otp_app: :kg_edu]}
+      {AshAuthentication.Supervisor, [otp_app: :kg_edu]},
+      # Session context for agent tools (tenant, userId, etc.)
+      KgEdu.Agent.SessionContext
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

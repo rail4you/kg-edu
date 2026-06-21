@@ -147,22 +147,24 @@ defmodule KgEduWeb.ChatController do
     KgEdu.Chat.qa_config()
   end
 
-  defp build_opts(_agent_type, tenant, _params) do
+  defp build_opts(_agent_type, tenant, params) do
     opts = KgEdu.Chat.edu_config()
 
     if tenant do
+      user_id = params["userId"] || (params["forwardedProps"] || %{})["userId"]
+      KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: user_id)
+
       original = Keyword.get(opts, :system_prompt, "")
-      opts
-      |> Keyword.put(:system_prompt, original <> "\n\n当前租户: #{tenant}")
-      |> Keyword.put(:tool_context, %{_tenant: tenant})
+      Keyword.put(opts, :system_prompt, original <> "\n\n当前租户: #{tenant}")
     else
       opts
     end
   end
 
   defp extract_tenant(conn, params) do
-    # Priority: body > X-Org-Schema header > assigns
+    # Priority: body.orgSchema > forwardedProps.orgSchema > X-Org-Schema header > assigns
     params["orgSchema"] ||
+      (params["forwardedProps"] || %{})["orgSchema"] ||
       params["tenant"] ||
       get_req_header(conn, "x-org-schema") |> List.first() ||
       conn.assigns[:org_schema] ||

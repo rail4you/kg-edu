@@ -194,6 +194,7 @@ defmodule KgEdu.Chat do
     4. 如果用户没明确说课程名，先调用GetCourses获取列表后再操作。
     5. 【禁止展示ID】内部工具返回的数据中包含id、courseId、parentKnowledgeResourceId等ID字段，这些是系统内部标识符。在向用户展示时，绝对不要显示任何ID字段（如UUID），只展示名称、描述等有意义的信息。你可以内部使用ID来调用其他工具，但回答用户时不要包含任何ID。
     6. 回答简洁，直接给出结果，无需多余解释。
+    7. 【必须】所有工具调用都必须传入 _tenant 参数，值为当前租户标识。不传 _tenant 会导致工具调用失败。
     """
     |> String.trim()
   end

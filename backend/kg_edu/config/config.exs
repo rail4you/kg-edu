@@ -210,6 +210,12 @@ config :req_llm,
   alibaba_api_key: System.get_env("QWEN_API_KEY"),
   anthropic_api_key: System.get_env("ANTHROPIC_API_KEY")
 
+# Finch HTTP client — increase timeouts for LLM API calls (can take 30s+)
+config :finch,
+  connect_timeout: 30_000,
+  receive_timeout: 120_000,
+  pool_timeout: 15_000
+
 # Jido.AI configuration
 # The :qwen alias points at DashScope via req_llm's built-in :alibaba provider.
 # Set :fast / :qwen in your own agents via `use Jido.AI.Agent, model: :qwen`.
