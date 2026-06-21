@@ -93,16 +93,13 @@ defmodule KgEduWeb.ChatController do
 
   # Check if this message needs knowledge point selection
   defp is_knowledge_selection_needed?(message, params, tenant) do
-    IO.puts("[ChatCtrl] is_knowledge_selection_needed: msg=#{inspect(message)}")
     is_doc_gen = is_document_generation_request?(message)
     has_kp = params["knowledgePointIds"] || params["selectedKnowledgeIds"]
     is_followup =
       is_binary(message) and
         String.match?(message, ~r/已选择知识点|确认生成|knowledgePointIds/)
 
-    result = is_doc_gen and !is_followup and is_nil(has_kp) and tenant != nil
-    IO.puts("[ChatCtrl] → #{result}")
-    result
+    is_doc_gen and !is_followup and is_nil(has_kp) and tenant != nil
   end
 
   # Extract course_id from conversation context (forwardedProps, previous messages, etc.)
@@ -364,7 +361,7 @@ defmodule KgEduWeb.ChatController do
           KgEdu.Knowledge.Resource
           |> Ash.Query.new()
           |> Ash.Query.sort(name: :asc)
-          |> Ash.Query.limit(100)
+          |> Ash.Query.limit(20)
           |> Ash.read!(tenant: tenant, authorize?: false)
 
         resources
@@ -378,7 +375,16 @@ defmodule KgEduWeb.ChatController do
               )
           match_course && match_name
         end)
-        |> Enum.take(50)
+        |> Enum.sort_by(fn r ->
+          importance_order =
+            case r.importance_level do
+              "hard" -> 0
+              "important" -> 1
+              _ -> 2
+            end
+          {importance_order, r.name}
+        end)
+        |> Enum.take(10)
         |> Enum.map(fn r ->
           %{
             id: r.id,
