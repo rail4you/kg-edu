@@ -1,6 +1,7 @@
 defmodule KgEduWeb.ChatController do
   use KgEduWeb, :controller
 
+  require Logger
   alias Jido.AI.Reasoning.ReAct
 
   @doc """
@@ -92,13 +93,16 @@ defmodule KgEduWeb.ChatController do
 
   # Check if this message needs knowledge point selection
   defp is_knowledge_selection_needed?(message, params, tenant) do
+    IO.puts("[ChatCtrl] is_knowledge_selection_needed: msg=#{inspect(message)}")
     is_doc_gen = is_document_generation_request?(message)
     has_kp = params["knowledgePointIds"] || params["selectedKnowledgeIds"]
     is_followup =
       is_binary(message) and
         String.match?(message, ~r/已选择知识点|确认生成|knowledgePointIds/)
 
-    is_doc_gen and !is_followup and is_nil(has_kp) and tenant != nil
+    result = is_doc_gen and !is_followup and is_nil(has_kp) and tenant != nil
+    IO.puts("[ChatCtrl] → #{result}")
+    result
   end
 
   # Extract course_id from conversation context (forwardedProps, previous messages, etc.)
@@ -352,14 +356,18 @@ defmodule KgEduWeb.ChatController do
   Fetch knowledge resource list for a course from the database.
   """
   defp fetch_knowledge_list(tenant, course_id, search_term \\ nil) do
-    if not tenant do
+    if is_nil(tenant) do
       []
     else
       try do
-        KgEdu.Knowledge.Resource
-        |> Ash.Query.sort(name: :asc)
-        |> Ash.Query.limit(100)
-        |> Ash.read!(tenant: tenant, authorize?: false)
+        resources =
+          KgEdu.Knowledge.Resource
+          |> Ash.Query.new()
+          |> Ash.Query.sort(name: :asc)
+          |> Ash.Query.limit(100)
+          |> Ash.read!(tenant: tenant, authorize?: false)
+
+        resources
         |> Enum.filter(fn r ->
           match_course = is_nil(course_id) || r.course_id == course_id
           match_name =
@@ -368,7 +376,7 @@ defmodule KgEduWeb.ChatController do
                 String.downcase(r.name || ""),
                 String.downcase(search_term)
               )
-          match_course and match_name
+          match_course && match_name
         end)
         |> Enum.take(50)
         |> Enum.map(fn r ->
