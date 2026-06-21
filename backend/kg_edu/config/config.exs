@@ -31,7 +31,7 @@ config :waffle,
 #   secret_access_key: "Y481c9cjNvloxWTC0WOkLw8qWM9FMI",
 #   scheme: "https://",
 #   host: "s3.oss-cn-beijing.aliyuncs.com",
-#   region: "cn-beijing",
+#   region: "cn-beijing"
 # }
 
 config :ash_typescript,

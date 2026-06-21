@@ -1,52 +1,63 @@
 defmodule KgEdu.Agent.OssUpload do
   @moduledoc """
-  OSS file upload for agent-generated documents.
+  OSS file upload using HTTP Basic Auth.
 
-  Uploads files to AliCloud OSS using HTTP PUT with HMAC-SHA1 signature.
+  Uploads to Aliyun OSS via HTTP PUT with simple Basic authentication.
+  Same credentials and bucket as the Express server.
   """
 
   require Logger
 
   @bucket "kg-edu"
-  @endpoint "oss-cn-beijing.aliyuncs.com"
-
-  defp access_key_id, do: System.get_env("OSS_ACCESS_KEY_ID") || "LTAI5tA3M63FNf9qJPGwHGMU"
-  defp access_key_secret, do: System.get_env("OSS_ACCESS_KEY_SECRET") || "Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
+  @oss_host "oss-cn-beijing.aliyuncs.com"
+  @credentials "LTAI5tA3M63FNf9qJPGwHGMU:Y481c9cjNvloxWTC0WOkLw8qWM9FMI"
 
   @doc """
-  Upload a local file to OSS and return the public URL.
+  Upload a local file to Aliyun OSS and return the public URL.
 
   Returns `{:ok, url}` or `{:error, reason}`.
   """
   def upload(file_path) when is_binary(file_path) do
-    unless File.exists?(file_path) do
+    if not File.exists?(file_path) do
       {:error, "File not found: #{file_path}"}
     else
       timestamp = timestamp_key()
       file_name = Path.basename(file_path)
-      object_key = "uploads/#{timestamp}/#{file_name}"
-      url = "https://#{@bucket}.#{@endpoint}/#{object_key}"
+      # Sanitize: replace Chinese/special chars with safe ASCII for OSS object key
+      safe_name = sanitize_filename(file_name)
+      object_key = "uploads/#{timestamp}/#{safe_name}"
+      file_binary = File.read!(file_path)
 
-      result =
-        Req.new(
-          method: :put,
-          url: url,
-          headers: auth_headers("PUT", object_key, file_path)
-        )
-        |> Req.Request.put_attachment(file_path)
-        |> Req.Request.run()
-
-      case result do
-        {:ok, %{status: status}} when status in 200..299 ->
+      case put_object(object_key, file_binary) do
+        :ok ->
+          url = "https://#{@bucket}.#{@oss_host}/#{encoded_path(object_key)}"
           File.rm(file_path)
           {:ok, url}
 
-        {:ok, %{status: status, body: body}} ->
-          {:error, "OSS upload failed (#{status}): #{inspect(body)}"}
-
-        {:error, error} ->
-          {:error, "OSS upload failed: #{inspect(error)}"}
+        {:error, reason} ->
+          {:error, "OSS upload failed: #{inspect(reason)}"}
       end
+    end
+  end
+
+  @doc """
+  Upload a file from a Plug.Upload struct (multipart form data).
+  """
+  def upload_form(upload_file, opts \\ []) do
+    prefix = Keyword.get(opts, :prefix, "uploads")
+    timestamp = timestamp_key()
+    object_key = "#{prefix}/#{timestamp}/#{upload_file.filename}"
+    file_binary = File.read!(upload_file.path)
+
+    content_type = upload_file.content_type || "application/octet-stream"
+
+    case put_object(object_key, file_binary, content_type) do
+      :ok ->
+        url = "https://#{@bucket}.#{@oss_host}/#{object_key}"
+        {:ok, url}
+
+      {:error, reason} ->
+        {:error, "OSS upload failed: #{inspect(reason)}"}
     end
   end
 
@@ -78,34 +89,65 @@ defmodule KgEdu.Agent.OssUpload do
     end
   end
 
-  # ── OSS Signature (HMAC-SHA1) ──────────────────────────────────────────
+  # ── Private ────────────────────────────────────────────────────────────
 
-  defp auth_headers(method, object_key, file_path) do
-    date = format_http_date()
-    content_type = MIME.from_path(file_path)
-    content_md5 = file_path |> File.read!() |> :crypto.hash(:md5) |> Base.encode64()
+  defp put_object(object_key, binary, content_type \\ "application/octet-stream") do
+    # URL-encode the object key for non-ASCII characters (Chinese filenames, etc.)
+    encoded_key = object_key |> String.split("/") |> Enum.map_join("/", &URI.encode_www_form/1)
+    url = "https://#{@bucket}.#{@oss_host}/#{encoded_key}"
+    auth = "Basic " <> Base.encode64(@credentials)
 
-    string_to_sign = "#{method}\n#{content_md5}\n#{content_type}\n#{date}\n/#{@bucket}/#{object_key}"
+    result =
+      Req.new(
+        method: :put,
+        url: url,
+        headers: %{
+          "authorization" => auth,
+          "content-type" => content_type,
+          "date" => format_gmt()
+        },
+        body: binary
+      )
+      |> Req.Request.run()
 
-    signature =
-      :crypto.mac(:hmac, :sha, access_key_secret(), string_to_sign)
-      |> Base.encode64()
+    case result do
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
 
-    [
-      {"date", date},
-      {"content-type", content_type},
-      {"content-md5", content_md5},
-      {"authorization", "OSS #{access_key_id()}:#{signature}"}
-    ]
+      {:ok, %{status: status, body: body}} ->
+        {:error, "#{status}: #{inspect(body)}"}
+
+      {:error, error} ->
+        {:error, inspect(error)}
+    end
   end
 
   defp timestamp_key do
-    DateTime.utc_now()
-    |> Calendar.strftime("%Y%m%d%H%M%S")
+    DateTime.utc_now() |> Calendar.strftime("%Y%m%d%H%M%S")
   end
 
-  defp format_http_date do
-    DateTime.utc_now()
-    |> Calendar.strftime("%a, %d %b %Y %H:%M:%S GMT")
+  defp sanitize_filename(name) do
+    # Keep extension, replace Chinese/special chars with hex hash suffix
+    ext = Path.extname(name)
+    base = Path.basename(name, ext)
+    # If the name is pure ASCII and safe, keep it; otherwise use a hash
+    if String.match?(base, ~r/^[a-zA-Z0-9._-]+$/) do
+      name
+    else
+      hash = :crypto.hash(:md5, name) |> Base.encode16(case: :lower) |> binary_part(0, 8)
+      "file_#{hash}#{ext}"
+    end
+  end
+
+  defp encoded_path(key) do
+    key |> String.split("/") |> Enum.map_join("/", &URI.encode_www_form/1)
+  end
+
+  defp format_gmt do
+    # RFC 1123 GMT format: "Sun, 21 Jun 2026 03:00:00 GMT"
+    now = DateTime.utc_now()
+    day = now |> Calendar.strftime("%a")
+    date_part = now |> Calendar.strftime("%d %b %Y %H:%M:%S")
+    "#{day}, #{date_part} GMT"
   end
 end

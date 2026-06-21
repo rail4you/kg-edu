@@ -93,6 +93,13 @@ defmodule KgEduWeb.Router do
     post "/generate_ai_exercise", GenerationController, :generate_exercise
   end
 
+  # File upload endpoints (migrated from Express :3000 server)
+  scope "/api", KgEduWeb do
+    pipe_through :api_upload
+    post "/upload", FileUploadController, :upload
+    post "/sts-token", FileUploadController, :sts_token
+  end
+
   # Competency graph and curriculum generation endpoints
   scope "/", KgEduWeb do
     pipe_through :api
