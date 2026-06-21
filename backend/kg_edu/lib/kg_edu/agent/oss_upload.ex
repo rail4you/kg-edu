@@ -30,7 +30,7 @@ defmodule KgEdu.Agent.OssUpload do
 
       case put_object(object_key, file_binary) do
         :ok ->
-          url = "https://#{@bucket}.#{@oss_host}/#{encoded_path(object_key)}"
+          url = "https://#{@bucket}.#{@oss_host}/#{object_key}"
           File.rm(file_path)
           {:ok, url}
 
@@ -129,19 +129,12 @@ defmodule KgEdu.Agent.OssUpload do
   end
 
   defp sanitize_filename(name) do
-    # Keep extension, replace Chinese/special chars with hex hash suffix
-    ext = Path.extname(name)
-    base = Path.basename(name, ext)
-    # If the name is pure ASCII and safe, keep it; otherwise use a hash
-    if String.match?(base, ~r/^[a-zA-Z0-9._-]+$/) do
-      name
-    else
-      hash = :crypto.hash(:md5, name) |> Base.encode16(case: :lower) |> binary_part(0, 8)
-      "file_#{hash}#{ext}"
-    end
+    # Keep Chinese characters as-is; put_object will URL-encode them.
+    name
   end
 
   defp encoded_path(key) do
+    # URL-encode each path segment so Finch/Mint accepts non-ASCII chars
     key |> String.split("/") |> Enum.map_join("/", &URI.encode_www_form/1)
   end
 

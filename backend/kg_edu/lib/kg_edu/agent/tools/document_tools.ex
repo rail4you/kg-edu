@@ -15,26 +15,36 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     use Jido.Action,
       name: "GeneratePowerPointWithShapeCrawler",
-      description: "生成PPT/PPTX演示文稿课件。用户提到PPT、课件、幻灯片时必须调用。",
+      description: "生成PPT/PPTX演示文稿课件。用户提到PPT、课件、幻灯片时必须调用。请先在userRequirements中写入详细的幻灯片内容（用\\n分隔每条要点），包括知识点核心概念、关键要点、案例等。",
       schema:
         Zoi.object(%{
           courseName: Zoi.string(description: "课程名称"),
           knowledgeName: Zoi.string(description: "知识点名称") |> Zoi.optional(),
           courseId: Zoi.string(description: "课程ID") |> Zoi.optional(),
           knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional(),
-          userRequirements: Zoi.string(description: "用户额外需求") |> Zoi.optional(),
+          userRequirements: Zoi.string(description: "详细的幻灯片内容，用\\n分隔每条要点") |> Zoi.optional(),
           author: Zoi.string(description: "作者") |> Zoi.optional()
         })
 
     @impl true
     def run(params, _context) do
       course_name = params[:courseName] || "未命名课程"
+      knowledge_name = params[:knowledgeName]
+      knowledge_id = params[:knowledgeResourceId]
       author = params[:author] || "KgEdu"
       user_req = params[:userRequirements] || ""
 
-      # Build slide content from params
-      slides = build_slides(course_name, params[:knowledgeName], user_req)
+      # Build slide content — prefer knowledge resource data over raw user_req
+      slides = build_slides(course_name, knowledge_name, knowledge_id, user_req)
       output_dir = System.tmp_dir!()
+
+      # Build filename: 课程名-知识点名.pptx
+      file_name =
+        if knowledge_name do
+          "#{course_name}-#{knowledge_name}.pptx"
+        else
+          "#{course_name}.pptx"
+        end
 
       input = %{
         courseName: course_name,
@@ -51,11 +61,10 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
           case KgEdu.Agent.Tools.DocumentTools.safe_upload(file_path) do
             {:ok, url} ->
-              save_record(params, Path.basename(file_path), url, file_size, "pptx")
-              {:ok, %{result: "PPT课件「#{course_name}」已生成！\n下载链接: #{url}", fileUrl: url}}
+              save_record(params, file_name, url, file_size, "pptx")
+              {:ok, %{result: "PPT课件「#{course_name}-#{knowledge_name || "概览"}」已生成！\n下载链接: #{url}", fileUrl: url}}
 
             {:error, reason} ->
-              # Return file path on upload failure (still useful for debugging)
               {:ok, %{result: "PPT课件已生成（本地: #{file_path}）。上传失败: #{reason}", localPath: file_path}}
           end
 
@@ -67,28 +76,69 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       end
     end
 
-    defp build_slides(course_name, knowledge_name, user_req) do
-      bullets = String.split(user_req || "", "\n") |> Enum.reject(&(&1 == ""))
+    defp build_slides(course_name, knowledge_name, knowledge_id, user_req) do
+      # Primary content: userRequirements (LLM-generated slide content)
+      req_bullets = String.split(user_req || "", "\n") |> Enum.reject(&(&1 == ""))
+
+      # Supplementary: knowledge resource metadata
+      knowledge_bullets = get_knowledge_content(knowledge_id)
+
+      # Merge: LLM content first, then knowledge data as enrichment
+      all_bullets = req_bullets ++ knowledge_bullets |> Enum.uniq()
+
+      overview_content =
+        if req_bullets != [] do
+          "#{course_name}课程知识体系与教学目标"
+        else
+          "#{course_name}"
+        end
 
       slides = [
         %{
           "title" => "课程概览",
-          "content" => "#{course_name}课程知识体系与教学目标",
-          "bullets" => Enum.take(bullets, 5)
+          "content" => overview_content,
+          "bullets" => Enum.take(all_bullets, 5)
         }
       ]
 
       if knowledge_name do
+        detail_bullets =
+          if req_bullets != [] do
+            # Use remaining LLM content for the detail slide
+            Enum.drop(all_bullets, 5) |> Enum.take(10)
+          else
+            Enum.take(knowledge_bullets, 10)
+          end
+
         slides = slides ++ [
           %{
             "title" => knowledge_name,
-            "content" => user_req || "知识点详解",
-            "bullets" => Enum.drop(bullets, 5) |> Enum.take(6)
+            "content" => "知识点详解：#{knowledge_name}",
+            "bullets" => detail_bullets
           }
         ]
       end
 
       slides
+    end
+
+    defp get_knowledge_content(nil), do: []
+
+    defp get_knowledge_content(knowledge_id) do
+      tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+      if not tenant, do: []
+
+      case Ash.get(KgEdu.Knowledge.Resource, knowledge_id, tenant: tenant, authorize?: false) do
+        {:ok, resource} when not is_nil(resource) ->
+          lines = []
+          lines = if resource.description, do: lines ++ String.split(resource.description, "\n"), else: lines
+          lines = if resource.teaching_goal, do: lines ++ String.split(resource.teaching_goal, "\n"), else: lines
+          lines |> Enum.reject(&(&1 == ""))
+
+        _ -> []
+      end
+    rescue
+      _ -> []
     end
 
     defp get_file_size(path) do
