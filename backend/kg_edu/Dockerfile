@@ -1,89 +1,74 @@
-# Build stage
+# Stage 1: Backend Build (Elixir)
+# Frontend (Vite dist) is pre-built locally and already in priv/static/
 FROM hexpm/elixir:1.17.3-erlang-27.1.2-ubuntu-jammy-20240808 AS builder
 
-# Install build dependencies (cached unless apt packages change)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    git \
-    unzip \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Set build ENV
 ENV MIX_ENV=prod
 ENV ERL_AFLAGS="+JMsingle true"
 
-# Create app directory
 WORKDIR /app
 
-# Install hex and rebar (cached unless Elixir version changes)
 RUN mix local.hex --force && \
     mix local.rebar --force
 
-# Copy ONLY dependency files first (this layer cached unless deps change)
-COPY mix.exs mix.lock ./
+COPY backend/kg_edu/mix.exs backend/kg_edu/mix.lock ./
+RUN mix deps.get --only prod && mix deps.compile
 
-# Install and compile dependencies separately (heavy layer, rarely changes)
-RUN mix deps.get --only prod && \
-    mix deps.compile
+COPY backend/kg_edu/config config
+COPY backend/kg_edu/priv priv
+COPY backend/kg_edu/rel rel
+COPY backend/kg_edu/assets assets
+COPY backend/kg_edu/lib lib
 
-# Copy config files (changes less frequently than app code)
-COPY config config
-
-# Copy priv directory (includes migrations and static files)
-COPY priv priv
-
-# Copy assets (if using Phoenix, changes less than lib code)
-COPY assets assets
-
-# Compile assets (cached unless assets change)
-# RUN mix assets.deploy || true
-
-# Copy application code LAST (changes most frequently)
-COPY lib lib
-
-# Compile the application
 RUN mix compile
-
-# Build the release
+RUN mix assets.deploy
 RUN mix release
 
-# Runtime stage
+# Stage 2: Runtime
 FROM ubuntu:jammy-20240808
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    openssl \
-    libssl3 \
-    libncurses6 \
-    locales \
-    ca-certificates \
+# ── Minimal runtime deps (no nodejs/npm, use Bun instead) ──────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl libssl3 libncurses6 locales ca-certificates \
+    curl unzip \
+    pandoc \
     && rm -rf /var/lib/apt/lists/*
 
-# Set locale
+# ── Install Bun (single binary ~100MB, replaces nodejs+npm ~500MB) ────
+RUN curl -fsSL https://bun.sh/install | bash
+ENV BUN_INSTALL=/root/.bun
+ENV PATH="/root/.bun/bin:$PATH"
+
+# ── Install pptxgenjs via Bun ──────────────────────────────────────────
+RUN bun install -g pptxgenjs@3.12.0
+
+# ── Set locale ────────────────────────────────────────────────────────
 RUN locale-gen en_US.UTF-8
-ENV LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 
-# Set runtime ENV
-ENV MIX_ENV=prod \
-    PORT=4000
+# ── Runtime ENV ───────────────────────────────────────────────────────
+ENV MIX_ENV=prod PORT=4000 \
+    NODE_PATH=/root/.bun/install/global/node_modules
 
-# Create app user
-RUN groupadd -g 1000 app && \
-    useradd -u 1000 -g app -s /bin/bash -m app
+# ── Create app user ───────────────────────────────────────────────────
+RUN groupadd -g 1000 app && useradd -u 1000 -g app -s /bin/bash -m app
+
+# Copy bun for app user
+RUN cp -r /root/.bun /home/app/.bun && chown -R app:app /home/app/.bun
 
 WORKDIR /app
 
-# Copy release from builder (includes priv directory with static files)
 COPY --from=builder --chown=app:app /app/_build/prod/rel/kg_edu ./
-COPY --from=builder /app/priv/static ./priv/static
-# Ensure uploads directory exists with correct permissions
-# RUN mkdir -p priv/uploads && chown -R app:app priv
+
+RUN mkdir -p priv/uploads && chown -R app:app priv
 
 USER app
+ENV BUN_INSTALL=/home/app/.bun
+ENV PATH="/home/app/.bun/bin:$PATH"
+ENV NODE_PATH=/home/app/.bun/install/global/node_modules
 
 EXPOSE 4000
-
-# Start command
 CMD ["bin/kg_edu", "start"]

@@ -278,7 +278,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
     end
   end
 
-  # ── Python script runner ────────────────────────────────────────────────
+  # ── Script runners ────────────────────────────────────────────────────
 
   def safe_upload(file_path) do
     KgEdu.Agent.OssUpload.upload(file_path)
@@ -291,18 +291,29 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
     script = Path.join(tools_dir, script_name)
 
     if File.exists?(script) do
-      # Set NODE_PATH to include agent-server/node_modules for pptxgenjs
-      agent_node_modules =
-        :kg_edu
-        |> Application.app_dir()
-        |> Path.dirname()
-        |> Path.dirname()
-        |> Path.join("agent-server/node_modules")
-        |> Path.expand()
+      # Build NODE_PATH for pptxgenjs resolution:
+      # 1. System env NODE_PATH (Docker: /usr/local/lib/node_modules)
+      # 2. agent-server/node_modules (dev env)
+      # 3. Global npm prefix
+      node_paths =
+        [
+          System.get_env("NODE_PATH"),
+          # Dev: find agent-server/node_modules relative to the app
+          (Application.app_dir(:kg_edu)
+           |> Path.dirname()
+           |> Path.dirname()
+           |> Path.join("agent-server/node_modules")
+           |> Path.expand()
+           |> then(fn p -> if File.dir?(p), do: p, else: nil end)),
+          # Global npm node_modules
+          "/usr/local/lib/node_modules"
+        ]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(":")
 
-      env = [{"NODE_PATH", agent_node_modules}]
+      env = [{"NODE_PATH", node_paths}]
 
-      case System.cmd("node", [script, json_input], env: env, stderr_to_stdout: true) do
+      case System.cmd("bun", [script, json_input], env: env, stderr_to_stdout: true) do
         {output, 0} ->
           case Jason.decode(output) do
             {:ok, result} -> {:ok, result}
@@ -320,32 +331,6 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       end
     else
       {:error, "JS script not found: #{script}"}
-    end
-  end
-
-  def run_python_script(script_name, json_input) do
-    tools_dir = Application.app_dir(:kg_edu, "priv/skills/document/tools")
-    script = Path.join(tools_dir, script_name)
-
-    if File.exists?(script) do
-      case System.cmd("python3", [script, json_input], stderr_to_stdout: true) do
-        {output, 0} ->
-          case Jason.decode(output) do
-            {:ok, result} -> {:ok, result}
-            {:error, _} -> {:ok, %{"raw" => String.trim(output)}}
-          end
-
-        {output, exit_code} ->
-          error_msg =
-            case Jason.decode(output) do
-              {:ok, %{"error" => msg}} -> msg
-              _ -> String.trim(output)
-            end
-
-          {:error, "Python script '#{script_name}' failed (exit #{exit_code}): #{error_msg}"}
-      end
-    else
-      {:error, "Python script not found: #{script}"}
     end
   end
 end

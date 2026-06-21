@@ -133,7 +133,7 @@ defmodule KgEdu.JidoAgents.ScriptToolFactory do
 
   # ── Private ────────────────────────────────────────────────────────────────
 
-  @runtime_map %{"js" => "node", "py" => "python3"}
+  @runtime_map %{"js" => "bun"}
 
   # Finds the script file and returns {path, runtime_command}
   defp find_script(tools_dir, tool_name) do
@@ -229,12 +229,11 @@ defmodule KgEdu.JidoAgents.ScriptToolFactory do
   defp build_schema_from_json(_props, _required), do: @default_schema_ast
 
     # Generate the full action module AST.
-  # runtime is the command to invoke: "node" or "python3"
+  # runtime is the command to invoke ("bun")
   # json_mode=true → params as JSON argv[2], stdout parsed as JSON
   # json_mode=false → params as positional CLI args, stdout parsed as integer
   defp generate_action_module(tool_name, description, schema_ast, tools_dir, json_mode, runtime) do
-    # Determine script extension from runtime
-    ext = if runtime == "python3", do: "py", else: "js"
+    ext = "js"
     script_path = Path.join(tools_dir, "#{tool_name}.#{ext}")
 
     run_body =

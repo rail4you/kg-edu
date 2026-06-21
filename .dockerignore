@@ -1,0 +1,37 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Elixir build artifacts (not needed in Docker build context)
+backend/kg_edu/_build/
+backend/kg_edu/deps/
+backend/kg_edu/.elixir_ls/
+
+# Node modules (installed inside Docker stages)
+**/node_modules/
+
+# Frontend dist (built inside Docker, not needed from context)
+kg-edu-vite-antd/dist/
+
+# Dev/IDE
+.dev-logs/
+.dev-pids/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deprecated agent (not part of this build)
+agent-server/
+
+# Old docker compose (not needed)
+docker-compose.yml
+
+# Large test results / screenshots
+kg-edu-vite-antd/test-results/
+kg-edu-vite-antd/screenshots/

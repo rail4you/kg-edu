@@ -1,0 +1,2 @@
+## Erlang VM arguments for KgEdu release
+## SSL CA certs configured via rel/env.sh.eex (runtime path resolution)

@@ -81,6 +81,7 @@ defmodule KgEdu.MixProject do
        compile: false,
        depth: 1},
       {:swoosh, "~> 1.16"},
+      {:gen_smtp, "~> 1.2"},
       {:req, "~> 0.5"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0"},
@@ -111,7 +112,19 @@ defmodule KgEdu.MixProject do
       test: ["ash.setup --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind kg_edu", "esbuild kg_edu"],
+      # === 前端 React (Vite) 构建 ===
+      "assets.build_frontend": ["build_frontend"],
+      # === 构建所有静态资源 (React + Tailwind + esbuild) ===
+      "assets.build_all": ["assets.build_frontend", "assets.build"],
+      # === Docker/CI 部署: dist 已预构建, 只做 digest ===
       "assets.deploy": [
+        "tailwind kg_edu --minify",
+        "esbuild kg_edu --minify",
+        "phx.digest"
+      ],
+      # === 本地完整部署: 先构建前端再 digest ===
+      "assets.deploy_full": [
+        "assets.build_frontend",
         "tailwind kg_edu --minify",
         "esbuild kg_edu --minify",
         "phx.digest"

@@ -7,7 +7,11 @@ import Config
 # before starting your production server.
 config :kg_edu, KgEduWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  static_paths: ["static", "uploads"]
+  # 包含 Vite React SPA 构建产物的所有文件类型
+  static_paths: ~w(
+    assets fonts images logo files favicon.ico robots.txt index.html vite.svg
+    .well-known
+  )
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req
@@ -34,12 +38,11 @@ config :kg_edu, KgEduWeb.Endpoint,
   static_url: [path: "/"],
   static: [
     at: "/",
-    from: :my_app,
-    gzip: false,
-    only: ~w(js css images fonts favicon.ico robots.txt index.html)
+    from: :kg_edu,
+    gzip: true,
+    only: ~w(
+      assets fonts images logo files favicon.ico robots.txt index.html vite.svg
+      .well-known
+    )
   ]
 
-# Email API endpoint for production
-# Should be set via environment variable
-config :kg_edu, :email_api,
-  endpoint: System.get_env("EMAIL_API_ENDPOINT", "http://kg-edu-ai-agent:5000/agent/email")

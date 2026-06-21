@@ -49,6 +49,17 @@ config :ash_typescript,
   require_tenant_parameters: true,
   type_mapping_overrides: [
     {KgEdu.Types.JsonMap, "Record<string, any>"}
+  ],
+  # === Lifecycle Hooks: 自动注入 JWT 认证头 ===
+  rpc_action_before_request_hook: "RpcHooks.beforeRequest",
+  rpc_action_after_request_hook: "RpcHooks.afterRequest",
+  rpc_validation_before_request_hook: "RpcHooks.beforeValidationRequest",
+  # Import hooks module into generated ash_rpc.ts
+  import_into_generated: [
+    %{
+      import_name: "RpcHooks",
+      file: "./rpcHooks"
+    }
   ]
 
 config :cinder, default_theme: "modern"
@@ -144,7 +155,7 @@ config :kg_edu, KgEduWeb.Endpoint,
   static_url: [path: "/"],
   static: [
     at: "/",
-    from: :my_app,
+    from: :kg_edu,
     gzip: false,
     only: ~w(js css images fonts favicon.ico robots.txt index.html)
   ],
@@ -170,7 +181,7 @@ config :esbuild,
   version: "0.25.4",
   kg_edu: [
     args:
-      ~w(js/index.tsx js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
@@ -228,8 +239,6 @@ config :jido_ai,
     capable: "alibaba_cn:qwen-max"
   }
 
-# Email API endpoint configuration
-config :kg_edu, :email_api, endpoint: "http://localhost:5000/agent/email"
 
 # Waffle configuration for file uploads
 # config :waffle,

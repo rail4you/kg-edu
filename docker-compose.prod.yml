@@ -22,7 +22,7 @@ services:
     networks:
       - kg-edu-network
 
-  # Elixir Backend
+  # Elixir Phoenix Backend (统一服务：API + React SPA 静态文件)
   backend:
     image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest
     container_name: kg-edu-backend
@@ -35,6 +35,8 @@ services:
       - PORT=4000
       - PHX_SERVER=true
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - REACT_TOKEN_SECRET=${REACT_TOKEN_SECRET:-kg-edu-local-react-token-secret-change-in-prod-32}
     ports:
       - "4000:4000"
     depends_on:
@@ -43,100 +45,25 @@ services:
     volumes:
       - backend_uploads:/app/priv/uploads
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/"]
       interval: 30s
       timeout: 10s
       retries: 3
     networks:
       - kg-edu-network
 
-  # AI Agent Service (Bun + Pi SDK)
-  ai-agent:
-    image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_agent:latest
-    container_name: kg-edu-ai-agent
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - AGENT_PORT=5050
-      - KG_EDU_BACKEND_URL=http://backend:4000
-      - QWEN_API_KEY=${QWEN_API_KEY}
-      - QWEN_BASE_URL=${QWEN_BASE_URL}
-      - QWEN_MODEL=${QWEN_MODEL:-qwen-plus}
-      # Pi Agent model configuration (for exercise generation via Pi SDK)
-      - PI_AGENT_MODEL_PROVIDER=${PI_AGENT_MODEL_PROVIDER:-qwen}
-      - PI_AGENT_MODEL_ID=${PI_AGENT_MODEL_ID:-qwen-plus}
-      # OSS
-      - OSS_BUCKET=${OSS_BUCKET:-kg-edu}
-      - OSS_REGION=${OSS_REGION:-cn-beijing}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-oss-cn-beijing.aliyuncs.com}
-      - OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}
-      - OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}
-    ports:
-      - "5050:5050"
-    depends_on:
-      - backend
-    volumes:
-      # Mount Pi agent model config with API keys
-      - ./pi-config/models.json:/root/.pi/agent/models.json:ro
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5050/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - kg-edu-network
-
-  # Frontend (Bun + Vite)
-  frontend:
-    image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_frontend:latest
-    container_name: kg-edu-frontend
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      # AI Agent URL - 使用 Docker 内部网络地址
-      - AGENT_URL=http://kg-edu-ai-agent:5050/agui
-      # Backend URL for RPC calls
-      - KG_EDU_BACKEND_URL=http://backend:4000
-      # Agent API base URL for skill calls (exercise generation etc.)
-      - KG_EDU_AGENT_API_BASE_URL=http://kg-edu-ai-agent:5050
-      # Pi Agent mode
-      - ASSISTANT_AGENT_MODE=pi
-      # Pi Agent model configuration
-      - PI_AGENT_MODEL_PROVIDER=zai
-      - PI_AGENT_MODEL_ID=glm-5.1
-      # ZAI API Key (read by Pi SDK for provider "zai")
-      - ZAI_API_KEY=${ZAI_API_KEY}
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-      - ai-agent
-    volumes:
-      # Mount Pi agent model config with API keys
-      - ./pi-config/models.json:/root/.pi/agent/models.json:ro
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - kg-edu-network
-
-  # Nginx Reverse Proxy
+  # Nginx 反向代理（可选：用于 TLS 终止和负载均衡）
   nginx:
     image: nginx:alpine
     container_name: kg-edu-nginx
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - backend
-      - frontend
     networks:
       - kg-edu-network
 

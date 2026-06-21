@@ -18,12 +18,7 @@
  * {"filePath": "/tmp/xxx.pptx", "slideCount": 5}
  */
 
-// Add agent-server node_modules to require path for pptxgenjs
-const agentModules = "../../../agent-server/node_modules";
-try { require.resolve(agentModules + "/pptxgenjs"); } catch(e) {}
-process.env.NODE_PATH = (process.env.NODE_PATH || "") + ":" + require("path").resolve(__dirname, agentModules);
-require("module").Module._initPaths();
-
+// pptxgenjs is resolved via NODE_PATH (set by document_tools.ex)
 const PptxGenJS = require("pptxgenjs");
 const path = require("path");
 const fs = require("fs");

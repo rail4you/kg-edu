@@ -87,6 +87,7 @@ defmodule KgEduWeb.Router do
 
   scope "/api", KgEduWeb do
     pipe_through :api
+    get "/health", PageController, :health
     post "/chat/stream", ChatController, :stream_message
     get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
     post "/session/find-tenants", SessionController, :find_tenants
@@ -235,6 +236,7 @@ defmodule KgEduWeb.Router do
 
   scope "/", KgEduWeb do
     pipe_through :browser
+    get "/health", PageController, :health
     get "/*path", PageController, :index
 
     # get "/", PageController, :home
