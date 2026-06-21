@@ -105,6 +105,75 @@ defmodule KgEduWeb.GenerationController do
   end
 
   @doc """
+  POST /api/curriculum/jobs
+  Create an async curriculum generation job.
+  """
+  def create_curriculum_job(conn, params) do
+    tenant = extract_tenant(conn, params)
+    major_id = params["majorId"]
+
+    if is_nil(tenant) or is_nil(major_id) do
+      json(conn, %{success: false, message: "tenant 和 majorId 是必需参数"})
+    else
+      job_id = KgEdu.Agent.JobManager.create(tenant, major_id)
+      KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: params["userId"])
+
+      # Update status to running
+      KgEdu.Agent.JobManager.update(job_id, %{status: "running", message: "正在生成课程体系..."})
+
+      # Run generation async
+      Task.start(fn ->
+        result =
+          KgEdu.Agent.Tools.GenerateCurriculum.run(%{
+            majorId: major_id,
+            customPrompt: params["customPrompt"]
+          }, %{})
+
+        case result do
+          {:ok, output} ->
+            KgEdu.Agent.JobManager.update(job_id, %{
+              status: "succeeded",
+              message: output.result,
+              result: %{
+                curriculumId: output[:curriculumId],
+                title: output[:title],
+                markdownPreview: output[:content],
+                downloadUrl: output[:downloadUrl] || ""
+              }
+            })
+
+          {:error, reason} ->
+            KgEdu.Agent.JobManager.update(job_id, %{
+              status: "failed",
+              message: reason,
+              error: reason
+            })
+        end
+      end)
+
+      json(conn, %{
+        success: true,
+        message: "任务已创建",
+        data: %{jobId: job_id, status: "queued"}
+      })
+    end
+  end
+
+  @doc """
+  GET /api/curriculum/jobs/:jobId
+  Get the status of a curriculum generation job.
+  """
+  def get_curriculum_job(conn, %{"jobId" => job_id}) do
+    case KgEdu.Agent.JobManager.get(job_id) do
+      {:ok, job} ->
+        json(conn, %{success: true, data: job})
+
+      {:error, :not_found} ->
+        conn |> put_status(404) |> json(%{success: false, message: "任务不存在"})
+    end
+  end
+
+  @doc """
   POST /api/curriculum/upload
   Upload a curriculum document file to OSS and update the design record.
   """

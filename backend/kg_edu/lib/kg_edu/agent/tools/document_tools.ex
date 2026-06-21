@@ -145,7 +145,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
         Logger.info("[DocumentTools] Generating DOCX '#{file_name}' (#{String.length(content)} chars)")
 
-        case KgEdu.Agent.Tools.DocumentTools.run_python_script("generate_docx.py", Jason.encode!(input)) do
+        case KgEdu.Agent.Tools.DocumentTools.run_js_script("generate_docx.js", Jason.encode!(input)) do
           {:ok, %{"filePath" => file_path}} ->
             file_size = get_file_size(file_path)
 

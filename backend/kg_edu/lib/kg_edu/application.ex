@@ -31,6 +31,9 @@ defmodule KgEdu.Application do
       KgEdu.Agent.SessionContext
     ]
 
+    # Start ETS-based job manager for async curriculum generation
+    KgEdu.Agent.JobManager.start()
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: KgEdu.Supervisor]

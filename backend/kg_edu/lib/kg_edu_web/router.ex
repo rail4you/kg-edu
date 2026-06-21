@@ -107,10 +107,12 @@ defmodule KgEduWeb.Router do
     post "/import-chapters", ImportController, :import_chapters
   end
 
-  # Curriculum document upload
+  # Curriculum document upload + async jobs
   scope "/api/curriculum", KgEduWeb do
     pipe_through :api
     post "/upload", GenerationController, :upload_curriculum_document
+    post "/jobs", GenerationController, :create_curriculum_job
+    get "/jobs/:jobId", GenerationController, :get_curriculum_job
   end
 
   # CopilotKit/Pi SDK compatible chat endpoint
