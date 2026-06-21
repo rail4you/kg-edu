@@ -183,3 +183,50 @@
 - `backend/kg_edu/priv/models_dev/` — 开发环境 LLM 模型配置
 - Vite proxy 中 `:3000` 的 `/api/copilotkit` 转发（可能已不需要）
 - `agent-server/` 目录被 `.gitignore` 忽略了吗？需确认 git 状态
+
+---
+
+## 执行状态 (2026-06-21)
+
+### ✅ 已完成
+
+| 批次 | 内容 | 减少 |
+|---|---|---|
+| 第一批 | 删除 agent-server/ (全部 14 条路由已迁移) | ✅ |
+| 第一批 | 清理 docker-compose.yml (删除 old nextjs-ts) | ✅ |
+| 第一批 | 未使用变量加 `_` 前缀 (~70 处) | ✅ |
+| 第一批 | 删除未使用 imports/aliases (8 处) | ✅ |
+| 第一批 | `Logger.warn` → `Logger.warning` | ✅ |
+| 第一批 | `@doc` 删除/转注释 (excel_import, chat_controller) | ✅ |
+| 第一批 | `length()` → pattern match (3 处) | ✅ |
+| 第一批 | `0..-5` → `0..-5//-1` | ✅ |
+| 第一批 | 删除 resource.ex 重复函数定义 | ✅ |
+| 第一批 | Clauses 分组 (map_row_to_attributes) | ✅ |
+| 第一批 | 删除确认未使用函数 (hash_password/2 等) | ✅ |
+| 第二批 | 删除 OPML parser 未使用函数 (8 个函数) | ✅ |
+| 第三批 | 修复 API 断裂: Ash.Changeset.fetch_context | ✅ |
+| 第三批 | 修复 API 断裂: ExcelParser.parse_from_base64/1→/2 | ✅ |
+| 第三批 | 修复 API 断裂: File.write 模块解析 | ✅ |
+| 第三批 | 修复 API 断裂: StudentKnowledgeMastery 方法名 | ✅ |
+| 第三批 | 修复 API 断裂: LearningRecommendation 方法名 | ✅ |
+| 第三批 | 修复 API 断裂: Resource.list_knowledge_resources! | ✅ |
+
+### ⚠️ 保留（需要业务决策）
+
+| 类别 | 数量 | 说明 |
+|---|---|---|
+| Mux 库未安装 | 3 | `video_uploader.ex`、`upload_video_controller.ex` 引用 Mux，但依赖未安装 |
+| 未使用函数（死代码链） | ~19 | resource.ex 和 opml_parser.ex 中的遗留导入 pipeline 函数 |
+| `check_in_session.ex` get_by_token | 1 | Ash define 与手动定义冲突，纯 cosmetic |
+| `ash_migration_manager.ex` map update | 1 | 类型推断问题 |
+| 永不匹配 clause | 1 | xmind_parser Base.decode64 pattern |
+| 永不匹配 pattern | 1 | recommendation_api |
+| `NestedHierarchyRpc.read/4` | 1 | Ash.ManualRead 回调未实现 |
+| `unused import Ash.Query` | 1 | `^` 操作符需要 import（编译器误报） |
+
+### 最终指标
+
+- **初始**: 140 条警告
+- **现在**: ~40 条（其中 ~19 条是死代码，~3 条是 Mux 未安装，其余是 cosmetic/架构性问题）
+- **错误**: 0
+- **编译**: ✅ 通过
