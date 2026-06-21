@@ -205,11 +205,6 @@ defmodule KgEduWeb.Router do
     forward "/", KgEduWeb.AshJsonApiRouter
   end
 
-  scope "/webhooks", KgEduWeb do
-    pipe_through :api
-    post "/mux", UploadVideoController, :webhook
-  end
-
   # Other scopes may use custom stacks.
   scope "/api", KgEduWeb do
     pipe_through :api
@@ -228,7 +223,6 @@ defmodule KgEduWeb.Router do
     get "/files/template", FileUploadController, :download_template
     post "/files/import-xmind", FileUploadController, :import_xmind
     post "/files/import-excel", FileUploadController, :import_excel
-    post "/videos/upload", UploadVideoController, :direct_upload
     post "/videos/upload-waffle", UploadVideoController, :upload
     post "/videos/:video_id/link-chapter", UploadVideoController, :link_to_chapter
     post "/videos/:video_id/unlink-chapter", UploadVideoController, :unlink_from_chapter
