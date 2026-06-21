@@ -9,8 +9,6 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND_DIR="$PROJECT_ROOT/kg-edu-vite-antd"
 BACKEND_DIR="$PROJECT_ROOT/backend/kg_edu"
-AGENT_DIR="$PROJECT_ROOT/agent-server"
-AGENT_SERVER_DIR="$PROJECT_ROOT/agent-server"
 
 # PID文件目录
 PID_DIR="$PROJECT_ROOT/.dev-pids"
@@ -19,7 +17,6 @@ LOG_DIR="$PROJECT_ROOT/.dev-logs"
 # 服务名称
 FRONTEND="frontend"
 BACKEND="backend"
-AGENT="agent"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -96,7 +93,7 @@ cleanup_orphan_processes() {
     log_info "清理残留进程..."
 
     # 1. 清理僵尸 bun dev 进程（UE 状态的进程）
-    local zombie_pids=$(ps aux | grep -E "bun.*(run dev|run dev:server|--watch server\.ts)" | grep -v grep | grep -v Craft | awk '{print $2}')
+    local zombie_pids=$(ps aux | grep -E "bun.*run dev" | grep -v grep | grep -v Craft | awk '{print $2}')
     if [ -n "$zombie_pids" ]; then
         echo "$zombie_pids" | xargs kill -9 2>/dev/null || true
         log_info "  已清理残留 bun dev 进程"
@@ -104,7 +101,7 @@ cleanup_orphan_processes() {
 
     # 2. 清理占用开发端口的进程
     local port_pids=""
-    for port in 8081 3000 4000 5000 5001 5050; do
+    for port in 8081 4000; do
         local pids=$(lsof -ti :$port 2>/dev/null || true)
         if [ -n "$pids" ]; then
             port_pids="$port_pids $pids"
@@ -112,7 +109,7 @@ cleanup_orphan_processes() {
     done
     if [ -n "$port_pids" ]; then
         echo "$port_pids" | tr ' ' '\n' | sort -u | xargs kill -9 2>/dev/null || true
-        log_info "  已清理端口占用进程 (8081, 3000, 4000, 5000, 5001)"
+        log_info "  已清理端口占用进程 (8081, 4000)"
     fi
 
     # 3. 清理孤立的 vite/esbuild 进程（不在当前 PID 树下的）
@@ -170,11 +167,9 @@ stop_service() {
 
 stop_frontend() {
     stop_service $FRONTEND "前端"
-    # 额外清理 vite 和 dev:server 子进程
+    # 额外清理 vite 子进程
     local vite_pids=$(ps aux | grep -E "vite.*8081" | grep -v grep | awk '{print $2}')
     [ -n "$vite_pids" ] && echo "$vite_pids" | xargs kill -9 2>/dev/null || true
-    local devsrv_pids=$(ps aux | grep "bun.*--watch server\.ts" | grep "$FRONTEND_DIR" | grep -v grep | awk '{print $2}')
-    [ -n "$devsrv_pids" ] && echo "$devsrv_pids" | xargs kill -9 2>/dev/null || true
 }
 
 stop_backend() {
@@ -186,17 +181,10 @@ stop_backend() {
     [ -n "$esbuild_pids" ] && echo "$esbuild_pids" | xargs kill -9 2>/dev/null || true
 }
 
-stop_agent() {
-    stop_service $AGENT "AI Agent"
-    local bun_agent_pids=$(ps aux | grep "bun.*server\.ts" | grep "$AGENT_DIR" | grep -v grep | awk '{print $2}')
-    [ -n "$bun_agent_pids" ] && echo "$bun_agent_pids" | xargs kill -9 2>/dev/null || true
-}
-
 stop_all() {
     log_info "停止所有服务..."
     stop_frontend
     stop_backend
-    stop_agent
     log_success "所有服务已停止"
 }
 
@@ -218,35 +206,21 @@ start_frontend() {
     # 清空日志
     > "$LOG_DIR/$FRONTEND.log"
 
-    # 启动 API Server (bun --watch server.ts) 在后台
-    bun --watch server.ts >> "$LOG_DIR/$FRONTEND.log" 2>&1 &
-    disown $!
-    local api_pid=$!
-
-    # 使用 npx vite 而不是 bun run dev，避免 bun 导致的僵尸进程问题
+    # Vite Dev Server
     npx vite --port 8081 >> "$LOG_DIR/$FRONTEND.log" 2>&1 &
     disown $!
     local vite_pid=$!
 
-    # 记录主 PID（vite 进程）
     echo $vite_pid > "$PID_DIR/$FRONTEND.pid"
-    # 同时记录 api server PID 用于清理
-    echo $api_pid > "$PID_DIR/${FRONTEND}-api.pid"
 
     sleep 3
 
-    # 验证两个服务都启动成功
     local vite_ok=false
-    local api_ok=false
 
     if kill -0 "$vite_pid" 2>/dev/null; then
         vite_ok=true
     fi
-    if kill -0 "$api_pid" 2>/dev/null; then
-        api_ok=true
-    fi
 
-    # 也检查端口
     if ! $vite_ok; then
         local vp=$(lsof -ti :8081 2>/dev/null || true)
         if [ -n "$vp" ]; then
@@ -254,20 +228,12 @@ start_frontend() {
             echo "$vp" | head -1 > "$PID_DIR/$FRONTEND.pid"
         fi
     fi
-    if ! $api_ok; then
-        local ap=$(lsof -ti :3000 2>/dev/null || true)
-        if [ -n "$ap" ]; then
-            echo "$ap" | head -1 > "$PID_DIR/${FRONTEND}-api.pid"
-        fi
-    fi
 
     if $vite_ok; then
         log_success "前端服务已启动"
         log_info "  - Vite Dev Server: http://localhost:8081 (PID: $(cat $PID_DIR/$FRONTEND.pid))"
-        log_info "  - API Server: http://localhost:3000"
     else
         log_error "前端服务启动失败，请查看日志: $LOG_DIR/$FRONTEND.log"
-        log_info "  尝试运行: $0 cleanup 后重新启动"
         return 1
     fi
 }
@@ -319,47 +285,10 @@ start_backend() {
     fi
 }
 
-# 启动 AI Agent 服务
-start_agent() {
-    log_info "启动 AI Agent 服务 (Pi SDK)..."
-    if is_running $AGENT; then
-        log_warn "AI Agent 服务已在运行中 (PID: $(get_pid $AGENT))"
-        return 0
-    fi
-
-    init_dirs
-    cd "$AGENT_SERVER_DIR"
-
-    # 清空日志
-    > "$LOG_DIR/$AGENT.log"
-
-    # 加载 .env 文件中的环境变量（覆盖可能存在的 shell 环境变量，避免旧 key 干扰）
-    if [ -f "$AGENT_SERVER_DIR/.env" ]; then
-      set -a
-      source "$AGENT_SERVER_DIR/.env"
-      set +a
-    fi
-
-    bun run src/server.ts >> "$LOG_DIR/$AGENT.log" 2>&1 &
-    disown $!
-    local pid=$!
-    echo $pid > "$PID_DIR/$AGENT.pid"
-
-    sleep 3
-    if is_running $AGENT; then
-        log_success "AI Agent 服务已启动 (PID: $pid)"
-        log_info "  - Agent Server: http://localhost:5050"
-    else
-        log_error "AI Agent 服务启动失败，请查看日志: $LOG_DIR/$AGENT.log"
-        return 1
-    fi
-}
-
 # 启动所有服务
 start_all() {
     log_info "启动所有服务..."
     start_backend
-    start_agent
     start_frontend
     log_success "所有服务已启动"
 }
@@ -400,7 +329,6 @@ status_all() {
     echo "=========================================="
     status_service $FRONTEND "前端 (Frontend)" 8081
     status_service $BACKEND "后端 (Backend)" 4000
-    status_service $AGENT "AI Agent" 5000
     echo "=========================================="
 }
 
@@ -471,9 +399,8 @@ show_help() {
     echo "  migrate              执行数据库迁移 (后端专用)"
     echo ""
     echo "服务名称:"
-    echo "  frontend  - 前端服务 (Vite + API Server)"
-    echo "  backend   - 后端服务 (Phoenix)"
-    echo "  agent     - AI Agent 服务 (Bun + Express)"
+    echo "  frontend  - 前端服务 (Vite)"
+    echo "  backend   - 后端服务 (Phoenix + AI Agent)"
     echo "  all       - 所有服务"
     echo ""
     echo "示例:"
@@ -499,7 +426,6 @@ main() {
             case $service in
                 frontend) start_frontend ;;
                 backend) start_backend ;;
-                agent) start_agent ;;
                 all) start_all ;;
                 *) log_error "未知服务: $service"; show_help; exit 1 ;;
             esac
@@ -508,7 +434,6 @@ main() {
             case $service in
                 frontend) stop_frontend ;;
                 backend) stop_backend ;;
-                agent) stop_agent ;;
                 all) stop_all ;;
                 *) log_error "未知服务: $service"; show_help; exit 1 ;;
             esac
@@ -517,7 +442,6 @@ main() {
             case $service in
                 frontend) stop_frontend; start_frontend ;;
                 backend) stop_backend; start_backend ;;
-                agent) stop_agent; start_agent ;;
                 all) stop_all; cleanup_orphan_processes; start_all ;;
                 *) log_error "未知服务: $service"; show_help; exit 1 ;;
             esac
@@ -527,7 +451,7 @@ main() {
             ;;
         logs)
             if [ -z "$service" ] || [ "$service" = "all" ]; then
-                log_error "请指定服务名称: frontend, backend 或 agent"
+                log_error "请指定服务名称: frontend 或 backend"
                 exit 1
             fi
             view_logs $service
