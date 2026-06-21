@@ -15,7 +15,11 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     use Jido.Action,
       name: "GeneratePowerPointWithShapeCrawler",
-      description: "生成PPT/PPTX演示文稿课件。用户提到PPT、课件、幻灯片时必须调用。请先在userRequirements中写入详细的幻灯片内容（用\\n分隔每条要点），包括知识点核心概念、关键要点、案例等。",
+      description: "生成PPT/PPTX演示文稿课件。用户提到PPT、课件、幻灯片时必须调用。" <>
+        "请在userRequirements中按以下结构组织幻灯片内容（用真实换行分隔）：" <>
+        "第一行=课程概述(1句话)，后续每4-8行用空行分隔为一张幻灯片，" <>
+        "每张幻灯片格式：标题行\\n要点1\\n要点2\\n要点3（标题后换行写3-6个要点）。" <>
+        "示例：\\n平面构成概述\\n核心概念：二维空间组合\\n三大要素：点线面\\n基本原理：对称均衡\\n\\n点的形态\\n位置感与聚集性\\n作为最小视觉单位\\n在版式中的导向作用",
       schema:
         Zoi.object(%{
           courseName: Zoi.string(description: "课程名称"),
@@ -77,49 +81,84 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
     end
 
     defp build_slides(course_name, knowledge_name, knowledge_id, user_req) do
-      # Primary content: userRequirements (LLM-generated slide content)
-      req_bullets = String.split(user_req || "", "\n") |> Enum.reject(&(&1 == ""))
+      # Split userRequirements by paragraphs (double-newline) → each paragraph = one slide
+      paragraphs = split_paragraphs(user_req || "")
 
       # Supplementary: knowledge resource metadata
       knowledge_bullets = get_knowledge_content(knowledge_id)
 
-      # Merge: LLM content first, then knowledge data as enrichment
-      all_bullets = req_bullets ++ knowledge_bullets |> Enum.uniq()
-
-      overview_content =
-        if req_bullets != [] do
-          "#{course_name}课程知识体系与教学目标"
-        else
-          "#{course_name}"
-        end
-
+      # Build overview slide
       slides = [
         %{
           "title" => "课程概览",
-          "content" => overview_content,
-          "bullets" => Enum.take(all_bullets, 5)
+          "content" => "#{course_name}课程知识体系与教学目标",
+          "bullets" => Enum.take(knowledge_bullets, 5)
         }
       ]
 
-      if knowledge_name do
-        detail_bullets =
-          if req_bullets != [] do
-            # Use remaining LLM content for the detail slide
-            Enum.drop(all_bullets, 5) |> Enum.take(10)
-          else
-            Enum.take(knowledge_bullets, 10)
-          end
+      # Build content slides from paragraphs
+      if paragraphs != [] do
+        content_slides =
+          paragraphs
+          |> Enum.with_index()
+          |> Enum.map(fn {para, idx} ->
+            lines = String.split(para, "\n") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
 
-        slides = slides ++ [
-          %{
-            "title" => knowledge_name,
-            "content" => "知识点详解：#{knowledge_name}",
-            "bullets" => detail_bullets
-          }
-        ]
+            case lines do
+              [title | body_lines] when body_lines != [] ->
+                %{
+                  "title" => title,
+                  "content" => title,
+                  "bullets" => Enum.take(body_lines, 6)
+                }
+
+              [title] ->
+                %{
+                  "title" => title,
+                  "content" => title,
+                  "bullets" => []
+                }
+
+              [] ->
+                # Empty paragraph — skip
+                nil
+            end
+          end)
+          |> Enum.reject(&is_nil/1)
+
+        slides = slides ++ content_slides
+
+      # If no paragraphs but knowledge_name exists, add a detail slide
+      else
+        if knowledge_name do
+          detail_bullets =
+            if knowledge_bullets != [] do
+              Enum.take(knowledge_bullets, 8)
+            else
+              ["请参考课程资料获取详细内容"]
+            end
+
+          slides = slides ++ [
+            %{
+              "title" => knowledge_name,
+              "content" => "知识点详解：#{knowledge_name}",
+              "bullets" => detail_bullets
+            }
+          ]
+        end
       end
 
       slides
+    end
+
+    defp split_paragraphs(text) do
+      # Normalize \\n escape sequences to real newlines
+      normalized = String.replace(text, "\\n", "\n")
+      # Split by double-newline (paragraph boundaries)
+      normalized
+      |> String.split("\n\n")
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
     end
 
     defp get_knowledge_content(nil), do: []
