@@ -33,7 +33,7 @@ defmodule KgEdu.TenantManager do
 
   Note: user_attrs must include password_confirmation for registration
   """
-  def create_user_in_tenant(user_attrs, tenant_id, current_user) do
+  def create_user_in_tenant(user_attrs, _tenant_id, current_user) do
     # Verify current user is super admin
     if current_user.role == :super_admin do
       KgEdu.Accounts.User.register_user_in_tenant(user_attrs)

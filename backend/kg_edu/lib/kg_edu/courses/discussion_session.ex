@@ -9,8 +9,6 @@ defmodule KgEdu.Courses.DiscussionSession do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
-  import Ash.Query
-
   postgres do
     table("discussion_sessions")
     repo(KgEdu.Repo)

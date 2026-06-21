@@ -133,11 +133,6 @@ defmodule KgEdu.Agent.OssUpload do
     name
   end
 
-  defp encoded_path(key) do
-    # URL-encode each path segment so Finch/Mint accepts non-ASCII chars
-    key |> String.split("/") |> Enum.map_join("/", &URI.encode_www_form/1)
-  end
-
   defp format_gmt do
     # RFC 1123 GMT format: "Sun, 21 Jun 2026 03:00:00 GMT"
     now = DateTime.utc_now()

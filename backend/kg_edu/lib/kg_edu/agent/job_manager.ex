@@ -44,9 +44,12 @@ defmodule KgEdu.Agent.JobManager do
         now = DateTime.utc_now() |> DateTime.to_iso8601()
         updated = Map.merge(job, Map.put(updates, :updatedAt, now))
 
-        if updates[:status] in ["succeeded", "failed"] do
-          updated = Map.put(updated, :completedAt, now)
-        end
+        updated =
+          if updates[:status] in ["succeeded", "failed"] do
+            Map.put(updated, :completedAt, now)
+          else
+            updated
+          end
 
         :ets.insert(@table_name, {job_id, updated})
         :ok

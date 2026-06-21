@@ -253,7 +253,7 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
         resources
 
       _ ->
-        Logger.warn("Failed to fetch knowledge resources")
+        Logger.warning("Failed to fetch knowledge resources")
         []
     end
   end
@@ -585,7 +585,7 @@ defmodule KgEdu.Knowledge.RecommendationEngine do
   defp has_resources?([]), do: false
   defp has_resources?(list) when is_list(list), do: length(list) > 0
 
-  defp generate_weakness_reason(mastery_or_resource, severity, knowledge_resource, nil) do
+  defp generate_weakness_reason(_mastery_or_resource, severity, knowledge_resource, nil) do
     # No mastery data - this is from activity logs
     base_msg = "You haven't studied '#{knowledge_resource.name}' yet."
 

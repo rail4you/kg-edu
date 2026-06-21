@@ -144,13 +144,13 @@ defmodule KgEdu.MigrationManager do
 
     case Ecto.Migrator.with_repo(Repo, fn repo ->
            # Create a temporary repo configuration with the tenant schema
-           tenant_config = Keyword.put(repo.config(), :schema, tenant_schema)
+           _tenant_config = Keyword.put(repo.config(), :schema, tenant_schema)
 
            # This is a simplified approach - in practice you might need
            # to use AshPostgres.Migration utilities for proper tenant migrations
            Ecto.Migrator.run(repo, migrations_path, :up, all: true, prefix: tenant_schema)
          end) do
-      {:ok, version, migrations} ->
+      {:ok, _version, _migrations} ->
         :ok
 
       {:error, reason} ->

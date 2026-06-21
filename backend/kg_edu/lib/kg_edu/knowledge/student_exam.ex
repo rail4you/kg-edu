@@ -10,6 +10,7 @@ defmodule KgEdu.Knowledge.StudentExam do
   import Ash.Query
   import Ash.Changeset
 
+
   postgres do
     table "student_exams"
     repo KgEdu.Repo
@@ -549,7 +550,7 @@ defmodule KgEdu.Knowledge.StudentExam do
         else: answer_query
 
     case Ash.read(answer_query, tenant: tenant) do
-      {:ok, existing_answers} when length(existing_answers) > 0 ->
+      {:ok, [_ | _]} ->
         # Answers already exist
         :ok
 
@@ -568,7 +569,7 @@ defmodule KgEdu.Knowledge.StudentExam do
     query = if tenant, do: Ash.Query.set_context(query, %{tenant: tenant}), else: query
 
     case Ash.read(query, load: [:exercise], tenant: tenant) do
-      {:ok, exam_exercises} when length(exam_exercises) > 0 ->
+      {:ok, [_ | _] = exam_exercises} ->
         results =
           Enum.reduce_while(exam_exercises, [], fn exam_exercise, acc ->
             case Ash.create(

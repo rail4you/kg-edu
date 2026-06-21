@@ -162,7 +162,7 @@ defmodule KgEdu.MajorAnalysis.JobPosition do
     end
   end
 
-  defp call_ai_job_analysis(position, _tenant) do
+  defp call_ai_job_analysis(_position, _tenant) do
     # TODO: Call actual AI Agent service
     # For now, return a placeholder analysis
     {:ok, Jason.encode!(%{

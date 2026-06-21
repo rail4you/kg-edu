@@ -23,7 +23,7 @@ defmodule KgEduWeb.Plugs.LoadActor do
     case AshAuthentication.Jwt.peek(token) do
       {:ok, %{"tenant" => tenant, "sub" => subject}} when not is_nil(tenant) and not is_nil(subject) ->
         {:ok, %{"tenant" => tenant, "sub" => subject}}
-      {:ok, claims} ->
+      {:ok, _claims} ->
         {:error, :missing_fields}
       {:error, _} = error ->
         error

@@ -65,7 +65,7 @@ defmodule KgEduWeb.ImportController do
         {:ok, _data} ->
           KgEdu.Agent.SessionContext.put(tenant: tenant)
           base64_data = extract_base64(params["file_data"])
-          file_name = params["file_name"] || "chapters.xlsx"
+          _file_name = params["file_name"] || "chapters.xlsx"
 
           try do
             result =

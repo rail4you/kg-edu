@@ -35,7 +35,7 @@ defmodule KgEdu.KnowledgeHierarchyHelper do
     |> Ash.Query.sort(inserted_at: :asc)
     |> Ash.read(authorize?: false, tenant: tenant)
     |> case do
-      {:ok, cells} when length(cells) > 0 ->
+      {:ok, [_ | _] = cells} ->
         IO.puts("Found #{length(cells)} cells under unit #{unit_id}")
 
         # Analyze cell names to determine hierarchy

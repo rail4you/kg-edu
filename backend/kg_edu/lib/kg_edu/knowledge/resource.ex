@@ -8,8 +8,6 @@ defmodule KgEdu.Knowledge.Resource do
 
   require Ash.Query
   require Logger
-  import Ecto.Query
-  import Logger, only: [error: 1, info: 1]
 
   postgres do
     table("knowledge_resources")
@@ -2105,14 +2103,14 @@ defmodule KgEdu.Knowledge.Resource do
     col4 = safe_get(row, 4)  # E列 - 五级知识点
     col5 = safe_get(row, 5)  # F列 - 六级知识点
     col6 = safe_get(row, 6)  # G列 - 七级知识点
-    col7 = safe_get(row, 7)  # H列 - 前置知识点
-    col8 = safe_get(row, 8)  # I列 - 后置知识点
-    col9 = safe_get(row, 9)  # J列 - 关联知识点
-    col10 = safe_get(row, 10) # K列 - 标签
-    col11 = safe_get(row, 11) # L列 - 认知维度
-    col12 = safe_get(row, 12) # M列 - 分类
-    col13 = safe_get(row, 13) # N列 - 教学目标
-    col14 = safe_get(row, 14) # O列 - 知识点说明
+    _col7 = safe_get(row, 7)  # H列 - 前置知识点
+    _col8 = safe_get(row, 8)  # I列 - 后置知识点
+    _col9 = safe_get(row, 9)  # J列 - 关联知识点
+    _col10 = safe_get(row, 10) # K列 - 标签
+    _col11 = safe_get(row, 11) # L列 - 认知维度
+    _col12 = safe_get(row, 12) # M列 - 分类
+    _col13 = safe_get(row, 13) # N列 - 教学目标
+    _col14 = safe_get(row, 14) # O列 - 知识点说明
 
     levels = [col0, col1, col2, col3, col4, col5, col6]
     {knowledge_name, level_index} = find_deepest_level(levels)
@@ -2131,7 +2129,7 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   # 创建一级知识点 (subject)
-  defp create_subject_level(row, col0, acc) do
+  defp create_subject_level(_row, col0, acc) do
     name = safe_strip(col0)
     if is_nil(name) or name == "" do
       {:ok, acc}
@@ -2165,7 +2163,7 @@ defmodule KgEdu.Knowledge.Resource do
   end
 
   # 创建二级知识点 (knowledge_unit)，挂到 subject 下
-  defp create_unit_level(row, col1, acc) do
+  defp create_unit_level(_row, col1, acc) do
     name = safe_strip(col1)
     if is_nil(name) or name == "" or is_nil(acc.current_subject_id) do
       {:ok, acc}
@@ -2311,7 +2309,7 @@ defmodule KgEdu.Knowledge.Resource do
     ensure_relation_types_exist(tenant)
     
     # 收集所有关系
-    relations_to_create = []
+    _relations_to_create = []
     
     Enum.each(data_rows, fn row ->
       col0 = safe_get(row, 0)
@@ -2641,36 +2639,6 @@ defmodule KgEdu.Knowledge.Resource do
     acc
   end
 
-  defp safe_get(list, index) do
-    if index < length(list), do: Enum.at(list, index), else: nil
-  end
-
-  defp safe_strip(nil), do: nil
-  defp safe_strip(val) when is_binary(val), do: String.trim(val)
-  defp safe_strip(val), do: val
-
-  defp find_deepest_level(levels) do
-    filled_levels =
-      levels
-      |> Enum.with_index()
-      |> Enum.filter(fn {name, _idx} ->
-        name = safe_strip(name)
-        name != nil and name != ""
-      end)
-
-    case filled_levels do
-      [] -> {nil, -1}
-      [_last] = one -> 
-        last = elem(List.first(one), 0)
-        idx = elem(List.first(one), 1)
-        {safe_strip(last), idx}
-      multiple ->
-        last = elem(List.last(multiple), 0)
-        idx = elem(List.last(multiple), 1)
-        {safe_strip(last), idx}
-    end
-  end
-
   defp get_or_create_subject_for_level(nil, acc), do: {:ok, nil, acc}
   defp get_or_create_subject_for_level(subject_name, acc) do
     subject_name = safe_strip(subject_name)
@@ -2776,7 +2744,7 @@ defmodule KgEdu.Knowledge.Resource do
          teaching_objective,
          level_index,
          subject_id,
-         unit_id,
+         _unit_id,
          acc
        ) do
     name = safe_strip(name)
@@ -2835,23 +2803,6 @@ defmodule KgEdu.Knowledge.Resource do
         IO.inspect("Error checking knowledge existence: #{inspect(reason)}")
         {:ok, nil, acc}
     end
-  end
-
-  defp parse_importance_from_tags(nil), do: :normal
-  defp parse_importance_from_tags(tags) do
-    tags = String.downcase(tags)
-    cond do
-      String.contains?(tags, "难点") -> :hard
-      String.contains?(tags, "重点") -> :important
-      true -> :normal
-    end
-  end
-
-  defp process_relations(_knowledge_id, nil, nil, nil, acc), do: acc
-  defp process_relations(_knowledge_id, _, _, _, acc) do
-    # TODO: Implement relation creation after knowledge resources are created
-    # This requires a two-pass approach or deferred relation processing
-    acc
   end
 
   defp create_or_get_subject(subject_name, course_id, acc) do
@@ -3516,7 +3467,7 @@ defmodule KgEdu.Knowledge.Resource do
         # sortPath 格式为 "000100020002"，每级 4 位字符
         # 父级路径是去掉最后 4 位字符
         if String.length(path) > 4 do
-          String.slice(path, 0..-5)
+          String.slice(path, 0..-5//-1)
         else
           ""
         end

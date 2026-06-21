@@ -68,7 +68,7 @@ defmodule KgEdu.KnowledgeExample do
     # ---------- Step 3: Create Knowledge Cells (Leaf Level) ----------
 
     # Algebra Cells (under Algebra Unit)
-    {:ok, linear_eq} =
+    {:ok, _linear_eq} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Linear Equations",
         description: "Solving equations of the form ax + b = c",
@@ -81,7 +81,7 @@ defmodule KgEdu.KnowledgeExample do
         importance_level: :important
       })
 
-    {:ok, quadratic_eq} =
+    {:ok, _quadratic_eq} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Quadratic Equations",
         description: "Solving equations",
@@ -94,7 +94,7 @@ defmodule KgEdu.KnowledgeExample do
         importance_level: :hard
       })
 
-    {:ok, factoring} =
+    {:ok, _factoring} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Factoring Polynomials",
         description: "Breaking down polynomials into products of factors",
@@ -108,7 +108,7 @@ defmodule KgEdu.KnowledgeExample do
       })
 
     # Geometry Cells (under Geometry Unit)
-    {:ok, pythagorean} =
+    {:ok, _pythagorean} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Pythagorean Theorem",
         description: "In right triangles: a² + b² = c²",
@@ -121,7 +121,7 @@ defmodule KgEdu.KnowledgeExample do
         importance_level: :important
       })
 
-    {:ok, angles} =
+    {:ok, _angles} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Angles and Triangles",
         description: "Properties of angles in triangles",
@@ -135,7 +135,7 @@ defmodule KgEdu.KnowledgeExample do
       })
 
     # Mechanics Cells (under Mechanics Unit)
-    {:ok, newtons_laws} =
+    {:ok, _newtons_laws} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Newton's Laws of Motion",
         description: "Three fundamental laws governing motion",
@@ -148,7 +148,7 @@ defmodule KgEdu.KnowledgeExample do
         importance_level: :hard
       })
 
-    {:ok, kinetic_energy} =
+    {:ok, _kinetic_energy} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Kinetic Energy",
         description: "Energy of motion: KE = ½mv²",
@@ -162,7 +162,7 @@ defmodule KgEdu.KnowledgeExample do
       })
 
     # Direct Cell (under Subject, no Unit)
-    {:ok, problem_solving} =
+    {:ok, _problem_solving} =
       KgEdu.Knowledge.Resource.create_knowledge_resource(%{
         name: "Mathematical Problem Solving",
         description: "General strategies for solving math problems",

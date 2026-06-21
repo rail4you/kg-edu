@@ -20,12 +20,12 @@ defmodule KgEdu.Accounts.User.Changes.CreateUser do
   ## Returns
   {:ok, user} or {:error, reason}
   """
-  def change(changeset, opts, context) do
+  def change(changeset, opts, _context) do
     # Extract arguments from opts or context
     member_id = Ash.Changeset.get_argument(changeset, :member_id) || Keyword.get(opts, :member_id)
     name = Ash.Changeset.get_argument(changeset, :name) || Keyword.get(opts, :name)
     email = Ash.Changeset.get_argument(changeset, :email) || Keyword.get(opts, :email)
-    password = Ash.Changeset.get_argument(changeset, :password) || Keyword.get(opts, :password)
+    _password = Ash.Changeset.get_argument(changeset, :password) || Keyword.get(opts, :password)
     role = Ash.Changeset.get_argument(changeset, :role) || Keyword.get(opts, :role, :user)
     tenant_id = Ash.Changeset.get_argument(changeset, :tenant_id) || Keyword.get(opts, :tenant_id)
 
@@ -50,10 +50,6 @@ defmodule KgEdu.Accounts.User.Changes.CreateUser do
         hashed = Bcrypt.hash_pwd_salt(password)
         Ash.Changeset.change_attribute(changeset, :hashed_password, hashed)
     end
-  end
-
-  defp hash_password(_changeset, nil) do
-    {:error, "Password is required"}
   end
 
   defp set_tenant_if_provided(changeset, nil), do: changeset

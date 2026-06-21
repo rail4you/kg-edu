@@ -1,8 +1,6 @@
 defmodule KgEduWeb.ChatController do
   use KgEduWeb, :controller
 
-  alias Jido.AI.Reasoning.ReAct
-
   @doc """
   SSE streaming chat endpoint — Pi SDK compatible format.
 
@@ -102,7 +100,7 @@ defmodule KgEduWeb.ChatController do
   end
 
   # Extract course_id from conversation context (forwardedProps, previous messages, etc.)
-  defp extract_course_id_from_context(params, tenant) do
+  defp extract_course_id_from_context(params, _tenant) do
     # Try forwardedProps first
     fp = params["forwardedProps"] || %{}
     fp["courseId"] ||
@@ -187,10 +185,13 @@ defmodule KgEduWeb.ChatController do
 
             if clean_delta != "" do
               # Emit TEXT_MESSAGE_START on first content
-              unless Map.get(state, :text_started) do
-                sse_write(conn, "TEXT_MESSAGE_START", %{})
-                state = Map.put(state, :text_started, true)
-              end
+              state =
+                if !Map.get(state, :text_started) do
+                  sse_write(conn, "TEXT_MESSAGE_START", %{})
+                  Map.put(state, :text_started, true)
+                else
+                  state
+                end
 
               sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: clean_delta})
               {conn, state}
@@ -333,9 +334,7 @@ defmodule KgEduWeb.ChatController do
 
   # ── CUSTOM_UI helpers ───────────────────────────────────────────────────
 
-  @doc """
-  Detect if user message is a document generation request (PPTX/DOCX).
-  """
+  # Detect if user message is a document generation request (PPTX/DOCX).
   defp is_document_generation_request?(nil), do: false
 
   defp is_document_generation_request?(message) when is_binary(message) do
@@ -348,16 +347,8 @@ defmodule KgEduWeb.ChatController do
     is_document_generation_request?(last_user)
   end
 
-  @doc """
-  Fetch relevant knowledge resources for document generation.
-
-  Strategy:
-  1. Search knowledge resources by name (using search_term from user message)
-  2. Group results by course_id, pick the course with most matches
-  3. Return top 10 items from that course (sorted by importance)
-  4. If no search_term, return items from specified course_id
-  """
-  defp fetch_knowledge_list(tenant, course_id, search_term \\ nil) do
+  # Fetch relevant knowledge resources for document generation.
+  defp fetch_knowledge_list(tenant, course_id, search_term) do
     if is_nil(tenant) do
       []
     else

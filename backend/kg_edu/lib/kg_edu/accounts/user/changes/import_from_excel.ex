@@ -100,9 +100,7 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     end
   end
 
-  defp import_users_from_excel(_, _, _) do
-    {:error, "Invalid parameters"}
-  end
+
 
   defp create_users_from_data(user_data, tenant_schema) when is_list(user_data) do
     results =

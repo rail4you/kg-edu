@@ -9,7 +9,7 @@ defmodule KgEdu.Agent.Tools.GetCourses do
       })
 
   @impl true
-  def run(params, _context) do
+  def run(_params, _context) do
     courses = KgEdu.Agent.DataAccess.list_courses()
     text = "共 #{length(courses)} 门课程:\n" <> format_courses(courses)
     {:ok, %{result: text, courses: courses}}

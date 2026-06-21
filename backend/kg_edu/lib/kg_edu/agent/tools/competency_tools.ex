@@ -10,6 +10,7 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
   """
 
   require Ash.Query
+  require Logger
 
   use Jido.Action,
     name: "GenerateCompetencyGraph",

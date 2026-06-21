@@ -281,6 +281,11 @@ defmodule KgEdu.ExcelImport do
     end
   end
 
+  defp map_row_to_attributes(row, _attributes) do
+    Logger.warning("Invalid row format: #{inspect(row)}")
+    nil
+  end
+
   defp map_row_to_attributes_with_data(row, attributes) do
     # Skip rows that are too short (less than half the expected columns)
     if length(row) < div(length(attributes), 2) do
@@ -316,11 +321,6 @@ defmodule KgEdu.ExcelImport do
       #   nil
       # end
     end
-  end
-
-  defp map_row_to_attributes(row, _attributes) do
-    Logger.warning("Invalid row format: #{inspect(row)}")
-    nil
   end
 
   # Check if the mapped row has the basic required fields

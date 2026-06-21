@@ -26,7 +26,7 @@ defmodule KgEdu.Activity.Changes.LogFileView do
     changeset
   end
 
-  defp get_user_id(changeset, context, opts) do
+  defp get_user_id(_changeset, context, opts) do
     # Try to get user_id from options first
     case Keyword.get(opts, :user_id) do
       nil ->

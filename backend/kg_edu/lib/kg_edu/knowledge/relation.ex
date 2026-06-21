@@ -1,5 +1,4 @@
 defmodule KgEdu.Knowledge.Relation do
-  alias ElixirSense.Log
 
   use Ash.Resource,
     otp_app: :kg_edu,
@@ -7,8 +6,6 @@ defmodule KgEdu.Knowledge.Relation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshTypescript.Resource]
-
-  import Logger, only: [info: 1, error: 1]
 
   require Logger
   require Ash.Query

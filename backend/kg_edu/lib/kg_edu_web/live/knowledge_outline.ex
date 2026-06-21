@@ -226,7 +226,7 @@ defmodule KgEduWeb.Live.KnowledgeOutline do
 
   def handle_event("create-knowledge", %{"knowledge" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.new_knowledge_form, params: params) do
-      {:ok, knowledge} ->
+      {:ok, _knowledge} ->
         knowledge_items =
           build_knowledge_outline(socket.assigns.course_id, socket.assigns.current_user)
 

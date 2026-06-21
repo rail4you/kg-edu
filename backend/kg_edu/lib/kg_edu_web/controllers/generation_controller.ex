@@ -197,7 +197,7 @@ defmodule KgEduWeb.GenerationController do
 
             json(conn, %{success: true, message: "上传成功", data: %{file_url: url}})
           rescue
-            e ->
+            _e ->
               json(conn, %{success: true, message: "文件已上传，记录更新失败", data: %{file_url: url}})
           end
 

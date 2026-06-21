@@ -53,29 +53,6 @@ services:
     networks:
       - kg-edu-network
 
-  # Next.js Frontend
-  frontend:
-    build:
-      context: ./nextjs-ts
-      dockerfile: Dockerfile
-    container_name: kg-edu-frontend
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - kg-edu-network
-
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
@@ -88,7 +65,6 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - backend
-      - frontend
     networks:
       - kg-edu-network
 

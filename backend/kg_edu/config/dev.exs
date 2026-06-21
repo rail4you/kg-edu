@@ -104,4 +104,5 @@ config :kg_edu, :reqllm,
       "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",
   model: "openrouter:z-ai/glm-4.5"
 
-Code.compiler_options(warnings_as_errors: false)
+# warnings_as_errors is deprecated via Code.compiler_options/1;
+# use `MIX_ENV=dev mix compile --warnings-as-errors` instead

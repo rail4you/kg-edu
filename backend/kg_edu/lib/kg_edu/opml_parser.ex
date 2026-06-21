@@ -47,7 +47,7 @@ defmodule KgEdu.OpmlParser do
     |> Enum.filter(&(&1 != nil))
   end
 
-  defp process_outline_with_children(outline_xml, _head, current_subject, current_unit) do
+  defp process_outline_with_children(outline_xml, head, current_subject, current_unit) do
     # Extract attributes from outline element
     title = SweetXml.xpath(outline_xml, ~x"./@title"s)
     text = SweetXml.xpath(outline_xml, ~x"./@text"s)
@@ -76,7 +76,7 @@ defmodule KgEdu.OpmlParser do
           # This is a subject - create it and process children with this as subject
           child_items =
             children
-            |> Enum.flat_map(&process_outline_with_children(&1, _head, knowledge_title, nil))
+            |> Enum.flat_map(&process_outline_with_children(&1, head, knowledge_title, nil))
 
           [
             %{
@@ -93,7 +93,7 @@ defmodule KgEdu.OpmlParser do
           child_items =
             children
             |> Enum.flat_map(
-              &process_outline_with_children(&1, _head, current_subject, knowledge_title)
+              &process_outline_with_children(&1, head, current_subject, knowledge_title)
             )
 
           [

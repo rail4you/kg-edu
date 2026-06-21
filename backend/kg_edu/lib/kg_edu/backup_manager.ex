@@ -410,7 +410,7 @@ defmodule KgEdu.BackupManager do
     restore_command = build_restore_command(backup_file, schema_name, opts)
 
     case System.cmd("pg_restore", restore_command, stderr_to_stdout: true) do
-      {output, 0} ->
+      {_output, 0} ->
         # Post-restore actions
         post_restore_actions(organization, opts)
 
