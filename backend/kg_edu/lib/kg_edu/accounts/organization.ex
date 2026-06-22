@@ -41,7 +41,7 @@ defmodule KgEdu.Accounts.Organization do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     read :by_id do
       description "Get a org by ID"
@@ -56,6 +56,21 @@ defmodule KgEdu.Accounts.Organization do
 
     update :update do
       accept [:name]
+    end
+
+    destroy :destroy do
+      description "Delete organization and drop its tenant schema (CASCADE)"
+      require_atomic? false
+
+      change fn changeset, _context ->
+        schema = changeset.data.schema_name
+
+        if is_binary(schema) and schema != "" do
+          KgEdu.Repo.query("DROP SCHEMA IF EXISTS #{schema} CASCADE")
+        end
+
+        changeset
+      end
     end
 
     action :create_with_migrations, :map do
@@ -340,7 +355,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get user statistics
             user_stats =
-              case KgEdu.Accounts.User |> Ash.read(tenant: tenant) do
+              case KgEdu.Accounts.User |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, users} ->
                   total_users = length(users)
 
@@ -363,9 +378,9 @@ defmodule KgEdu.Accounts.Organization do
                   %{total: 0, by_role: %{}, super_admins: 0, admins: 0, teachers: 0, students: 0}
               end
 
-            # Get course statistics
+            # Get course statistics (use get_all_courses to bypass actor filtering)
             course_stats =
-              case KgEdu.Courses.Course |> Ash.read(tenant: tenant) do
+              case KgEdu.Courses.Course |> Ash.read(action: :get_all_courses, tenant: tenant, authorize?: false) do
                 {:ok, courses} ->
                   total_courses = length(courses)
                   published_courses = courses |> Enum.count(& &1.publish_status)
@@ -382,7 +397,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get knowledge resource statistics
             knowledge_stats =
-              case KgEdu.Knowledge.Resource |> Ash.read(tenant: tenant) do
+              case KgEdu.Knowledge.Resource |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, resources} ->
                   by_type =
                     resources
@@ -404,7 +419,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get file statistics
             file_stats =
-              case KgEdu.Courses.File |> Ash.read(tenant: tenant) do
+              case KgEdu.Courses.File |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, files} ->
                   %{
                     total: length(files)
@@ -416,7 +431,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get video statistics
             video_stats =
-              case KgEdu.Courses.Video |> Ash.read(tenant: tenant) do
+              case KgEdu.Courses.Video |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, videos} ->
                   %{
                     total: length(videos)
@@ -428,7 +443,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get homework statistics
             homework_stats =
-              case KgEdu.Knowledge.Homework |> Ash.read(tenant: tenant) do
+              case KgEdu.Knowledge.Homework |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, homeworks} ->
                   %{
                     total: length(homeworks)
@@ -440,7 +455,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get exercise statistics
             exercise_stats =
-              case KgEdu.Knowledge.Exercise |> Ash.read(tenant: tenant) do
+              case KgEdu.Knowledge.Exercise |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, exercises} ->
                   %{
                     total: length(exercises)
@@ -452,7 +467,7 @@ defmodule KgEdu.Accounts.Organization do
 
             # Get activity statistics
             activity_stats =
-              case KgEdu.Activity.ActivityLog |> Ash.read(tenant: tenant) do
+              case KgEdu.Activity.ActivityLog |> Ash.read(tenant: tenant, authorize?: false) do
                 {:ok, activities} ->
                   by_type =
                     activities
@@ -469,6 +484,9 @@ defmodule KgEdu.Accounts.Organization do
                   %{total: 0, by_type: %{}}
               end
 
+            # Get database-level statistics (table count, total rows)
+            db_stats = get_tenant_db_stats(tenant)
+
             summary = %{
               organization_id: organization_id,
               organization_name: organization.name,
@@ -481,6 +499,7 @@ defmodule KgEdu.Accounts.Organization do
               homeworks: homework_stats,
               exercises: exercise_stats,
               activities: activity_stats,
+              database: db_stats,
               total_resources: %{
                 files: file_stats.total,
                 videos: video_stats.total,
@@ -803,5 +822,81 @@ defmodule KgEdu.Accounts.Organization do
   @spec org_id_to_schema_id(binary()) :: binary()
   def org_id_to_schema_id(org_id) do
     "org_" <> (org_id |> String.replace("-", "_"))
+  end
+
+  # ── Database statistics ──────────────────────────────────────────────
+
+  defp get_tenant_db_stats(tenant) do
+    # Run ANALYZE to update planner statistics for accurate reltuples
+    # Newly imported tenants have reltuples = -1 until analyzed
+    analyze_tenant(tenant)
+
+    table_count = get_table_count(tenant)
+    total_rows = get_estimated_row_count(tenant)
+    table_details = get_per_table_counts(tenant)
+
+    %{
+      table_count: table_count,
+      total_rows: total_rows,
+      tables: table_details
+    }
+  end
+
+  defp analyze_tenant(tenant) do
+    KgEdu.Repo.query("ANALYZE", [], prefix: tenant)
+  end
+
+  defp get_table_count(tenant) do
+    query = """
+    SELECT count(*)
+    FROM information_schema.tables
+    WHERE table_schema = $1
+      AND table_type = 'BASE TABLE'
+      AND table_name != 'schema_migrations'
+    """
+
+    case KgEdu.Repo.query(query, [tenant]) do
+      {:ok, %{rows: [[count]]}} -> count
+      _ -> 0
+    end
+  end
+
+  defp get_estimated_row_count(tenant) do
+    query = """
+    SELECT COALESCE(sum(GREATEST(c.reltuples, 0)), 0)::bigint
+    FROM pg_class c
+    JOIN pg_namespace n ON c.relnamespace = n.oid
+    WHERE n.nspname = $1
+      AND c.relkind = 'r'
+      AND c.relname != 'schema_migrations'
+    """
+
+    case KgEdu.Repo.query(query, [tenant]) do
+      {:ok, %{rows: [[count]]}} -> count
+      _ -> 0
+    end
+  end
+
+  defp get_per_table_counts(tenant) do
+    query = """
+    SELECT
+      c.relname AS table_name,
+      GREATEST(c.reltuples::bigint, 0) AS estimated_rows
+    FROM pg_class c
+    JOIN pg_namespace n ON c.relnamespace = n.oid
+    WHERE n.nspname = $1
+      AND c.relkind = 'r'
+      AND c.relname != 'schema_migrations'
+    ORDER BY c.reltuples DESC
+    """
+
+    case KgEdu.Repo.query(query, [tenant]) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [table_name, row_count] ->
+          %{name: table_name, rows: row_count}
+        end)
+
+      _ -> []
+    end
   end
 end

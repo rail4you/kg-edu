@@ -6,7 +6,7 @@ defmodule KgEduWeb.OrganizationController do
   alias KgEdu.OrganizationDataTransfer
 
   def get_summary(conn, %{"organization_id" => organization_id}) do
-    case KgEdu.Accounts.Organization.get_organization_summary(%{organization_id: organization_id}) do
+    case KgEdu.Accounts.Organization.get_organization_summary(organization_id) do
       {:ok, summary} ->
         json(conn, %{success: true, data: summary})
 
