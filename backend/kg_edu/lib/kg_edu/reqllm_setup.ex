@@ -1,17 +1,12 @@
 defmodule KgEdu.ReqLLMSetup do
   @moduledoc """
   Module to setup ReqLLM configuration on application start.
+  API keys are loaded dynamically by KgEdu.Agent.ApiKeyProvider.
   """
 
   def setup do
-    config = Application.get_env(:kg_edu, :reqllm)
-
-    if config && config[:api_key] do
-      ReqLLM.put_key(:openrouter_api_key, config[:api_key])
-    else
-      IO.warn(
-        "ReqLLM API key not configured. Please set OPENROUTER_API_KEY environment variable."
-      )
-    end
+    # ReqLLM provider registry is configured in config.exs.
+    # Actual keys are injected at runtime by ApiKeyProvider.
+    :ok
   end
 end

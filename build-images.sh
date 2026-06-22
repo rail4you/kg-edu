@@ -1,26 +1,37 @@
 #!/bin/bash
+set -e
 
-# Build all Docker images locally
-echo "Building Docker images..."
+# 构建统一 Docker 镜像 (前端 + 后端) 并保存为 tar 文件
+# 用于离线环境部署，需要手动传输 tar 文件到远程服务器
 
-# Build backend image
-echo "Building backend image..."
-docker build -t kg-edu-backend:latest ./backend/kg_edu
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+IMAGE="kg-edu-backend:latest"
+TAR_FILE="kg-edu-backend-latest.tar"
 
-# Build frontend image  
-echo "Building frontend image..."
-docker build -t kg-edu-frontend:latest ./nextjs-ts
-
-# Save images to tar files
-echo "Saving images to tar files..."
-docker save -o kg-edu-backend-latest.tar kg-edu-backend:latest
-docker save -o kg-edu-frontend-latest.tar kg-edu-frontend:latest
-
-echo "Images built and saved successfully!"
-echo "Files created:"
-echo "- kg-edu-backend-latest.tar"
-echo "- kg-edu-frontend-latest.tar"
+echo "=========================================="
+echo "  Building unified image (frontend + backend)"
+echo "=========================================="
 echo ""
-echo "Transfer these files to your remote machine and run:"
-echo "docker load -i kg-edu-backend-latest.tar"
-echo "docker load -i kg-edu-frontend-latest.tar"
+echo "  Image: $IMAGE"
+echo "  Output: $TAR_FILE"
+echo ""
+
+# Build frontend first, copy to backend, then build image
+(cd "$PROJECT_ROOT/kg-edu-vite-antd" && bash ./build-test.sh)
+
+echo ""
+echo "Saving image to tar..."
+docker save -o "$TAR_FILE" "$IMAGE"
+
+echo ""
+echo "=========================================="
+echo "  Build Complete!"
+echo "=========================================="
+echo ""
+echo "  Transfer to remote:"
+echo "    scp $TAR_FILE root@123.57.141.233:/root/kg_edu/"
+echo ""
+echo "  On remote host:"
+echo "    docker load -i /root/kg_edu/$TAR_FILE"
+echo "    cd /root/kg_edu && docker compose -f docker-compose.yml up -d"
+echo ""

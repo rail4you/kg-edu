@@ -1,23 +1,23 @@
 defmodule KgEdu.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
-  @moduledoc false
-
   use Application
 
   @impl true
   def start(_type, _args) do
-    # Load env files: prefer the agent-server .env (Qwen key), then local .env.
-    # Walk up from the app root until we find the sibling agent-server folder.
+    # Load env files for non-key configuration
     env_sources = build_env_sources()
     Dotenvy.source(env_sources, required: false)
 
-    # The Pi agent at /api/assistant/ag-ui reads its Qwen key from
-    # ~/.pi/agent/models.json. Mirror that source so the Jido agent can
-    # authenticate with the same credentials when QWEN_API_KEY is missing.
-    sync_qwen_key_from_pi_agent()
+    # Ensure DASHSCOPE_API_KEY is available for ReqLLM (from env, models.json, or DB fallback)
+    ensure_dashscope_key()
 
-    # Setup ReqLLM configuration
+    # Seed the api_key_configs table from ~/.pi/agent/models.json
+    # if the database has no key yet (first-time setup fallback).
+    Task.start(fn ->
+      Process.sleep(2_000)
+      seed_api_keys_from_pi_agent()
+    end)
+
+    # Setup ReqLLM configuration (provider registry, no keys needed here)
     KgEdu.ReqLLMSetup.setup()
 
     children = [
@@ -27,26 +27,95 @@ defmodule KgEdu.Application do
       {Phoenix.PubSub, name: KgEdu.PubSub},
       KgEduWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :kg_edu]},
-      # Session context for agent tools (tenant, userId, etc.)
       KgEdu.Agent.SessionContext
     ]
 
-    # Start ETS-based job manager for async curriculum generation
     KgEdu.Agent.JobManager.start()
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: KgEdu.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
     KgEduWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  # ── DashScope key bootstrapping ────────────────────────────────────────
+
+  defp ensure_dashscope_key do
+    # Already set? Done.
+    if is_binary(System.get_env("DASHSCOPE_API_KEY")) and
+         System.get_env("DASHSCOPE_API_KEY") != "" do
+      :ok
+    else
+      # 1. Try QWEN_API_KEY env var
+      qwen_key = System.get_env("QWEN_API_KEY")
+
+      if is_binary(qwen_key) and qwen_key != "" do
+        System.put_env("DASHSCOPE_API_KEY", qwen_key)
+        IO.puts("[kg_edu] DASHSCOPE_API_KEY set from QWEN_API_KEY")
+      else
+        # 2. Try ~/.pi/agent/models.json
+        case read_pi_agent_qwen_key() do
+          {:ok, key} ->
+            System.put_env("DASHSCOPE_API_KEY", key)
+            IO.puts("[kg_edu] DASHSCOPE_API_KEY set from ~/.pi/agent/models.json")
+
+          :error ->
+            # 3. DB will be loaded at request time by ApiKeyProvider.ensure_key()
+            :ok
+        end
+      end
+    end
+  end
+
+  # ── Key seeding ────────────────────────────────────────────────────────
+
+  defp seed_api_keys_from_pi_agent do
+    # Only seed if the database has no qwen key yet
+    case KgEdu.SystemConfig.ApiKeyConfig.get_config(%{provider: "qwen"}) do
+      {:ok, []} ->
+        case read_pi_agent_qwen_key() do
+          {:ok, key} ->
+            KgEdu.SystemConfig.ApiKeyConfig.set_config(%{
+              provider: :qwen,
+              api_key: key
+            })
+
+            IO.puts("[kg_edu] Seeded Qwen API key from ~/.pi/agent/models.json")
+
+          :error ->
+            :ok
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp read_pi_agent_qwen_key do
+    path = Path.expand("~/.pi/agent/models.json")
+
+    with true <- File.exists?(path),
+         {:ok, raw} <- File.read(path),
+         {:ok, decoded} <- safe_decode(raw),
+         %{"providers" => %{"qwen" => %{"apiKey" => key}}} <- decoded,
+         key when is_binary(key) and byte_size(key) > 0 <- key do
+      {:ok, key}
+    else
+      _ -> :error
+    end
+  end
+
+  defp safe_decode(raw) do
+    {:ok, Jason.decode!(raw)}
+  rescue
+    _ -> :error
+  end
+
+  # ── Env sources ────────────────────────────────────────────────────────
 
   defp build_env_sources do
     app_root = Application.app_dir(:kg_edu)
@@ -70,56 +139,5 @@ defmodule KgEdu.Application do
       depth <= 0 -> nil
       true -> walk_up_to_sibling(Path.expand(Path.join(dir, "..")), sibling, file, depth - 1)
     end
-  end
-
-  # The Pi agent (kg-edu-vite-antd) stores provider credentials in
-  # ~/.pi/agent/models.json. When QWEN_API_KEY is not set in any of our
-  # env sources, fall back to that file so the Jido agent shares the
-  # working key with /api/assistant/ag-ui.
-  defp sync_qwen_key_from_pi_agent do
-    if empty_env?("QWEN_API_KEY") do
-      case read_pi_agent_qwen_key() do
-        {:ok, key} ->
-          System.put_env("QWEN_API_KEY", key)
-          Application.put_env(:req_llm, :alibaba_cn_api_key, key)
-          Application.put_env(:req_llm, :alibaba_api_key, key)
-
-          IO.puts(
-            "[kg_edu] Loaded QWEN_API_KEY from ~/.pi/agent/models.json " <>
-              "(len=#{String.length(key)})"
-          )
-
-        :error ->
-          :ok
-      end
-    end
-  end
-
-  defp empty_env?(name) do
-    case System.get_env(name) do
-      nil -> true
-      "" -> true
-      _ -> false
-    end
-  end
-
-  defp read_pi_agent_qwen_key do
-    path = Path.expand("~/.pi/agent/models.json")
-
-    with true <- File.exists?(path),
-         {:ok, raw} <- File.read(path),
-         {:ok, decoded} <- safe_decode(raw),
-         %{"providers" => %{"qwen" => %{"apiKey" => key}}} <- decoded,
-         key when is_binary(key) and byte_size(key) > 0 <- key do
-      {:ok, key}
-    else
-      _ -> :error
-    end
-  end
-
-  defp safe_decode(raw) do
-    {:ok, Jason.decode!(raw)}
-  rescue
-    _ -> :error
   end
 end

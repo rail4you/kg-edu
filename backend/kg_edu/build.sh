@@ -6,8 +6,9 @@ IMAGE="${IMAGE:-registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:lat
 
 docker buildx build \
   --platform "${PLATFORM}" \
+  -f "$(dirname "$0")/Dockerfile" \
   -t "${IMAGE}" \
   --load \
-  .
+  "$(dirname "$0")/../.."
 
 docker push "${IMAGE}"

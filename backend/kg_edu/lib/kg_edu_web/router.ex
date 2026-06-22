@@ -92,6 +92,17 @@ defmodule KgEduWeb.Router do
     get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
     post "/session/find-tenants", SessionController, :find_tenants
     post "/generate_ai_exercise", GenerationController, :generate_exercise
+    get "/admin/system-info", SystemInfoController, :get_info
+  end
+
+  # Legacy /agent prefix — frontend still calls with /agent/* URLs
+  scope "/agent", KgEduWeb do
+    pipe_through :api
+    post "/api/generate_ai_exercise", GenerationController, :generate_exercise
+    post "/api/chat", ChatController, :stream_message
+    post "/import-chapters", ImportController, :import_chapters
+    post "/import", ImportController, :import_knowledge
+    post "/competency-graph/generate", GenerationController, :generate_competency_graph
   end
 
   # File upload endpoints (migrated from Express :3000 server)

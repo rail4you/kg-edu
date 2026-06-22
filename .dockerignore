@@ -5,7 +5,6 @@
 
 # Elixir build artifacts (not needed in Docker build context)
 backend/kg_edu/_build/
-backend/kg_edu/deps/
 backend/kg_edu/.elixir_ls/
 
 # Node modules (installed inside Docker stages)

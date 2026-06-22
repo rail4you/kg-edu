@@ -91,15 +91,21 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
           case parse_exercise_json(response_text) do
             {:ok, exercises} ->
               created = save_exercises(exercises, tenant, course_id, existing_titles, type, difficulty)
-              text = "练习题生成成功！共创建 #{length(created)} 道题。"
-              {:ok, %{result: text, exercises: created}}
+              if created == [] do
+                preview = String.slice(response_text, 0, 200)
+                {:error, "AI 已响应但解析后的题目均为空。响应预览: #{preview}"}
+              else
+                text = "练习题生成成功！共创建 #{length(created)} 道题。"
+                {:ok, %{result: text, exercises: created}}
+              end
 
             {:error, reason} ->
-              {:error, "解析LLM响应失败: #{reason}"}
+              preview = String.slice(response_text, 0, 300)
+              {:error, "#{reason}\nAI 响应预览: #{preview}"}
           end
 
         {:error, reason} ->
-          {:error, "LLM调用失败: #{reason}"}
+          {:error, format_llm_error(reason)}
       end
     end
   end
@@ -108,7 +114,7 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
 
   defp get_existing_titles(tenant, course_id) do
     try do
-      KgEdu.Knowledge.Question
+      KgEdu.Knowledge.Exercise
       |> Ash.Query.new()
       |> Ash.Query.for_read(:read)
       |> Ash.Query.filter(course_id == ^course_id)
@@ -133,6 +139,7 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
 
   defp call_llm(system, user) do
     model = Application.get_env(:kg_edu, :reqllm)[:model] || "alibaba_cn:qwen-plus"
+    ensure_qwen_key()
 
     case ReqLLM.Generation.generate_text(model, [
            %{role: "system", content: system},
@@ -142,25 +149,61 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
         {:ok, ReqLLM.Response.text(response)}
 
       {:error, reason} ->
-        {:error, inspect(reason)}
+        {:error, reason}
+    end
+  end
+
+  defp ensure_qwen_key, do: KgEdu.Agent.ApiKeyProvider.ensure_key()
+
+  defp format_llm_error(error) do
+    cond do
+      is_struct(error, ReqLLM.Error.API.Request) ->
+        status = error.status || "?"
+        msg = get_in(error.response_body, ["error", "message"]) || "请求失败"
+        "AI 服务调用失败 (#{status}): #{msg}"
+
+      is_struct(error, ReqLLM.Error.API.Response) ->
+        status = error.status || "?"
+        msg = get_in(error.response_body, ["error", "message"]) || "响应异常"
+        "AI 服务响应失败 (#{status}): #{msg}"
+
+      is_binary(error) ->
+        "AI 服务调用失败: #{error}"
+
+      true ->
+        "AI 服务调用失败，请检查 API Key 配置"
     end
   end
 
   defp parse_exercise_json(text) do
-    # Try direct parse first
+    # 1. Direct JSON array
+    with {:error, _} <- decode_as_list(text),
+         # 2. Markdown code fence ```json ... ```
+         {:error, _} <- extract_code_fence(text),
+         # 3. Lazy regex extract [...]
+         {:error, _} <- extract_lazy_array(text) do
+      {:error, "LLM响应中未找到有效JSON数组"}
+    end
+  end
+
+  defp decode_as_list(text) do
     case Jason.decode(text) do
       {:ok, list} when is_list(list) -> {:ok, list}
-      _ ->
-        # Try extracting JSON array from markdown code blocks
-        case Regex.run(~r/\[.*\]/s, text) do
-          [match] ->
-            case Jason.decode(match) do
-              {:ok, list} when is_list(list) -> {:ok, list}
-              _ -> {:error, "无法解析LLM响应为JSON数组"}
-            end
-          nil ->
-            {:error, "LLM响应中未找到JSON数组"}
-        end
+      _ -> {:error, :not_list}
+    end
+  end
+
+  defp extract_code_fence(text) do
+    case Regex.run(~r/```(?:json)?\s*\n?(\[.*?\])\s*\n?```/s, text, capture: :all_but_first) do
+      [json_str] -> decode_as_list(json_str)
+      _ -> {:error, :no_fence}
+    end
+  end
+
+  defp extract_lazy_array(text) do
+    case Regex.run(~r/\[\s*\{.*?\}\s*(?:,\s*\{.*?\}\s*)*\]/s, text) do
+      [match] -> decode_as_list(match)
+      _ -> {:error, :no_array}
     end
   end
 
@@ -185,8 +228,8 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
 
       # Create via Ash
       try do
-        {:ok, record} =
-          KgEdu.Knowledge.Question
+        record =
+          KgEdu.Knowledge.Exercise
           |> Ash.Changeset.for_create(:create, %{
             title: final_title,
             question_content: data["questionContent"] || "",
@@ -195,7 +238,8 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
             answer_explanation: data["answerExplanation"] || "",
             options: options,
             course_id: course_id,
-            difficulty: data["difficulty"] || difficulty
+            difficulty: data["difficulty"] || difficulty,
+            ai_type: :ai_generated
           })
           |> Ash.create!(tenant: tenant, authorize?: false)
 
@@ -222,7 +266,28 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
     type = (data["questionType"] || "")
 
     case data["options"] do
-      nil -> nil
+      nil ->
+        nil
+
+      # JSON array from LLM: ["A. xxx", "B. xxx", ...]
+      options when is_list(options) ->
+        choices =
+          options
+          |> Enum.map(&to_string/1)
+          |> Enum.map(&String.trim/1)
+          |> Enum.reject(&(&1 == ""))
+
+        if choices == [] do
+          nil
+        else
+          if type == "multiple_response" do
+            encode_multiple_response(choices, data)
+          else
+            Jason.encode!(%{choices: choices})
+          end
+        end
+
+      # Plain string with newlines
       options when is_binary(options) ->
         choices =
           options
@@ -234,14 +299,7 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
           nil
         else
           if type == "multiple_response" do
-            correct =
-              (data["answer"] || "")
-              |> String.split(~r/[,，\s;]+/, trim: true)
-              |> Enum.map(&String.upcase(String.trim(&1)))
-              |> Enum.filter(&(byte_size(&1) == 1 and &1 >= "A" and &1 <= "D"))
-              |> Enum.map(fn letter -> :binary.first(letter) - 65 end)
-
-            Jason.encode!(%{choices: choices, correctAnswers: correct})
+            encode_multiple_response(choices, data)
           else
             Jason.encode!(%{choices: choices})
           end
@@ -249,5 +307,16 @@ defmodule KgEdu.Agent.Tools.GenerateExercises do
 
       _ -> nil
     end
+  end
+
+  defp encode_multiple_response(choices, data) do
+    correct =
+      (data["answer"] || "")
+      |> String.split(~r/[,，\s;]+/, trim: true)
+      |> Enum.map(&String.upcase(String.trim(&1)))
+      |> Enum.filter(&(byte_size(&1) == 1 and &1 >= "A" and &1 <= "D"))
+      |> Enum.map(fn letter -> :binary.first(letter) - 65 end)
+
+    Jason.encode!(%{choices: choices, correctAnswers: correct})
   end
 end

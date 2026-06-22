@@ -145,7 +145,8 @@ config :kg_edu,
     KgEdu.Email,
     KgEdu.Attendance,
     KgEdu.GroupTask,
-    KgEdu.MajorAnalysis
+    KgEdu.MajorAnalysis,
+    KgEdu.SystemConfig
   ]
 
 # Configures the endpoint
@@ -206,20 +207,13 @@ config :logger, :default_formatter,
 config :phoenix, :json_library, Jason
 
 # ReqLLM configuration for AI exercise generation
+# API keys are loaded dynamically from the database by KgEdu.Agent.ApiKeyProvider.
+# DO NOT hardcode keys here.
 config :kg_edu, :reqllm,
-  api_key:
-    System.get_env("OPENROUTER_API_KEY") ||
-      "*************************************************************************",
-  model: "openrouter:z-ai/glm-4.5"
+  model: "alibaba_cn:qwen-plus"
 
-# ReqLLM provider keys for Jido.AI agents
-# QWEN_API_KEY is loaded from agent-server/.env (or the OS env) by application.ex
-# and reused for both DashScope endpoints (international + China).
-config :req_llm,
-  openai_api_key: System.get_env("OPENAI_API_KEY"),
-  alibaba_cn_api_key: System.get_env("QWEN_API_KEY"),
-  alibaba_api_key: System.get_env("QWEN_API_KEY"),
-  anthropic_api_key: System.get_env("ANTHROPIC_API_KEY")
+# ReqLLM provider keys — loaded dynamically at runtime by ApiKeyProvider.
+# DO NOT set empty string defaults here — they block System.get_env fallback in ReqLLM.Keys
 
 # Finch HTTP client — increase timeouts for LLM API calls (can take 30s+)
 config :finch,

@@ -7,27 +7,40 @@ defmodule KgEduWeb.GenerationController do
   """
   def generate_exercise(conn, params) do
     tenant = extract_tenant(conn, params)
+    # Frontend wraps params in "input" key
+    input = params["input"] || params
 
     if is_nil(tenant) do
       json(conn, %{success: false, error: "未设置租户上下文"})
     else
-      KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: params["userId"])
+      KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: input["userId"])
 
       result =
         KgEdu.Agent.Tools.GenerateExercises.run(%{
-          courseId: params["courseId"],
-          knowledgeName: params["knowledgeName"] || params["chapterName"],
-          exerciseType: params["exerciseType"] || "multiple_choice",
-          number: params["number"] || 5,
-          difficulty: params["difficulty"] || 3
+          courseId: input["courseId"],
+          knowledgeName: input["knowledgeName"] || input["chapterName"],
+          exerciseType: input["exerciseType"] || "multiple_choice",
+          number: input["number"] || 5,
+          difficulty: input["difficulty"] || 3
         }, %{})
 
       case result do
         {:ok, output} ->
+          exercises_data =
+            (output[:exercises] || [])
+            |> Enum.map(fn ex ->
+              %{
+                id: ex.id,
+                title: ex.title,
+                question_type: ex.question_type,
+                difficulty: ex.difficulty
+              }
+            end)
+
           json(conn, %{
             success: true,
             message: output.result,
-            data: output[:exercises] || []
+            data: exercises_data
           })
 
         {:error, reason} ->

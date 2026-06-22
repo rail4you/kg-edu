@@ -193,14 +193,12 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
   end
 
   defp generate_exercise_content(prompt, exercise_type) do
-    # Get ReqLLM configuration
     config = Application.get_env(:kg_edu, :reqllm)
-    model = config[:model] || "openrouter:z-ai/glm-4.5"
+    model = config[:model] || "alibaba_cn:qwen-plus"
 
-    # Define schema for structured output
-    schema = build_exercise_schema(exercise_type)
-    Logger.info("Using schema: #{inspect(schema)}, prompt: #{prompt}")
-    # Generate structured object
+    # Load Qwen API key from database before every call
+    KgEdu.Agent.ApiKeyProvider.ensure_key()
+
     case ReqLLM.generate_text(model, prompt) do
       {:ok, response} ->
         {:ok, object} = ReqLLM.Response.text(response) |> JsonCleanerAdvanced.parse(keys: :atoms)
@@ -211,11 +209,19 @@ defmodule KgEdu.Knowledge.Exercise.Changes.GenerateAIExercise do
           {:error, reason} -> {:error, reason}
         end
 
+      {:error, %ReqLLM.Error.API.Request{} = err} ->
+        msg = get_in(err.response_body, ["error", "message"]) || "请求失败"
+        {:error, "AI 服务调用失败 (#{err.status}): #{msg}"}
+
+      {:error, %ReqLLM.Error.API.Response{} = err} ->
+        msg = get_in(err.response_body, ["error", "message"]) || "响应异常"
+        {:error, "AI 服务响应失败 (#{err.status}): #{msg}"}
+
       {:error, reason} ->
-        {:error, reason}
+        {:error, "AI 服务调用失败: #{inspect(reason)}"}
 
       _ ->
-        {:error, "Unexpected error during exercise generation"}
+        {:error, "AI 服务调用失败，请检查 API Key 配置"}
     end
   end
 

@@ -40,6 +40,7 @@ defmodule KgEdu.Chat do
     * `:tool_concurrency` - Max concurrent tool executions (default: 4)
   """
   def stream_answer(message, opts \\ []) when is_binary(message) do
+    KgEdu.Agent.ApiKeyProvider.ensure_key()
     config = build_config(opts)
     ReAct.stream(message, config)
   end

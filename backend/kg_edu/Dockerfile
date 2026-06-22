@@ -15,7 +15,9 @@ RUN mix local.hex --force && \
     mix local.rebar --force
 
 COPY backend/kg_edu/mix.exs backend/kg_edu/mix.lock ./
-RUN mix deps.get --only prod && mix deps.compile
+COPY backend/kg_edu/deps deps
+# Remove precompiled NIF artifacts from local deps (arm64 → amd64 cross-compile)
+RUN find deps -name "*.so" -delete && find deps -name "*.o" -delete && mix deps.compile
 
 COPY backend/kg_edu/config config
 COPY backend/kg_edu/priv priv
@@ -33,7 +35,7 @@ FROM ubuntu:jammy-20240808
 # ── Minimal runtime deps (no nodejs/npm, use Bun instead) ──────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl libssl3 libncurses6 locales ca-certificates \
-    curl unzip \
+    curl unzip wget \
     pandoc \
     && rm -rf /var/lib/apt/lists/*
 

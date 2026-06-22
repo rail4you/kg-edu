@@ -70,11 +70,11 @@ defmodule KgEdu.Courses.Discussion do
     end
 
     create :create do
-      accept [:title, :content, :course_id, :user_id]
+      accept [:title, :content, :course_id, :user_id, :rating]
     end
 
     update :update do
-      accept [:title, :content]
+      accept [:title, :content, :rating]
     end
 
     update :increment_view do
@@ -140,6 +140,14 @@ defmodule KgEdu.Courses.Discussion do
       public? true
       default 0
       description "Number of views"
+    end
+
+    attribute :rating, :integer do
+      allow_nil? true
+      public? true
+      default 5
+      constraints min: 1, max: 5
+      description "Rating score (1-5)"
     end
 
     create_timestamp :inserted_at do

@@ -100,7 +100,7 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
           end
 
         {:error, reason} ->
-          {:error, "LLM调用失败: #{reason}"}
+          {:error, format_llm_error(reason)}
       end
     end
   end
@@ -130,6 +130,7 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
 
   defp call_llm(user_prompt) do
     model = Application.get_env(:kg_edu, :reqllm)[:model] || "alibaba_cn:qwen-plus"
+    ensure_qwen_key()
 
     case ReqLLM.Generation.generate_text(model, [
            %{role: "system", content: @system_prompt},
@@ -139,7 +140,29 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
         {:ok, ReqLLM.Response.text(response)}
 
       {:error, reason} ->
-        {:error, inspect(reason)}
+        {:error, reason}
+    end
+  end
+
+  defp ensure_qwen_key, do: KgEdu.Agent.ApiKeyProvider.ensure_key()
+
+  defp format_llm_error(error) do
+    cond do
+      is_struct(error, ReqLLM.Error.API.Request) ->
+        status = error.status || "?"
+        msg = get_in(error.response_body, ["error", "message"]) || "请求失败"
+        "AI 服务调用失败 (#{status}): #{msg}"
+
+      is_struct(error, ReqLLM.Error.API.Response) ->
+        status = error.status || "?"
+        msg = get_in(error.response_body, ["error", "message"]) || "响应异常"
+        "AI 服务响应失败 (#{status}): #{msg}"
+
+      is_binary(error) ->
+        "AI 服务调用失败: #{error}"
+
+      true ->
+        "AI 服务调用失败，请检查 API Key 配置"
     end
   end
 
