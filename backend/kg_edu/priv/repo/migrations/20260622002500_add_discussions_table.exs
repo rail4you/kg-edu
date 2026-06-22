@@ -15,7 +15,7 @@ defmodule KgEdu.Repo.Migrations.AddDiscussionsTable do
       add :view_count, :integer, null: false, default: 0
       add :rating, :integer, null: true, default: 5
 
-      add :course_id, references(:courses, type: :uuid, on_delete: :delete), null: false
+      add :course_id, references(:courses, type: :uuid, on_delete: :delete_all), null: false
       add :user_id, references(:users, type: :uuid, on_delete: :nilify_all), null: true
 
       add :tenant, :string

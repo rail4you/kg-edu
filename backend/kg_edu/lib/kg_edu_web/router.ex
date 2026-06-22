@@ -226,6 +226,10 @@ defmodule KgEduWeb.Router do
     post "/organizations/summary", OrganizationController, :get_all_summary
     get "/organizations/:organization_id/summary", OrganizationController, :get_summary
     post "/organizations/summary/:organization_id", OrganizationController, :get_summary
+
+    # Organization export/import (tenant cloning)
+    post "/organizations/:id/export", OrganizationController, :export
+    post "/organizations/import", OrganizationController, :import
   end
 
   scope "/api", KgEduWeb do
