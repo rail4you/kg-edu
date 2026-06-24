@@ -35,8 +35,17 @@ FROM ubuntu:jammy-20240808
 # ── Minimal runtime deps (no nodejs/npm, use Bun instead) ──────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl libssl3 libncurses6 locales ca-certificates \
-    curl unzip wget \
+    curl unzip wget gnupg \
     pandoc \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Install PostgreSQL 16 client (pg_dump + psql) ─────────────────────
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
+      gpg --dearmor -o /usr/share/keyrings/postgresql.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" \
+      > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install Bun (single binary ~100MB, replaces nodejs+npm ~500MB) ────

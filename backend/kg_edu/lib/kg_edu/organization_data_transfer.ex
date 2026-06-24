@@ -86,8 +86,16 @@ defmodule KgEdu.OrganizationDataTransfer do
       db_config = get_db_config()
       env = [{"PGPASSWORD", db_config[:password] || ""}]
 
-      # 1. sed-replace the old schema name with the new one
-      replaced_sql = String.replace(sql_content, "#{old_tenant}.", "#{new_tenant}.")
+      # 1. Strip Ash Postgres \restrict / \unrestrict psql meta-commands
+      #    These are injected by ash_postgres but not recognized by plain psql.
+      replaced_sql =
+        sql_content
+        |> String.split("\n")
+        |> Enum.reject(&(String.starts_with?(&1, "\\restrict") || String.starts_with?(&1, "\\unrestrict")))
+        |> Enum.join("\n")
+
+      # 2. sed-replace the old schema name with the new one
+      replaced_sql = String.replace(replaced_sql, "#{old_tenant}.", "#{new_tenant}.")
 
       # Also fix the header comment to point to new schema
       replaced_sql =
@@ -244,7 +252,11 @@ defmodule KgEdu.OrganizationDataTransfer do
         "非空约束冲突，源数据缺少必填字段"
 
       true ->
-        error_line = output |> String.split("\n") |> Enum.find(&String.contains?(&1, "ERROR:")) || "未知错误"
+        error_line =
+          output
+          |> String.split("\n")
+          |> Enum.find(&String.match?(&1, ~r/ERROR:|error:/))
+          || "未知错误"
         String.trim(error_line)
     end
   end

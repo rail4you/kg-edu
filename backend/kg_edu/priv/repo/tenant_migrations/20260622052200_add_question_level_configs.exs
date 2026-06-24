@@ -9,7 +9,7 @@ defmodule KgEdu.Repo.TenantMigrations.AddQuestionLevelConfigs do
   use Ecto.Migration
 
   def up do
-    create table(:question_level_configs, primary_key: false, prefix: prefix()) do
+    create_if_not_exists table(:question_level_configs, primary_key: false, prefix: prefix()) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
       add :level_key, :text, null: false
       add :label, :text, null: false
@@ -35,18 +35,21 @@ defmodule KgEdu.Repo.TenantMigrations.AddQuestionLevelConfigs do
           )
     end
 
-    create unique_index(:question_level_configs, [:course_id, :level_key],
-             name: "question_level_configs_course_level_key_index",
-             prefix: prefix()
-           )
+    execute """
+      CREATE UNIQUE INDEX IF NOT EXISTS question_level_configs_course_level_key_index
+      ON #{prefix()}.question_level_configs (course_id, level_key)
+    """
   end
 
   def down do
-    drop constraint(:question_level_configs, "question_level_configs_course_id_fkey")
-    drop unique_index(:question_level_configs, [:course_id, :level_key],
-           name: "question_level_configs_course_level_key_index",
-           prefix: prefix()
-         )
-    drop table(:question_level_configs, prefix: prefix())
+    execute """
+      DROP INDEX IF EXISTS #{prefix()}.question_level_configs_course_level_key_index
+    """
+    execute """
+      ALTER TABLE #{prefix()}.question_level_configs DROP CONSTRAINT IF EXISTS question_level_configs_course_id_fkey
+    """
+    execute """
+      DROP TABLE IF EXISTS #{prefix()}.question_level_configs
+    """
   end
 end

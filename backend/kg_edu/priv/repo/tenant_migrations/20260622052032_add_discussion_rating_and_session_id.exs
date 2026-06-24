@@ -8,14 +8,38 @@ defmodule KgEdu.Repo.TenantMigrations.AddDiscussionRatingAndSessionId do
   use Ecto.Migration
 
   def up do
-    alter table(:discussions, prefix: prefix()) do
-      add :rating, :bigint, default: 5
-    end
+    schema = prefix()
+
+    execute """
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = '#{schema}'
+            AND table_name = 'discussions'
+            AND column_name = 'rating'
+        ) THEN
+          ALTER TABLE #{schema}.discussions ADD COLUMN rating bigint DEFAULT 5;
+        END IF;
+      END $$;
+    """
   end
 
   def down do
-    alter table(:discussions, prefix: prefix()) do
-      remove :rating
-    end
+    schema = prefix()
+
+    execute """
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = '#{schema}'
+            AND table_name = 'discussions'
+            AND column_name = 'rating'
+        ) THEN
+          ALTER TABLE #{schema}.discussions DROP COLUMN rating;
+        END IF;
+      END $$;
+    """
   end
 end

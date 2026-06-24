@@ -9,21 +9,42 @@ defmodule KgEdu.Repo.TenantMigrations.AddDiscussionSessionIdToDiscussions do
   use Ecto.Migration
 
   def up do
-    alter table(:discussions, prefix: prefix()) do
-      add :discussion_session_id,
-          references(:discussion_sessions,
-            column: :id,
-            name: "discussions_discussion_session_id_fkey",
-            type: :uuid,
-            prefix: prefix(),
-            on_delete: :nilify_all
-          )
-    end
+    schema = prefix()
+
+    execute """
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = '#{schema}'
+            AND table_name = 'discussions'
+            AND column_name = 'discussion_session_id'
+        ) THEN
+          ALTER TABLE #{schema}.discussions
+            ADD COLUMN discussion_session_id uuid
+            CONSTRAINT discussions_discussion_session_id_fkey
+            REFERENCES #{schema}.discussion_sessions(id)
+            ON DELETE SET NULL;
+        END IF;
+      END $$;
+    """
   end
 
   def down do
-    alter table(:discussions, prefix: prefix()) do
-      remove :discussion_session_id
-    end
+    schema = prefix()
+
+    execute """
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = '#{schema}'
+            AND table_name = 'discussions'
+            AND column_name = 'discussion_session_id'
+        ) THEN
+          ALTER TABLE #{schema}.discussions DROP COLUMN discussion_session_id;
+        END IF;
+      END $$;
+    """
   end
 end
