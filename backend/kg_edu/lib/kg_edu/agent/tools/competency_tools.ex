@@ -182,25 +182,38 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
     count = 0
 
     Enum.reduce(categories, count, fn category, acc ->
+      category_name = Map.get(category, "name", "专业能力")
+      category_atom = map_category(category_name)
       abilities = Map.get(category, "abilities", [])
 
       Enum.reduce(abilities, acc, fn ability, inner_acc ->
-        save_ability(tenant, major_id, nil, ability, inner_acc)
+        save_ability(tenant, major_id, nil, category_atom, ability, inner_acc)
       end)
     end)
   end
 
-  defp save_ability(tenant, major_id, parent_id, ability, count) do
+  defp map_category(name) do
+    cond do
+      String.contains?(name, "实践") or String.contains?(name, "practical") -> :practical
+      String.contains?(name, "通用") or String.contains?(name, "素质") or String.contains?(name, "general") -> :general
+      true -> :professional
+    end
+  end
+
+  defp save_ability(tenant, major_id, parent_id, category, ability, count) do
     # Create the ability node
     try do
-      {:ok, record} =
-        KgEdu.Knowledge.SubAbilityKnowledgeResource
+      record =
+        KgEdu.MajorAnalysis.MajorCompetency
         |> Ash.Changeset.for_create(:create, %{
           major_id: major_id,
           name: ability["name"] || "未命名能力",
           description: ability["description"] || "",
-          level: ability["level"] || 1,
-          parent_id: parent_id
+          category: category,
+          level: to_string(ability["level"] || 1),
+          weight: ability["weight"] || 1.0,
+          parent_id: parent_id,
+          ai_generated: true
         })
         |> Ash.create!(tenant: tenant, authorize?: false)
 
@@ -209,7 +222,7 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
       # Recursively create children
       children = ability["children"] || []
       Enum.reduce(children, new_count, fn child, acc ->
-        save_ability(tenant, major_id, record.id, child, acc)
+        save_ability(tenant, major_id, record.id, category, child, acc)
       end)
     rescue
       e ->
