@@ -34,7 +34,9 @@ defmodule KgEdu.Agent.ApiKeyProvider do
         env_var = env_var_for(provider_str)
 
         Application.put_env(:req_llm, config_key, key)
-        System.put_env(env_var, key)
+        # Also set for alibaba_cn which ReqLLM uses internally
+        Application.put_env(:req_llm, :alibaba_cn_api_key, key)
+        if env_var, do: System.put_env(env_var, key)
         :ok
 
       _ ->
@@ -42,6 +44,7 @@ defmodule KgEdu.Agent.ApiKeyProvider do
     end
   end
 
+  defp env_var_for("alibaba_cn"), do: "DASHSCOPE_API_KEY"
   defp env_var_for("qwen"), do: "DASHSCOPE_API_KEY"
   defp env_var_for(_), do: nil
 

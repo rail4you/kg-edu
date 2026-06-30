@@ -130,33 +130,97 @@ defmodule KgEdu.Agent.Tools.GenerateCurriculum do
   # ── LLM call ────────────────────────────────────────────────────────────
 
   defp call_llm(user_prompt) do
-    model = Application.get_env(:kg_edu, :reqllm)[:model] || "alibaba_cn:qwen-plus"
-    ensure_qwen_key()
-
-    case ReqLLM.Generation.generate_text(model, [
-           %{role: "system", content: @system_prompt},
-           %{role: "user", content: user_prompt}
-         ], max_tokens: 16384, temperature: 0.7) do
-      {:ok, response} ->
-        {:ok, ReqLLM.Response.text(response)}
-
-      {:error, reason} ->
-        {:error, reason}
+    model = "qwen-plus"
+    # Use fresh Req request instead of ReqLLM to avoid Finch pool issues
+    ensure_key = fn ->
+      KgEdu.Agent.ApiKeyProvider.ensure_key()
+      System.get_env("DASHSCOPE_API_KEY") ||
+        Application.get_env(:req_llm, :alibaba_cn_api_key) ||
+        Application.get_env(:req_llm, :qwen_api_key)
     end
+
+    api_key = ensure_key.()
+
+    if is_nil(api_key) or api_key == "" do
+      {:error, "API Key 未配置"}
+    else
+      url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+      body = %{
+        model: model,
+        messages: [
+          %{role: "system", content: @system_prompt},
+          %{role: "user", content: user_prompt}
+        ],
+        max_tokens: 16384,
+        temperature: 0.7
+      }
+
+      Logger.info("[GenerateCurriculum] Calling DashScope API directly")
+      start = System.monotonic_time(:millisecond)
+
+      case Req.post(url,
+        json: body,
+        headers: %{"Authorization" => "Bearer #{api_key}"},
+        connect_options: [timeout: 30_000],
+        receive_timeout: 120_000
+      ) do
+        {:ok, %{status: 200, body: %{"choices" => [%{"message" => %{"content" => content}} | _]}}} ->
+          elapsed = System.monotonic_time(:millisecond) - start
+          Logger.info("[GenerateCurriculum] LLM call completed in #{elapsed}ms")
+          {:ok, content}
+
+        {:ok, %{status: status, body: body}} ->
+          elapsed = System.monotonic_time(:millisecond) - start
+          Logger.error("[GenerateCurriculum] API error #{status}: #{inspect(body)}")
+          msg = get_in(body, ["error", "message"]) || get_in(body, ["message"]) || "HTTP #{status}"
+          {:error, "AI 服务调用失败 (#{status}): #{msg}"}
+
+        {:error, error} ->
+          elapsed = System.monotonic_time(:millisecond) - start
+          Logger.error("[GenerateCurriculum] Request error after #{elapsed}ms: #{inspect(error)}")
+          {:error, "AI 服务调用失败: #{Exception.message(error)}"}
+      end
+    end
+  rescue
+    e ->
+      Logger.error("[GenerateCurriculum] LLM call crashed: #{Exception.message(e)}")
+      {:error, e}
   end
 
   defp ensure_qwen_key, do: KgEdu.Agent.ApiKeyProvider.ensure_key()
 
   defp format_llm_error(error) do
+    Logger.error("[GenerateCurriculum] Raw LLM error: #{inspect(error)}")
+
     cond do
       is_struct(error, ReqLLM.Error.API.Request) ->
         status = error.status || "?"
-        msg = get_in(error.response_body, ["error", "message"]) || "请求失败"
+        # DashScope errors may have "message" at top level or nested under "error"
+        body = error.response_body
+        msg =
+          cond do
+            is_map(body) ->
+              Map.get(body, "message") ||
+                get_in(body, ["error", "message"]) ||
+                get_in(body, [:error, :message]) ||
+                inspect(body)
+            is_binary(body) and body != "" -> body
+            true -> "请求失败"
+          end
         "AI 服务调用失败 (#{status}): #{msg}"
 
       is_struct(error, ReqLLM.Error.API.Response) ->
         status = error.status || "?"
-        msg = get_in(error.response_body, ["error", "message"]) || "响应异常"
+        body = error.response_body
+        msg =
+          cond do
+            is_map(body) ->
+              Map.get(body, "message") ||
+                get_in(body, ["error", "message"]) ||
+                inspect(body)
+            is_binary(body) and body != "" -> body
+            true -> "响应异常"
+          end
         "AI 服务响应失败 (#{status}): #{msg}"
 
       is_binary(error) ->

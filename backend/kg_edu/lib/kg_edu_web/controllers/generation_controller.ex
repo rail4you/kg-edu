@@ -134,6 +134,9 @@ defmodule KgEduWeb.GenerationController do
       # Update status to running
       KgEdu.Agent.JobManager.update(job_id, %{status: "running", message: "正在生成课程体系..."})
 
+      # Ensure API key is loaded BEFORE spawning task (sets env vars for entire VM)
+      KgEdu.Agent.ApiKeyProvider.ensure_key()
+
       # Run generation async
       Task.start(fn ->
         result =

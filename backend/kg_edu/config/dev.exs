@@ -101,5 +101,17 @@ config :swoosh, :api_client, false
 config :kg_edu, :reqllm,
   model: "alibaba_cn:qwen-plus"
 
+# ReqLLM Finch pool — force HTTP/1.1 to avoid HTTP/2 issues with DashScope
+config :req_llm, :finch,
+  pools: %{
+    :default => [protocols: [:http1], size: 5, count: 4]
+  }
+
+# Increase Finch timeouts for LLM calls
+config :finch,
+  connect_timeout: 60_000,
+  receive_timeout: 300_000,
+  pool_timeout: 30_000
+
 # warnings_as_errors is deprecated via Code.compiler_options/1;
 # use `MIX_ENV=dev mix compile --warnings-as-errors` instead

@@ -147,15 +147,36 @@ defmodule KgEdu.Agent.Tools.GenerateCompetencyGraph do
   defp ensure_qwen_key, do: KgEdu.Agent.ApiKeyProvider.ensure_key()
 
   defp format_llm_error(error) do
+    Logger.error("[CompetencyGraph] Raw LLM error: #{inspect(error)}")
+
     cond do
       is_struct(error, ReqLLM.Error.API.Request) ->
         status = error.status || "?"
-        msg = get_in(error.response_body, ["error", "message"]) || "请求失败"
+        body = error.response_body
+        msg =
+          cond do
+            is_map(body) ->
+              Map.get(body, "message") ||
+                get_in(body, ["error", "message"]) ||
+                get_in(body, [:error, :message]) ||
+                inspect(body)
+            is_binary(body) and body != "" -> body
+            true -> "请求失败"
+          end
         "AI 服务调用失败 (#{status}): #{msg}"
 
       is_struct(error, ReqLLM.Error.API.Response) ->
         status = error.status || "?"
-        msg = get_in(error.response_body, ["error", "message"]) || "响应异常"
+        body = error.response_body
+        msg =
+          cond do
+            is_map(body) ->
+              Map.get(body, "message") ||
+                get_in(body, ["error", "message"]) ||
+                inspect(body)
+            is_binary(body) and body != "" -> body
+            true -> "响应异常"
+          end
         "AI 服务响应失败 (#{status}): #{msg}"
 
       is_binary(error) ->
