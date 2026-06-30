@@ -78,11 +78,10 @@ defmodule KgEdu.Agent.Tools.GenerateCurriculum do
 
       case call_llm(user_prompt) do
         {:ok, markdown_content} ->
-          # Extract title from markdown
-          title = extract_title(markdown_content) || "课程体系设计方案"
-
-          # Save to DB
+          # Extract title from markdown and add date suffix
+          raw_title = extract_title(markdown_content) || "课程体系设计方案"
           tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+          title = unique_title(raw_title, tenant, major_id)
           user_id = KgEdu.Agent.SessionContext.get(:user_id)
 
           case save_curriculum(tenant, major_id, title, markdown_content, user_id) do
@@ -177,15 +176,36 @@ defmodule KgEdu.Agent.Tools.GenerateCurriculum do
     end
   end
 
+  defp unique_title(base_title, tenant, major_id) do
+    today = Date.utc_today() |> Date.to_iso8601()
+    base = "#{base_title} (#{today})"
+
+    # Count existing designs with same date prefix for this major
+    count =
+      try do
+        KgEdu.MajorAnalysis.CurriculumDesign
+        |> Ash.Query.filter(major_id == ^major_id)
+        |> Ash.read!(tenant: tenant, authorize?: false)
+        |> Enum.count(fn d -> String.starts_with?(d.title, base) end)
+      rescue
+        _ -> 0
+      end
+
+    if count > 0 do
+      "#{base} ##{count + 1}"
+    else
+      base
+    end
+  end
+
   defp save_curriculum(tenant, major_id, title, content, user_id) do
     try do
-      {:ok, record} =
+      record =
         KgEdu.MajorAnalysis.CurriculumDesign
         |> Ash.Changeset.for_create(:create, %{
           major_id: major_id,
           title: title,
-          content: content,
-          created_by_id: user_id
+          markdown_content: content
         })
         |> Ash.create!(tenant: tenant, authorize?: false)
 
