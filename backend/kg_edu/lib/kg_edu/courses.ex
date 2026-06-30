@@ -166,6 +166,7 @@ defmodule KgEdu.Courses do
       rpc_action(:create_discussion, :create)
       rpc_action(:list_discussions, :read)
       rpc_action(:list_discussions_by_course, :by_course)
+      rpc_action(:list_discussions_by_session, :by_session)
       rpc_action(:get_discussion, :read)
       rpc_action(:update_discussion, :update)
       rpc_action(:delete_discussion, :destroy)

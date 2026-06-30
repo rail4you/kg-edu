@@ -31,6 +31,7 @@ defmodule KgEdu.Courses.Discussion do
     define :get_discussion, action: :read, get_by: [:id]
     define :list_discussions, action: :read
     define :list_discussions_by_course, action: :by_course
+    define :list_discussions_by_session, action: :by_session
     define :increment_reply, action: :increment_reply
   end
 
@@ -69,8 +70,27 @@ defmodule KgEdu.Courses.Discussion do
       prepare build(sort: [inserted_at: :desc], load: [:user])
     end
 
+    read :by_session do
+      description "List discussions by discussion session ID"
+
+      argument :discussion_session_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(discussion_session_id == ^arg(:discussion_session_id))
+
+      pagination do
+        required? false
+        offset? true
+        keyset? true
+        countable true
+      end
+
+      prepare build(sort: [inserted_at: :desc], load: [:user])
+    end
+
     create :create do
-      accept [:title, :content, :course_id, :user_id, :rating]
+      accept [:title, :content, :course_id, :user_id, :rating, :discussion_session_id]
     end
 
     update :update do
@@ -150,6 +170,12 @@ defmodule KgEdu.Courses.Discussion do
       description "Rating score (1-5)"
     end
 
+    attribute :discussion_session_id, :uuid do
+      allow_nil? true
+      public? true
+      description "The discussion session this discussion belongs to"
+    end
+
     create_timestamp :inserted_at do
       public? true
     end
@@ -170,6 +196,12 @@ defmodule KgEdu.Courses.Discussion do
       allow_nil? true
       public? true
       description "The user who created this discussion"
+    end
+
+    belongs_to :discussion_session, KgEdu.Courses.DiscussionSession do
+      allow_nil? true
+      public? true
+      description "The discussion session this discussion belongs to"
     end
   end
 end
