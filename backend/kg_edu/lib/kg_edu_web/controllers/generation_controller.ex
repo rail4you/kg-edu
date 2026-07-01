@@ -1,5 +1,7 @@
 defmodule KgEduWeb.GenerationController do
   use KgEduWeb, :controller
+  require Ash.Query
+  require Logger
 
   @doc """
   POST /api/generate_ai_exercise
@@ -186,6 +188,96 @@ defmodule KgEduWeb.GenerationController do
 
       {:error, :not_found} ->
         conn |> put_status(404) |> json(%{success: false, message: "任务不存在"})
+    end
+  end
+
+  @doc """
+  POST /exam/preview
+  Preview exam composition - randomly select exercises by type and count.
+  """
+  def preview_exam(conn, params) do
+    tenant = extract_tenant(conn, params)
+    course_id = params["courseId"] || params["course_id"]
+    exercise_config = params["exerciseConfig"] || params["exercise_config"] || %{}
+
+    if is_nil(tenant) or is_nil(course_id) do
+      json(conn, %{success: false, message: "未设置租户上下文或课程ID"})
+    else
+      sections =
+        exercise_config
+        |> Enum.map(fn {question_type, config} ->
+          count = config["count"] || config[:count] || 0
+          points = config["points"] || config[:points] || 2
+          difficulties = config["difficulties"] || config[:difficulties] || [1, 2, 3]
+
+          type_name =
+            case question_type do
+              "multiple_choice" -> "单选题"
+              "multiple_response" -> "多选题"
+              "true_false" -> "判断题"
+              "fill_in_blank" -> "填空题"
+              "essay" -> "问答题"
+              "term_definition" -> "名词解释"
+              "case_study" -> "案例题"
+              _ -> question_type
+            end
+
+          # Query exercises matching course_id, question_type, and difficulties
+          type_atom = String.to_existing_atom(question_type)
+          query =
+            KgEdu.Knowledge.Exercise
+            |> Ash.Query.new()
+            |> Ash.Query.filter(course_id: course_id, question_type: type_atom)
+
+          available =
+            try do
+              Ash.read!(query, tenant: tenant, authorize?: false, actor: nil)
+              |> Enum.filter(fn ex -> Enum.member?(difficulties, ex.difficulty) end)
+            rescue
+              e ->
+                Logger.error("Preview query failed: #{Exception.message(e)}")
+                []
+            end
+            |> Enum.shuffle()
+            |> Enum.take(count)
+
+          exercises =
+            available
+            |> Enum.map(fn ex ->
+              %{
+                Id: ex.id,
+                Title: ex.title,
+                QuestionType: to_string(ex.question_type),
+                QuestionTypeName: type_name,
+                Content: ex.question_content,
+                Options: if(ex.options, do: Jason.encode!(ex.options), else: nil),
+                Answer: ex.answer,
+                Points: points
+              }
+            end)
+
+          %{
+            QuestionType: question_type,
+            QuestionTypeName: type_name,
+            RequestedCount: count,
+            ActualCount: length(available),
+            Exercises: exercises
+          }
+        end)
+        |> Enum.reject(fn s -> s[:ActualCount] == 0 end)
+
+      total_points =
+        sections
+        |> Enum.map(fn s -> s[:ActualCount] * 2 end)
+        |> Enum.sum()
+
+      json(conn, %{
+        Success: true,
+        Message: "组卷预览成功",
+        CourseId: course_id,
+        TotalPoints: total_points,
+        Sections: sections
+      })
     end
   end
 

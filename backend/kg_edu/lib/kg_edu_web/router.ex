@@ -88,6 +88,7 @@ defmodule KgEduWeb.Router do
   scope "/api", KgEduWeb do
     pipe_through :api
     get "/health", PageController, :health
+    get "/branding", PageController, :branding
     post "/chat/stream", ChatController, :stream_message
     get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
     post "/session/find-tenants", SessionController, :find_tenants
@@ -112,11 +113,12 @@ defmodule KgEduWeb.Router do
     post "/sts-token", FileUploadController, :sts_token
   end
 
-  # Competency graph and curriculum generation endpoints
+  # Competency graph, curriculum generation, and exam preview endpoints
   scope "/", KgEduWeb do
     pipe_through :api
     post "/competency-graph/generate", GenerationController, :generate_competency_graph
     post "/curriculum/generate", GenerationController, :generate_curriculum
+    post "/exam/preview", GenerationController, :preview_exam
   end
 
   # Excel import endpoints (compatible with agent-server format)
