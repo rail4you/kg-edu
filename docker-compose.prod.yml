@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   db:
@@ -27,6 +25,8 @@ services:
     image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest
     container_name: kg-edu-backend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=ecto://postgres:postgres@db:5432/kg_edu_dev
       - SECRET_KEY_BASE=${SECRET_KEY_BASE}
@@ -38,6 +38,13 @@ services:
       - QWEN_API_KEY=${QWEN_API_KEY}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
       - REACT_TOKEN_SECRET=${REACT_TOKEN_SECRET:-kg-edu-local-react-token-secret-change-in-prod-32}
+      - BRANDING_APP_NAME=${BRANDING_APP_NAME}
+      - BRANDING_APP_TITLE=${BRANDING_APP_TITLE}
+      - BRANDING_APP_DESCRIPTION=${BRANDING_APP_DESCRIPTION}
+      - BRANDING_LOGO_DARK=${BRANDING_LOGO_DARK}
+      - BRANDING_LOGO_LIGHT=${BRANDING_LOGO_LIGHT}
+      - BRANDING_FAVICON=${BRANDING_FAVICON}
+      - BRANDING_CONTACT_EMAIL=${BRANDING_CONTACT_EMAIL}
     ports:
       - "4000:4000"
     depends_on:

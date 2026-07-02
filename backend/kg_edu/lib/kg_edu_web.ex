@@ -17,7 +17,7 @@ defmodule KgEduWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images logo files favicon.ico robots.txt index.html vite.svg logo.svg logo-light.svg logo.png logo-light.png book-placeholder.svg)
+  def static_paths, do: ~w(assets fonts images logo files favicon.ico robots.txt index.html vite.svg logo.svg logo-light.svg logo.png logo-light.png logo-zikeyunsu.svg logo-zikeyunsu-light.svg book-placeholder.svg)
 
   def router do
     quote do

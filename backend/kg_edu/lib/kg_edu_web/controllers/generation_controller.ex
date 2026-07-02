@@ -346,6 +346,45 @@ defmodule KgEduWeb.GenerationController do
     end
   end
 
+  @doc """
+  POST /api/job-competency-graph/ai-generate
+  AI generate job competency graph (tasks, abilities, knowledge links).
+  """
+  def ai_generate_job_graph(conn, params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      KgEdu.Agent.SessionContext.put(tenant: tenant)
+
+      result =
+        KgEdu.Agent.Tools.GenerateJobCompetencyGraph.run(%{
+          jobPositionId: params["jobPositionId"],
+          graphId: params["graphId"],
+          taskCount: params["taskCount"]
+        }, %{})
+
+      case result do
+        {:ok, output} ->
+          json(conn, %{
+            success: true,
+            message: output.result,
+            data: %{
+              taskCount: output.taskCount,
+              abilityCount: output.abilityCount,
+              linkCount: output.linkCount,
+              mismatchWarnings: output.mismatchWarnings,
+              overallAssessment: output.overallAssessment
+            }
+          })
+
+        {:error, reason} ->
+          json(conn, %{success: false, message: reason})
+      end
+    end
+  end
+
   # ── Helpers ─────────────────────────────────────────────────────────────
 
   defp extract_tenant(conn, params) do

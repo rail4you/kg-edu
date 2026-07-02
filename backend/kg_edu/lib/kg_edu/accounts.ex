@@ -69,6 +69,7 @@ defmodule KgEdu.Accounts do
       rpc_action :reset_password, :reset_password_with_token
       rpc_action :change_password, :change_password
       rpc_action :change_password_direct, :change_password_direct
+      rpc_action :admin_change_user_password, :admin_change_user_password
       rpc_action :get_current_user, :get_current_user
       rpc_action :update_user, :update
       rpc_action :delete_user, :destroy

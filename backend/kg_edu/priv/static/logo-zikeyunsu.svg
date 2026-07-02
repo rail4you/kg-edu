@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="60" viewBox="0 0 240 60">
+  <defs>
+    <linearGradient id="z-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="z-grad-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <!-- 图标：Z 字形 + 云朵 -->
+  <g transform="translate(8, 10)">
+    <!-- 云朵底座 -->
+    <path d="M 4 28 C 4 22 8 18 14 18 C 14 12 20 8 26 8 C 32 8 36 12 38 16 C 42 14 46 16 46 20 C 46 24 42 28 38 28 Z"
+          fill="url(#z-grad)" opacity="0.9"/>
+    <!-- Z 字闪电 -->
+    <path d="M 18 24 L 30 24 L 24 14 L 34 14 L 20 30 L 26 20 L 16 20 Z"
+          fill="#FFFFFF" opacity="0.95"/>
+  </g>
+  <!-- 文字：智课云枢 -->
+  <text x="62" y="38" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif"
+        font-size="28" font-weight="700" fill="url(#z-grad)" letter-spacing="2">
+    智课云枢
+  </text>
+</svg>

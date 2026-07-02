@@ -179,7 +179,7 @@ defmodule KgEdu.GroupTask.Group do
 
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
-      allow_nil? false
+      allow_nil? true
       public? true
     end
 

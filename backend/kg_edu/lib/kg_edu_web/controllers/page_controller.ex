@@ -6,6 +6,30 @@ defmodule KgEduWeb.PageController do
     json(conn, %{status: "ok", service: "kg-edu-phoenix"})
   end
 
+  # 品牌配置端点 — 从环境变量读取，支持部署时配置
+  # 环境变量前缀: BRANDING_
+  def branding(conn, _params) do
+    app_name = System.get_env("BRANDING_APP_NAME", "课堂星")
+    app_title = System.get_env("BRANDING_APP_TITLE", "智慧教学系统")
+    app_description = System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台")
+    logo_light = System.get_env("BRANDING_LOGO_LIGHT", "/logo-light.svg")
+    logo_dark = System.get_env("BRANDING_LOGO_DARK", "/logo.svg")
+    favicon = System.get_env("BRANDING_FAVICON", "/vite.svg")
+    contact_email = System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
+    app_copyright = "#{app_name} © 2026 - 融合知识图谱与人工智能技术 | #{app_title}"
+
+    json(conn, %{
+      app_name: app_name,
+      app_title: app_title,
+      app_description: app_description,
+      app_copyright: app_copyright,
+      logo_light: logo_light,
+      logo_dark: logo_dark,
+      favicon: favicon,
+      contact_email: contact_email
+    })
+  end
+
   def home(conn, _params) do
     render(conn, :home)
   end

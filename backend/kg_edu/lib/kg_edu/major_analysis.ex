@@ -252,6 +252,48 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :list_supports_by_course, :by_course
       rpc_action :replace_competency_course_supports, :replace_for_competency
     end
+
+    resource KgEdu.MajorAnalysis.JobCompetencyGraph do
+      rpc_action :create_job_competency_graph, :create
+      rpc_action :update_job_competency_graph, :update_graph
+      rpc_action :delete_job_competency_graph, :destroy
+      rpc_action :get_job_competency_graph, :by_id
+      rpc_action :list_job_competency_graphs, :read
+      rpc_action :list_graphs_by_job_position, :by_job_position
+      rpc_action :activate_job_competency_graph, :activate
+      rpc_action :clone_job_competency_graph, :clone
+    end
+
+    resource KgEdu.MajorAnalysis.JobCoreTask do
+      rpc_action :create_job_core_task, :create
+      rpc_action :update_job_core_task, :update_task
+      rpc_action :delete_job_core_task, :destroy
+      rpc_action :get_job_core_task, :by_id
+      rpc_action :list_job_core_tasks, :read
+      rpc_action :list_core_tasks_by_graph, :by_graph
+      rpc_action :list_core_tasks_by_job_position, :by_job_position
+    end
+
+    resource KgEdu.MajorAnalysis.JobTaskAbility do
+      rpc_action :create_job_task_ability, :create
+      rpc_action :update_job_task_ability, :update_ability
+      rpc_action :delete_job_task_ability, :destroy
+      rpc_action :get_job_task_ability, :by_id
+      rpc_action :list_job_task_abilities, :read
+      rpc_action :list_abilities_by_core_task, :by_core_task
+      rpc_action :list_abilities_by_graph, :by_graph
+    end
+
+    resource KgEdu.MajorAnalysis.AbilityKnowledgeLink do
+      rpc_action :create_ability_knowledge_link, :create
+      rpc_action :update_ability_knowledge_link, :update_link
+      rpc_action :delete_ability_knowledge_link, :destroy
+      rpc_action :list_ability_knowledge_links, :read
+      rpc_action :list_links_by_ability, :by_ability
+      rpc_action :list_links_by_graph, :by_graph
+      rpc_action :list_links_by_knowledge_resource, :by_knowledge_resource
+      rpc_action :replace_ability_knowledge_links, :replace_for_ability
+    end
   end
 
   resources do
@@ -272,5 +314,9 @@ defmodule KgEdu.MajorAnalysis do
     resource KgEdu.MajorAnalysis.MajorEnrollment
     resource KgEdu.MajorAnalysis.MajorCourse
     resource KgEdu.MajorAnalysis.CompetencyCourseSupport
+    resource KgEdu.MajorAnalysis.JobCompetencyGraph
+    resource KgEdu.MajorAnalysis.JobCoreTask
+    resource KgEdu.MajorAnalysis.JobTaskAbility
+    resource KgEdu.MajorAnalysis.AbilityKnowledgeLink
   end
 end

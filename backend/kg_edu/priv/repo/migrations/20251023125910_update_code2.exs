@@ -1,4 +1,4 @@
-defmodule KgEdu.Repo.Migrations.UpdateCode do
+defmodule KgEdu.Repo.Migrations.UpdateCode2 do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 

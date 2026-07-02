@@ -289,6 +289,11 @@ defmodule KgEdu.Accounts.User do
         allow_nil?(true)
       end
 
+      argument :employee_id, :string do
+        description("The user's employee ID (工号)")
+        allow_nil?(true)
+      end
+
       # Use the CreateUser change to handle password hashing and data storage
       change({__MODULE__.Changes.CreateUser, []})
 
@@ -304,6 +309,7 @@ defmodule KgEdu.Accounts.User do
       change(set_attribute(:class_id, arg(:class_id)))
       change(set_attribute(:major, arg(:major)))
       change(set_attribute(:colledge, arg(:colledge)))
+      change(set_attribute(:employee_id, arg(:employee_id)))
     end
 
     update :update do
@@ -320,7 +326,8 @@ defmodule KgEdu.Accounts.User do
         :class_id,
         :school,
         :major,
-        :colledge
+        :colledge,
+        :employee_id
       ])
 
       require_atomic?(false)
@@ -422,6 +429,58 @@ defmodule KgEdu.Accounts.User do
         case Ash.update(changeset, tenant: tenant) do
           {:ok, updated_user} ->
             {:ok, updated_user}
+
+          {:error, error} ->
+            {:error, error}
+        end
+      end)
+    end
+
+    action :admin_change_user_password do
+      description("Admin or super admin changes a user's password directly")
+      returns(:map)
+
+      argument :user_id, :string do
+        description("The ID of the user whose password to change")
+        allow_nil?(false)
+      end
+
+      argument :new_password, :string do
+        description("The new password to set")
+        allow_nil?(false)
+        constraints(min_length: 8)
+        sensitive?(true)
+      end
+
+      argument :password_confirmation, :string do
+        description("Password confirmation")
+        allow_nil?(false)
+        sensitive?(true)
+      end
+
+      run(fn input, context ->
+        user_id = input.arguments.user_id
+        tenant = context.tenant
+
+        case Ash.get(KgEdu.Accounts.User, user_id, tenant: tenant) do
+          {:ok, nil} ->
+            {:error, "User not found"}
+
+          {:ok, target_user} ->
+            changeset =
+              target_user
+              |> Ash.Changeset.for_update(:internal_change_password_direct, %{
+                new_password: input.arguments.new_password,
+                password_confirmation: input.arguments.password_confirmation
+              })
+
+            case Ash.update(changeset, tenant: tenant) do
+              {:ok, updated_user} ->
+                {:ok, %{success: true, user_id: updated_user.id}}
+
+              {:error, error} ->
+                {:error, error}
+            end
 
           {:error, error} ->
             {:error, error}
@@ -1296,6 +1355,12 @@ defmodule KgEdu.Accounts.User do
       allow_nil?(true)
       public?(true)
       description("个人简介 (Personal Bio)")
+    end
+
+    attribute :employee_id, :string do
+      allow_nil?(true)
+      public?(true)
+      description("工号 (Employee ID)")
     end
   end
 
