@@ -143,6 +143,9 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
         chapter_desc = chapter.description || ""
         subchapters = Map.get(chapter, :subchapters) || []
 
+        # Try LLM enrichment for richer slide content
+        llm_slides = try_llm_enrichment(course_name, chapter_title, subchapters)
+
         slides = []
 
         # 1. Title slide
@@ -178,34 +181,13 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
           }
         ]
 
-        # 3. Subchapter detail slides
+        # 3. Subchapter detail slides — LLM enriched or fallback
         sub_slides =
-          subchapters
-          |> Enum.map(fn s ->
-            bullets = []
-            bullets = if s.description, do: bullets ++ String.split(s.description, "\n"), else: bullets
-
-            sub_subs = Map.get(s, :subchapters) || []
-            bullets =
-              if sub_subs != [] do
-                bullets ++ (sub_subs |> Enum.map(fn ss ->
-                  desc_suffix = if ss.description, do: "：#{String.slice(ss.description, 0, 80)}", else: ""
-                  "#{ss.title}#{desc_suffix}"
-                end))
-              else
-                bullets
-              end
-
-            if bullets == [] do
-              bullets = ["#{chapter_title} — #{s.title}"]
-            end
-
-            %{
-              "title" => s.title,
-              "content" => "#{chapter_title} · #{s.title}",
-              "bullets" => Enum.take(bullets, 8)
-            }
-          end)
+          if llm_slides != [] do
+            llm_slides
+          else
+            build_fallback_subchapter_slides(chapter_title, subchapters)
+          end
 
         slides = slides ++ sub_slides
 
@@ -232,6 +214,234 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
         slides
       end
+    end
+
+    # ── LLM enrichment ───────────────────────────────────────────────────────
+
+    defp try_llm_enrichment(course_name, chapter_title, subchapters) do
+      if subchapters == [] or !api_key_available?() do
+        Logger.info("[PPTX] LLM enrichment skipped: subs=#{length(subchapters)}, key=#{api_key_available?() != nil}")
+        []
+      else
+        Logger.info("[PPTX] Starting LLM enrichment for #{length(subchapters)} subchapters")
+        prompt = build_enrichment_prompt(course_name, chapter_title, subchapters)
+        Logger.info("[PPTX] Enrichment prompt: #{String.length(prompt)} chars")
+        case call_llm_for_content(prompt) do
+          {:ok, text} ->
+            Logger.info("[PPTX] LLM response: #{String.length(text)} chars")
+            slides = parse_llm_slides(text, chapter_title)
+            Logger.info("[PPTX] Parsed #{length(slides)} slides from LLM")
+            slides
+          err ->
+            Logger.warning("[PPTX] LLM enrichment failed: #{inspect(err)}")
+            []
+        end
+      end
+    end
+
+    defp api_key_available? do
+      System.get_env("DASHSCOPE_API_KEY") || System.get_env("QWEN_API_KEY")
+    end
+
+    defp build_enrichment_prompt(course_name, chapter_title, subchapters) do
+      structure = format_chapter_tree_for_prompt(subchapters, 0)
+      sub_count = length(subchapters)
+      total_leaves = count_leaf_subchapters(subchapters)
+
+      """
+      你是课程PPT课件内容生成专家。请根据以下课程信息，为每个子章节生成教学PPT内容。
+
+      课程名称：#{course_name}
+      章节名称：#{chapter_title}
+      子章节数量：#{sub_count} 个（共 #{total_leaves} 个知识点）
+
+      章节结构：
+      #{structure}
+
+      请为每个子章节生成PPT内容。要求：
+      1. 用 "## 子章节名" 标记每个子章节
+      2. 用 "### PPT标题" 给每一页PPT命名，内容较多的子章节用多个 ### 分页，每页3-5条要点
+      3. 用 "- " 列出每页的内容要点
+      4. 结构深、知识点多的子章节拆成2-3页，简单子章节1页即可
+      5. 要点要结合课程#{course_name}和章节#{chapter_title}的上下文展开，不要空洞
+      6. 语言专业、适合教学使用
+
+      示例格式：
+      ## 平面构成中的点
+      ### 基础概念：点的形态与性格
+      - 点是最基本的造型元素...
+      - 点的分类与视觉特征...
+      ### 专业应用：点在设计实践中的运用
+      - 版式设计中的点...
+      - 品牌视觉中的点...
+
+      直接输出内容，不要输出"好的"、"以下是"等开头语，不要输出代码块标记。
+      """
+    end
+
+    defp format_chapter_tree_for_prompt(subchapters, depth) do
+      indent = String.duplicate("  ", depth)
+      subchapters
+      |> Enum.map(fn s ->
+        line = "#{indent}- #{s.title}"
+        subs = Map.get(s, :subchapters) || []
+        if subs != [] do
+          line <> "\n" <> format_chapter_tree_for_prompt(subs, depth + 1)
+        else
+          line
+        end
+      end)
+      |> Enum.join("\n")
+    end
+
+    defp count_leaf_subchapters(subchapters) do
+      subchapters
+      |> Enum.map(fn s ->
+        subs = Map.get(s, :subchapters) || []
+        if subs == [], do: 1, else: count_leaf_subchapters(subs)
+      end)
+      |> Enum.sum()
+    end
+
+    defp call_llm_for_content(prompt) do
+      try do
+        result = KgEdu.Chat.run_answer(prompt,
+          KgEdu.Chat.qa_config(
+            model: :qwen,
+            system_prompt: "你是课程PPT课件内容生成专家。根据课程章节结构生成专业的教学PPT内容。直接输出内容，不添加额外说明。",
+            max_iterations: 1
+          )
+        )
+        text = result.result || ""
+        if text != "", do: {:ok, text}, else: :empty
+      rescue
+        e ->
+          Logger.warning("[DocumentTools.PPTX] LLM enrichment failed: #{inspect(e)}")
+          :error
+      end
+    end
+
+    defp parse_llm_slides(text, chapter_title) do
+      text
+      |> String.split(~r/\n## /)
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.flat_map(fn section ->
+        lines = String.split(section, "\n") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+        case lines do
+          [] -> []
+          [title | rest] ->
+            # title = subchapter name (from "## ")
+            # Parse multiple ### blocks within this subchapter
+            slides = parse_sub_sections(title, rest, chapter_title)
+            slides
+        end
+      end)
+      |> split_overflow_slides()
+    end
+
+    # Parse multiple ### sections within a ## subchapter
+    defp parse_sub_sections(subchapter_name, lines, chapter_title) do
+      # Group lines by ### markers
+      {groups, _current} =
+        lines
+        |> Enum.reduce({[], nil}, fn line, {groups, current} ->
+          if String.starts_with?(line, "### ") do
+            # New ### section — flush current, start new
+            ppt_title = String.replace_leading(line, "### ", "")
+            new_current = %{title: ppt_title, bullets: []}
+            if current, do: {[current | groups], new_current}, else: {groups, new_current}
+          else
+            if String.starts_with?(line, "- ") do
+              bullet = String.replace_leading(line, "- ", "") |> String.trim()
+              if current do
+                {groups, %{current | bullets: current.bullets ++ [bullet]}}
+              else
+                {groups, %{title: subchapter_name, bullets: [bullet]}}
+              end
+            else
+              {groups, current}
+            end
+          end
+        end)
+
+      # Flush last group
+      all_groups = if _current, do: [_current | groups], else: groups
+      all_groups = Enum.reverse(all_groups)
+
+      # If no ### markers at all, treat all bullets as one slide
+      if all_groups == [] do
+        bullets = lines |> Enum.filter(&String.starts_with?(&1, "- ")) |> Enum.map(fn l -> String.replace_leading(l, "- ", "") |> String.trim() end)
+        if bullets != [] do
+          [%{"title" => subchapter_name, "content" => "#{chapter_title} · #{subchapter_name}", "bullets" => bullets}]
+        else
+          []
+        end
+      else
+        # Convert groups to slides
+        Enum.map(all_groups, fn g ->
+          %{
+            "title" => g.title,
+            "content" => "#{chapter_title} · #{g.title}",
+            "bullets" => g.bullets
+          }
+        end)
+      end
+    end
+
+    # ── Fallback split: any slide with >5 bullets gets split ──────────────────
+
+    defp split_overflow_slides(slides) do
+      slides
+      |> Enum.flat_map(fn slide ->
+        bullets = slide["bullets"] || []
+        if length(bullets) > 5 do
+          chunks = Enum.chunk_every(bullets, 5)
+          chunks
+          |> Enum.with_index(1)
+          |> Enum.map(fn {chunk, idx} ->
+            suffix = if length(chunks) > 1, do: "（#{idx}/#{length(chunks)}）", else: ""
+            %{
+              "title" => "#{slide["title"]}#{suffix}",
+              "content" => "#{slide["content"]}#{suffix}",
+              "bullets" => chunk
+            }
+          end)
+        else
+          [slide]
+        end
+      end)
+    end
+
+    # ── Fallback: basic slides from structure (no LLM) ────────────────────────
+
+    defp build_fallback_subchapter_slides(chapter_title, subchapters) do
+      subchapters
+      |> Enum.map(fn s ->
+        bullets = []
+        bullets = if s.description, do: bullets ++ String.split(s.description, "\n"), else: bullets
+
+        sub_subs = Map.get(s, :subchapters) || []
+        bullets =
+          if sub_subs != [] do
+            bullets ++ (sub_subs |> Enum.map(fn ss ->
+              desc_suffix = if ss.description, do: "：#{String.slice(ss.description, 0, 80)}", else: ""
+              "#{ss.title}#{desc_suffix}"
+            end))
+          else
+            bullets
+          end
+
+        if bullets == [] do
+          bullets = ["#{chapter_title} — #{s.title}"]
+        end
+
+        %{
+          "title" => s.title,
+          "content" => "#{chapter_title} · #{s.title}",
+          "bullets" => Enum.take(bullets, 8)
+        }
+      end)
     end
 
     # Load sub-subchapters for richer slide content

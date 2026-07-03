@@ -76,6 +76,7 @@ defmodule KgEdu.Chat do
     emit_telemetry? = Keyword.get(opts, :emit_telemetry?, false)
     emit_signals? = Keyword.get(opts, :emit_signals?, false)
     tool_concurrency = Keyword.get(opts, :tool_concurrency, 4)
+    tool_timeout_ms = Keyword.get(opts, :tool_timeout_ms, 15_000)
     tool_context = Keyword.get(opts, :tool_context, %{})
 
     %{
@@ -88,6 +89,7 @@ defmodule KgEdu.Chat do
       emit_telemetry?: emit_telemetry?,
       emit_signals?: emit_signals?,
       tool_concurrency: tool_concurrency,
+      tool_timeout_ms: tool_timeout_ms,
       tool_context: tool_context
     }
   end
@@ -177,7 +179,8 @@ defmodule KgEdu.Chat do
           KgEdu.Agent.Tools.GenerateCompetencyGraph,
           KgEdu.Agent.Tools.GenerateCurriculum
         ],
-        max_iterations: 10
+        max_iterations: 10,
+        tool_timeout_ms: 120_000
       ],
       opts
     )
