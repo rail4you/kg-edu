@@ -15,35 +15,37 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     use Jido.Action,
       name: "GeneratePowerPointWithShapeCrawler",
-      description: "生成PPT课件。请在userRequirements中用真实换行分隔内容：每段一个幻灯片，首行标题后续行要点。用空行分隔不同幻灯片。",
+      description: "生成PPT课件。支持按课程/知识点/章节生成。传入chapterId时会自动获取章节内容构建PPT。",
       schema:
         Zoi.object(%{
           courseName: Zoi.string(description: "课程名称") |> Zoi.optional(),
-          knowledgeName: Zoi.string(description: "知识点名称") |> Zoi.optional(),
           courseId: Zoi.string(description: "课程ID") |> Zoi.optional(),
+          chapterId: Zoi.string(description: "章节ID — 传入后自动获取章节内容生成PPT") |> Zoi.optional(),
           knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional(),
-          userRequirements: Zoi.string(description: "幻灯内容，每段一页，空行分页。首行标题，后续行要点") |> Zoi.optional(),
+          knowledgeName: Zoi.string(description: "知识点名称") |> Zoi.optional(),
+          userRequirements: Zoi.string(description: "用户自定义幻灯内容（可选），每段一页，空行分页。首行标题，后续行要点") |> Zoi.optional(),
           author: Zoi.string(description: "作者") |> Zoi.optional()
         })
 
     @impl true
     def run(params, _context) do
       course_name = params[:courseName] || "未命名课程"
-      knowledge_name = params[:knowledgeName]
       knowledge_id = params[:knowledgeResourceId]
+      knowledge_name = params[:knowledgeName]
+      chapter_id = params[:chapterId]
       author = params[:author] || "KgEdu"
       user_req = params[:userRequirements] || ""
 
-      # Build slide content — prefer knowledge resource data over raw user_req
-      slides = build_slides(course_name, knowledge_name, knowledge_id, user_req)
+      # Build slide content
+      slides = build_slides(course_name, chapter_id, knowledge_name, knowledge_id, user_req)
       output_dir = System.tmp_dir!()
 
-      # Build filename: 课程名-知识点名.pptx
+      # Build filename
       file_name =
-        if knowledge_name do
-          "#{course_name}-#{knowledge_name}.pptx"
-        else
-          "#{course_name}.pptx"
+        cond do
+          knowledge_name -> "#{course_name}-#{knowledge_name}.pptx"
+          chapter_id && course_name -> "#{course_name}-#{get_chapter_title(chapter_id) || "章节"}.pptx"
+          true -> "#{course_name}.pptx"
         end
 
       input = %{
@@ -62,7 +64,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
           case KgEdu.Agent.Tools.DocumentTools.safe_upload(file_path) do
             {:ok, url} ->
               save_record(params, file_name, url, file_size, "pptx")
-              {:ok, %{result: "PPT课件「#{course_name}-#{knowledge_name || "概览"}」已生成！\n下载链接: #{url}", fileUrl: url}}
+              {:ok, %{result: "PPT课件「#{file_name}」已生成！\n下载链接: #{url}", fileUrl: url}}
 
             {:error, reason} ->
               {:ok, %{result: "PPT课件已生成（本地: #{file_path}）。上传失败: #{reason}", localPath: file_path}}
@@ -76,13 +78,84 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       end
     end
 
-    defp build_slides(course_name, knowledge_name, knowledge_id, user_req) do
-      # Split userRequirements by paragraphs (double-newline) → each paragraph = one slide
+    # ── Slide builder ────────────────────────────────────────────────────────
+
+    defp build_slides(course_name, chapter_id, knowledge_name, knowledge_id, user_req) do
+      # If chapterId is provided, auto-fetch chapter content
+      if chapter_id do
+        build_slides_from_chapter(course_name, chapter_id, user_req)
+      else
+        # Original logic: from knowledge resource or user requirements
+        build_slides_from_knowledge(course_name, knowledge_name, knowledge_id, user_req)
+      end
+    end
+
+    # ── Build slides from chapter content ────────────────────────────────────
+
+    defp build_slides_from_chapter(course_name, chapter_id, user_req) do
+      tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+
+      # Fetch chapter with knowledge resources
+      chapter = KgEdu.Agent.DataAccess.get_chapter(chapter_id)
+
+      if is_nil(chapter) do
+        Logger.warning("[DocumentTools.PPTX] Chapter not found: #{chapter_id}")
+        build_slides_from_knowledge(course_name, nil, nil, user_req)
+      else
+        chapter_title = chapter.title
+        chapter_desc = chapter.description || ""
+
+        # Fetch knowledge resources for this chapter
+        resources = KgEdu.Agent.DataAccess.list_knowledge_resources(nil, chapter_id)
+
+        # Build slides
+        # 1. Title slide: course + chapter
+        # 2. Chapter overview
+        # 3. Per-knowledge-resource slides
+
+        slides = [
+          %{
+            "title" => "#{course_name} · #{chapter_title}",
+            "content" => "#{course_name} — #{chapter_title}",
+            "bullets" => [chapter_desc] |> Enum.reject(&(&1 == ""))
+          }
+        ]
+
+        # Knowledge resource slides
+        resource_slides =
+          resources
+          |> Enum.map(fn r ->
+            bullets = []
+            bullets = if r.description, do: bullets ++ [r.description], else: bullets
+            bullets = if r.teachingGoal, do: bullets ++ [r.teachingGoal], else: bullets
+
+            %{
+              "title" => r.name,
+              "content" => r.name,
+              "bullets" => Enum.take(bullets, 6)
+            }
+          end)
+
+        slides = slides ++ resource_slides
+
+        # If user also provided custom requirements, append as additional slides
+        paragraphs = split_paragraphs(user_req)
+        if paragraphs != [] do
+          custom_slides = paragraphs_to_slides(paragraphs)
+          slides = slides ++ custom_slides
+        end
+
+        slides
+      end
+    end
+
+    # ── Build slides from knowledge resource data ────────────────────────────
+
+    defp build_slides_from_knowledge(course_name, knowledge_name, knowledge_id, user_req) do
       paragraphs = split_paragraphs(user_req || "")
 
       Logger.debug("[DocumentTools.PPTX] paragraphs: #{length(paragraphs)}, knowledge_name=#{inspect(knowledge_name)}")
 
-      # Supplementary: knowledge resource metadata
       knowledge_bullets = get_knowledge_content(knowledge_id)
 
       # Build overview slide
@@ -97,34 +170,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       # Build content slides from paragraphs
       slides =
         if paragraphs != [] do
-          content_slides =
-            paragraphs
-            |> Enum.with_index()
-            |> Enum.map(fn {para, _idx} ->
-              lines = String.split(para, "\n") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
-
-              case lines do
-                [title | body_lines] when body_lines != [] ->
-                  %{
-                    "title" => title,
-                    "content" => title,
-                    "bullets" => Enum.take(body_lines, 6)
-                  }
-
-                [title] ->
-                  %{
-                    "title" => title,
-                    "content" => title,
-                    "bullets" => []
-                  }
-
-                [] ->
-                  nil
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-
-          slides ++ content_slides
+          slides ++ paragraphs_to_slides(paragraphs)
         else
           # No paragraphs — add detail slide from knowledge data
           detail_slides = build_fallback_slides(knowledge_name, knowledge_bullets)
@@ -132,6 +178,34 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
         end
 
       slides
+    end
+
+    defp paragraphs_to_slides(paragraphs) do
+      paragraphs
+      |> Enum.with_index()
+      |> Enum.map(fn {para, _idx} ->
+        lines = String.split(para, "\n") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+
+        case lines do
+          [title | body_lines] when body_lines != [] ->
+            %{
+              "title" => title,
+              "content" => title,
+              "bullets" => Enum.take(body_lines, 6)
+            }
+
+          [title] ->
+            %{
+              "title" => title,
+              "content" => title,
+              "bullets" => []
+            }
+
+          [] ->
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
     end
 
     defp build_fallback_slides(nil, _bullets), do: []
@@ -180,6 +254,14 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       end
     rescue
       _ -> []
+    end
+
+    defp get_chapter_title(chapter_id) do
+      tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+      chapter = KgEdu.Agent.DataAccess.get_chapter(chapter_id)
+      chapter && chapter.title
+    rescue
+      _ -> nil
     end
 
     defp get_file_size(path) do

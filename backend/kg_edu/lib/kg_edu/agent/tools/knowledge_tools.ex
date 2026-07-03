@@ -3,15 +3,16 @@ defmodule KgEdu.Agent.Tools.GetKnowledgeResources do
 
   use Jido.Action,
     name: "GetKnowledgeResources",
-    description: "获取知识资源（知识点/课时），可按课程ID筛选",
+    description: "获取知识资源（知识点/课时），可按课程ID或章节ID筛选",
     schema:
       Zoi.object(%{
-        courseId: Zoi.string(description: "课程ID") |> Zoi.optional()
+        courseId: Zoi.string(description: "课程ID") |> Zoi.optional(),
+        chapterId: Zoi.string(description: "章节ID") |> Zoi.optional()
       })
 
   @impl true
   def run(params, _context) do
-    resources = KgEdu.Agent.DataAccess.list_knowledge_resources(params[:courseId])
+    resources = KgEdu.Agent.DataAccess.list_knowledge_resources(params[:courseId], params[:chapterId])
     text = "共 #{length(resources)} 个知识资源:\n" <>
       (resources |> Enum.map(fn r ->
         importance = if r.importance, do: " [重要度: #{r.importance}]", else: ""

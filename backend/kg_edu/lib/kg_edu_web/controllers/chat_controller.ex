@@ -236,6 +236,7 @@ defmodule KgEduWeb.ChatController do
   # Tool names the LLM might accidentally output as text before calling
   @tool_names ~w(
     GetCourses GetCoursesByMajor GetCoursesBySemester
+    GetChapters GetChapterById
     GetKnowledgeResources GetExercises GetExams
     GenerateExercises GenerateCompetencyGraph GenerateCurriculum
     GeneratePowerPointWithShapeCrawler SaveAsDocxAndUpload
