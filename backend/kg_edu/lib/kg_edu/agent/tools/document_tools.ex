@@ -29,13 +29,48 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     @impl true
     def run(params, _context) do
-      course_name = params[:courseName] || "未命名课程"
-      knowledge_id = params[:knowledgeResourceId]
-      knowledge_name = params[:knowledgeName]
-      chapter_id = params[:chapterId]
-      author = params[:author] || "KgEdu"
-      user_req = params[:userRequirements] || ""
+      course_name = Map.get(params, "courseName") || params[:courseName]
+      course_id = Map.get(params, "courseId") || params[:courseId]
+      chapter_id = Map.get(params, "chapterId") || params[:chapterId]
+      knowledge_id = Map.get(params, "knowledgeResourceId") || params[:knowledgeResourceId]
+      knowledge_name = Map.get(params, "knowledgeName") || params[:knowledgeName]
+      author = (Map.get(params, "author") || params[:author]) || "KgEdu"
+      user_req = (Map.get(params, "userRequirements") || params[:userRequirements]) || ""
 
+      # Fallback: auto-fill from previous tool calls when Qwen passes empty args
+      course_id = if blank?(course_id), do: KgEdu.Agent.SessionContext.get(:last_course_id), else: course_id
+      course_name = if blank?(course_name), do: KgEdu.Agent.SessionContext.get(:last_course_name), else: course_name
+      
+      # Try chapterId from context, but only if GetChapters was called and there's exactly one plausible chapter
+      chapter_id = if blank?(chapter_id) do
+        chapters = KgEdu.Agent.SessionContext.get(:last_chapters) || []
+        # Only auto-pick if there's exactly one top-level chapter (avoids guessing wrong)
+        roots = Enum.filter(chapters, &is_nil(&1.parentChapterId))
+        if length(roots) == 1, do: hd(roots).id, else: chapter_id
+      else
+        chapter_id
+      end
+
+      if blank?(chapter_id) && blank?(knowledge_id) && blank?(knowledge_name) && user_req == "" do
+        # List available chapters to help LLM retry with correct args
+        chapters = KgEdu.Agent.SessionContext.get(:last_chapters) || []
+        roots = Enum.filter(chapters, &is_nil(&1.parentChapterId))
+        hint = if roots != [] do
+          "\n可用章节: " <> (roots |> Enum.map(fn c -> "#{c.title}(ID:#{c.id})" end) |> Enum.join(", "))
+        else
+          ""
+        end
+        {:ok, %{result: "请传入 chapterId 参数。可调用 GetChapters 获取章节列表。#{hint}"}}
+      else
+        do_generate(course_name, course_id, chapter_id, knowledge_name, knowledge_id, user_req, author, params)
+      end
+    end
+
+    defp blank?(nil), do: true
+    defp blank?(""), do: true
+    defp blank?(_), do: false
+
+    defp do_generate(course_name, course_id, chapter_id, knowledge_name, knowledge_id, user_req, author, params) do
       # Build slide content
       slides = build_slides(course_name, chapter_id, knowledge_name, knowledge_id, user_req)
       output_dir = System.tmp_dir!()
@@ -44,7 +79,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       file_name =
         cond do
           knowledge_name -> "#{course_name}-#{knowledge_name}.pptx"
-          chapter_id && course_name -> "#{course_name}-#{get_chapter_title(chapter_id) || "章节"}.pptx"
+          chapter_id && course_name != "未命名课程" -> "#{course_name}-#{get_chapter_title(chapter_id) || "章节"}.pptx"
           true -> "#{course_name}.pptx"
         end
 
@@ -95,58 +130,118 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
     defp build_slides_from_chapter(course_name, chapter_id, user_req) do
       tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
 
-      # Fetch chapter with knowledge resources
       chapter = KgEdu.Agent.DataAccess.get_chapter(chapter_id)
 
       if is_nil(chapter) do
         Logger.warning("[DocumentTools.PPTX] Chapter not found: #{chapter_id}")
         build_slides_from_knowledge(course_name, nil, nil, user_req)
       else
+        # Enrich subchapters with their own subchapters (2 levels deep)
+        chapter = enrich_subchapters(chapter)
+
         chapter_title = chapter.title
         chapter_desc = chapter.description || ""
+        subchapters = Map.get(chapter, :subchapters) || []
 
-        # Fetch knowledge resources for this chapter
-        resources = KgEdu.Agent.DataAccess.list_knowledge_resources(nil, chapter_id)
+        slides = []
 
-        # Build slides
-        # 1. Title slide: course + chapter
-        # 2. Chapter overview
-        # 3. Per-knowledge-resource slides
-
-        slides = [
+        # 1. Title slide
+        slides = slides ++ [
           %{
-            "title" => "#{course_name} · #{chapter_title}",
-            "content" => "#{course_name} — #{chapter_title}",
-            "bullets" => [chapter_desc] |> Enum.reject(&(&1 == ""))
+            "title" => "#{course_name}",
+            "content" => "#{course_name}\n#{chapter_title}",
+            "bullets" => ["课程章节教学课件"]
           }
         ]
 
-        # Knowledge resource slides
-        resource_slides =
-          resources
-          |> Enum.map(fn r ->
+        # 2. Chapter overview
+        desc_lines =
+          if chapter_desc != "" do
+            String.split(chapter_desc, "\n") |> Enum.reject(&(&1 == ""))
+          else
+            []
+          end
+
+        overview_bullets =
+          if desc_lines != [] do
+            Enum.take(desc_lines, 6)
+          else
+            ["本章节为「#{chapter_title}」，包含 #{length(subchapters)} 个子章节"] ++
+              Enum.map(subchapters, fn s -> s.title end)
+          end
+
+        slides = slides ++ [
+          %{
+            "title" => chapter_title,
+            "content" => "#{chapter_title} — 章节概述",
+            "bullets" => overview_bullets
+          }
+        ]
+
+        # 3. Subchapter detail slides
+        sub_slides =
+          subchapters
+          |> Enum.map(fn s ->
             bullets = []
-            bullets = if r.description, do: bullets ++ [r.description], else: bullets
-            bullets = if r.teachingGoal, do: bullets ++ [r.teachingGoal], else: bullets
+            bullets = if s.description, do: bullets ++ String.split(s.description, "\n"), else: bullets
+
+            sub_subs = Map.get(s, :subchapters) || []
+            bullets =
+              if sub_subs != [] do
+                bullets ++ (sub_subs |> Enum.map(fn ss ->
+                  desc_suffix = if ss.description, do: "：#{String.slice(ss.description, 0, 80)}", else: ""
+                  "#{ss.title}#{desc_suffix}"
+                end))
+              else
+                bullets
+              end
+
+            if bullets == [] do
+              bullets = ["#{chapter_title} — #{s.title}"]
+            end
 
             %{
-              "title" => r.name,
-              "content" => r.name,
-              "bullets" => Enum.take(bullets, 6)
+              "title" => s.title,
+              "content" => "#{chapter_title} · #{s.title}",
+              "bullets" => Enum.take(bullets, 8)
             }
           end)
 
-        slides = slides ++ resource_slides
+        slides = slides ++ sub_slides
 
-        # If user also provided custom requirements, append as additional slides
+        # 4. Summary slide
+        slides = slides ++ [
+          %{
+            "title" => "本章小结",
+            "content" => "#{chapter_title} · 内容回顾",
+            "bullets" =>
+              ["本章「#{chapter_title}」主要内容："] ++
+                Enum.map(subchapters, fn s ->
+                  sub_count = length(Map.get(s, :subchapters) || [])
+                  suffix = if sub_count > 0, do: "（含 #{sub_count} 个知识点）", else: ""
+                  "#{s.title}#{suffix}"
+                end)
+          }
+        ]
+
+        # 5. Custom user requirements
         paragraphs = split_paragraphs(user_req)
         if paragraphs != [] do
-          custom_slides = paragraphs_to_slides(paragraphs)
-          slides = slides ++ custom_slides
+          slides = slides ++ paragraphs_to_slides(paragraphs)
         end
 
         slides
       end
+    end
+
+    # Load sub-subchapters for richer slide content
+    defp enrich_subchapters(chapter) do
+      subs = Map.get(chapter, :subchapters) || []
+      enriched = Enum.map(subs, fn s ->
+        full = KgEdu.Agent.DataAccess.get_chapter(s.id)
+        if full, do: full, else: s
+      end)
+      Map.put(chapter, :subchapters, enriched)
     end
 
     # ── Build slides from knowledge resource data ────────────────────────────

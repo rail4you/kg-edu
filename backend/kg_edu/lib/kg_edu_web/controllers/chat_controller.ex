@@ -17,15 +17,6 @@ defmodule KgEduWeb.ChatController do
     - TOOL_CALL_START / TOOL_CALL_ARGS / TOOL_CALL_END
     - RUN_STARTED / RUN_FINISHED / RUN_ERROR
   """
-  # Handle GET (browser preflight / direct access)
-  def stream_message(conn, %{"message" => _} = _params) do
-    stream_message(conn, %{})
-  end
-
-  def stream_message(conn, _params) when conn.method == "GET" do
-    conn |> json(%{status: "ok", endpoint: "POST /api/assistant/ag-ui"})
-  end
-
   def stream_message(conn, params) do
     agent_type = Map.get(params, "agent", "edu")
 
@@ -134,9 +125,22 @@ defmodule KgEduWeb.ChatController do
     # Build config
     opts = build_opts(agent_type, tenant, params)
 
+    # Store user message in session context for tools to reference
+    KgEdu.Agent.SessionContext.put(last_user_message: message)
+
     # Stream ReAct events → Pi SDK SSE format
     events = KgEdu.Chat.stream_answer(message, opts)
-    {conn, _} = stream_pi_sdk_events(conn, events, tenant, message)
+    {conn, final_state} = stream_pi_sdk_events(conn, events, tenant, message)
+
+    # Flush any buffered text before finishing
+    pending = Map.get(final_state, :pending_text, "")
+    if pending != "" do
+      if !Map.get(final_state, :text_started) do
+        sse_write(conn, "TEXT_MESSAGE_START", %{})
+      end
+      sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: pending})
+      sse_write(conn, "TEXT_MESSAGE_END", %{})
+    end
 
     # Emit RUN_FINISHED
     sse_write(conn, "RUN_FINISHED", %{})
@@ -147,9 +151,10 @@ defmodule KgEduWeb.ChatController do
   # ── Pi SDK SSE format adapter ───────────────────────────────────────────
 
   defp stream_pi_sdk_events(conn, events, _tenant, _user_message) do
-    Enum.reduce(events, {conn, %{text_buffer: ""}}, fn event, {conn, state} ->
+    Enum.reduce(events, {conn, %{text_buffer: "", text_started: false, has_tools: false, pending_text: ""}}, fn event, {conn, state} ->
       case event.kind do
         :tool_started ->
+          state = Map.put(state, :has_tools, true)
           tool_name = Map.get(event.data, :tool_name) || "unknown"
           tool_call_id = Map.get(event.data, :tool_call_id) || generate_id()
           args = Map.get(event.data, :arguments, %{})
@@ -179,22 +184,26 @@ defmodule KgEduWeb.ChatController do
           delta = extract_delta(event.data)
 
           if delta != "" do
-            # Filter out tool call names that Qwen sometimes outputs as text
-            # before actually making the function call
             {clean_delta, state} = filter_tool_names(delta, state)
 
             if clean_delta != "" do
-              # Emit TEXT_MESSAGE_START on first content
-              state =
-                if !Map.get(state, :text_started) do
-                  sse_write(conn, "TEXT_MESSAGE_START", %{})
-                  Map.put(state, :text_started, true)
-                else
-                  state
-                end
+              if Map.get(state, :has_tools) do
+                # Tools were used — buffer all text, only show final result
+                pending = Map.get(state, :pending_text, "") <> clean_delta
+                {conn, Map.put(state, :pending_text, pending)}
+              else
+                # No tools used — stream text normally
+                state =
+                  if !Map.get(state, :text_started) do
+                    sse_write(conn, "TEXT_MESSAGE_START", %{})
+                    Map.put(state, :text_started, true)
+                  else
+                    state
+                  end
 
-              sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: clean_delta})
-              {conn, state}
+                sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: clean_delta})
+                {conn, state}
+              end
             else
               {conn, state}
             end
@@ -203,6 +212,7 @@ defmodule KgEduWeb.ChatController do
           end
 
         :request_completed ->
+          {conn, state}
           # Emit TEXT_MESSAGE_END if we started text
           if Map.get(state, :text_started) do
             sse_write(conn, "TEXT_MESSAGE_END", %{})

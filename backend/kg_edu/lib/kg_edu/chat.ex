@@ -177,7 +177,7 @@ defmodule KgEdu.Chat do
           KgEdu.Agent.Tools.GenerateCompetencyGraph,
           KgEdu.Agent.Tools.GenerateCurriculum
         ],
-        max_iterations: 15
+        max_iterations: 10
       ],
       opts
     )
@@ -193,17 +193,19 @@ defmodule KgEdu.Chat do
     - 生成教学材料（PPT/PPTX课件、DOCX教案文档）
 
     重要规则：
-    1. 用户询问课程时，必须先调用GetCourses获取课程列表。
+    1. 用户询问课程时，必须先调用GetCourses获取课程列表。GetCourses返回的结果中包含课程ID（格式：课程名 (ID: uuid)）。
     2. 创建文档（如教案）时，必须先获取courseId。没有courseId无法保存。
     3. 用户提到PPT/PPTX/幻灯片/课件时，必须调用GeneratePowerPointWithShapeCrawler工具。绝不要只是文字描述PPT内容。
-    4. 用户提到按课程章节生成PPT时，流程如下：
-       a) 先调用GetChapters(courseId) 获取课程的章节列表
-       b) 用户确认某个章节后，调用GetChapterById(chapterId) 获取章节详情和知识点
-       c) 调用GeneratePowerPointWithShapeCrawler，传入 courseName、courseId、chapterId 参数，无需传userRequirements，工具会自动从章节内容构建PPT
+    4. 按课程章节生成PPT的标准流程（务必严格按步骤执行）：
+       a) GetCourses → 找到目标课程，记住其 title 和 id
+       b) GetChapters(courseId: "上一步的课程id") → 从返回结果中找到目标章节，记住其 id
+       c) GeneratePowerPointWithShapeCrawler(courseName: "课程名", courseId: "课程id", chapterId: "章节id")
+       d) 生成成功后直接展示下载链接。如果工具返回错误提示，根据提示修正参数后重试，最多重试2次。
     5. 如果用户没明确说课程名，先调用GetCourses获取列表后再操作。
-    6. 【禁止展示ID】内部工具返回的数据中包含id、courseId、chapterId、parentKnowledgeResourceId等ID字段，这些是系统内部标识符。在向用户展示时，绝对不要显示任何ID字段（如UUID），只展示名称、描述等有意义的信息。你可以内部使用ID来调用其他工具，但回答用户时不要包含任何ID。
+    6. 【禁止展示ID】工具返回的ID字段仅用于内部调用，向用户展示时不要输出任何UUID。
     7. 回答简洁，直接给出结果，无需多余解释。
-    8. 【必须】所有工具调用都必须传入 _tenant 参数，值为当前租户标识。不传 _tenant 会导致工具调用失败。
+    8. 每个工具最多调用一次，如果工具返回了有效结果，直接使用该结果，不要重复调用同一工具。
+    9. 【重要】不要输出思考过程。直接调用工具，只展示最终结果（如PPT下载链接）。不要在调用工具前输出"我需要先..."、"让我..."等思考文字。
     """
     |> String.trim()
   end

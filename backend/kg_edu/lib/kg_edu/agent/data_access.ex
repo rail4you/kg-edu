@@ -116,19 +116,35 @@ defmodule KgEdu.Agent.DataAccess do
     |> Enum.map(&chapter_summary/1)
   end
 
-  @doc "Get a single chapter by ID, including its subchapters and knowledge resources."
-  def get_chapter(chapter_id, tenant \\ nil) do
+  @doc "Get a single chapter by ID (UUID) or by title."
+  def get_chapter(chapter_id_or_name, tenant \\ nil) do
     tenant = resolve_tenant(tenant)
 
-    Chapter
-    |> Ash.Query.filter(id == ^chapter_id)
-    |> Ash.Query.load([:subchapters, :knowledge_resources])
-    |> Ash.read!(tenant: tenant, authorize?: false)
-    |> List.first()
-    |> then(fn
+    chapter =
+      if is_uuid?(chapter_id_or_name) do
+        # Look up by UUID
+        Chapter
+        |> Ash.Query.filter(id == ^chapter_id_or_name)
+        |> Ash.Query.load([:subchapters, :knowledge_resources])
+        |> Ash.read!(tenant: tenant, authorize?: false)
+        |> List.first()
+      else
+        # LLM sometimes passes chapter title instead of UUID — look up by name
+        Chapter
+        |> Ash.Query.filter(title == ^chapter_id_or_name)
+        |> Ash.Query.load([:subchapters, :knowledge_resources])
+        |> Ash.read!(tenant: tenant, authorize?: false)
+        |> List.first()
+      end
+
+    case chapter do
       nil -> nil
       chapter -> chapter_summary(chapter) |> Map.put(:subchapters, (chapter.subchapters || []) |> Enum.map(&chapter_summary/1))
-    end)
+    end
+  end
+
+  defp is_uuid?(str) do
+    String.match?(str, ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   end
 
   defp chapter_summary(ch) do

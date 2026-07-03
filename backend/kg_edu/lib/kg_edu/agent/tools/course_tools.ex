@@ -3,14 +3,22 @@ defmodule KgEdu.Agent.Tools.GetCourses do
 
   use Jido.Action,
     name: "GetCourses",
-    description: "获取所有课程列表。当用户询问任何关于课程的内容时，必须首先调用此工具。",
+    description: "获取所有课程列表。当用户询问任何关于课程的内容时，必须首先调用此工具。返回结果包含课程ID（格式：课程名 (ID: uuid)），后续操作需要用到ID。",
     schema:
       Zoi.object(%{
+        _tenant: Zoi.string(description: "当前租户标识") |> Zoi.optional()
       })
 
   @impl true
   def run(_params, _context) do
     courses = KgEdu.Agent.DataAccess.list_courses()
+    
+    # Store in session context so downstream tools can reference
+    KgEdu.Agent.SessionContext.put(
+      last_courses: courses,
+      last_course_titles: Enum.map(courses, & &1.title)
+    )
+    
     text = "共 #{length(courses)} 门课程:\n" <> format_courses(courses)
     {:ok, %{result: text, courses: courses}}
   end
@@ -20,7 +28,8 @@ defmodule KgEdu.Agent.Tools.GetCourses do
     |> Enum.map(fn c ->
       major = if c.major, do: " (#{c.major})", else: ""
       semester = if c.semester, do: " - #{c.semester}", else: ""
-      "  • #{c.title}#{major}#{semester}"
+      id = c.id
+      "  • #{c.title}#{major}#{semester} (ID: #{id})"
     end)
     |> Enum.join("\n")
   end
