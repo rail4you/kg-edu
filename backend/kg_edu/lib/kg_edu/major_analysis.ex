@@ -171,6 +171,10 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :list_pending_enrollments, :list_pending
       rpc_action :my_applications, :my_applications
       rpc_action :update_enrollment, :update
+
+      # 结业管理
+      rpc_action :complete_enrollment, :complete
+      rpc_action :revoke_completion, :revoke_complete
     end
 
     resource KgEdu.MajorAnalysis.Major do
@@ -294,6 +298,26 @@ defmodule KgEdu.MajorAnalysis do
       rpc_action :list_links_by_knowledge_resource, :by_knowledge_resource
       rpc_action :replace_ability_knowledge_links, :replace_for_ability
     end
+
+    resource KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
+      rpc_action :create_certificate_template, :create
+      rpc_action :update_certificate_template, :update
+      rpc_action :delete_certificate_template, :destroy
+      rpc_action :get_certificate_template, :by_id
+      rpc_action :list_certificate_templates, :read
+      rpc_action :get_template_by_micro_major, :by_micro_major
+    end
+
+    resource KgEdu.MajorAnalysis.MicroMajorCertificate do
+      rpc_action :create_certificate, :create
+      rpc_action :update_certificate, :update
+      rpc_action :delete_certificate, :destroy
+      rpc_action :get_certificate, :by_id
+      rpc_action :list_certificates, :read
+      rpc_action :list_certificates_by_micro_major, :by_micro_major
+      rpc_action :my_certificates, :my_certs
+      rpc_action :get_student_certificate, :by_student_and_major
+    end
   end
 
   resources do
@@ -306,6 +330,8 @@ defmodule KgEdu.MajorAnalysis do
     resource KgEdu.MajorAnalysis.MicroMajorHomework
     resource KgEdu.MajorAnalysis.MicroMajorHomeworkSubmission
     resource KgEdu.MajorAnalysis.MicroMajorEnrollment
+    resource KgEdu.MajorAnalysis.MicroMajorCertificateTemplate
+    resource KgEdu.MajorAnalysis.MicroMajorCertificate
     resource KgEdu.MajorAnalysis.Major
     resource KgEdu.MajorAnalysis.JobPosition
     resource KgEdu.MajorAnalysis.MajorCompetency

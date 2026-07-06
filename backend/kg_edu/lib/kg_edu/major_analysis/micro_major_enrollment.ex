@@ -47,6 +47,9 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
     define :reapply_to_micro_major, action: :reapply
     define :list_pending_enrollments, action: :list_pending
     define :my_applications, action: :my_applications
+    # 结业管理
+    define :complete_enrollment, action: :complete
+    define :revoke_completion, action: :revoke_complete
   end
 
   actions do
@@ -188,6 +191,54 @@ defmodule KgEdu.MajorAnalysis.MicroMajorEnrollment do
           Ash.Changeset.add_error(changeset, Ash.Error.Changes.InvalidAttribute.exception(
             field: :status,
             message: "只能对已拒绝的报名重新申请"
+          ))
+        end
+      end
+    end
+
+    # ── 结业 ──
+    update :complete do
+      description "Mark a student's enrollment as completed"
+      accept [:notes]
+      require_atomic? false
+
+      change set_attribute(:status, :completed)
+      change set_attribute(:completed_at, &DateTime.utc_now/0)
+
+      change fn changeset, _context ->
+        require Logger
+        original_status = changeset.data.status
+        Logger.warning("[COMPLETE] original status: #{inspect(original_status)}, data: #{inspect(changeset.data)}")
+
+        if original_status == :active do
+          changeset
+        else
+          Ash.Changeset.add_error(changeset, Ash.Error.Changes.InvalidAttribute.exception(
+            field: :status,
+            message: "只能对学习中(active)的学生标记结业，当前状态: #{original_status}"
+          ))
+        end
+      end
+    end
+
+    # ── 撤销结业 ──
+    update :revoke_complete do
+      description "Revoke a completed enrollment back to active"
+      accept [:notes]
+      require_atomic? false
+
+      change set_attribute(:status, :active)
+      change set_attribute(:completed_at, nil)
+
+      change fn changeset, _context ->
+        original_status = changeset.data.status
+
+        if original_status == :completed do
+          changeset
+        else
+          Ash.Changeset.add_error(changeset, Ash.Error.Changes.InvalidAttribute.exception(
+            field: :status,
+            message: "只能撤销已结业(completed)的状态，当前状态: #{original_status}"
           ))
         end
       end

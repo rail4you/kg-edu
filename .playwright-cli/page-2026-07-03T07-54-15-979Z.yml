@@ -1,0 +1,39 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - img "课堂星" [ref=e7] [cursor=pointer]
+    - link "返回首页" [ref=e9] [cursor=pointer]:
+      - /url: /
+  - main [ref=e10]:
+    - generic [ref=e43]:
+      - img "education" [ref=e45]
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - heading "教师登录" [level=4] [ref=e48]
+          - text: 输入教职工号和密码，进入教学管理
+        - generic [ref=e50]:
+          - generic [ref=e51] [cursor=pointer]: 用户名登录
+          - generic [ref=e52] [cursor=pointer]: 手机号登录
+        - generic [ref=e53]:
+          - generic [ref=e59]:
+            - img "user" [ref=e61]:
+              - img [ref=e62]
+            - textbox "请输入用户名" [ref=e64]
+          - generic [ref=e67]:
+            - generic [ref=e70]:
+              - img "lock" [ref=e72]:
+                - img [ref=e73]
+              - textbox "请输入密码" [ref=e75]
+              - img "eye-invisible" [ref=e77] [cursor=pointer]:
+                - img [ref=e78]
+            - generic [ref=e83]: 密码长度至少6位
+          - button "登 录" [ref=e89] [cursor=pointer]:
+            - generic [ref=e90]: 登 录
+        - link "← 返回选择角色" [ref=e92] [cursor=pointer]:
+          - /url: /login
+        - generic [ref=e94] [cursor=pointer]:
+          - text: 切换角色
+          - img "question-circle" [ref=e95]:
+            - img [ref=e96]
+  - generic [ref=e40]:
+    - generic [ref=e41]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e42]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学系统

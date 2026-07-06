@@ -1,0 +1,201 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - img "课堂星" [ref=e9]
+          - generic [ref=e10]: 智慧教学系统
+        - generic [ref=e11]:
+          - button "首页" [ref=e12] [cursor=pointer]:
+            - generic [ref=e13]: 首页
+          - button "课程" [ref=e14] [cursor=pointer]:
+            - generic [ref=e15]: 课程
+          - button "微专业" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]: 微专业
+          - button "教学资源库" [ref=e18] [cursor=pointer]:
+            - generic [ref=e19]: 教学资源库
+          - button "示范教学包" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]: 示范教学包
+          - button "数字教材" [ref=e22] [cursor=pointer]:
+            - generic [ref=e23]: 数字教材
+          - button "合作单位" [ref=e24] [cursor=pointer]:
+            - generic [ref=e25]: 合作单位
+          - button "关于我们" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: 关于我们
+      - generic [ref=e28]:
+        - button "登 录" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: 登 录
+        - button "进入平台" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: 进入平台
+  - main [ref=e33]:
+    - generic [ref=e36]:
+      - complementary [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]: 智慧教学系统
+          - generic [ref=e40]: 专业分类导航
+        - list [ref=e41]
+        - button "查看全部专业 right" [ref=e42] [cursor=pointer]:
+          - text: 查看全部专业
+          - img "right" [ref=e43]:
+            - img [ref=e44]
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e49]:
+            - generic [ref=e50]: 精品课程
+            - heading "精品在线课程资源库" [level=2] [ref=e51]
+            - paragraph [ref=e52]: 汇聚 0 门跨校精品课程，覆盖 0 个学科
+            - button "浏览课程库 right" [ref=e53] [cursor=pointer]:
+              - generic [ref=e54]: 浏览课程库
+              - img "right" [ref=e55]:
+                - img [ref=e56]
+          - generic [ref=e59]:
+            - generic [ref=e60]: AI 课程
+            - heading "智慧教学 · 知识图谱驱动" [level=2] [ref=e61]
+            - paragraph [ref=e62]: AI 赋能课程建设、知识关联、能力图谱一体化教学新体验
+            - button "开始探索 right" [ref=e63] [cursor=pointer]:
+              - generic [ref=e64]: 开始探索
+              - img "right" [ref=e65]:
+                - img [ref=e66]
+          - generic [ref=e69]:
+            - generic [ref=e70]: 能力图谱
+            - heading "能力图谱 · 教学新范式" [level=2] [ref=e71]
+            - paragraph [ref=e72]: 基于岗位能力反向设计课程体系，可视化学习路径
+            - button "查看图谱 right" [ref=e73] [cursor=pointer]:
+              - generic [ref=e74]: 查看图谱
+              - img "right" [ref=e75]:
+                - img [ref=e76]
+        - button "上一张" [ref=e78] [cursor=pointer]:
+          - img "caret-left" [ref=e79]:
+            - img [ref=e80]
+        - button "下一张" [ref=e82] [cursor=pointer]:
+          - img "caret-right" [ref=e83]:
+            - img [ref=e84]
+        - generic [ref=e86]:
+          - button "第 1 张" [ref=e87] [cursor=pointer]
+          - button "第 2 张" [ref=e88] [cursor=pointer]
+          - button "第 3 张" [ref=e89] [cursor=pointer]
+    - generic [ref=e91]:
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - img "fire" [ref=e96]:
+              - img [ref=e97]
+            - heading "推荐课程" [level=2] [ref=e99]
+          - button "查看更多 right" [ref=e100] [cursor=pointer]:
+            - text: 查看更多
+            - img "right" [ref=e101]:
+              - img [ref=e102]
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - img "Image placeholder" [ref=e108]
+            - generic [ref=e112]:
+              - heading [level=3] [ref=e113]
+              - list [ref=e114]:
+                - listitem [ref=e115]
+                - listitem [ref=e116]
+                - listitem [ref=e117]
+          - generic [ref=e118]:
+            - img "Image placeholder" [ref=e121]
+            - generic [ref=e125]:
+              - heading [level=3] [ref=e126]
+              - list [ref=e127]:
+                - listitem [ref=e128]
+                - listitem [ref=e129]
+                - listitem [ref=e130]
+          - generic [ref=e131]:
+            - img "Image placeholder" [ref=e134]
+            - generic [ref=e138]:
+              - heading [level=3] [ref=e139]
+              - list [ref=e140]:
+                - listitem [ref=e141]
+                - listitem [ref=e142]
+                - listitem [ref=e143]
+          - generic [ref=e144]:
+            - img "Image placeholder" [ref=e147]
+            - generic [ref=e151]:
+              - heading [level=3] [ref=e152]
+              - list [ref=e153]:
+                - listitem [ref=e154]
+                - listitem [ref=e155]
+                - listitem [ref=e156]
+          - generic [ref=e157]:
+            - img "Image placeholder" [ref=e160]
+            - generic [ref=e164]:
+              - heading [level=3] [ref=e165]
+              - list [ref=e166]:
+                - listitem [ref=e167]
+                - listitem [ref=e168]
+                - listitem [ref=e169]
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - img "book" [ref=e174]:
+              - img [ref=e175]
+            - heading "新开课程" [level=2] [ref=e177]
+          - button "查看更多 right" [ref=e178] [cursor=pointer]:
+            - text: 查看更多
+            - img "right" [ref=e179]:
+              - img [ref=e180]
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - img "Image placeholder" [ref=e186]
+            - generic [ref=e190]:
+              - heading [level=3] [ref=e191]
+              - list [ref=e192]:
+                - listitem [ref=e193]
+                - listitem [ref=e194]
+                - listitem [ref=e195]
+          - generic [ref=e196]:
+            - img "Image placeholder" [ref=e199]
+            - generic [ref=e203]:
+              - heading [level=3] [ref=e204]
+              - list [ref=e205]:
+                - listitem [ref=e206]
+                - listitem [ref=e207]
+                - listitem [ref=e208]
+          - generic [ref=e209]:
+            - img "Image placeholder" [ref=e212]
+            - generic [ref=e216]:
+              - heading [level=3] [ref=e217]
+              - list [ref=e218]:
+                - listitem [ref=e219]
+                - listitem [ref=e220]
+                - listitem [ref=e221]
+          - generic [ref=e222]:
+            - img "Image placeholder" [ref=e225]
+            - generic [ref=e229]:
+              - heading [level=3] [ref=e230]
+              - list [ref=e231]:
+                - listitem [ref=e232]
+                - listitem [ref=e233]
+                - listitem [ref=e234]
+          - generic [ref=e235]:
+            - img "Image placeholder" [ref=e238]
+            - generic [ref=e242]:
+              - heading [level=3] [ref=e243]
+              - list [ref=e244]:
+                - listitem [ref=e245]
+                - listitem [ref=e246]
+                - listitem [ref=e247]
+    - generic [ref=e250]:
+      - generic [ref=e251]: 平台概览
+      - heading "智慧教学系统 课程首页重新聚焦课程展示" [level=1] [ref=e252]:
+        - text: 智慧教学系统
+        - strong [ref=e253]: 课程首页重新聚焦课程展示
+      - generic [ref=e254]: 首页仅保留推荐课程与新开课程两个核心栏目，每栏展示前 5 门课程。完整课程检索、标准学科筛选与分页浏览统一收敛到课程列表页。
+      - generic [ref=e255]:
+        - generic [ref=e256]:
+          - img "rocket" [ref=e257]:
+            - img [ref=e258]
+          - text: 0 门课程
+        - generic [ref=e260]:
+          - img "book" [ref=e261]:
+            - img [ref=e262]
+          - text: 0 个学科
+        - generic [ref=e264]:
+          - img "fire" [ref=e265]:
+            - img [ref=e266]
+          - text: 0 门推荐课程
+  - generic [ref=e269]:
+    - generic [ref=e270]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e271]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台
