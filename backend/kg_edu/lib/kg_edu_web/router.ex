@@ -104,6 +104,7 @@ defmodule KgEduWeb.Router do
     post "/import-chapters", ImportController, :import_chapters
     post "/import", ImportController, :import_knowledge
     post "/competency-graph/generate", GenerationController, :generate_competency_graph
+    post "/exam/preview", GenerationController, :preview_exam
   end
 
   # File upload endpoints (migrated from Express :3000 server)
