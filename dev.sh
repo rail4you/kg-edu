@@ -379,6 +379,8 @@ clean_restart() {
     log_info "完全清理并重启..."
     stop_all
     cleanup_orphan_processes
+    log_info "清理 Vite 缓存..."
+    rm -rf "$FRONTEND_DIR/node_modules/.vite" 2>/dev/null || true
     sleep 1
     start_all
 }
@@ -440,9 +442,19 @@ main() {
             ;;
         restart)
             case $service in
-                frontend) stop_frontend; start_frontend ;;
+                frontend)
+                    stop_frontend
+                    # 清理 Vite 缓存，确保重启后反映最新代码
+                    log_info "清理 Vite 缓存..."
+                    rm -rf "$FRONTEND_DIR/node_modules/.vite" 2>/dev/null || true
+                    start_frontend ;;
                 backend) stop_backend; start_backend ;;
-                all) stop_all; cleanup_orphan_processes; start_all ;;
+                all)
+                    stop_all
+                    cleanup_orphan_processes
+                    log_info "清理 Vite 缓存..."
+                    rm -rf "$FRONTEND_DIR/node_modules/.vite" 2>/dev/null || true
+                    start_all ;;
                 *) log_error "未知服务: $service"; show_help; exit 1 ;;
             esac
             ;;
