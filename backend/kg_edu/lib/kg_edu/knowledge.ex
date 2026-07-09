@@ -147,6 +147,7 @@ defmodule KgEdu.Knowledge do
 
     resource KgEdu.Knowledge.SubAbilityKnowledgeResource do
       rpc_action(:create_join, :create)
+      rpc_action(:update_join, :update)
       rpc_action(:destroy_join, :destroy)
       rpc_action(:get_joins_by_sub_ability, :by_sub_ability)
       rpc_action(:get_joins_by_knowledge_resource, :by_knowledge_resource)

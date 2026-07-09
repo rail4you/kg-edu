@@ -26,6 +26,7 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
 
   code_interface do
     define :create_join, action: :create
+    define :update_join, action: :update
     define :destroy_join, action: :destroy
     define :get_joins_by_sub_ability, action: :by_sub_ability
     define :get_joins_by_knowledge_resource, action: :by_knowledge_resource
@@ -36,7 +37,13 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
 
     create :create do
       primary? true
-      accept [:sub_ability_id, :knowledge_resource_id]
+      accept [:sub_ability_id, :knowledge_resource_id, :support_level, :weight, :description]
+    end
+
+    update :update do
+      primary? true
+      accept [:support_level, :weight, :description]
+      require_atomic? false
     end
 
     read :by_sub_ability do
@@ -72,6 +79,25 @@ defmodule KgEdu.Knowledge.SubAbilityKnowledgeResource do
 
   attributes do
     uuid_primary_key :id
+
+    attribute :support_level, :atom do
+      allow_nil? false
+      public? true
+      default :primary
+      constraints one_of: [:primary, :secondary, :practice]
+      description "Support level: primary / secondary / practice"
+    end
+
+    attribute :weight, :float do
+      allow_nil? false
+      public? true
+      default 1.0
+    end
+
+    attribute :description, :string do
+      allow_nil? true
+      public? true
+    end
 
     timestamps()
   end
