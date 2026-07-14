@@ -72,6 +72,17 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
         :title_color,
         :title_font,
         :border_color,
+        :background_image_url,
+        :name_field_x,
+        :name_field_y,
+        :name_field_width,
+        :name_field_height,
+        :name_font_family,
+        :name_font_size,
+        :name_font_weight,
+        :name_color,
+        :name_letter_spacing,
+        :name_text_align,
       ]
     end
 
@@ -87,6 +98,17 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
         :title_color,
         :title_font,
         :border_color,
+        :background_image_url,
+        :name_field_x,
+        :name_field_y,
+        :name_field_width,
+        :name_field_height,
+        :name_font_family,
+        :name_font_size,
+        :name_font_weight,
+        :name_color,
+        :name_letter_spacing,
+        :name_text_align,
       ]
       require_atomic? false
     end
@@ -116,8 +138,8 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
       allow_nil? false
       public? true
       default :simple
-      constraints one_of: [:simple, :classic, :modern]
-      description "证书风格：simple(简约风), classic(学院经典), modern(现代风)"
+      constraints one_of: [:simple, :classic, :modern, :scanned]
+      description "证书风格：simple(简约风), classic(学院经典), modern(现代风), scanned(扫描件模板)"
     end
 
     attribute :issuer_name, :string do
@@ -169,6 +191,84 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
       public? true
       default "#8a8a86"
       description "边框颜色（十六进制）"
+    end
+
+    attribute :background_image_url, :string do
+      allow_nil? true
+      public? true
+      description "扫描件背景图 URL（scanned 风格使用）"
+    end
+
+    attribute :name_field_x, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.2")
+      description "姓名框归一化 X 坐标（0~1）"
+    end
+
+    attribute :name_field_y, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.45")
+      description "姓名框归一化 Y 坐标（0~1）"
+    end
+
+    attribute :name_field_width, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.6")
+      description "姓名框归一化宽度（0~1）"
+    end
+
+    attribute :name_field_height, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.08")
+      description "姓名框归一化高度（0~1）"
+    end
+
+    attribute :name_font_family, :string do
+      allow_nil? true
+      public? true
+      default "serif"
+      description "姓名字体族"
+    end
+
+    attribute :name_font_size, :integer do
+      allow_nil? true
+      public? true
+      default 36
+      description "姓名字号（相对图片高度的 px）"
+    end
+
+    attribute :name_font_weight, :atom do
+      allow_nil? true
+      public? true
+      default :normal
+      constraints one_of: [:normal, :bold]
+      description "姓名字重：normal / bold"
+    end
+
+    attribute :name_color, :string do
+      allow_nil? true
+      public? true
+      default "#000000"
+      description "姓名颜色（十六进制）"
+    end
+
+    attribute :name_letter_spacing, :integer do
+      allow_nil? true
+      public? true
+      default 4
+      description "姓名字间距 px"
+    end
+
+    attribute :name_text_align, :atom do
+      allow_nil? true
+      public? true
+      default :center
+      constraints one_of: [:left, :center, :right]
+      description "姓名对齐方式：left / center / right"
     end
 
     create_timestamp :inserted_at do
