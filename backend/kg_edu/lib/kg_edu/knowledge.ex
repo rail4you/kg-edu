@@ -153,6 +153,15 @@ defmodule KgEdu.Knowledge do
       rpc_action(:get_joins_by_knowledge_resource, :by_knowledge_resource)
     end
 
+    resource KgEdu.Knowledge.AbilityRelation do
+      rpc_action(:create_ability_relation, :create)
+      rpc_action(:update_ability_relation, :update)
+      rpc_action(:destroy_ability_relation, :destroy)
+      rpc_action(:list_ability_relations, :read)
+      rpc_action(:get_ability_relation, :read)
+      rpc_action(:get_ability_relations_by_course, :by_course)
+    end
+
     resource KgEdu.Knowledge.UserCase do
       rpc_action(:list_user_cases, :read)
       rpc_action(:create_user_case, :create)
@@ -279,6 +288,7 @@ defmodule KgEdu.Knowledge do
     resource(KgEdu.Knowledge.MainAbility)
     resource(KgEdu.Knowledge.SubAbility)
     resource(KgEdu.Knowledge.SubAbilityKnowledgeResource)
+    resource(KgEdu.Knowledge.AbilityRelation)
     resource(KgEdu.Knowledge.UserCase)
     resource(KgEdu.Knowledge.Exam)
     resource(KgEdu.Knowledge.ExamExercise)

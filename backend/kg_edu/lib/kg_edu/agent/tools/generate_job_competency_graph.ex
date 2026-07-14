@@ -23,12 +23,33 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
   @system_prompt """
   你是岗位能力图谱构建专家。你需要分析一个岗位，为其生成核心任务、能力点，并关联已有课程的知识点。
 
+  ## 任务去重要求（严格遵守）
+
+  每个核心任务必须聚焦**不同的职能方向**，覆盖岗位价值链上的独立环节。常见的职能方向（按需选择 5 类左右，不要重复）：
+
+  - **用户与市场调研**：面向用户的发现性工作（用户访谈、问卷、竞品分析、画像与场景地图等）。产出：调研报告、用户画像、需求清单。
+  - **方案与体验设计**：面向产品的创造性工作（功能设计、交互设计、原型、PRD）。产出：设计方案、原型、PRD 文档。
+  - **工程与实现落地**：面向系统的构建性工作（编码、单元测试、技术评审、代码重构）。产出：可运行代码、技术文档、测试用例。
+  - **质量与效果验证**：面向结果的验证性工作（数据分析、AB 实验、可用性测试、效果评估）。产出：数据看板、实验报告、可用性报告。
+  - **运营与协作交付**：面向协作的传递性工作（上线发布、培训、跨部门沟通、文档沉淀）。产出：上线方案、培训材料、运营 SOP。
+  - **学习与持续精进**：面向个人的成长性工作（技术调研、知识分享、读书复盘）。产出：调研笔记、分享记录、知识库条目。
+
+  ### 强制约束
+
+  1. **禁止重叠**：任意两个任务的 title 不得使用同义动词描述同类行为（如「理解用户需求」与「挖掘用户真实需求」只能保留一个）；description 中出现的手段/方法/产出物在所有任务中**只能出现一次**。
+  2. **维度互斥**：同一任务只能属于上述【一个】职能方向，不能横跨多个方向。description 中不要堆砌"既要…又要…"的并列表达。
+  3. **方法独有**：每个任务只能使用自己方向下的方法集。用户研究类不要写"方案设计"、工程类不要写"用户访谈"。
+  4. **粒度一致**：标题统一为 6-12 字动宾短语，描述统一为 30-60 字"做什么 + 怎么交付"。
+  5. **数量控制**：先在心里列出方向分配（如调研1+设计1+工程1+验证1+运营1），再为每个方向只生成 1 个任务；用户指定的 taskCount 会作为最终数量约束。
+
+  ## 输出格式
+
   你的输出必须是一个合法的 JSON 对象，格式如下：
   {
     "tasks": [
       {
         "title": "核心任务名称",
-        "description": "任务描述（30-60字）",
+        "description": "任务描述（30-60字，仅含本方向独有的方法和产出）",
         "abilities": [
           {
             "name": "能力名称",
@@ -170,7 +191,7 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     #{course_text}
 
     要求：
-    1. 生成 #{task_count} 个核心任务，覆盖岗位的主要工作领域
+    1. 生成 #{task_count} 个核心任务，先按"调研/设计/工程/验证/运营/学习"等不同职能方向各分配 1 个，方向之间**不得重复**；每个任务的标题动词与方法必须区别于其他任务。
     2. 每个任务下生成 2-4 个能力点，标注等级（beginner/intermediate/advanced）
     3. 从已有知识点中寻找匹配项（knowledgeMatches），匹配度评分 0-1
     4. 如果岗位技能方向与已有课程知识点差异较大，在 mismatchWarnings 中说明
@@ -233,12 +254,10 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
 
   defp save_to_db(data, graph_id, job_position_id, tenant) do
     tasks = Map.get(data, "tasks", [])
-    saved_tasks = []
-    total_abilities = 0
-    total_links = 0
+    deduped_tasks = deduplicate_tasks(tasks)
 
     {saved_tasks, total_abilities, total_links} =
-      Enum.reduce(tasks, {[], 0, 0}, fn task, {acc_tasks, acc_abilities, acc_links} ->
+      Enum.reduce(deduped_tasks, {[], 0, 0}, fn task, {acc_tasks, acc_abilities, acc_links} ->
         # Create core task
         task_attrs = %{
           title: task["title"] || "未命名任务",
@@ -264,6 +283,88 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
       abilityCount: total_abilities,
       linkCount: total_links
     }
+  end
+
+  # 去重策略：
+  # 1. 标题/规范化后的标题完全相同 -> 丢弃后续重复项
+  # 2. 标题在分词后 jaccard 相似度 > 0.6（视为同义改写）-> 保留首个，丢弃后续
+  # 3. 描述文本与任何已保留任务的描述 jaccard > 0.5 -> 丢弃
+  defp deduplicate_tasks(tasks) do
+    initial_state = %{
+      kept: [],
+      seen_titles: MapSet.new(),
+      kept_title_token_sets: [],
+      kept_desc_token_sets: []
+    }
+
+    tasks
+    |> Enum.with_index()
+    |> Enum.reduce(initial_state, fn {task, idx}, state ->
+      title = (task["title"] || "") |> to_string() |> String.trim()
+      desc = (task["description"] || "") |> to_string() |> String.trim()
+
+      title_tokens = tokenize(title)
+      desc_tokens = tokenize(desc)
+      norm_title = normalize_title(title)
+
+      is_dup =
+        MapSet.member?(state.seen_titles, norm_title) or
+          overlap_with_any_list?(title_tokens, state.kept_title_token_sets, 0.6) or
+          overlap_with_any_list?(desc_tokens, state.kept_desc_token_sets, 0.5)
+
+      if is_dup do
+        Logger.warning(
+          "[GenerateJobGraph] Dropping duplicate/overlapping task ##{idx}: '#{title}'"
+        )
+        state
+      else
+        %{
+          state
+          | kept: state.kept ++ [task],
+            seen_titles: MapSet.put(state.seen_titles, norm_title),
+            kept_title_token_sets: [title_tokens | state.kept_title_token_sets],
+            kept_desc_token_sets: [desc_tokens | state.kept_desc_token_sets]
+        }
+      end
+    end)
+    |> Map.get(:kept)
+  end
+
+  defp normalize_title(title) do
+    title
+    |> String.replace(~r/[[:punct:][:space:]]/, "")
+    |> String.downcase()
+  end
+
+  # 中文友好的分词：单字粒度 + bigram
+  defp tokenize(text) do
+    text = String.replace(text, ~r/[[:punct:][:space:]]/, "")
+    chars = String.graphemes(text)
+    chars_set = MapSet.new(chars)
+
+    bigrams =
+      chars
+      |> Enum.chunk_every(2, 1, :discard)
+      |> MapSet.new()
+
+    MapSet.union(chars_set, bigrams)
+  end
+
+  defp overlap_with_any_list?(tokens, kept_token_sets, threshold) do
+    Enum.any?(kept_token_sets, fn other_tokens ->
+      jaccard(tokens, other_tokens) > threshold
+    end)
+  end
+
+  defp jaccard(a, b) do
+    inter = MapSet.intersection(a, b) |> MapSet.size()
+    union = MapSet.union(a, b) |> MapSet.size()
+
+    if union == 0 do
+      0.0
+    else
+      inter / union
+    end
   end
 
   defp save_abilities_and_links(task, graph_id, abilities, data, tenant) do
