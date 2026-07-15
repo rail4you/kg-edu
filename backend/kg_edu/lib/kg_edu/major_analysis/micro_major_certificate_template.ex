@@ -83,6 +83,16 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
         :name_color,
         :name_letter_spacing,
         :name_text_align,
+        :cert_no_field_x,
+        :cert_no_field_y,
+        :cert_no_field_width,
+        :cert_no_field_height,
+        :cert_no_font_family,
+        :cert_no_font_size,
+        :cert_no_font_weight,
+        :cert_no_color,
+        :cert_no_letter_spacing,
+        :cert_no_text_align,
       ]
     end
 
@@ -109,6 +119,16 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
         :name_color,
         :name_letter_spacing,
         :name_text_align,
+        :cert_no_field_x,
+        :cert_no_field_y,
+        :cert_no_field_width,
+        :cert_no_field_height,
+        :cert_no_font_family,
+        :cert_no_font_size,
+        :cert_no_font_weight,
+        :cert_no_color,
+        :cert_no_letter_spacing,
+        :cert_no_text_align,
       ]
       require_atomic? false
     end
