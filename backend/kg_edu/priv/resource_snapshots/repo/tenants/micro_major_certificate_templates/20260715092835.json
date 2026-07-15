@@ -284,6 +284,126 @@
       "type": "text"
     },
     {
+      "allow_nil?": true,
+      "default": "\"0.2\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_field_x",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"0.55\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_field_y",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"0.6\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_field_width",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"0.06\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_field_height",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"serif\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_font_family",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "24",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_font_size",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"normal\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_font_weight",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"#000000\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_color",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "2",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_letter_spacing",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": true,
+      "default": "\"center\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "cert_no_text_align",
+      "type": "text"
+    },
+    {
       "allow_nil?": false,
       "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
@@ -313,8 +433,23 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "6BF321A100A679B526C0AE87851E8A2B50F7A4CB9D40146F106F737AD1F4E1DE",
-  "identities": [],
+  "hash": "16B24A897A6E7E6D0D9E9AD613E4518D13182D728014EA16B48B71D6982CFE66",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "micro_major_certificate_templates_unique_micro_major_template_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "micro_major_id"
+        }
+      ],
+      "name": "unique_micro_major_template",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": null,
     "global": false,

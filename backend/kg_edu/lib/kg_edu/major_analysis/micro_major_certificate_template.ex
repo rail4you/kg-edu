@@ -271,6 +271,78 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
       description "姓名对齐方式：left / center / right"
     end
 
+    attribute :cert_no_field_x, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.2")
+      description "证书编号框归一化 X 坐标（0~1）"
+    end
+
+    attribute :cert_no_field_y, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.55")
+      description "证书编号框归一化 Y 坐标（0~1）"
+    end
+
+    attribute :cert_no_field_width, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.6")
+      description "证书编号框归一化宽度（0~1）"
+    end
+
+    attribute :cert_no_field_height, :decimal do
+      allow_nil? true
+      public? true
+      default Decimal.new("0.06")
+      description "证书编号框归一化高度（0~1）"
+    end
+
+    attribute :cert_no_font_family, :string do
+      allow_nil? true
+      public? true
+      default "serif"
+      description "证书编号字体族"
+    end
+
+    attribute :cert_no_font_size, :integer do
+      allow_nil? true
+      public? true
+      default 24
+      description "证书编号字号（相对图片高度的 px）"
+    end
+
+    attribute :cert_no_font_weight, :atom do
+      allow_nil? true
+      public? true
+      default :normal
+      constraints one_of: [:normal, :bold]
+      description "证书编号字重：normal / bold"
+    end
+
+    attribute :cert_no_color, :string do
+      allow_nil? true
+      public? true
+      default "#000000"
+      description "证书编号颜色（十六进制）"
+    end
+
+    attribute :cert_no_letter_spacing, :integer do
+      allow_nil? true
+      public? true
+      default 2
+      description "证书编号字间距 px"
+    end
+
+    attribute :cert_no_text_align, :atom do
+      allow_nil? true
+      public? true
+      default :center
+      constraints one_of: [:left, :center, :right]
+      description "证书编号对齐方式：left / center / right"
+    end
+
     create_timestamp :inserted_at do
       public? true
     end
