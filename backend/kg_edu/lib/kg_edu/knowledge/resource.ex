@@ -2042,7 +2042,17 @@ defmodule KgEdu.Knowledge.Resource do
   # - level 3+ (D-G列，四级知识点) → parent_knowledge_resource_id = 上一级 cell id
   # ============================================================
 
-  def process_knowledge_import(knowledge_data, course_id, tenant) do
+  def do_process_knowledge_import(knowledge_data, course_id, tenant) do
+    try do
+      process_knowledge_import(knowledge_data, course_id, tenant)
+    rescue
+      e ->
+        IO.inspect({:PKI_EXCEPTION, Exception.message(e), __STACKTRACE__}, label: "PKI_ERROR")
+        {:error, Exception.message(e)}
+    end
+  end
+
+  defp process_knowledge_import(knowledge_data, course_id, tenant) do
     subjects = %{}
     units = %{}
     knowledge_cells = %{}
@@ -2071,10 +2081,25 @@ defmodule KgEdu.Knowledge.Resource do
       name_to_id: %{}
     }
 
-    result = Enum.reduce_while(data_rows, {:ok, initial_acc}, fn row, {:ok, acc} ->
-      case process_import_row(row, acc) do
-        {:ok, new_acc} -> {:cont, {:ok, new_acc}}
-        {:error, reason} -> {:halt, {:error, reason}}
+    result = Enum.reduce_while(data_rows, {:ok, initial_acc}, fn row, acc_val ->
+      case acc_val do
+        {:ok, acc} ->
+          try do
+            case process_import_row(row, acc) do
+              {:ok, new_acc} -> {:cont, {:ok, new_acc}}
+              {:error, reason} ->
+                IO.inspect({:process_row_error, reason, row}, label: "ROW_ERROR")
+                {:halt, {:error, reason}}
+            end
+          rescue
+            e ->
+              IO.inspect({:process_row_exception, Exception.message(e), row}, label: "ROW_EXCEPTION")
+              {:halt, {:error, Exception.message(e)}}
+          end
+
+        other ->
+          IO.inspect({:unexpected_acc, other}, label: "ACC_ERROR")
+          {:halt, {:error, "unexpected accumulator: \#{inspect(other)}"}}
       end
     end)
 

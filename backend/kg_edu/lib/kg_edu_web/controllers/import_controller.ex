@@ -22,7 +22,8 @@ defmodule KgEduWeb.ImportController do
             result =
               KgEdu.Knowledge.ImportService.import_knowledge_excel(
                 extract_base64(params["file_data"]),
-                course_id
+                course_id,
+                tenant
               )
 
             case result do
@@ -72,7 +73,7 @@ defmodule KgEduWeb.ImportController do
               KgEdu.Knowledge.Resource.import_knowledge_from_excel(%{
                 excel_data: base64_data,
                 course_id: course_id
-              })
+              }, tenant: tenant)
 
             case result do
               {:ok, data} ->

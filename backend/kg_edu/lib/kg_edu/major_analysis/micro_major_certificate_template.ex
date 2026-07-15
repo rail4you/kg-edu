@@ -279,6 +279,10 @@ defmodule KgEdu.MajorAnalysis.MicroMajorCertificateTemplate do
     end
   end
 
+  identities do
+    identity :unique_micro_major_template, [:micro_major_id]
+  end
+
   relationships do
     belongs_to :micro_major, KgEdu.MajorAnalysis.MicroMajor do
       allow_nil? false
