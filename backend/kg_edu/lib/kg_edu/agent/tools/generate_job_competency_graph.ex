@@ -34,13 +34,15 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
   - **运营与协作交付**：面向协作的传递性工作（上线发布、培训、跨部门沟通、文档沉淀）。产出：上线方案、培训材料、运营 SOP。
   - **学习与持续精进**：面向个人的成长性工作（技术调研、知识分享、读书复盘）。产出：调研笔记、分享记录、知识库条目。
 
-  ### 强制约束
+  ### 标题唯一性强制约束
 
-  1. **禁止重叠**：任意两个任务的 title 不得使用同义动词描述同类行为（如「理解用户需求」与「挖掘用户真实需求」只能保留一个）；description 中出现的手段/方法/产出物在所有任务中**只能出现一次**。
-  2. **维度互斥**：同一任务只能属于上述【一个】职能方向，不能横跨多个方向。description 中不要堆砌"既要…又要…"的并列表达。
-  3. **方法独有**：每个任务只能使用自己方向下的方法集。用户研究类不要写"方案设计"、工程类不要写"用户访谈"。
-  4. **粒度一致**：标题统一为 6-12 字动宾短语，描述统一为 30-60 字"做什么 + 怎么交付"。
-  5. **数量控制**：先在心里列出方向分配（如调研1+设计1+工程1+验证1+运营1），再为每个方向只生成 1 个任务；用户指定的 taskCount 会作为最终数量约束。
+  1. **标题语义绝对互斥**：任意两个任务的 title **必须使用完全不同的动词和宾语**，禁止出现同义/近义表达。例如「理解用户需求」和「挖掘用户真实需求」=> 只保留一个，「需求分析」和「需求调研」=> 只保留一个。
+  2. **与已有任务区分**：如果已有核心任务列表不为空，您生成的新任务标题必须与已有任务**语义上明显不同**，不能是同义词改写。
+  3. **禁止重叠**：description 中出现的手段/方法/产出物在所有任务中**只能出现一次**。
+  4. **维度互斥**：同一任务只能属于上述【一个】职能方向，不能横跨多个方向。description 中不要堆砌"既要…又要…"的并列表达。
+  5. **方法独有**：每个任务只能使用自己方向下的方法集。用户研究类不要写"方案设计"、工程类不要写"用户访谈"。
+  6. **粒度一致**：标题统一为 6-12 字动宾短语，描述统一为 30-60 字"做什么 + 怎么交付"。
+  7. **数量控制**：先在心里列出方向分配（如调研1+设计1+工程1+验证1+运营1），再为每个方向只生成 1 个任务；用户指定的 taskCount 会作为最终数量约束。
 
   ## 输出格式
 
@@ -116,10 +118,13 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
       courses = fetch_courses(tenant)
       knowledge_resources = fetch_knowledge_resources(tenant)
 
+      existing_tasks = fetch_existing_tasks(job_position_id, tenant)
+
       {:ok, %{
         job: job,
         courses: courses,
-        knowledge_resources: knowledge_resources
+        knowledge_resources: knowledge_resources,
+        existing_tasks: existing_tasks
       }}
     end
   end
@@ -146,6 +151,18 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     try do
       KgEdu.Knowledge.Resource
       |> Ash.read!(tenant: tenant, authorize?: false, load: [:course])
+    rescue
+      _ -> []
+    end
+  end
+
+  defp fetch_existing_tasks(job_position_id, tenant) do
+    try do
+      KgEdu.MajorAnalysis.JobCoreTask
+      |> Ash.read!(tenant: tenant, authorize?: false,
+        filter: [job_position_id: job_position_id],
+        select: [:title])
+      |> Enum.map(& &1.title)
     rescue
       _ -> []
     end
@@ -179,6 +196,15 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
         |> Enum.join("\n\n")
       end
 
+    existing_task_text =
+      if context.existing_tasks == [] do
+        "（暂无已有核心任务）"
+      else
+        context.existing_tasks
+        |> Enum.map(&"  - #{&1}")
+        |> Enum.join("\n")
+      end
+
     """
     请分析以下岗位，生成 #{task_count} 个核心任务及其能力点，并尝试关联已有课程知识点。
 
@@ -190,8 +216,11 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     【已有课程与知识点】
     #{course_text}
 
+    【已有核心任务（请避免生成标题相近的任务）】
+    #{existing_task_text}
+
     要求：
-    1. 生成 #{task_count} 个核心任务，先按"调研/设计/工程/验证/运营/学习"等不同职能方向各分配 1 个，方向之间**不得重复**；每个任务的标题动词与方法必须区别于其他任务。
+    1. 生成 #{task_count} 个核心任务，先按"调研/设计/工程/验证/运营/学习"等不同职能方向各分配 1 个，方向之间**不得重复**；每个任务的标题动词与方法必须区别于其他任务。生成的标题必须与【已有核心任务】列表中的标题**语义上明显不同**，不能使用同义词改写已有任务。
     2. 每个任务下生成 2-4 个能力点，标注等级（beginner/intermediate/advanced）
     3. 从已有知识点中寻找匹配项（knowledgeMatches），匹配度评分 0-1
     4. 如果岗位技能方向与已有课程知识点差异较大，在 mismatchWarnings 中说明
