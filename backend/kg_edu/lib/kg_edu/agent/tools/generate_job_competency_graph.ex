@@ -17,7 +17,8 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
       Zoi.object(%{
         jobPositionId: Zoi.string(description: "岗位ID"),
         graphId: Zoi.string(description: "能力图谱ID"),
-        taskCount: Zoi.integer(description: "生成任务数量") |> Zoi.optional()
+        taskCount: Zoi.integer(description: "生成任务数量") |> Zoi.optional(),
+        previewOnly: Zoi.boolean(description: "是否仅预览（不持久化）") |> Zoi.default(false)
       })
 
   @system_prompt """
@@ -81,6 +82,7 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     job_position_id = params[:jobPositionId]
     graph_id = params[:graphId]
     task_count = params[:taskCount] || 5
+    preview_only = Map.get(params, :previewOnly, false)
 
     if is_nil(job_position_id) or is_nil(graph_id) do
       {:error, "jobPositionId 和 graphId 是必需参数"}
@@ -92,19 +94,62 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
            user_prompt <- build_user_prompt(context, task_count),
            {:ok, json_text} <- call_llm(user_prompt),
            {:ok, data} <- parse_json(json_text),
-           :ok <- validate_data(data),
-           saved <- save_to_db(data, graph_id, job_position_id, tenant) do
-        {:ok,
-         %{
-           result: build_summary(data, saved),
-           mismatchWarnings: Map.get(data, "mismatchWarnings", []),
-           overallAssessment: Map.get(data, "overallAssessment", ""),
-           taskCount: length(saved.tasks),
-           abilityCount: saved.abilityCount,
-           linkCount: saved.linkCount
-         }}
+           :ok <- validate_data(data) do
+        if preview_only do
+          # 预览模式：返回数据但不持久化
+          preview_payload =
+            data
+            |> build_preview_payload()
+
+          {:ok,
+           %{
+             preview: true,
+             previewData: preview_payload,
+             mismatchWarnings: Map.get(data, "mismatchWarnings", []),
+             overallAssessment: Map.get(data, "overallAssessment", "")
+           }}
+        else
+          saved = save_to_db(data, graph_id, job_position_id, tenant)
+
+          {:ok,
+           %{
+             result: build_summary(data, saved),
+             mismatchWarnings: Map.get(data, "mismatchWarnings", []),
+             overallAssessment: Map.get(data, "overallAssessment", ""),
+             taskCount: length(saved.tasks),
+             abilityCount: saved.abilityCount,
+             linkCount: saved.linkCount
+           }}
+        end
       end
     end
+  end
+
+  # ── Preview Payload ──────────────────────────────────────────────────────
+
+  defp build_preview_payload(data) do
+    tasks =
+      data
+      |> Map.get("tasks", [])
+      |> Enum.map(fn task ->
+        abilities =
+          Map.get(task, "abilities", [])
+          |> Enum.map(fn a ->
+            %{
+              name: a["name"] || "未命名能力",
+              description: a["description"] || "",
+              level: a["level"] || "beginner"
+            }
+          end)
+
+        %{
+          title: task["title"] || "未命名任务",
+          description: task["description"] || "",
+          abilities: abilities
+        }
+      end)
+
+    %{tasks: tasks}
   end
 
   # ── Context ─────────────────────────────────────────────────────────────
@@ -281,7 +326,27 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
 
   # ── Persistence ─────────────────────────────────────────────────────────
 
+  # 删除指定图谱下所有现有任务；级联关系（on_delete: :delete）
+  # 会自动清理任务的能力点（JobTaskAbility）和知识点关联（AbilityKnowledgeLink）
+  defp delete_existing_tasks(graph_id, tenant) do
+    KgEdu.MajorAnalysis.JobCoreTask
+    |> Ash.Query.filter(graph_id == ^graph_id)
+    |> Ash.read!(tenant: tenant, authorize?: false)
+    |> Enum.each(fn task ->
+      case Ash.destroy(task, tenant: tenant, authorize?: false) do
+        :ok -> :ok
+        {:ok, _} -> :ok
+        {:error, reason} ->
+          Logger.warning("[GenerateJobGraph] Failed to delete existing task #{task.id}: #{inspect(reason)}")
+          :ok
+      end
+    end)
+  end
+
   defp save_to_db(data, graph_id, job_position_id, tenant) do
+    # 1) 清理该图谱下已有任务（级联删除任务能力点与知识点关联）
+    delete_existing_tasks(graph_id, tenant)
+
     tasks = Map.get(data, "tasks", [])
     deduped_tasks = deduplicate_tasks(tasks)
 

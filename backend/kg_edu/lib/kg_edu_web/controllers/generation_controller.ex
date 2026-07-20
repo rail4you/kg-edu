@@ -349,6 +349,14 @@ defmodule KgEduWeb.GenerationController do
   @doc """
   POST /api/job-competency-graph/ai-generate
   AI generate job competency graph (tasks, abilities, knowledge links).
+
+  Request:
+    - jobPositionId: required
+    - graphId: required
+    - taskCount: optional, default 5
+    - previewOnly: optional bool, default false. When true, returns preview
+      data without persisting. Subsequent call with previewOnly=false saves
+      (and overwrites existing tasks/abilities/links).
   """
   def ai_generate_job_graph(conn, params) do
     tenant = extract_tenant(conn, params)
@@ -358,14 +366,28 @@ defmodule KgEduWeb.GenerationController do
     else
       KgEdu.Agent.SessionContext.put(tenant: tenant)
 
+      preview_only = to_bool(params["previewOnly"], false)
+
       result =
         KgEdu.Agent.Tools.GenerateJobCompetencyGraph.run(%{
           jobPositionId: params["jobPositionId"],
           graphId: params["graphId"],
-          taskCount: params["taskCount"]
+          taskCount: params["taskCount"],
+          previewOnly: preview_only
         }, %{})
 
       case result do
+        {:ok, output} when is_map_key(output, :preview) and output.preview ->
+          json(conn, %{
+            success: true,
+            preview: true,
+            data: %{
+              previewData: output.previewData,
+              mismatchWarnings: output.mismatchWarnings,
+              overallAssessment: output.overallAssessment
+            }
+          })
+
         {:ok, output} ->
           json(conn, %{
             success: true,
@@ -384,6 +406,13 @@ defmodule KgEduWeb.GenerationController do
       end
     end
   end
+
+  defp to_bool(nil, _default), do: false
+  defp to_bool(false, _default), do: false
+  defp to_bool(true, _default), do: true
+  defp to_bool("true", _default), do: true
+  defp to_bool("1", _default), do: true
+  defp to_bool(_, default), do: default
 
   # ── Helpers ─────────────────────────────────────────────────────────────
 
