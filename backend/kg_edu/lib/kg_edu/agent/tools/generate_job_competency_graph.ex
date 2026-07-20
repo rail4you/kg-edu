@@ -121,9 +121,25 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
              linkCount: saved.linkCount
            }}
         end
+      else
+        # LLM 调用或解析失败时，把复杂 error 结构转为可序列化的字符串
+        err -> {:error, format_error(err)}
       end
     end
   end
+
+  # 把任意错误结构归一为可 JSON 序列化的字符串（避免 Phoenix json 编码失败）
+  defp format_error(%ReqLLM.Error.API.Request{reason: reason}) when is_binary(reason) do
+    "AI 服务调用失败：#{reason}"
+  end
+
+  defp format_error(%ReqLLM.Error.API.Request{} = err) do
+    "AI 服务调用失败（HTTP #{inspect(err.status)}）"
+  end
+
+  defp format_error(%ReqLLM.Error{} = err), do: "AI 服务错误：#{Exception.message(err)}"
+  defp format_error(msg) when is_binary(msg), do: msg
+  defp format_error(err), do: inspect(err, limit: 5, printable_limit: 200)
 
   # ── Preview Payload ──────────────────────────────────────────────────────
 
@@ -285,7 +301,7 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     case ReqLLM.Generation.generate_text(model, [
            %{role: "system", content: @system_prompt},
            %{role: "user", content: user_prompt}
-         ], max_tokens: 16384, temperature: 0.7) do
+         ], max_tokens: 16384, temperature: 0.7, receive_timeout: 240_000) do
       {:ok, response} ->
         {:ok, ReqLLM.Response.text(response)}
       {:error, reason} ->

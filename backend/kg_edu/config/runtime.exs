@@ -44,6 +44,18 @@ if config_env() == :prod do
     access_token_id: System.get_env("MUX_TOKEN_ID"),
     access_token_secret: System.get_env("MUX_TOKEN_SECRET")
 
+  # ReqLLM Finch pool — force HTTP/1.1 (DashScope compatibility)
+  config :req_llm, :finch,
+    pools: %{
+      :default => [protocols: [:http1], size: 5, count: 4]
+    }
+
+  # Increase Finch timeouts for LLM calls (large generations can take time)
+  config :finch,
+    connect_timeout: 60_000,
+    receive_timeout: 300_000,
+    pool_timeout: 30_000
+
   config :kg_edu, KgEdu.Repo,
     # ssl: true,
     url: database_url,
