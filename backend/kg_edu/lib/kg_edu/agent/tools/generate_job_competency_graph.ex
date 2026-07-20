@@ -137,7 +137,11 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     "AI 服务调用失败（HTTP #{inspect(err.status)}）"
   end
 
-  defp format_error(%ReqLLM.Error{} = err), do: "AI 服务错误：#{Exception.message(err)}"
+  defp format_error(%_{} = err) do
+    # 其它 struct（含 ReqLLM.Error 等异常类型）：走 inspect 输出关键信息
+    inspect(err, limit: 5, printable_limit: 200)
+  end
+
   defp format_error(msg) when is_binary(msg), do: msg
   defp format_error(err), do: inspect(err, limit: 5, printable_limit: 200)
 
