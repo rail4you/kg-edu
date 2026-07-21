@@ -53,7 +53,7 @@ if config_env() == :prod do
   # Increase Finch timeouts for LLM calls (large generations can take time)
   config :finch,
     connect_timeout: 60_000,
-    receive_timeout: 300_000,
+    receive_timeout: 600_000,
     pool_timeout: 30_000
 
   config :kg_edu, KgEdu.Repo,

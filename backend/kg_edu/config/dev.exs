@@ -110,7 +110,7 @@ config :req_llm, :finch,
 # Increase Finch timeouts for LLM calls
 config :finch,
   connect_timeout: 60_000,
-  receive_timeout: 300_000,
+  receive_timeout: 600_000,
   pool_timeout: 30_000
 
 # warnings_as_errors is deprecated via Code.compiler_options/1;

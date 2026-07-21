@@ -305,7 +305,7 @@ defmodule KgEdu.Agent.Tools.GenerateJobCompetencyGraph do
     case ReqLLM.Generation.generate_text(model, [
            %{role: "system", content: @system_prompt},
            %{role: "user", content: user_prompt}
-         ], max_tokens: 16384, temperature: 0.7, receive_timeout: 240_000) do
+         ], max_tokens: 32768, temperature: 0.7, receive_timeout: 600_000) do
       {:ok, response} ->
         {:ok, ReqLLM.Response.text(response)}
       {:error, reason} ->
