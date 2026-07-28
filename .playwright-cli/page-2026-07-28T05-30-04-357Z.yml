@@ -1,0 +1,195 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e8] [cursor=pointer]:
+        - img "课堂星" [ref=e9]
+        - generic [ref=e10]: 智慧教学系统
+      - generic [ref=e11]:
+        - button "登 录" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13]: 登 录
+        - button "menu" [ref=e14] [cursor=pointer]:
+          - img "menu" [ref=e16]:
+            - img [ref=e17]
+  - main [ref=e19]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - heading "材料成形工艺" [level=1] [ref=e23]
+        - paragraph [ref=e24]: 软件工程
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - img "book" [ref=e27]:
+              - img [ref=e28]
+            - text: 软件工程
+          - generic [ref=e30]:
+            - img "clock-circle" [ref=e31]:
+              - img [ref=e32]
+            - text: 2024春季
+          - generic [ref=e35]:
+            - img "clock-circle" [ref=e36]:
+              - img [ref=e37]
+            - text: 32 学时
+          - generic [ref=e40]:
+            - img "video-camera" [ref=e41]:
+              - img [ref=e42]
+            - text: 3 学分
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - img "book" [ref=e49]:
+                - img [ref=e50]
+              - generic [ref=e52]: 课程简介
+            - generic [ref=e53]: 材料成形工艺
+            - generic [ref=e54]:
+              - button "right 登录后选课" [ref=e55] [cursor=pointer]:
+                - img "right" [ref=e57]:
+                  - img [ref=e58]
+                - generic [ref=e60]: 登录后选课
+              - button "apartment 查看知识图谱" [ref=e61] [cursor=pointer]:
+                - img "apartment" [ref=e63]:
+                  - img [ref=e64]
+                - generic [ref=e66]: 查看知识图谱
+          - generic [ref=e67]:
+            - button "层级面板" [ref=e68] [cursor=pointer]
+            - button "放射图谱" [ref=e69] [cursor=pointer]
+          - generic [ref=e70]:
+            - generic [ref=e71] [cursor=pointer]:
+              - generic [ref=e73]:
+                - img "picture" [ref=e75]:
+                  - img [ref=e76]
+                - generic [ref=e78]: 全景图谱
+              - generic [ref=e80]:
+                - generic: 树图
+                - button "上一个图谱" [ref=e85]:
+                  - img "left" [ref=e86]:
+                    - img [ref=e87]
+                - button "下一个图谱" [ref=e89]:
+                  - img "right" [ref=e90]:
+                    - img [ref=e91]
+                - button "fullscreen 全屏" [ref=e93]:
+                  - img "fullscreen" [ref=e94]:
+                    - img [ref=e95]
+                  - generic [ref=e97]: 全屏
+            - generic [ref=e98] [cursor=pointer]:
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - img "team" [ref=e102]:
+                    - img [ref=e103]
+                  - generic [ref=e105]: 教师团队
+                - generic [ref=e106]:
+                  - img "bank" [ref=e107]:
+                    - img [ref=e108]
+                  - generic [ref=e110]: school1
+              - generic [ref=e112]:
+                - generic [ref=e114]: t
+                - generic [ref=e115]:
+                  - strong [ref=e116]: teacher2
+                  - generic [ref=e117]: 副教授
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - img "team" [ref=e121]:
+                  - img [ref=e122]
+                - generic [ref=e124]: 累计数据
+              - generic [ref=e125]:
+                - generic [ref=e126]:
+                  - strong [ref=e127]: "22"
+                  - generic [ref=e128]: 累计人数
+                - generic [ref=e129]:
+                  - strong [ref=e130]: "1"
+                  - generic [ref=e131]: 累计学校
+                - generic [ref=e132]:
+                  - strong [ref=e133]: "0"
+                  - generic [ref=e134]: 累计互动
+                - generic [ref=e135]:
+                  - strong [ref=e136]: "2"
+                  - generic [ref=e137]: 累计访问
+        - generic [ref=e138]:
+          - generic [ref=e140]:
+            - generic [ref=e141]:
+              - generic [ref=e144] [cursor=pointer]:
+                - generic [ref=e145]: 能力体系
+                - generic [ref=e146]:
+                  - generic [ref=e147]: 知识目标
+                  - generic [ref=e149]: 素养目标
+                  - generic [ref=e151]: 能力目标
+              - generic [ref=e153]:
+                - strong [ref=e154]: "201"
+                - generic [ref=e155]: 能力
+            - generic [ref=e156]:
+              - generic [ref=e159] [cursor=pointer]:
+                - generic [ref=e160]: 问题体系
+                - generic [ref=e161]:
+                  - generic [ref=e162]: 问题链
+                  - generic [ref=e164]: 实践
+                  - generic [ref=e166]: 实验
+              - generic [ref=e168]:
+                - strong [ref=e169]: "11"
+                - generic [ref=e170]: 问题
+            - generic [ref=e171]:
+              - generic [ref=e174] [cursor=pointer]:
+                - generic [ref=e175]: 知识体系
+                - generic [ref=e176]:
+                  - generic [ref=e177]: 知识点
+                  - generic [ref=e179]: 技能点
+                  - generic [ref=e181]: 教案
+              - generic [ref=e183]:
+                - strong [ref=e184]: "22"
+                - generic [ref=e185]: 知识点
+            - generic [ref=e186]:
+              - generic [ref=e189] [cursor=pointer]:
+                - generic [ref=e190]: 教学资源
+                - generic [ref=e191]:
+                  - generic [ref=e192]: 文档
+                  - generic [ref=e194]: 习题
+                  - generic [ref=e196]: 视频
+              - generic [ref=e198]:
+                - strong [ref=e199]: "44"
+                - generic [ref=e200]: 教学资源
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - img "apartment":
+                    - img
+                - generic: 材料成形工艺
+                - generic: 课程核心
+              - img
+              - generic:
+                - generic:
+                  - img "trophy":
+                    - img
+                - generic:
+                  - strong: "201"
+                  - generic: 能力
+                - generic: 能力体系
+                - generic: 知识目标
+              - generic:
+                - generic:
+                  - img "experiment":
+                    - img
+                - generic:
+                  - strong: "11"
+                  - generic: 问题
+                - generic: 问题体系
+                - generic: 问题链
+              - generic:
+                - generic:
+                  - img "file-text":
+                    - img
+                - generic:
+                  - strong: "22"
+                  - generic: 知识点
+                - generic: 知识体系
+                - generic: 知识点
+              - generic:
+                - generic:
+                  - img "build":
+                    - img
+                - generic:
+                  - strong: "44"
+                  - generic: 教学资源
+                - generic: 教学资源
+                - generic: 文档
+  - generic [ref=e202]:
+    - generic [ref=e203]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e204]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学系统

@@ -1,0 +1,9 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e7] [cursor=pointer]:
+      - img "课堂星" [ref=e8]
+      - generic [ref=e9]: 智慧教学系统
+  - main [ref=e10]
+  - generic [ref=e19]:
+    - generic [ref=e20]: 关于我们丨联系我们丨隐私条款
+    - generic [ref=e21]: 课堂星 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台

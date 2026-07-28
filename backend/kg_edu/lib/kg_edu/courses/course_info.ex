@@ -47,7 +47,8 @@ defmodule KgEdu.Courses.CourseInfo do
         :target,
         :course_highlights,
         :course_introduction,
-        :course_structure
+        :course_structure,
+        :graduation_requirements
       ]
     end
 
@@ -59,7 +60,8 @@ defmodule KgEdu.Courses.CourseInfo do
         :target,
         :course_highlights,
         :course_introduction,
-        :course_structure
+        :course_structure,
+        :graduation_requirements
       ]
     end
   end
@@ -119,6 +121,12 @@ defmodule KgEdu.Courses.CourseInfo do
       allow_nil? true
       public? true
       description "课程知识逻辑结构"
+    end
+
+    attribute :graduation_requirements, :string do
+      allow_nil? true
+      public? true
+      description "毕业要求"
     end
 
     create_timestamp :inserted_at
