@@ -8,14 +8,17 @@ defmodule KgEdu.Repo.TenantMigrations.AddUniqueIndexMicroMajorCertTemplates do
   use Ecto.Migration
 
   def up do
-    create unique_index(:micro_major_certificate_templates, [:micro_major_id],
+    # 使用 create_if_not_exists 保证幂等：部分租户（如通过手工 SQL / 旧迁移链）
+    # 可能已存在该索引但 schema_migrations 未记录版本号，直接 create 会报
+    # duplicate_table 导致整个租户迁移链中断。
+    create_if_not_exists unique_index(:micro_major_certificate_templates, [:micro_major_id],
            name: :idx_mm_cert_templates_unique_mm,
            prefix: prefix()
          )
   end
 
   def down do
-    drop unique_index(:micro_major_certificate_templates, [:micro_major_id],
+    drop_if_exists unique_index(:micro_major_certificate_templates, [:micro_major_id],
            name: :idx_mm_cert_templates_unique_mm,
            prefix: prefix()
          )
