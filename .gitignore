@@ -14,6 +14,10 @@ kg-edu-vite-antd
 .dev-logs/
 .dev-pids/
 
+# User manual screenshots (kept locally, not in git)
+用户手册/images/
+docs-manual/images/
+
 # Node
 node_modules/
 package.json
