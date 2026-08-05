@@ -3,6 +3,17 @@ defmodule KgEduWeb.GenerationController do
   require Ash.Query
   require Logger
 
+  # 只读教师禁止 AI 生成类写操作（练习题/能力图谱/课程体系/岗位图谱/课程文档上传/建异步任务）
+  plug KgEduWeb.Plugs.RequireEditable
+       when action in [
+              :generate_exercise,
+              :generate_competency_graph,
+              :generate_curriculum,
+              :create_curriculum_job,
+              :upload_curriculum_document,
+              :ai_generate_job_graph
+            ]
+
   @doc """
   POST /api/generate_ai_exercise
   Direct exercise generation endpoint (non-streaming).
@@ -18,13 +29,16 @@ defmodule KgEduWeb.GenerationController do
       KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: input["userId"])
 
       result =
-        KgEdu.Agent.Tools.GenerateExercises.run(%{
-          courseId: input["courseId"],
-          knowledgeName: input["knowledgeName"] || input["chapterName"],
-          exerciseType: input["exerciseType"] || "multiple_choice",
-          number: input["number"] || 5,
-          difficulty: input["difficulty"] || 3
-        }, %{})
+        KgEdu.Agent.Tools.GenerateExercises.run(
+          %{
+            courseId: input["courseId"],
+            knowledgeName: input["knowledgeName"] || input["chapterName"],
+            exerciseType: input["exerciseType"] || "multiple_choice",
+            number: input["number"] || 5,
+            difficulty: input["difficulty"] || 3
+          },
+          %{}
+        )
 
       case result do
         {:ok, output} ->
@@ -64,10 +78,13 @@ defmodule KgEduWeb.GenerationController do
       KgEdu.Agent.SessionContext.put(tenant: tenant)
 
       result =
-        KgEdu.Agent.Tools.GenerateCompetencyGraph.run(%{
-          majorId: params["majorId"],
-          customPrompt: params["customPrompt"]
-        }, %{})
+        KgEdu.Agent.Tools.GenerateCompetencyGraph.run(
+          %{
+            majorId: params["majorId"],
+            customPrompt: params["customPrompt"]
+          },
+          %{}
+        )
 
       case result do
         {:ok, output} ->
@@ -96,10 +113,13 @@ defmodule KgEduWeb.GenerationController do
       KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: params["userId"])
 
       result =
-        KgEdu.Agent.Tools.GenerateCurriculum.run(%{
-          majorId: params["majorId"],
-          customPrompt: params["customPrompt"]
-        }, %{})
+        KgEdu.Agent.Tools.GenerateCurriculum.run(
+          %{
+            majorId: params["majorId"],
+            customPrompt: params["customPrompt"]
+          },
+          %{}
+        )
 
       case result do
         {:ok, output} ->
@@ -142,10 +162,13 @@ defmodule KgEduWeb.GenerationController do
       # Run generation async
       Task.start(fn ->
         result =
-          KgEdu.Agent.Tools.GenerateCurriculum.run(%{
-            majorId: major_id,
-            customPrompt: params["customPrompt"]
-          }, %{})
+          KgEdu.Agent.Tools.GenerateCurriculum.run(
+            %{
+              majorId: major_id,
+              customPrompt: params["customPrompt"]
+            },
+            %{}
+          )
 
         case result do
           {:ok, output} ->
@@ -224,6 +247,7 @@ defmodule KgEduWeb.GenerationController do
 
           # Query exercises matching course_id, question_type, and difficulties
           type_atom = String.to_existing_atom(question_type)
+
           query =
             KgEdu.Knowledge.Exercise
             |> Ash.Query.new()
@@ -369,12 +393,15 @@ defmodule KgEduWeb.GenerationController do
       preview_only = to_bool(params["previewOnly"], false)
 
       result =
-        KgEdu.Agent.Tools.GenerateJobCompetencyGraph.run(%{
-          jobPositionId: params["jobPositionId"],
-          graphId: params["graphId"],
-          taskCount: params["taskCount"],
-          previewOnly: preview_only
-        }, %{})
+        KgEdu.Agent.Tools.GenerateJobCompetencyGraph.run(
+          %{
+            jobPositionId: params["jobPositionId"],
+            graphId: params["graphId"],
+            taskCount: params["taskCount"],
+            previewOnly: preview_only
+          },
+          %{}
+        )
 
       case result do
         {:ok, output} when is_map_key(output, :preview) and output.preview ->

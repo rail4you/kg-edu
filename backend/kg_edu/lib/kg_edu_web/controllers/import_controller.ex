@@ -1,6 +1,9 @@
 defmodule KgEduWeb.ImportController do
   use KgEduWeb, :controller
 
+  # 只读教师禁止导入知识点/章节
+  plug KgEduWeb.Plugs.RequireEditable when action in [:import_knowledge, :import_chapters]
+
   @doc """
   POST /import — Import knowledge points from Excel (base64 JSON format).
 
@@ -70,10 +73,13 @@ defmodule KgEduWeb.ImportController do
 
           try do
             result =
-              KgEdu.Knowledge.Resource.import_knowledge_from_excel(%{
-                excel_data: base64_data,
-                course_id: course_id
-              }, tenant: tenant)
+              KgEdu.Knowledge.Resource.import_knowledge_from_excel(
+                %{
+                  excel_data: base64_data,
+                  course_id: course_id
+                },
+                tenant: tenant
+              )
 
             case result do
               {:ok, data} ->

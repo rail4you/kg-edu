@@ -21,22 +21,28 @@ defmodule KgEduWeb.Plugs.LoadActor do
 
   defp verify_and_extract_claims(token) do
     case AshAuthentication.Jwt.peek(token) do
-      {:ok, %{"tenant" => tenant, "sub" => subject}} when not is_nil(tenant) and not is_nil(subject) ->
+      {:ok, %{"tenant" => tenant, "sub" => subject}}
+      when not is_nil(tenant) and not is_nil(subject) ->
         {:ok, %{"tenant" => tenant, "sub" => subject}}
+
       {:ok, _claims} ->
         {:error, :missing_fields}
+
       {:error, _} = error ->
         error
     end
   end
 
   defp load_user(nil, _), do: {:error, :no_subject}
+
   defp load_user(subject, tenant) do
     # Extract user ID from subject (format: "user?id=<uuid>" or just uuid)
     user_id = extract_user_id(subject)
-    
+
     case user_id do
-      nil -> {:error, :invalid_subject}
+      nil ->
+        {:error, :invalid_subject}
+
       _ ->
         case KgEdu.Accounts.User
              |> Ash.Query.filter(id == ^user_id)
@@ -83,6 +89,11 @@ defmodule KgEduWeb.Router do
     plug :load_from_bearer
     plug :set_actor, :user
     plug KgEduWeb.Plugs.LoadActor
+  end
+
+  # JSON API 写操作守卫：只读教师禁止 POST/PATCH/PUT/DELETE
+  pipeline :api_json_write_guard do
+    plug KgEduWeb.Plugs.EnforceEditWindow
   end
 
   scope "/api", KgEduWeb do
@@ -211,7 +222,7 @@ defmodule KgEduWeb.Router do
   end
 
   scope "/api/json" do
-    pipe_through [:api]
+    pipe_through [:api, :api_json_write_guard]
 
     forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/json/open_api",

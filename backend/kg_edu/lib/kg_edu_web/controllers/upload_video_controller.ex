@@ -2,6 +2,10 @@ defmodule KgEduWeb.UploadVideoController do
   use KgEduWeb, :controller
   require Logger
 
+  # 只读教师禁止视频上传与章节关联操作
+  plug KgEduWeb.Plugs.RequireEditable
+       when action in [:upload, :link_to_chapter, :unlink_from_chapter]
+
   alias KgEdu.Courses.Video
 
   def upload(conn, %{"video" => video_upload, "chapter_id" => chapter_id} = params) do

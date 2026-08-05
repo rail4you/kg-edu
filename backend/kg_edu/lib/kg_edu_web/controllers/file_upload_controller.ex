@@ -3,6 +3,9 @@ defmodule KgEduWeb.FileUploadController do
 
   require Logger
 
+  # 只读教师禁止上传（含获取 OSS 上传凭据）
+  plug KgEduWeb.Plugs.RequireEditable when action in [:upload, :sts_token]
+
   @doc """
   POST /api/upload
 
