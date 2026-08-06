@@ -81,7 +81,9 @@ defmodule KgEdu.Accounts.User do
     # class management
     define :remove_student_from_class, action: :remove_student_from_class
     # super admin tenant management
-    define :get_users_from_tenant, action: :get_users_from_tenant
+    define(:get_users_from_tenant, action: :get_users_from_tenant)
+    # batch edit permission
+    define(:bulk_update_edit_permission, action: :bulk_update_edit_permission)
   end
 
   actions do
@@ -1243,6 +1245,78 @@ defmodule KgEdu.Accounts.User do
       description "Get users from a specific tenant (super admin only)"
       # Load the class relationship so users with class_id include class data
       prepare build(load: [:class])
+    end
+
+    action :bulk_update_edit_permission, :map do
+      description "批量设置教师/管理员的编辑权限（使用期限）。仅管理员/超级管理员可调用。"
+
+      argument :user_ids, {:array, :uuid} do
+        description "要设置的用户 ID 列表"
+        allow_nil?(false)
+      end
+
+      argument :edit_enabled, :boolean do
+        description "编辑权限开关"
+        allow_nil?(false)
+      end
+
+      argument :edit_period_start, :date do
+        description "编辑起始日期，空表示不限"
+        allow_nil?(true)
+      end
+
+      argument :edit_period_end, :date do
+        description "编辑截止日期，空表示不限"
+        allow_nil?(true)
+      end
+
+      run fn input, context ->
+        actor = context.actor
+
+        if is_nil(actor) or actor.role not in [:admin, :super_admin] do
+          {:error, "无权执行此操作"}
+        else
+          attrs = %{
+            edit_enabled: input.arguments.edit_enabled,
+            edit_period_start: input.arguments.edit_period_start,
+            edit_period_end: input.arguments.edit_period_end
+          }
+
+          {updated, errors} =
+            Enum.reduce(input.arguments.user_ids, {0, []}, fn user_id, {ok, errs} ->
+              case Ash.get(KgEdu.Accounts.User, user_id, tenant: context.tenant) do
+                {:ok, nil} ->
+                  {ok, errs}
+
+                {:ok, user} ->
+                  opts = [
+                    actor: actor,
+                    tenant: context.tenant,
+                    context: %{}
+                  ]
+
+                  changeset =
+                    Ash.Changeset.for_update(user, :update, attrs, opts)
+
+                  case Ash.update(changeset, opts) do
+                    {:ok, _user} -> {ok + 1, errs}
+                    {:error, error} -> {ok, [error | errs]}
+                  end
+
+                {:error, error} ->
+                  {ok, [error | errs]}
+              end
+            end)
+
+          {:ok,
+           %{
+             success: errors == [],
+             updated: updated,
+             failed: length(errors),
+             errors: Enum.map(errors, &inspect/1)
+           }}
+        end
+      end
     end
   end
 

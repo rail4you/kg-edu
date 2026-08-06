@@ -82,6 +82,8 @@ defmodule KgEdu.Accounts do
       rpc_action :update_student, :update_student
       # Super admin tenant management
       rpc_action :get_users_from_tenant, :get_users_from_tenant
+      # Batch edit permission
+      rpc_action :bulk_update_edit_permission, :bulk_update_edit_permission
     end
 
     resource KgEdu.Accounts.Organization do

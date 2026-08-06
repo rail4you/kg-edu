@@ -22,8 +22,7 @@ defmodule KgEdu.Accounts.EditPermissionTest do
       assert EditPermission.status(nil, @today) == :not_applicable
     end
 
-    test "non-teacher roles are not applicable" do
-      assert EditPermission.status(teacher(%{role: :admin}), @today) == :not_applicable
+    test "super_admin and student roles are not applicable" do
       assert EditPermission.status(teacher(%{role: :super_admin}), @today) == :not_applicable
       assert EditPermission.status(teacher(%{role: :user}), @today) == :not_applicable
     end
@@ -32,8 +31,17 @@ defmodule KgEdu.Accounts.EditPermissionTest do
       assert EditPermission.status(teacher(), @today) == :ok
     end
 
+    test "admin without period is editable" do
+      assert EditPermission.status(teacher(%{role: :admin}), @today) == :ok
+    end
+
     test "teacher with edit_enabled false is locked as disabled" do
       assert EditPermission.status(teacher(%{edit_enabled: false}), @today) ==
+               {:locked, :disabled}
+    end
+
+    test "admin with edit_enabled false is locked as disabled" do
+      assert EditPermission.status(teacher(%{role: :admin, edit_enabled: false}), @today) ==
                {:locked, :disabled}
     end
 
@@ -42,14 +50,35 @@ defmodule KgEdu.Accounts.EditPermissionTest do
       assert EditPermission.status(actor, @today) == {:locked, :not_started}
     end
 
+    test "admin before period start is locked as not_started" do
+      actor = teacher(%{role: :admin, edit_period_start: ~D[2026-09-01]})
+      assert EditPermission.status(actor, @today) == {:locked, :not_started}
+    end
+
     test "teacher after period end is locked as expired" do
       actor = teacher(%{edit_period_end: ~D[2026-01-01]})
+      assert EditPermission.status(actor, @today) == {:locked, :expired}
+    end
+
+    test "admin after period end is locked as expired" do
+      actor = teacher(%{role: :admin, edit_period_end: ~D[2026-01-01]})
       assert EditPermission.status(actor, @today) == {:locked, :expired}
     end
 
     test "teacher inside the window is editable" do
       actor =
         teacher(%{
+          edit_period_start: ~D[2026-01-01],
+          edit_period_end: ~D[2026-12-31]
+        })
+
+      assert EditPermission.status(actor, @today) == :ok
+    end
+
+    test "admin inside the window is editable" do
+      actor =
+        teacher(%{
+          role: :admin,
           edit_period_start: ~D[2026-01-01],
           edit_period_end: ~D[2026-12-31]
         })

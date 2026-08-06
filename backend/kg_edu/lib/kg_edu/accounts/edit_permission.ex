@@ -1,16 +1,18 @@
 defmodule KgEdu.Accounts.EditPermission do
   @moduledoc """
-  教师编辑权限（使用期限）判定引擎。
+  教师/管理员编辑权限（使用期限）判定引擎。
 
-  仅对 `teacher` 角色生效；管理员、学生、游客（无 actor）不受影响。
+  仅对 `teacher` 与 `admin` 角色生效；超级管理员、学生、游客（无 actor）不受影响。
 
   ## 判定规则（以服务器日期为准）
-  - actor 为 nil 或非 teacher 角色 → `:not_applicable`（不拦截）
+  - actor 为 nil 或非 teacher/admin 角色 → `:not_applicable`（不拦截）
   - `edit_enabled == false` → `{:locked, :disabled}`（管理员已关闭）
   - 已设置 `edit_period_start` 且今天 < start → `{:locked, :not_started}`（未到开始时间）
   - 已设置 `edit_period_end` 且今天 > end → `{:locked, :expired}`（已到期）
   - 其余 → `:ok`（可编辑）
   """
+
+  @restricted_roles [:teacher, :admin]
 
   @type locked_reason :: :disabled | :not_started | :expired
   @type status :: :ok | :not_applicable | {:locked, locked_reason}
@@ -28,7 +30,7 @@ defmodule KgEdu.Accounts.EditPermission do
   def status(nil, _today), do: :not_applicable
 
   def status(actor, today) do
-    if Map.get(actor, :role) != :teacher do
+    if Map.get(actor, :role) not in @restricted_roles do
       :not_applicable
     else
       cond do
