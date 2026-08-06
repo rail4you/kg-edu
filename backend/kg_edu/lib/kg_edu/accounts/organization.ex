@@ -38,6 +38,7 @@ defmodule KgEdu.Accounts.Organization do
     define :create_scheduled_backups, action: :create_scheduled_backups
     define :get_organization_summary, args: [:organization_id], action: :get_organization_summary
     define :get_all_organization_summary, action: :get_all_organization_summary
+    define :get_tenant_user_counts, action: :get_tenant_user_counts
   end
 
   actions do
@@ -766,6 +767,45 @@ defmodule KgEdu.Accounts.Organization do
             }
 
             {:ok, summary}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    end
+
+    action :get_tenant_user_counts do
+      description "Return per-role user counts per tenant (organization)."
+      returns :map
+
+      run fn _input, _context ->
+        case KgEdu.Accounts.Organization |> Ash.read() do
+          {:ok, organizations} ->
+            counts =
+              Enum.map(organizations, fn org ->
+                role_counts =
+                  case Ash.read(KgEdu.Accounts.User, tenant: org.schema_name) do
+                    {:ok, users} ->
+                      Enum.group_by(users, & &1.role)
+                      |> Map.new(fn {role, list} -> {role, length(list)} end)
+
+                    _ ->
+                      %{}
+                  end
+
+                %{
+                  schema_name: org.schema_name,
+                  name: org.name,
+                  total: Map.get(role_counts, :user, 0) + Map.get(role_counts, :teacher, 0) +
+                    Map.get(role_counts, :admin, 0) + Map.get(role_counts, :super_admin, 0),
+                  super_admin: Map.get(role_counts, :super_admin, 0),
+                  admin: Map.get(role_counts, :admin, 0),
+                  teacher: Map.get(role_counts, :teacher, 0),
+                  student: Map.get(role_counts, :user, 0)
+                }
+              end)
+
+            {:ok, %{tenants: counts}}
 
           {:error, reason} ->
             {:error, reason}

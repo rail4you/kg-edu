@@ -106,6 +106,7 @@ defmodule KgEdu.Accounts do
       rpc_action :create_scheduled_backups, :create_scheduled_backups
       rpc_action :get_organization_summary, :get_organization_summary
       rpc_action :get_all_organization_summary, :get_all_organization_summary
+      rpc_action :get_tenant_user_counts, :get_tenant_user_counts
     end
 
     resource KgEdu.Accounts.Class do
