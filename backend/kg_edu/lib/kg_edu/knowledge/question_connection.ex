@@ -93,6 +93,27 @@ defmodule KgEdu.Knowledge.QuestionConnection do
         :created_by_id
       ]
 
+      # course_id 为空时尝试从源问题推导，避免前端漏传时报错
+      change fn changeset, context ->
+        if Ash.Changeset.get_attribute(changeset, :course_id) do
+          changeset
+        else
+          case Ash.Changeset.get_attribute(changeset, :source_question_id) do
+            nil ->
+              changeset
+
+            source_id ->
+              case Ash.get(KgEdu.Knowledge.Question, source_id, tenant: context.tenant) do
+                {:ok, question} when not is_nil(question.course_id) ->
+                  Ash.Changeset.change_attribute(changeset, :course_id, question.course_id)
+
+                _ ->
+                  changeset
+              end
+          end
+        end
+      end
+
       validate fn changeset, _context ->
         source_id = Ash.Changeset.get_attribute(changeset, :source_question_id)
         target_id = Ash.Changeset.get_attribute(changeset, :target_question_id)
