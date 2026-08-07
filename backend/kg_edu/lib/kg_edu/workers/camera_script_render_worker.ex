@@ -19,8 +19,8 @@ defmodule KgEdu.Workers.CameraScriptRenderWorker do
 
   @poll_interval 15
   # DashScope 服务端对卡住的任务 60 分钟才超时；这里本地提前兜底，
-  # 超过该时长未完成即标记失败，避免长时间干等（可配，默认 5 分钟）
-  @submit_timeout_seconds System.get_env("DASH_SCOPE_TASK_TIMEOUT", "300")
+  # 超过该时长未完成即标记失败，避免长时间干等（可配，默认 10 分钟）
+  @submit_timeout_seconds System.get_env("DASH_SCOPE_TASK_TIMEOUT", "600")
                           |> String.to_integer()
 
   @impl Oban.Worker
@@ -74,10 +74,11 @@ defmodule KgEdu.Workers.CameraScriptRenderWorker do
     end
   end
 
-  # TTS → 合成 → 提交 s2v
+  # TTS → 合成 → 合规检测 → 提交 s2v
   defp prepare_and_submit(script, scenes, scene, tenant) do
     with {:ok, audio_url} <- ensure_audio(scene),
          {:ok, scene_image_url} <- ensure_scene_image(scene),
+         :ok <- detect_image(scene_image_url),
          {:ok, dashscope_task_id} <- submit_s2v(scene, scene_image_url, audio_url) do
       scene = scene |> Map.put("audio_url", audio_url) |> Map.put("scene_image_url", scene_image_url)
       scene = scene |> Map.put("dashscope_task_id", dashscope_task_id) |> Map.put("status", "submitted")
@@ -137,6 +138,37 @@ defmodule KgEdu.Workers.CameraScriptRenderWorker do
               {:error, "场景图合成失败: #{reason}"}
           end
         end
+    end
+  end
+
+  # 图片合规检测（wan2.2-s2v-detect）
+  defp detect_image(image_url) do
+    with {:ok, api_key} <- api_key() do
+      body = %{model: "wan2.2-s2v-detect", input: %{image_url: image_url}}
+
+      case Req.post("https://dashscope.aliyuncs.com/api/v1/services/aigc/image2video/face-detect",
+             headers: %{"authorization" => "Bearer #{api_key}"},
+             json: body,
+             connect_options: [timeout: 10_000],
+             receive_timeout: 60_000
+           ) do
+        {:ok, %Req.Response{status: 200, body: %{"output" => %{"check_pass" => true}}}} ->
+          :ok
+
+        {:ok, %Req.Response{status: 200, body: %{"output" => %{"check_pass" => false}}}} ->
+          {:error,
+           "图片合规检测未通过：请使用清晰、单人的正面人物图片，且背景建议使用纯色/绿幕，" <>
+             "避免人像被文字背景遮挡或画面过小"}
+
+        {:ok, %Req.Response{status: 200, body: %{"message" => msg}}} ->
+          {:error, "图片检测失败: #{msg}"}
+
+        {:ok, %Req.Response{status: s, body: b}} ->
+          {:error, "图片检测失败 (#{s}): #{inspect(b)}"}
+
+        {:error, reason} ->
+          {:error, "图片检测异常: #{inspect(reason)}"}
+      end
     end
   end
 

@@ -20,7 +20,7 @@ defmodule KgEdu.Agent.SceneComposer do
     - bg_image_url: 背景图片（优先于 text）
     - person_image_url: 人像图（必选）
     - width / height: 背景尺寸，默认 1280x720
-    - scale: 人像缩放，默认 "0.55:-1"（按比例缩到宽度 55%）
+    - scale: 人像缩放（可选，默认按背景高度 85% 适配，保证主体完整）
   """
   def compose(opts) do
     person_url = Keyword.fetch!(opts, :person_image_url)
@@ -29,7 +29,7 @@ defmodule KgEdu.Agent.SceneComposer do
          {:ok, person_path} <- download(person_url) do
       result =
         KgEdu.Agent.VideoProcessor.compose(bg_path, person_path,
-          scale: Keyword.get(opts, :scale, "0.55:-1")
+          scale: Keyword.get(opts, :scale)
         )
 
       File.rm(bg_path)

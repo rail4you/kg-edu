@@ -161,7 +161,15 @@ defmodule KgEdu.Agent.VideoProcessor do
     overlay =
       if x && y, do: "overlay=x=#{x}:y=#{y}", else: "overlay=x=(W-w)/2:y=(H-h)/2"
 
-    person_chain = "format=rgba" <> if(scale, do: ",scale=#{scale}", else: "")
+    # 人像按高度适配：默认占背景高度 85%，保证人物主体完整可被检测
+    person_scale =
+      scale ||
+        case probe_dimensions(bg_path) do
+          {:ok, {_w, h}} -> "scale=-1:#{max(round(h * 0.85), 200)}"
+          _ -> "scale=-1:612"
+        end
+
+    person_chain = "format=rgba,#{person_scale}"
     filter_complex = "[1:v]#{person_chain}[fg];[0:v][fg]#{overlay}"
 
     run_ffmpeg([
@@ -173,6 +181,23 @@ defmodule KgEdu.Agent.VideoProcessor do
       "-q:v", "2",
       output
     ], output)
+  end
+
+  defp probe_dimensions(path) do
+    case System.cmd(@ffprobe,
+           ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+            "-of", "csv=s=x:p=0", path],
+           stderr_to_stdout: true
+         ) do
+      {out, 0} ->
+        case String.trim(out) |> String.split("x") |> Enum.map(&String.to_integer/1) do
+          [w, h] when w > 0 and h > 0 -> {:ok, {w, h}}
+          _ -> :error
+        end
+
+      _ ->
+        :error
+    end
   end
 
   # ── 拼接 ─────────────────────────────────────────────────────────────

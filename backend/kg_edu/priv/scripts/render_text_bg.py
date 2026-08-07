@@ -52,11 +52,11 @@ def main():
     margin = int(w) * 8 // 100
     lines = wrap_text(text, font, int(w) - 2 * margin, draw)
 
-    max_lines = 14
+    max_lines = 8
     lines = lines[:max_lines]
-    line_height = int(base_size * 1.45)
-    total_h = line_height * len(lines)
-    y = (int(h) - total_h) // 2
+    line_height = int(base_size * 1.4)
+    # 文字放在顶部区域（前 30% 高度），人像留出中部/下部空间
+    y = int(int(h) * 0.04)
 
     for line in lines:
         tw = draw.textlength(line, font=font)

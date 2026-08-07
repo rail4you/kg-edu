@@ -22,8 +22,8 @@ defmodule KgEdu.Workers.DigitalHumanWorker do
   @video_model "wan2.2-s2v"
   @poll_interval 15
   # DashScope 服务端对卡住的任务 60 分钟才超时；这里本地提前兜底，
-  # 超过该时长未完成即标记失败（可配，默认 5 分钟）
-  @submit_timeout_seconds System.get_env("DASH_SCOPE_TASK_TIMEOUT", "300")
+  # 超过该时长未完成即标记失败（可配，默认 10 分钟）
+  @submit_timeout_seconds System.get_env("DASH_SCOPE_TASK_TIMEOUT", "600")
                           |> String.to_integer()
   @detect_endpoint "/api/v1/services/aigc/image2video/face-detect"
   @submit_endpoint "/api/v1/services/aigc/image2video/video-synthesis/"
@@ -105,7 +105,7 @@ defmodule KgEdu.Workers.DigitalHumanWorker do
             :ok
           else
             update_task(task, tenant, %{
-              progress_message: "正在生成视频，通常需要 1-5 分钟，请耐心等待..."
+              progress_message: "正在生成视频，通常需要 1-10 分钟，请耐心等待..."
             })
 
             {:snooze, @poll_interval}

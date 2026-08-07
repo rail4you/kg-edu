@@ -26,7 +26,9 @@ COPY backend/kg_edu/assets assets
 COPY backend/kg_edu/lib lib
 
 RUN mix compile
-RUN mix assets.deploy
+# Frontend dist 已由 build-test.sh 预构建进 priv/static；
+# 容器内跳过 tailwind/esbuild（dev-only 且无网络下载），只做 digest
+RUN mix phx.digest
 RUN mix release
 
 # Stage 2: Runtime
@@ -37,6 +39,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl libssl3 libncurses6 locales ca-certificates \
     curl unzip wget gnupg \
     pandoc \
+    ffmpeg \
+    python3 python3-pil python3-pip \
+    libreoffice \
+    fonts-noto-cjk \
+    && pip3 install --no-cache-dir pymupdf \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install PostgreSQL 16 client (pg_dump + psql) ─────────────────────
