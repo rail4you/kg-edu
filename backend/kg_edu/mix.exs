@@ -82,6 +82,7 @@ defmodule KgEdu.MixProject do
       {:swoosh, "~> 1.16"},
       {:gen_smtp, "~> 1.2"},
       {:req, "~> 0.5"},
+      {:oban, "~> 2.20"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0"},
       {:telemetry_metrics, "~> 1.0"},

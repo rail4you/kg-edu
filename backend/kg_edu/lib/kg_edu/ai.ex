@@ -16,6 +16,12 @@ defmodule KgEdu.AI do
       rpc_action :list_conversations, :read
       rpc_action :delete_conversation, :destroy
     end
+
+    resource KgEdu.AI.DigitalHumanTask do
+      rpc_action :create_digital_human_task, :create
+      rpc_action :get_digital_human_task, :by_id
+      rpc_action :list_digital_human_tasks, :read
+    end
   end
 
   resources do
@@ -32,6 +38,13 @@ defmodule KgEdu.AI do
       define :get_conversation, action: :read, get_by: [:id]
       define :list_conversations, action: :read
       define :delete_conversation, action: :destroy
+    end
+
+    resource KgEdu.AI.DigitalHumanTask do
+      define :create_digital_human_task, action: :create
+      define :get_digital_human_task, action: :read, get_by: [:id]
+      define :list_digital_human_tasks, action: :read
+      define :update_digital_human_task_status, action: :update_status
     end
   end
 end

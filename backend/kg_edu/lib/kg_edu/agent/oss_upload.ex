@@ -62,6 +62,32 @@ defmodule KgEdu.Agent.OssUpload do
   end
 
   @doc """
+  Upload a video file (mp4) to Aliyun OSS and return the public URL.
+  Uses `video/mp4` content type so browsers can stream the file.
+  """
+  def upload_video(file_path) do
+    if not File.exists?(file_path) do
+      {:error, "File not found: #{file_path}"}
+    else
+      timestamp = timestamp_key()
+      file_name = Path.basename(file_path)
+      safe_name = sanitize_filename(file_name)
+      object_key = "uploads/#{timestamp}/#{safe_name}"
+      file_binary = File.read!(file_path)
+
+      case put_object(object_key, file_binary, "video/mp4") do
+        :ok ->
+          url = "https://#{@bucket}.#{@oss_host}/#{object_key}"
+          File.rm(file_path)
+          {:ok, url}
+
+        {:error, reason} ->
+          {:error, "OSS upload failed: #{inspect(reason)}"}
+      end
+    end
+  end
+
+  @doc """
   Save a file record to the database via Ash.
   Returns the file ID or nil (graceful fallback — file URL is still returned).
   """

@@ -27,7 +27,8 @@ defmodule KgEdu.Application do
       {Phoenix.PubSub, name: KgEdu.PubSub},
       KgEduWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :kg_edu]},
-      KgEdu.Agent.SessionContext
+      KgEdu.Agent.SessionContext,
+      {KgEdu.Oban, name: KgEdu.Oban}
     ]
 
     KgEdu.Agent.JobManager.start()

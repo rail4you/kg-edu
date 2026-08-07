@@ -149,6 +149,15 @@ defmodule KgEduWeb.Router do
     get "/jobs/:jobId", GenerationController, :get_curriculum_job
   end
 
+  # Digital human video generation tasks
+  scope "/api/digital-human", KgEduWeb do
+    pipe_through :api
+    post "/tasks", DigitalHumanController, :create
+    get "/tasks", DigitalHumanController, :list
+    get "/tasks/:id", DigitalHumanController, :show
+    delete "/tasks/:id", DigitalHumanController, :delete
+  end
+
   # CopilotKit/Pi SDK compatible chat endpoint
   # Frontend calls POST /api/assistant/ag-ui via Vite proxy
   scope "/api/assistant", KgEduWeb do

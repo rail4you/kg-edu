@@ -65,10 +65,15 @@ config :ash_typescript,
 config :cinder, default_theme: "modern"
 # config :ash_oban, pro?: false
 
-config :kg_edu, Oban,
+config :kg_edu, KgEdu.Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10, chat_responses: [limit: 10], conversations: [limit: 10]],
+  queues: [
+    default: 10,
+    chat_responses: [limit: 10],
+    conversations: [limit: 10],
+    digital_human: [limit: 2]
+  ],
   repo: KgEdu.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
