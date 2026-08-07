@@ -22,6 +22,14 @@ defmodule KgEdu.AI do
       rpc_action :get_digital_human_task, :by_id
       rpc_action :list_digital_human_tasks, :read
     end
+
+    resource KgEdu.AI.CameraScript do
+      rpc_action :create_camera_script, :create
+      rpc_action :get_camera_script, :by_id
+      rpc_action :list_camera_scripts, :read
+      rpc_action :update_camera_script, :update
+      rpc_action :delete_camera_script, :destroy
+    end
   end
 
   resources do
@@ -45,6 +53,15 @@ defmodule KgEdu.AI do
       define :get_digital_human_task, action: :read, get_by: [:id]
       define :list_digital_human_tasks, action: :read
       define :update_digital_human_task_status, action: :update_status
+    end
+
+    resource KgEdu.AI.CameraScript do
+      define :create_camera_script, action: :create
+      define :get_camera_script, action: :read, get_by: [:id]
+      define :list_camera_scripts, action: :read
+      define :update_camera_script, action: :update
+      define :update_camera_script_status, action: :update_status
+      define :delete_camera_script, action: :destroy
     end
   end
 end

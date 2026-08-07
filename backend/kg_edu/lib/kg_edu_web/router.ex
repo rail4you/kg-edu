@@ -159,6 +159,16 @@ defmodule KgEduWeb.Router do
     post "/chroma-key", DigitalHumanController, :chroma_key
     post "/compose", DigitalHumanController, :compose
     post "/export", DigitalHumanController, :export
+
+    # 镜头脚本
+    post "/scripts", DigitalHumanController, :create_script
+    put "/scripts/:id", DigitalHumanController, :update_script
+    get "/scripts", DigitalHumanController, :list_scripts
+    get "/scripts/:id", DigitalHumanController, :get_script
+    delete "/scripts/:id", DigitalHumanController, :delete_script
+    post "/scripts/import-txt", DigitalHumanController, :import_txt
+    post "/scripts/import-pptx", DigitalHumanController, :import_pptx
+    post "/scripts/:id/render", DigitalHumanController, :render_script
   end
 
   # CopilotKit/Pi SDK compatible chat endpoint

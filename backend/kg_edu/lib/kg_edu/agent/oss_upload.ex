@@ -27,8 +27,9 @@ defmodule KgEdu.Agent.OssUpload do
       safe_name = sanitize_filename(file_name)
       object_key = "uploads/#{timestamp}/#{safe_name}"
       file_binary = File.read!(file_path)
+      content_type = content_type_for(file_path)
 
-      case put_object(object_key, file_binary) do
+      case put_object(object_key, file_binary, content_type) do
         :ok ->
           url = "https://#{@bucket}.#{@oss_host}/#{object_key}"
           File.rm(file_path)
@@ -152,6 +153,28 @@ defmodule KgEdu.Agent.OssUpload do
 
   defp timestamp_key do
     DateTime.utc_now() |> Calendar.strftime("%Y%m%d%H%M%S")
+  end
+
+  @doc false
+  def content_type_for(file_path) do
+    case Path.extname(file_path) |> String.downcase() do
+      ".jpg" -> "image/jpeg"
+      ".jpeg" -> "image/jpeg"
+      ".png" -> "image/png"
+      ".webp" -> "image/webp"
+      ".bmp" -> "image/bmp"
+      ".gif" -> "image/gif"
+      ".mp3" -> "audio/mpeg"
+      ".wav" -> "audio/wav"
+      ".mp4" -> "video/mp4"
+      ".mov" -> "video/quicktime"
+      ".ts" -> "video/mp2t"
+      ".mkv" -> "video/x-matroska"
+      ".json" -> "application/json"
+      ".pdf" -> "application/pdf"
+      ".txt" -> "text/plain"
+      _ -> "application/octet-stream"
+    end
   end
 
   defp sanitize_filename(name) do

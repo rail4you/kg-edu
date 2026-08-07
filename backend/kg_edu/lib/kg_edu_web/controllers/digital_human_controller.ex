@@ -12,8 +12,8 @@ defmodule KgEduWeb.DigitalHumanController do
 
   require Logger
 
-  # 只读教师禁止创建数字人任务
-  plug KgEduWeb.Plugs.RequireEditable when action in [:create]
+  # 只读教师禁止创建数字人任务 / 导入脚本
+  plug KgEduWeb.Plugs.RequireEditable when action in [:create, :create_script, :import_txt, :import_pptx, :render_script]
 
   @doc """
   POST /api/digital-human/tasks
@@ -59,13 +59,7 @@ defmodule KgEduWeb.DigitalHumanController do
             })
 
           {:error, changeset} ->
-            reason =
-              changeset
-              |> Ash.Changeset.errors()
-              |> Enum.map(&Exception.message/1)
-              |> Enum.join("; ")
-
-            json(conn, %{success: false, message: reason || "创建任务失败"})
+            json(conn, %{success: false, message: format_changeset_error(changeset)})
         end
     end
   end
@@ -143,6 +137,347 @@ defmodule KgEduWeb.DigitalHumanController do
           conn |> put_status(404) |> json(%{success: false, message: "任务不存在"})
       end
     end
+  end
+
+  # ── 镜头脚本 ────────────────────────────────────────────────────────
+
+  @doc """
+  POST /api/digital-human/scripts
+  创建/保存镜头脚本。
+
+  Body: { title?, scenes: [...] }
+  """
+  def create_script(conn, params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      scenes = params["scenes"] || []
+
+      if not is_list(scenes) or scenes == [] do
+        json(conn, %{success: false, message: "scenes 不能为空"})
+      else
+        attrs = %{
+          title: params["title"] || "镜头脚本",
+          scenes: normalize_scenes(scenes)
+        }
+
+        case KgEdu.AI.CameraScript.create_camera_script(attrs,
+               tenant: tenant,
+               authorize?: false,
+               actor: actor(conn)
+             ) do
+          {:ok, script} ->
+            json(conn, %{success: true, data: %{scriptId: script.id, status: "draft"}})
+
+          {:error, changeset} ->
+            json(conn, %{success: false, message: format_changeset_error(changeset)})
+        end
+      end
+    end
+  end
+
+  @doc """
+  PUT /api/digital-human/scripts/:id
+  更新镜头脚本。
+  """
+  def update_script(conn, %{"id" => id} = params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      with {:ok, script} <-
+             KgEdu.AI.CameraScript.get_camera_script(%{id: id},
+               tenant: tenant,
+               authorize?: false
+             ) do
+        attrs =
+          %{}
+          |> maybe_put(:title, params["title"])
+          |> maybe_put(:scenes, if(params["scenes"], do: normalize_scenes(params["scenes"])))
+
+        case script
+             |> Ash.Changeset.for_update(:update, attrs)
+             |> Ash.update(tenant: tenant, authorize?: false) do
+          {:ok, updated} ->
+            json(conn, %{success: true, data: %{scriptId: updated.id, status: "updated"}})
+
+          {:error, changeset} ->
+            json(conn, %{success: false, message: format_changeset_error(changeset)})
+        end
+      else
+        _ -> conn |> put_status(404) |> json(%{success: false, message: "脚本不存在"})
+      end
+    end
+  end
+
+  @doc """
+  GET /api/digital-human/scripts
+  列出当前用户的镜头脚本。
+  """
+  def list_scripts(conn, params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      scripts =
+        KgEdu.AI.CameraScript
+        |> Ash.Query.new()
+        |> Ash.Query.sort(updated_at: :desc)
+        |> Ash.Query.limit(100)
+        |> Ash.read!(tenant: tenant, actor: actor(conn), authorize?: false)
+
+      json(conn, %{success: true, data: %{scripts: Enum.map(scripts, &serialize_script/1)}})
+    end
+  end
+
+  @doc """
+  GET /api/digital-human/scripts/:id
+  读取脚本（含镜头进度）。
+  """
+  def get_script(conn, %{"id" => id} = params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      case KgEdu.AI.CameraScript.get_camera_script(%{id: id},
+             tenant: tenant,
+             authorize?: false
+           ) do
+        {:ok, script} ->
+          json(conn, %{success: true, data: serialize_script(script)})
+
+        {:error, _} ->
+          conn |> put_status(404) |> json(%{success: false, message: "脚本不存在"})
+      end
+    end
+  end
+
+  @doc """
+  DELETE /api/digital-human/scripts/:id
+  """
+  def delete_script(conn, %{"id" => id} = params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      case KgEdu.AI.CameraScript.get_camera_script(%{id: id},
+             tenant: tenant,
+             authorize?: false
+           ) do
+        {:ok, script} ->
+          script
+          |> Ash.Changeset.for_destroy(:destroy)
+          |> Ash.destroy!(tenant: tenant, authorize?: false)
+
+          json(conn, %{success: true, message: "脚本已删除"})
+
+        {:error, _} ->
+          conn |> put_status(404) |> json(%{success: false, message: "脚本不存在"})
+      end
+    end
+  end
+
+  @doc """
+  POST /api/digital-human/scripts/import-txt
+  导入 TXT 文稿 → 自动分段创建镜头脚本。
+
+  Body: { title?, content }
+  """
+  def import_txt(conn, params) do
+    tenant = extract_tenant(conn, params)
+    content = params["content"] || ""
+
+    cond do
+      is_nil(tenant) ->
+        json(conn, %{success: false, message: "未设置租户上下文"})
+
+      String.trim(content) == "" ->
+        json(conn, %{success: false, message: "文稿内容为空"})
+
+      true ->
+        case KgEdu.Agent.ScriptParser.parse_txt(content) do
+          {:ok, scenes} ->
+            json(conn, %{success: true, data: %{scenes: scenes}})
+
+          {:error, reason} ->
+            json(conn, %{success: false, message: "解析失败: #{reason}"})
+        end
+    end
+  end
+
+  @doc """
+  POST /api/digital-human/scripts/import-pptx
+  导入 PPT → 每页一个镜头（页面文字 + 备注台词 + 页面背景图）。
+
+  支持 multipart 文件上传（field: file）或 base64（file_data）。
+  """
+  def import_pptx(conn, params) do
+    tenant = extract_tenant(conn, params)
+
+    cond do
+      is_nil(tenant) ->
+        json(conn, %{success: false, message: "未设置租户上下文"})
+
+      true ->
+        with {:ok, pptx_path} <- save_pptx(params) do
+          result =
+            try do
+              KgEdu.Agent.ScriptParser.parse_pptx(pptx_path)
+            rescue
+              e -> {:error, Exception.message(e)}
+            end
+
+          File.rm(pptx_path)
+
+          case result do
+            {:ok, scenes} ->
+              json(conn, %{success: true, data: %{scenes: scenes}})
+
+            {:error, reason} ->
+              json(conn, %{success: false, message: "PPT 解析失败: #{reason}"})
+          end
+        else
+          {:error, reason} -> json(conn, %{success: false, message: reason})
+        end
+    end
+  end
+
+  @doc """
+  POST /api/digital-human/scripts/:id/render
+  开始渲染镜头脚本（逐镜头 TTS → 合成 → 生成 → 拼接）。
+  """
+  def render_script(conn, %{"id" => id} = params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      case KgEdu.AI.CameraScript.get_camera_script(%{id: id},
+             tenant: tenant,
+             authorize?: false
+           ) do
+        {:ok, script} ->
+          scenes = normalize_scenes(script.scenes)
+
+          missing_person =
+            Enum.find(scenes, fn s -> is_nil(s["person_image_url"]) or s["person_image_url"] == "" end)
+
+          if missing_person do
+            json(conn, %{
+              success: false,
+              message: "镜头「#{missing_person["title"] || ""}」未设置人物图片"
+            })
+          else
+            # 重置为渲染中
+            scenes = Enum.map(scenes, fn s -> Map.merge(%{"status" => "pending", "error" => nil}, s) end)
+
+            update_script_attrs(script, tenant, %{status: :rendering, scenes: scenes, error_message: nil})
+
+            %{script_id: id, tenant: tenant}
+            |> KgEdu.Workers.CameraScriptRenderWorker.new()
+            |> KgEdu.Oban.insert()
+
+            json(conn, %{success: true, message: "渲染已启动", data: %{status: "rendering"}})
+          end
+
+        {:error, _} ->
+          conn |> put_status(404) |> json(%{success: false, message: "脚本不存在"})
+      end
+    end
+  end
+
+  # ── 脚本 helpers ─────────────────────────────────────────────────────
+
+  defp serialize_script(script) do
+    %{
+      id: script.id,
+      title: script.title,
+      status: to_string(script.status),
+      scenes: script.scenes || [],
+      videoUrl: script.video_url,
+      errorMessage: script.error_message,
+      createdAt: script.inserted_at,
+      updatedAt: script.updated_at
+    }
+  end
+
+  defp normalize_scenes(scenes) when is_list(scenes) do
+    scenes
+    |> Enum.with_index(1)
+    |> Enum.map(fn {s, i} ->
+      s =
+        if is_map(s), do: s, else: %{}
+
+      s =
+        Map.put_new(s, "id", Ecto.UUID.generate())
+        |> Map.put_new("title", "镜头#{i}")
+        |> Map.put_new("text", "")
+        |> Map.put_new("page_text", s["text"] || "")
+        |> Map.put_new("bg_color", "#1e3a5f")
+        |> Map.put_new("person_image_url", nil)
+        |> Map.put_new("voice", "longanyang")
+        |> Map.put_new("status", "pending")
+        |> Map.put_new("audio_url", nil)
+        |> Map.put_new("scene_image_url", nil)
+        |> Map.put_new("video_url", nil)
+        |> Map.put_new("dashscope_task_id", nil)
+        |> Map.put_new("error", nil)
+
+      s
+    end)
+  end
+
+  defp normalize_scenes(_), do: []
+
+  defp save_pptx(params) do
+    case params["file"] do
+      %Plug.Upload{} = upload ->
+        tmp = Path.join(System.tmp_dir!(), "import_#{System.unique_integer([:positive])}.pptx")
+        File.cp!(upload.path, tmp)
+        {:ok, tmp}
+
+      _ ->
+        case params["file_data"] do
+          base64 when is_binary(base64) and base64 != "" ->
+            data = String.replace(base64, ~r/^data:.*?;base64,/, "")
+
+            case Base.decode64(data) do
+              {:ok, bytes} ->
+                tmp = Path.join(System.tmp_dir!(), "import_#{System.unique_integer([:positive])}.pptx")
+                File.write!(tmp, bytes)
+                {:ok, tmp}
+
+              :error ->
+                {:error, "base64 解码失败"}
+            end
+
+          _ ->
+            {:error, "缺少 PPT 文件（file 或 file_data）"}
+        end
+    end
+  end
+
+  defp update_script_attrs(script, tenant, attrs) do
+    script
+    |> Ash.Changeset.for_update(:update_status, attrs)
+    |> Ash.update!(tenant: tenant, authorize?: false)
+  rescue
+    e -> Logger.error("[DigitalHuman] update script failed: #{Exception.message(e)}")
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp format_changeset_error(changeset) do
+    changeset.errors
+    |> Ash.Error.to_error_class()
+    |> Exception.message()
   end
 
   # ── 抠像 ─────────────────────────────────────────────────────────────

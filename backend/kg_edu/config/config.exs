@@ -48,7 +48,8 @@ config :ash_typescript,
   phoenix_import_path: "phoenix",
   require_tenant_parameters: true,
   type_mapping_overrides: [
-    {KgEdu.Types.JsonMap, "Record<string, any>"}
+    {KgEdu.Types.JsonMap, "Record<string, any>"},
+    {KgEdu.Types.JsonList, "any[]"}
   ],
   # === Lifecycle Hooks: 自动注入 JWT 认证头 ===
   rpc_action_before_request_hook: "RpcHooks.beforeRequest",

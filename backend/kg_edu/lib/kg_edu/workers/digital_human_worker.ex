@@ -21,6 +21,10 @@ defmodule KgEdu.Workers.DigitalHumanWorker do
   @detect_model "wan2.2-s2v-detect"
   @video_model "wan2.2-s2v"
   @poll_interval 15
+  # DashScope 服务端对卡住的任务 60 分钟才超时；这里本地提前兜底，
+  # 超过该时长未完成即标记失败（可配，默认 5 分钟）
+  @submit_timeout_seconds System.get_env("DASH_SCOPE_TASK_TIMEOUT", "300")
+                          |> String.to_integer()
   @detect_endpoint "/api/v1/services/aigc/image2video/face-detect"
   @submit_endpoint "/api/v1/services/aigc/image2video/video-synthesis/"
   @task_endpoint "/api/v1/tasks/"
@@ -91,13 +95,29 @@ defmodule KgEdu.Workers.DigitalHumanWorker do
           mark_failed(task, tenant, reason)
           :ok
 
-        _running ->
-          update_task(task, tenant, %{
-            progress_message: "正在生成视频，通常需要 1-10 分钟，请耐心等待..."
-          })
+        %{"task_status" => "UNKNOWN"} ->
+          mark_failed(task, tenant, "生成任务已失效，请重新提交")
+          :ok
 
-          {:snooze, @poll_interval}
+        _running ->
+          if task_submitted_elapsed(task) > @submit_timeout_seconds do
+            mark_failed(task, tenant, "生成超时（超过 #{div(@submit_timeout_seconds, 60)} 分钟），请重新生成")
+            :ok
+          else
+            update_task(task, tenant, %{
+              progress_message: "正在生成视频，通常需要 1-5 分钟，请耐心等待..."
+            })
+
+            {:snooze, @poll_interval}
+          end
       end
+    end
+  end
+
+  defp task_submitted_elapsed(task) do
+    case task.updated_at do
+      nil -> 0
+      dt -> DateTime.diff(DateTime.utc_now(), dt)
     end
   end
 
