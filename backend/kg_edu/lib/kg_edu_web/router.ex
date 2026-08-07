@@ -156,6 +156,9 @@ defmodule KgEduWeb.Router do
     get "/tasks", DigitalHumanController, :list
     get "/tasks/:id", DigitalHumanController, :show
     delete "/tasks/:id", DigitalHumanController, :delete
+    post "/chroma-key", DigitalHumanController, :chroma_key
+    post "/compose", DigitalHumanController, :compose
+    post "/export", DigitalHumanController, :export
   end
 
   # CopilotKit/Pi SDK compatible chat endpoint
