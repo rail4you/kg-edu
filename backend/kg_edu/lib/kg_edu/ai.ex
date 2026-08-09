@@ -30,6 +30,13 @@ defmodule KgEdu.AI do
       rpc_action :update_camera_script, :update
       rpc_action :delete_camera_script, :destroy
     end
+
+    resource KgEdu.AI.ChromaKeyRecord do
+      rpc_action :create_chroma_key_record, :create
+      rpc_action :get_chroma_key_record, :by_id
+      rpc_action :list_chroma_key_records, :read
+      rpc_action :delete_chroma_key_record, :destroy
+    end
   end
 
   resources do
@@ -62,6 +69,13 @@ defmodule KgEdu.AI do
       define :update_camera_script, action: :update
       define :update_camera_script_status, action: :update_status
       define :delete_camera_script, action: :destroy
+    end
+
+    resource KgEdu.AI.ChromaKeyRecord do
+      define :create_chroma_key_record, action: :create
+      define :get_chroma_key_record, action: :read, get_by: [:id]
+      define :list_chroma_key_records, action: :read
+      define :delete_chroma_key_record, action: :destroy
     end
   end
 end

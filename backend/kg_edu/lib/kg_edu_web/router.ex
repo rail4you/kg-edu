@@ -157,6 +157,8 @@ defmodule KgEduWeb.Router do
     get "/tasks/:id", DigitalHumanController, :show
     delete "/tasks/:id", DigitalHumanController, :delete
     post "/chroma-key", DigitalHumanController, :chroma_key
+    get "/chroma-records", DigitalHumanController, :list_chroma_records
+    delete "/chroma-records/:id", DigitalHumanController, :delete_chroma_record
     post "/compose", DigitalHumanController, :compose
     post "/export", DigitalHumanController, :export
 

@@ -474,6 +474,42 @@ defmodule KgEduWeb.DigitalHumanController do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
+  defp save_chroma_record(conn, tenant, source_url, result_url, params, opts) do
+    attrs = %{
+      source_image_url: source_url,
+      result_image_url: result_url,
+      color: params["bgColor"] || params["bg_color"] || params["color"] || "green",
+      similarity: float_param(params["similarity"], 0.4),
+      blend: float_param(params["blend"], 0.1),
+      yuv: int_param(params["yuv"], 1) == 1,
+      despill: int_param(params["despill"], 0) == 1
+    }
+
+    case KgEdu.AI.ChromaKeyRecord.create_chroma_key_record(attrs,
+           tenant: tenant,
+           authorize?: false,
+           actor: actor(conn)
+         ) do
+      {:ok, _} -> :ok
+      {:error, e} -> Logger.warning("[DigitalHuman] save chroma record failed: #{inspect(e)}")
+    end
+  end
+
+  defp serialize_chroma_record(r) do
+    %{
+      id: r.id,
+      sourceImageUrl: r.source_image_url,
+      resultImageUrl: r.result_image_url,
+      color: r.color,
+      similarity: r.similarity,
+      blend: r.blend,
+      yuv: r.yuv,
+      despill: r.despill,
+      createdAt: r.inserted_at,
+      updatedAt: r.updated_at
+    }
+  end
+
   defp format_changeset_error(changeset) do
     changeset.errors
     |> Ash.Error.to_error_class()
@@ -484,10 +520,9 @@ defmodule KgEduWeb.DigitalHumanController do
 
   @doc """
   POST /api/digital-human/chroma-key
-  广播级一键抠像。
+  AI 智能抠图（Qwen-Image-Edit）：精确抠出人物 + 指定背景/文字合成场景图。
 
-  Body: { imageUrl, color?, similarity?, blend?, yuv?, despill? }
-  color: green/blue/white/black/red 或 hex
+  Body: { imageUrl, bgColor?, text?, size? }
   """
   def chroma_key(conn, params) do
     tenant = extract_tenant(conn, params)
@@ -501,36 +536,70 @@ defmodule KgEduWeb.DigitalHumanController do
         json(conn, %{success: false, message: "imageUrl 是必需参数"})
 
       true ->
-        case download_to_temp(image_url) do
-          {:ok, tmp_path} ->
-            opts = [
-              color: params["color"] || "green",
-              similarity: float_param(params["similarity"], 0.4),
-              blend: float_param(params["blend"], 0.1),
-              yuv: int_param(params["yuv"], 1),
-              despill: int_param(params["despill"], 0)
-            ]
+        opts = [
+          bg_color: params["bgColor"] || params["bg_color"] || "#1e3a5f",
+          text: params["text"],
+          size: params["size"] || "768*1024"
+        ]
 
-            case KgEdu.Agent.VideoProcessor.chroma_key(tmp_path, opts) do
-              {:ok, output_path} ->
-                case KgEdu.Agent.OssUpload.upload(output_path) do
-                  {:ok, url} ->
-                    File.rm(tmp_path)
-                    json(conn, %{success: true, data: %{resultUrl: url}})
-
-                  {:error, reason} ->
-                    File.rm(tmp_path)
-                    json(conn, %{success: false, message: "结果上传失败: #{reason}"})
-                end
-
-              {:error, reason} ->
-                File.rm(tmp_path)
-                json(conn, %{success: false, message: "抠像失败: #{reason}"})
-            end
+        case KgEdu.Agent.ImageEditClient.ai_cutout_and_store(image_url, opts) do
+          {:ok, url} ->
+            save_chroma_record(conn, tenant, image_url, url, params, [])
+            json(conn, %{success: true, data: %{resultUrl: url, mode: "ai"}})
 
           {:error, reason} ->
-            json(conn, %{success: false, message: "图片下载失败: #{reason}"})
+            json(conn, %{success: false, message: reason})
         end
+    end
+  end
+
+  @doc """
+  GET /api/digital-human/chroma-records
+  抠像历史记录列表（按用户过滤）。
+  """
+  def list_chroma_records(conn, params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      records =
+        KgEdu.AI.ChromaKeyRecord
+        |> Ash.Query.new()
+        |> Ash.Query.sort(updated_at: :desc)
+        |> Ash.Query.limit(100)
+        |> Ash.read!(tenant: tenant, actor: actor(conn), authorize?: false)
+
+      json(conn, %{
+        success: true,
+        data: %{records: Enum.map(records, &serialize_chroma_record/1)}
+      })
+    end
+  end
+
+  @doc """
+  DELETE /api/digital-human/chroma-records/:id
+  """
+  def delete_chroma_record(conn, %{"id" => id} = params) do
+    tenant = extract_tenant(conn, params)
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, message: "未设置租户上下文"})
+    else
+      case KgEdu.AI.ChromaKeyRecord.get_chroma_key_record(%{id: id},
+             tenant: tenant,
+             authorize?: false
+           ) do
+        {:ok, record} ->
+          record
+          |> Ash.Changeset.for_destroy(:destroy)
+          |> Ash.destroy!(tenant: tenant, authorize?: false)
+
+          json(conn, %{success: true, message: "记录已删除"})
+
+        {:error, _} ->
+          conn |> put_status(404) |> json(%{success: false, message: "记录不存在"})
+      end
     end
   end
 
@@ -707,6 +776,7 @@ defmodule KgEduWeb.DigitalHumanController do
       params["tenant"] ||
       (params["forwardedProps"] || %{})["orgSchema"] ||
       get_req_header(conn, "x-org-schema") |> List.first() ||
-      conn.assigns[:org_schema]
+      conn.assigns[:org_schema] ||
+      conn.private[:ash_tenant]
   end
 end
