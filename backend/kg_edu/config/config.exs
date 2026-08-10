@@ -72,8 +72,7 @@ config :kg_edu, KgEdu.Oban,
   queues: [
     default: 10,
     chat_responses: [limit: 10],
-    conversations: [limit: 10],
-    digital_human: [limit: 2]
+    conversations: [limit: 10]
   ],
   repo: KgEdu.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
