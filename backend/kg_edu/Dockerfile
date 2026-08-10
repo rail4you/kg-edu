@@ -39,7 +39,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl libssl3 libncurses6 locales ca-certificates \
     curl unzip wget gnupg \
     pandoc \
-    ffmpeg \
     python3 python3-pil python3-pip \
     libreoffice \
     fonts-noto-cjk \

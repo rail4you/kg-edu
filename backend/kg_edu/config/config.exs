@@ -64,18 +64,6 @@ config :ash_typescript,
   ]
 
 config :cinder, default_theme: "modern"
-# config :ash_oban, pro?: false
-
-config :kg_edu, KgEdu.Oban,
-  engine: Oban.Engines.Basic,
-  notifier: Oban.Notifiers.Postgres,
-  queues: [
-    default: 10,
-    chat_responses: [limit: 10],
-    conversations: [limit: 10]
-  ],
-  repo: KgEdu.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
