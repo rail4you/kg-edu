@@ -118,7 +118,8 @@ defmodule KgEdu.Courses.Course do
         :subject_category_id,
         :teacher_id,
         :browse_count,
-        :color_scheme
+        :color_scheme,
+        :education_level
       ]
     end
 
@@ -253,7 +254,8 @@ defmodule KgEdu.Courses.Course do
         :subject_category_id,
         :teacher_id,
         :browse_count,
-        :color_scheme
+        :color_scheme,
+        :education_level
       ]
     end
 
@@ -953,6 +955,13 @@ defmodule KgEdu.Courses.Course do
       public? true
 
       description "Front page color scheme: auto, pure, graphite_blue, sea_mist, pine_green, amber_brown, mist_purple, inkstone_gray, celadon_gray"
+    end
+
+    attribute :education_level, :string do
+      default "undergraduate"
+      public? true
+
+      description "教育层次 (Education Level): graduate, undergraduate, higher_vocational, secondary_vocational"
     end
 
     create_timestamp :inserted_at
