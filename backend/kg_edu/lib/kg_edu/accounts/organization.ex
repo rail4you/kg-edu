@@ -775,37 +775,62 @@ defmodule KgEdu.Accounts.Organization do
     end
 
     action :get_tenant_user_counts do
-      description "Return per-role user counts per tenant (organization)."
+      description "Return per-role user counts per tenant (organization), plus the public system schema."
       returns :map
 
       run fn _input, _context ->
-        case KgEdu.Accounts.Organization |> Ash.read() do
-          {:ok, organizations} ->
-            counts =
-              Enum.map(organizations, fn org ->
-                role_counts =
-                  case Ash.read(KgEdu.Accounts.User, tenant: org.schema_name) do
-                    {:ok, users} ->
-                      Enum.group_by(users, & &1.role)
-                      |> Map.new(fn {role, list} -> {role, length(list)} end)
+        role_counts_for = fn schema ->
+          case Ash.read(KgEdu.Accounts.User, tenant: schema) do
+            {:ok, users} ->
+              Enum.group_by(users, & &1.role)
+              |> Map.new(fn {role, list} -> {role, length(list)} end)
 
-                    _ ->
-                      %{}
-                  end
+            _ ->
+              %{}
+          end
+        end
 
-                %{
-                  schema_name: org.schema_name,
-                  name: org.name,
-                  total: Map.get(role_counts, :user, 0) + Map.get(role_counts, :teacher, 0) +
-                    Map.get(role_counts, :admin, 0) + Map.get(role_counts, :super_admin, 0),
-                  super_admin: Map.get(role_counts, :super_admin, 0),
-                  admin: Map.get(role_counts, :admin, 0),
-                  teacher: Map.get(role_counts, :teacher, 0),
-                  student: Map.get(role_counts, :user, 0)
-                }
+        entry_for = fn role_counts, schema, name ->
+          %{
+            schema_name: schema,
+            name: name,
+            total: Map.get(role_counts, :user, 0) + Map.get(role_counts, :teacher, 0) +
+              Map.get(role_counts, :admin, 0) + Map.get(role_counts, :super_admin, 0),
+            super_admin: Map.get(role_counts, :super_admin, 0),
+            admin: Map.get(role_counts, :admin, 0),
+            teacher: Map.get(role_counts, :teacher, 0),
+            student: Map.get(role_counts, :user, 0)
+          }
+        end
+
+        # 公共 schema（系统租户）的 users 表结构较旧，缺少部分列，
+        # 因此直接使用原生 SQL 按 role 统计，绕过 Ash 资源映射。
+        public_role_counts =
+          case KgEdu.Repo.query("SELECT role, COUNT(*) FROM public.users GROUP BY role") do
+            {:ok, %{rows: rows}} ->
+              Map.new(rows || [], fn [role, count] ->
+                key =
+                  if role in ["admin", "teacher", "user", "super_admin"],
+                    do: String.to_atom(role),
+                    else: :other
+
+                {key, count}
               end)
 
-            {:ok, %{tenants: counts}}
+            _ ->
+              %{}
+          end
+
+        case KgEdu.Accounts.Organization |> Ash.read() do
+          {:ok, organizations} ->
+            tenant_counts =
+              Enum.map(organizations, fn org ->
+                entry_for.(role_counts_for.(org.schema_name), org.schema_name, org.name)
+              end)
+
+            public_entry = entry_for.(public_role_counts, "public", "系统租户")
+
+            {:ok, %{tenants: tenant_counts ++ [public_entry]}}
 
           {:error, reason} ->
             {:error, reason}
