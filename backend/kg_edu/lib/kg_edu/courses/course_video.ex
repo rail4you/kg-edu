@@ -34,17 +34,14 @@ defmodule KgEdu.Courses.CourseVideo do
     create :create do
       accept [:name, :media_type, :video_url, :image_url, :course_id]
 
-      change fn changeset, _context ->
-        validate_media_payload(changeset)
-      end
+      validate &validate_media_payload/2
     end
 
     update :update do
       accept [:name, :media_type, :video_url, :image_url, :course_id]
+      require_atomic? false
 
-      change fn changeset, _context ->
-        validate_media_payload(changeset)
-      end
+      validate &validate_media_payload/2
     end
 
     read :by_course do
@@ -113,34 +110,28 @@ defmodule KgEdu.Courses.CourseVideo do
     end
   end
 
-  defp validate_media_payload(changeset) do
+  defp validate_media_payload(changeset, _context) do
     media_type = Ash.Changeset.get_attribute(changeset, :media_type) || :video
     video_url = Ash.Changeset.get_attribute(changeset, :video_url)
     image_url = Ash.Changeset.get_attribute(changeset, :image_url)
 
-    changeset =
-      if media_type == :video and blank?(video_url) do
-        Ash.Changeset.add_error(
-          changeset,
-          %Ash.Error.Changes.InvalidAttribute{
-            field: :video_url,
-            message: "视频类型必须提供视频地址"
-          }
-        )
-      else
-        changeset
-      end
+    cond do
+      media_type == :video and blank?(video_url) ->
+        {:error,
+         %Ash.Error.Changes.InvalidAttribute{
+           field: :video_url,
+           message: "视频类型必须提供视频地址"
+         }}
 
-    if media_type == :image and blank?(image_url) do
-      Ash.Changeset.add_error(
-        changeset,
-        %Ash.Error.Changes.InvalidAttribute{
-          field: :image_url,
-          message: "图片类型必须提供图片地址"
-        }
-      )
-    else
-      changeset
+      media_type == :image and blank?(image_url) ->
+        {:error,
+         %Ash.Error.Changes.InvalidAttribute{
+           field: :image_url,
+           message: "图片类型必须提供图片地址"
+         }}
+
+      true ->
+        :ok
     end
   end
 
