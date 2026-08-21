@@ -44,3 +44,6 @@ backend/kg_edu/priv/static/logo/*-*.svg
 backend/kg_edu/priv/static/samples/*-*.png
 backend/kg_edu/priv/static/pdfjs-dist/*-*.mjs
 /erl_crash.dump
+
+# playwright test artifacts
+.playwright-cli/
