@@ -331,6 +331,9 @@ defmodule KgEdu.Accounts.User do
       change set_attribute(:edit_enabled, arg(:edit_enabled))
       change set_attribute(:edit_period_start, arg(:edit_period_start))
       change set_attribute(:edit_period_end, arg(:edit_period_end))
+
+      # 仅超级管理员可在创建时设置编辑权限/使用期限，其他角色强制重置为默认值
+      change {__MODULE__.Changes.ProtectEditPermission, []}
     end
 
     update :update do
@@ -365,7 +368,7 @@ defmodule KgEdu.Accounts.User do
         end
       end
 
-      # 仅管理员/超管可修改编辑权限字段，教师修改自己的资料时强制还原
+      # 仅超级管理员可修改编辑权限字段，教师/管理员修改自己资料时强制还原
       change {__MODULE__.Changes.ProtectEditPermission, []}
 
       require_atomic? false
@@ -1248,7 +1251,7 @@ defmodule KgEdu.Accounts.User do
     end
 
     action :bulk_update_edit_permission, :map do
-      description "批量设置教师/管理员的编辑权限（使用期限）。仅管理员/超级管理员可调用。"
+      description "批量设置教师/管理员的编辑权限（使用期限）。仅超级管理员可调用。"
 
       argument :user_ids, {:array, :uuid} do
         description "要设置的用户 ID 列表"
@@ -1273,8 +1276,8 @@ defmodule KgEdu.Accounts.User do
       run fn input, context ->
         actor = context.actor
 
-        if is_nil(actor) or actor.role not in [:admin, :super_admin] do
-          {:error, "无权执行此操作"}
+        if is_nil(actor) or actor.role != :super_admin do
+          {:error, "仅超级管理员可执行此操作"}
         else
           attrs = %{
             edit_enabled: input.arguments.edit_enabled,

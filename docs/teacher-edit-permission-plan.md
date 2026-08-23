@@ -179,17 +179,17 @@ otherwise                                        → :ok
 - `/live/*` 与 AshAdmin 为内部管理台（浏览器会话），实施时可加 `on_mount` 守卫或暂缓（低优先级）。
 - 长期加固：抽一个 `Ash.Policy.Check`（`TeacherEditAllowed`），在主要写资源（course/chapter/video/file/exercise/question/homework/exam/knowledge resource/relation/group_task/experiment/micro_major/major 等）的 policy 里各加一行 `forbid_if`。**列为第二阶段加固项**，因涉及 ~30 个资源文件，改动机械但量大。
 
-### 5.4 字段自保护（防止教师篡改自己的编辑权限）
+### 5.4 字段自保护（防止教师/管理员篡改编辑权限）
 
-`update :update` 动作同时被"管理员改教师"和"教师改自己资料"（如教师设置页）使用。新增 change：
+`update :update` 动作同时被"管理员改教师/管理员"和"角色改自己资料"使用。新增 change（`protect_edit_permission.ex`）：
 
 ```elixir
-# kg_edu/accounts/user/changes/protect_edit_permission.ex
-# actor.role 不在 [:admin, :super_admin] 时，将
-# edit_enabled / edit_period_start / edit_period_end 强制还原为原值
+# 仅 super_admin 可修改 edit_enabled / edit_period_start / edit_period_end；
+# update 路径：其他角色修改时强制还原为原值；
+# create_user 路径：非 super_admin 创建用户时强制重置为默认（开启、不限期限）。
 ```
 
-保证教师无法自行开启/延长自己的编辑权限。
+保证教师/管理员无法自行开启或延长自己的编辑权限，且普通管理员无法在创建用户时顺带配置使用时限。
 
 ---
 
@@ -206,6 +206,12 @@ otherwise                                        → :ok
   - 提示文案：`不设置期限表示不限时间；超出设置期限后教师仅可查看，无法编辑`
 - 校验：结束日期 >= 开始日期
 - 提交时并入 `data`，create/update payload 携带 `editEnabled / editPeriodStart / editPeriodEnd`
+
+> **权限说明（2026-02 收紧）**：编辑权限/使用期限的**配置能力仅超级管理员开放**。
+> - 普通管理员的表单中该模块为只读展示（`Switch`/`RangePicker` 禁用 + "仅超级管理员可设置"提示），提交 payload 不携带这些字段；
+> - 列表/详情仍展示只读状态标签（`EditPermissionTag`），供管理员查看；
+> - 「批量设置期限」按钮仅超级管理员可见可点；
+> - 后端 `bulk_update_edit_permission`、`ProtectEditPermission`（update/create 两条路径）均仅放行 `super_admin`，管理员即使直接调 RPC 也会被拒绝或还原。
 
 ### 6.2 教师列表与详情展示（`teachers.tsx`）
 
