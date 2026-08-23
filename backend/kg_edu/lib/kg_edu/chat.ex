@@ -176,11 +176,16 @@ defmodule KgEdu.Chat do
           KgEdu.Agent.Tools.GetExams,
           KgEdu.Agent.Tools.DocumentTools.PPTX,
           KgEdu.Agent.Tools.DocumentTools.DOCX,
+          KgEdu.Agent.Tools.DocumentTools.GenerateLessonPlan,
           KgEdu.Agent.Tools.GenerateCompetencyGraph,
           KgEdu.Agent.Tools.GenerateCurriculum
         ],
         max_iterations: 10,
-        tool_timeout_ms: 120_000
+        # Max output tokens for the turn (long tool-call args / final answers).
+        max_tokens: 8192,
+        # Generous tool budget: PPTX LLM enrichment + JS script + OSS upload
+        # can exceed 2 minutes on slow VPS instances.
+        tool_timeout_ms: 300_000
       ],
       opts
     )
@@ -199,16 +204,18 @@ defmodule KgEdu.Chat do
     1. 用户询问课程时，必须先调用GetCourses获取课程列表。GetCourses返回的结果中包含课程ID（格式：课程名 (ID: uuid)）。
     2. 创建文档（如教案）时，必须先获取courseId。没有courseId无法保存。
     3. 用户提到PPT/PPTX/幻灯片/课件时，必须调用GeneratePowerPointWithShapeCrawler工具。绝不要只是文字描述PPT内容。
-    4. 按课程章节生成PPT的标准流程（务必严格按步骤执行）：
+    4. 【教案专用】用户要求生成教案/教学计划/教学设计时，必须调用 GenerateLessonPlan 工具，只需传 courseId（可选 chapterId/knowledgeName 限定范围），教案正文由系统自动生成。绝不要自己把整篇教案拼在工具参数里传给其它文档工具。
+    5. 按课程章节生成PPT的标准流程（务必严格按步骤执行）：
        a) GetCourses → 找到目标课程，记住其 title 和 id
        b) GetChapters(courseId: "上一步的课程id") → 从返回结果中找到目标章节，记住其 id
        c) GeneratePowerPointWithShapeCrawler(courseName: "课程名", courseId: "课程id", chapterId: "章节id")
        d) 生成成功后直接展示下载链接。如果工具返回错误提示，根据提示修正参数后重试，最多重试2次。
-    5. 如果用户没明确说课程名，先调用GetCourses获取列表后再操作。
-    6. 【禁止展示ID】工具返回的ID字段仅用于内部调用，向用户展示时不要输出任何UUID。
-    7. 回答简洁，直接给出结果，无需多余解释。
-    8. 每个工具最多调用一次，如果工具返回了有效结果，直接使用该结果，不要重复调用同一工具。
-    9. 【重要】不要输出思考过程。直接调用工具，只展示最终结果（如PPT下载链接）。不要在调用工具前输出"我需要先..."、"让我..."等思考文字。
+    6. 只有用户明确提供了文档正文内容（如粘贴文本要求转成Word）时，才使用 SaveAsDocxAndUpload 并把该内容传给 content 参数。
+    7. 如果用户没明确说课程名，先调用GetCourses获取列表后再操作。
+    8. 【禁止展示ID】工具返回的ID字段仅用于内部调用，向用户展示时不要输出任何UUID。
+    9. 回答简洁，直接给出结果，无需多余解释。
+    10. 每个工具最多调用一次，如果工具返回了有效结果，直接使用该结果，不要重复调用同一工具。
+    11. 【重要】不要输出思考过程。直接调用工具，只展示最终结果（如PPT/教案下载链接）。不要在调用工具前输出"我需要先..."、"让我..."等思考文字。
     """
     |> String.trim()
   end

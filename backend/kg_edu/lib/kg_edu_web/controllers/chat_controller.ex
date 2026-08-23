@@ -249,7 +249,7 @@ defmodule KgEduWeb.ChatController do
     GetChapters GetChapterById
     GetKnowledgeResources GetExercises GetExams
     GenerateExercises GenerateCompetencyGraph GenerateCurriculum
-    GeneratePowerPointWithShapeCrawler SaveAsDocxAndUpload
+    GeneratePowerPointWithShapeCrawler SaveAsDocxAndUpload GenerateLessonPlan
   )
 
   # Filter out tool call names from text output.

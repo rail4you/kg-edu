@@ -7,6 +7,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
   """
 
   require Logger
+  require Ash.Query
 
   # ── GeneratePowerPointWithShapeCrawler ──────────────────────────────────
 
@@ -610,58 +611,325 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
       content = params[:content] || ""
       course_id = params[:courseId]
       file_name = params[:fileName] || "document"
-      output_dir = System.tmp_dir!()
 
       if content == "" or is_nil(course_id) do
         {:error, "content 和 courseId 是必需参数"}
       else
-        input = %{
-          content: content,
-          fileName: file_name,
-          outputDir: output_dir
-        }
+        KgEdu.Agent.Tools.DocumentTools.save_docx_and_upload(content, file_name, params)
+      end
+    end
+  end
 
-        Logger.info("[DocumentTools] Generating DOCX '#{file_name}' (#{String.length(content)} chars)")
+  # ── GenerateLessonPlan ──────────────────────────────────────────────────
+  #
+  # 教案专用工具：只接收小体积参数（courseId / chapterId 等），教案正文由
+  # 系统在服务端通过非流式 LLM 调用生成（避开 DashScope 流式工具参数丢失问题），
+  # 再保存为 DOCX 并上传 OSS。
 
-        case KgEdu.Agent.Tools.DocumentTools.run_js_script("generate_docx.js", Jason.encode!(input)) do
-          {:ok, %{"filePath" => file_path}} ->
-            file_size = get_file_size(file_path)
+  defmodule GenerateLessonPlan do
+    @moduledoc "Generate a complete lesson plan (教案) DOCX for a course using server-side LLM generation."
 
-            case KgEdu.Agent.Tools.DocumentTools.safe_upload(file_path) do
-              {:ok, url} ->
-                save_record(params, Path.basename(file_path), url, file_size, "docx")
-                {:ok, %{result: "文档已生成！\n下载链接: #{url}", fileUrl: url}}
+    use Jido.Action,
+      name: "GenerateLessonPlan",
+      description:
+        "根据课程生成完整教案DOCX并上传。只需传 courseId（可选 chapterId 限定章节、knowledgeName 限定知识点）。教案正文由系统自动生成，不要传入 content。",
+      schema:
+        Zoi.object(%{
+          courseId: Zoi.string(description: "课程ID（必需，先调用 GetCourses 获取）") |> Zoi.optional(),
+          courseName: Zoi.string(description: "课程名称") |> Zoi.optional(),
+          chapterId: Zoi.string(description: "章节ID — 只生成该章节的教案") |> Zoi.optional(),
+          knowledgeName: Zoi.string(description: "知识点名称 — 生成该知识点的教案") |> Zoi.optional(),
+          knowledgeResourceId: Zoi.string(description: "知识资源ID") |> Zoi.optional(),
+          userRequirements: Zoi.string(description: "用户补充要求（可选）") |> Zoi.optional(),
+          author: Zoi.string(description: "作者") |> Zoi.optional()
+        })
 
-              {:error, _reason} ->
-                {:ok, %{result: "文档已生成（本地: #{file_path}）", localPath: file_path}}
-            end
+    @impl true
+    def run(params, _context) do
+      course_id = Map.get(params, "courseId") || params[:courseId]
+      course_name = Map.get(params, "courseName") || params[:courseName]
+      chapter_id = Map.get(params, "chapterId") || params[:chapterId]
+      knowledge_name = Map.get(params, "knowledgeName") || params[:knowledgeName]
+      knowledge_id = Map.get(params, "knowledgeResourceId") || params[:knowledgeResourceId]
+      user_req = (Map.get(params, "userRequirements") || params[:userRequirements]) || ""
 
-          {:ok, raw} ->
-            {:error, "DOCX生成脚本返回异常: #{inspect(raw)}"}
+      # Fallback: auto-fill from previous tool calls when the model passes empty args
+      course_id = if blank?(course_id), do: KgEdu.Agent.SessionContext.get(:last_course_id), else: course_id
+      course_name = if blank?(course_name), do: KgEdu.Agent.SessionContext.get(:last_course_name), else: course_name
+      user_req = String.replace(user_req, "\\n", "\n")
+
+      if blank?(course_id) do
+        {:error, "需要 courseId 参数。请先调用 GetCourses 获取课程列表，再调用 GenerateLessonPlan。"}
+      else
+        case KgEdu.Agent.Tools.DocumentTools.generate_lesson_plan_content(
+               course_id,
+               course_name,
+               chapter_id,
+               knowledge_name,
+               knowledge_id,
+               user_req
+             ) do
+          {:ok, content} when content != "" ->
+            file_name =
+              (course_name || "课程")
+              |> then(fn cn ->
+                scope =
+                  cond do
+                    chapter_id && KgEdu.Agent.Tools.DocumentTools.get_chapter_title(chapter_id) ->
+                      KgEdu.Agent.Tools.DocumentTools.get_chapter_title(chapter_id)
+                    knowledge_name -> knowledge_name
+                    true -> nil
+                  end
+                if scope, do: "#{cn}-#{scope}-教案.docx", else: "#{cn}-教案.docx"
+              end)
+
+            Logger.info("[DocumentTools.GenerateLessonPlan] Generated lesson plan (#{String.length(content)} chars)")
+            KgEdu.Agent.Tools.DocumentTools.save_docx_and_upload(content, file_name, params)
+
+          {:ok, ""} ->
+            {:error, "教案内容生成失败：模型返回为空，请重试"}
 
           {:error, reason} ->
-            {:error, "DOCX生成失败: #{reason}"}
+            {:error, "教案内容生成失败: #{reason}"}
         end
       end
     end
 
-    defp get_file_size(path) do
-      case File.stat(path) do
-        {:ok, stat} -> stat.size
-        _ -> 0
+    defp blank?(nil), do: true
+    defp blank?(""), do: true
+    defp blank?(_), do: false
+  end
+
+  # ── Shared helpers (used by DOCX + GenerateLessonPlan) ──────────────────
+
+  @doc "Get a chapter's title by id (public helper)."
+  def get_chapter_title(chapter_id) do
+    tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+    chapter = KgEdu.Agent.DataAccess.get_chapter(chapter_id, tenant)
+    chapter && chapter.title
+  rescue
+    _ -> nil
+  end
+
+  @doc """
+  Generate a complete lesson plan (教案) in Markdown via a NON-STREAMED LLM
+  call. Non-streaming avoids the DashScope streamed tool-call args loss bug
+  and gives the model a full 8192-token budget for a thorough lesson plan.
+  """
+  def generate_lesson_plan_content(course_id, course_name, chapter_id, knowledge_name, knowledge_id, user_req) do
+    tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+
+    course = fetch_course(course_id, tenant)
+    course_title = (course && Map.get(course, :title)) || course_name || "本课程"
+    course_desc = (course && Map.get(course, :description)) || ""
+    course_major = (course && Map.get(course, :major)) || ""
+    course_semester = (course && Map.get(course, :semester)) || ""
+
+    chapters = if course_id, do: KgEdu.Agent.DataAccess.list_chapters(course_id, tenant), else: []
+    chapter_title = if chapter_id, do: get_chapter_title(chapter_id)
+
+    kps =
+      cond do
+        course_id && chapter_id ->
+          KgEdu.Agent.DataAccess.list_knowledge_resources(course_id, chapter_id, tenant: tenant)
+
+        course_id ->
+          KgEdu.Agent.DataAccess.list_knowledge_resources(course_id, nil, tenant: tenant)
+
+        true ->
+          []
       end
+
+    prompt =
+      build_lesson_plan_prompt(
+        course_title,
+        course_desc,
+        course_major,
+        course_semester,
+        chapter_title,
+        chapters,
+        kps,
+        knowledge_name,
+        knowledge_id,
+        user_req
+      )
+
+    KgEdu.Agent.ApiKeyProvider.ensure_key(:qwen)
+    model = Application.get_env(:kg_edu, :reqllm)[:model] || "alibaba_cn:qwen-plus"
+
+    Logger.info("[DocumentTools.GenerateLessonPlan] LLM prompt: #{String.length(prompt)} chars")
+
+    case ReqLLM.Generation.generate_text(model, [
+           %{role: "system", content: "你是资深教学设计专家，精通高校课程教案撰写。只输出教案正文 Markdown，不要输出无关说明。"},
+           %{role: "user", content: prompt}
+         ],
+           # Non-streamed generation of a full lesson plan can take 1-3 minutes:
+           # override the req_llm default 30s receive timeout.
+           max_tokens: 8192,
+           temperature: 0.6,
+           receive_timeout: 240_000
+         ) do
+      {:ok, response} ->
+        text =
+          response
+          |> ReqLLM.Response.text()
+          |> String.replace(~r/^```[a-zA-Z]*\n?/, "")
+          |> String.replace(~r/\n?```\s*$/, "")
+          |> String.trim()
+
+        {:ok, text}
+
+      {:error, error} ->
+        {:error, format_llm_error(error)}
     end
+  end
 
-    defp save_record(params, file_name, url, size, type) do
-      tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+  @doc "Save markdown content as DOCX, upload to OSS, and record in DB."
+  def save_docx_and_upload(content, file_name, params) do
+    output_dir = System.tmp_dir!()
+    input = %{content: content, fileName: file_name, outputDir: output_dir}
 
-      if tenant do
-        KgEdu.Agent.OssUpload.save_file_record(tenant, file_name, url, size, type,
-          user_id: KgEdu.Agent.SessionContext.get(:user_id),
-          course_id: params[:courseId],
-          knowledge_resource_id: params[:knowledgeResourceId]
-        )
+    Logger.info("[DocumentTools] Generating DOCX '#{file_name}' (#{String.length(content)} chars)")
+
+    case run_js_script("generate_docx.js", Jason.encode!(input)) do
+      {:ok, %{"filePath" => file_path}} ->
+        file_size = get_file_size(file_path)
+
+        case safe_upload(file_path) do
+          {:ok, url} ->
+            save_record(params, Path.basename(file_path), url, file_size, "docx")
+            {:ok, %{result: "教案/文档已生成！\n下载链接: #{url}", fileUrl: url}}
+
+          {:error, reason} ->
+            {:ok, %{result: "文档已生成（本地: #{file_path}）。上传失败: #{reason}", localPath: file_path}}
+        end
+
+      {:ok, raw} ->
+        {:error, "DOCX生成脚本返回异常: #{inspect(raw)}"}
+
+      {:error, reason} ->
+        {:error, "DOCX生成失败: #{reason}"}
+    end
+  end
+
+  def fetch_course(course_id, tenant) do
+    if is_nil(course_id) do
+      nil
+    else
+      course =
+        KgEdu.Courses.Course
+        |> Ash.Query.filter(id == ^course_id)
+        |> Ash.read_one(tenant: tenant, authorize?: false)
+
+      course && %{
+        id: course.id,
+        title: course.title,
+        major: course.major,
+        semester: course.semester,
+        description: course.description
+      }
+    end
+  rescue
+    _ -> nil
+  end
+
+  defp build_lesson_plan_prompt(course_title, course_desc, course_major, course_semester, chapter_title, chapters, kps, knowledge_name, knowledge_id, user_req) do
+    scope =
+      cond do
+        chapter_title -> "章节「#{chapter_title}」"
+        knowledge_name -> "知识点「#{knowledge_name}」"
+        knowledge_id -> "指定知识点"
+        true -> "整门课程"
       end
+
+    chapter_lines =
+      chapters
+      |> Enum.take(30)
+      |> Enum.map_join("\n", fn ch ->
+        desc = Map.get(ch, :description) || ""
+        desc_short = if desc != "", do: "（#{String.slice(desc, 0, 60)}）", else: ""
+        "  - #{ch.title}#{desc_short}"
+      end)
+
+    kp_lines =
+      kps
+      |> Enum.take(30)
+      |> Enum.map_join("\n", fn kp ->
+        desc = Map.get(kp, :description) || ""
+        desc_short = if desc != "", do: "（#{String.slice(desc, 0, 60)}）", else: ""
+        "  - #{kp.name}#{desc_short}"
+      end)
+
+    user_req_block = if user_req != "", do: "\n\n## 教师补充要求\n#{user_req}", else: ""
+
+    """
+    请为以下课程撰写一份完整的教案（Markdown 格式，中文）。
+
+    ## 课程信息
+    - 课程名称：#{course_title}
+    - 专业：#{if course_major == "", do: "未知", else: course_major}
+    - 学期：#{if course_semester == "", do: "未知", else: course_semester}
+    - 课程描述：#{if course_desc == "", do: "无", else: course_desc}
+    - 教案范围：#{scope}
+
+    ## 课程章节
+    #{if chapter_lines == "", do: "（无章节数据）", else: chapter_lines}
+
+    ## 知识点
+    #{if kp_lines == "", do: "（无知识点数据）", else: kp_lines}
+    #{user_req_block}
+
+    ## 撰写要求（必须包含以下章节，用 Markdown 标题组织）
+    1. `# 课程名称教案` 作为文档大标题
+    2. `## 课程基本信息`：课程名称、授课对象、课时安排（建议 32-48 学时）、教材与参考资料
+    3. `## 教学目标`：知识目标、能力目标、素质目标（分条列出）
+    4. `## 教学重点与难点`
+    5. `## 教学内容与过程`：结合上面的章节/知识点逐章展开（重点章节写详细，含导入-讲授-互动-小结各环节与时间分配）
+    6. `## 教学方法与手段`
+    7. `## 教学评价与考核方式`（给出平时/期中/期末占比）
+    8. `## 作业与思考题`
+    9. `## 教学反思`
+
+    要求内容具体、专业、可直接用于教学，篇幅完整（不少于 2000 字）。直接输出 Markdown，不要输出代码块标记或任何额外解释。
+    """
+  end
+
+  defp save_record(params, file_name, url, size, type) do
+    tenant = KgEdu.Agent.DataAccess.resolve_tenant(nil)
+
+    if tenant do
+      KgEdu.Agent.OssUpload.save_file_record(tenant, file_name, url, size, type,
+        user_id: KgEdu.Agent.SessionContext.get(:user_id),
+        course_id: params[:courseId] || Map.get(params, "courseId"),
+        knowledge_resource_id: params[:knowledgeResourceId] || Map.get(params, "knowledgeResourceId")
+      )
+    end
+  end
+
+  defp get_file_size(path) do
+    case File.stat(path) do
+      {:ok, stat} -> stat.size
+      _ -> 0
+    end
+  end
+
+  defp format_llm_error(error) do
+    cond do
+      is_struct(error, ReqLLM.Error.API.Request) ->
+        status = error.status || "?"
+        msg = get_in(error.response_body, ["error", "message"]) || "请求失败"
+        "AI 服务调用失败 (#{status}): #{msg}"
+
+      is_struct(error, ReqLLM.Error.API.Response) ->
+        status = error.status || "?"
+        msg = get_in(error.response_body, ["error", "message"]) || "响应异常"
+        "AI 服务响应失败 (#{status}): #{msg}"
+
+      is_binary(error) ->
+        "AI 服务调用失败: #{error}"
+
+      true ->
+        "AI 服务调用失败，请检查 API Key 配置"
     end
   end
 
