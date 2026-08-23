@@ -16,6 +16,9 @@ RUN mix local.hex --force && \
 
 COPY backend/kg_edu/mix.exs backend/kg_edu/mix.lock ./
 COPY backend/kg_edu/deps deps
+COPY backend/kg_edu/patches patches
+# Apply project dependency patches (e.g. jido_ai args_lost retry) before compiling
+RUN bash patches/apply.sh
 # Remove precompiled NIF artifacts from local deps (arm64 → amd64 cross-compile)
 RUN find deps -name "*.so" -delete && find deps -name "*.o" -delete && mix deps.compile
 

@@ -104,7 +104,9 @@ defmodule KgEdu.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
+      setup: ["deps.get", "patch_deps", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
+      # deps.get 之后自动应用依赖补丁(见 lib/mix/tasks/patch_deps.ex 与 patches/*.patch)
+      "deps.get": ["deps.get", "patch_deps"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],

@@ -97,6 +97,7 @@
 2. **使用 codegen 生成 API** - 后端资源变更后使用 `./dev.sh codegen <task>` 生成迁移
 3. **数据库迁移** - 资源变更后执行 `./dev.sh migrate` 更新数据库
 4. **查看日志排错** - 服务异常时使用 `./dev.sh logs <service>` 查看日志
+5. **依赖补丁** - `backend/kg_edu/patches/` 下有对第三方依赖源码的修复（如 jido_ai 流式工具参数丢失重试），`deps/` 被 gitignore，`mix deps.get` 后会自动应用，也可手动 `mix patch_deps` 或 `./backend/kg_edu/patches/apply.sh`；修改依赖源码后应重新生成补丁入库
 
 ## 网络架构与端口映射
 

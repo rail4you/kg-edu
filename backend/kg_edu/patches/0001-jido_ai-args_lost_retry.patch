@@ -1,0 +1,79 @@
+--- a/jido_ai/lib/jido_ai/reasoning/react/runner.ex	2026-06-15 14:06:42
++++ b/jido_ai/lib/jido_ai/reasoning/react/runner.ex	2026-08-23 22:09:08
+@@ -445,21 +445,63 @@
+     end
+   end
+ 
+-  defp request_turn_stream(%State{} = state, owner, ref, %Config{} = config, messages, llm_opts, model) do
++  # ── Streamed tool-call args loss guard ────────────────────────────────────
++  #
++  # Some providers (DashScope/Qwen via OpenAI-compatible streaming) occasionally
++  # drop the leading fragments of long tool-call argument JSON, producing raw
++  # `args_lost` markers (metadata.error == {:args_lost, reason}) on the response's
++  # tool calls. If we feed that back to the model as a tool error, the model
++  # simply retries emitting the same oversized JSON, which fails again → the run
++  # looks stuck and burns all its iterations.
++  #
++  # Instead: discard the broken turn (never appended to context) and re-issue
++  # the SAME LLM request, up to @tool_arg_retries extra attempts.
++  @tool_arg_retries 2
++
++  defp consume_stream_with_retry(state, owner, ref, config, messages, llm_opts, model, attempt) do
+     case ReqLLM.Generation.stream_text(model, messages, llm_opts) do
+       {:ok, stream_response} ->
+         announce_stream_control(owner, ref, stream_response)
+ 
+         case consume_stream(state, owner, ref, config, stream_response, model) do
+-          {:ok, updated_state, turn, response_id} -> {:ok, updated_state, turn, response_id}
+-          {:error, updated_state, reason} -> {:error, updated_state, reason, :llm_stream}
++          {:ok, state, %Turn{} = turn, response_id, %ReqLLM.Response{} = response} ->
++            if attempt < @tool_arg_retries and response_has_lost_tool_args?(response) do
++              Logger.warning(
++                "[ReAct] Tool call arguments lost during streaming (attempt #{attempt + 1}); retrying LLM turn"
++              )
++
++              consume_stream_with_retry(state, owner, ref, config, messages, llm_opts, model, attempt + 1)
++            else
++              {:ok, state, turn, response_id}
++            end
++
++          {:error, updated_state, reason} ->
++            {:error, updated_state, reason}
+         end
+ 
+       {:error, reason} ->
+-        {:error, state, reason, :llm_request}
++        {:error, state, reason}
+     end
+   end
+ 
++  defp response_has_lost_tool_args?(%ReqLLM.Response{} = response) do
++    response
++    |> ReqLLM.Response.tool_calls()
++    |> Enum.any?(fn tool_call ->
++      case ReqLLM.ToolCall.metadata(tool_call) do
++        %{error: {:args_lost, _reason}} -> true
++        _ -> false
++      end
++    end)
++  end
++
++  defp request_turn_stream(%State{} = state, owner, ref, %Config{} = config, messages, llm_opts, model) do
++    case consume_stream_with_retry(state, owner, ref, config, messages, llm_opts, model, 0) do
++      {:ok, updated_state, turn, response_id} -> {:ok, updated_state, turn, response_id}
++      {:error, updated_state, reason} -> {:error, updated_state, reason, :llm_stream}
++    end
++  end
++
+   defp request_turn_generate(%State{} = state, %Config{} = config, messages, llm_opts, model) do
+     case ReqLLM.Generation.generate_text(model, messages, llm_opts) do
+       {:ok, response} ->
+@@ -492,7 +534,7 @@
+           |> Turn.from_response(model: Jido.AI.model_label(model))
+           |> apply_stream_accumulator(current_state)
+ 
+-        {:ok, current_state, turn, extract_response_id(response)}
++        {:ok, current_state, turn, extract_response_id(response), response}
+ 
+       {:error, reason} ->
+         {:error, current_stream_state(state_key, state), reason}
