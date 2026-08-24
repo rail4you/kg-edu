@@ -41,7 +41,10 @@ defmodule KgEdu.Agent.Tools.GetChapters do
     if is_nil(course_id) || course_id == "" do
       courses = KgEdu.Agent.DataAccess.list_courses(tenant)
       text = "请提供课程信息。当前可用的课程:\n" <>
-        (courses |> Enum.map(fn c -> "  • #{c.title} (ID: #{c.id})" end) |> Enum.join("\n"))
+        (courses |> Enum.map(fn c ->
+          desc = if c.description && c.description != "" && c.description != c.title, do: "：#{c.description}", else: ""
+          "  • #{c.title}#{desc} (ID: #{c.id})"
+        end) |> Enum.join("\n"))
       {:ok, %{result: text, courses: courses}}
     else
       chapters = KgEdu.Agent.DataAccess.list_chapters(course_id)

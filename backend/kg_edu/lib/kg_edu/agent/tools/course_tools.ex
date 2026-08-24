@@ -29,7 +29,15 @@ defmodule KgEdu.Agent.Tools.GetCourses do
       major = if c.major, do: " (#{c.major})", else: ""
       semester = if c.semester, do: " - #{c.semester}", else: ""
       id = c.id
-      "  • #{c.title}#{major}#{semester} (ID: #{id})"
+
+      desc =
+        if c.description && c.description != "" && c.description != c.title do
+          "：#{c.description}"
+        else
+          ""
+        end
+
+      "  • #{c.title}#{major}#{semester}#{desc} (ID: #{id})"
     end)
     |> Enum.join("\n")
   end

@@ -13,11 +13,17 @@ defmodule KgEdu.Agent.Tools.GetKnowledgeResources do
   @impl true
   def run(params, _context) do
     resources = KgEdu.Agent.DataAccess.list_knowledge_resources(params[:courseId], params[:chapterId])
-    text = "共 #{length(resources)} 个知识资源:\n" <>
-      (resources |> Enum.map(fn r ->
-        importance = if r.importance, do: " [重要度: #{r.importance}]", else: ""
-        "  • #{r.name}#{importance}"
-      end) |> Enum.join("\n"))
+
+    text =
+      "共 #{length(resources)} 个知识资源:\n" <>
+        (resources
+         |> Enum.map(fn r ->
+           importance = if r.importance, do: " [重要度: #{r.importance}]", else: ""
+           desc = if r.description && r.description != "", do: "：#{r.description}", else: ""
+           "  • #{r.name}#{importance}#{desc}"
+         end)
+         |> Enum.join("\n"))
+
     {:ok, %{result: text, resources: resources}}
   end
 end
