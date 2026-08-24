@@ -154,7 +154,15 @@ defmodule KgEduWeb.ChatController do
     Enum.reduce(events, {conn, %{text_buffer: "", text_started: false, has_tools: false, pending_text: ""}}, fn event, {conn, state} ->
       case event.kind do
         :tool_started ->
-          state = Map.put(state, :has_tools, true)
+          # A tool call begins — discard any text the model produced so far: it
+          # is narration/thinking ("我需要先获取课程列表...") and must never reach
+          # the user. Only the text emitted after the LAST tool call (the final
+          # answer) is kept and flushed when the run finishes.
+          state =
+            state
+            |> Map.put(:has_tools, true)
+            |> Map.put(:pending_text, "")
+
           tool_name = Map.get(event.data, :tool_name) || "unknown"
           tool_call_id = Map.get(event.data, :tool_call_id) || generate_id()
           args = Map.get(event.data, :arguments, %{})
@@ -187,23 +195,12 @@ defmodule KgEduWeb.ChatController do
             {clean_delta, state} = filter_tool_names(delta, state)
 
             if clean_delta != "" do
-              if Map.get(state, :has_tools) do
-                # Tools were used — buffer all text, only show final result
-                pending = Map.get(state, :pending_text, "") <> clean_delta
-                {conn, Map.put(state, :pending_text, pending)}
-              else
-                # No tools used — stream text normally
-                state =
-                  if !Map.get(state, :text_started) do
-                    sse_write(conn, "TEXT_MESSAGE_START", %{})
-                    Map.put(state, :text_started, true)
-                  else
-                    state
-                  end
-
-                sse_write(conn, "TEXT_MESSAGE_CONTENT", %{delta: clean_delta})
-                {conn, state}
-              end
+              # Buffer ALL text locally — the user only sees the final result.
+              # Narration emitted before/between tool calls is discarded when the
+              # next tool starts; whatever remains when the run finishes is the
+              # final answer, flushed as a single TEXT_MESSAGE.* sequence.
+              pending = Map.get(state, :pending_text, "") <> clean_delta
+              {conn, Map.put(state, :pending_text, pending)}
             else
               {conn, state}
             end
@@ -212,12 +209,8 @@ defmodule KgEduWeb.ChatController do
           end
 
         :request_completed ->
-          {conn, state}
-          # Emit TEXT_MESSAGE_END if we started text
-          if Map.get(state, :text_started) do
-            sse_write(conn, "TEXT_MESSAGE_END", %{})
-          end
-
+          # Text is only flushed once, in _run_agent_stream/4, after the whole
+          # run completes — nothing to emit here.
           {conn, state}
 
         :request_failed ->
@@ -235,11 +228,23 @@ defmodule KgEduWeb.ChatController do
     end)
   end
 
+  # Extract user-visible text from an llm_delta event.
+  #   - `:thinking` chunks are the model's internal reasoning (e.g. qwen
+  #     reasoning_content) — never shown to the user.
+  #   - `:tool_call` chunks are tool invocations — already surfaced as
+  #     TOOL_CALL_START/ARGS/END events.
+  #   - `:content` chunks are the actual answer text.
   defp extract_delta(data) do
-    cond do
-      is_binary(Map.get(data, :delta)) -> data.delta
-      is_binary(Map.get(data, :content)) -> data.content
-      true -> ""
+    case Map.get(data, :chunk_type) do
+      chunk_type when chunk_type in [:thinking, :tool_call] ->
+        ""
+
+      _ ->
+        cond do
+          is_binary(Map.get(data, :delta)) -> data.delta
+          is_binary(Map.get(data, :content)) -> data.content
+          true -> ""
+        end
     end
   end
 
