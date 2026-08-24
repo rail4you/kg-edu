@@ -486,7 +486,7 @@ defmodule KgEdu.Accounts.User do
       argument :new_password, :string do
         description "The new password to set"
         allow_nil? false
-        constraints min_length: 8
+        constraints min_length: 6
         sensitive? true
       end
 
@@ -601,7 +601,7 @@ defmodule KgEdu.Accounts.User do
       argument :new_password, :string do
         description "The new password to set"
         allow_nil? false
-        constraints min_length: 8
+        constraints min_length: 6
         sensitive? true
       end
 
