@@ -790,6 +790,15 @@ defmodule KgEdu.Accounts.Organization do
           end
         end
 
+        # 统计各租户 schema 中指定表的行数（班级/小组数量）。
+        # 部分 schema 可能缺少对应表（旧租户/孤儿 schema），此时按 0 处理。
+        entity_count_for = fn schema, table ->
+          case KgEdu.Repo.query("SELECT count(*) FROM #{schema}.#{table}") do
+            {:ok, %{rows: [[n]]}} when is_integer(n) -> n
+            _ -> 0
+          end
+        end
+
         entry_for = fn role_counts, schema, name ->
           %{
             schema_name: schema,
@@ -799,7 +808,9 @@ defmodule KgEdu.Accounts.Organization do
             super_admin: Map.get(role_counts, :super_admin, 0),
             admin: Map.get(role_counts, :admin, 0),
             teacher: Map.get(role_counts, :teacher, 0),
-            student: Map.get(role_counts, :user, 0)
+            student: Map.get(role_counts, :user, 0),
+            classes: entity_count_for.(schema, "classes"),
+            groups: entity_count_for.(schema, "groups")
           }
         end
 
