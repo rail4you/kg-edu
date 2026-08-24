@@ -217,6 +217,7 @@ defmodule KgEdu.Courses.CourseEnrollment do
   relationships do
     belongs_to :course, KgEdu.Courses.Course do
       allow_nil? true
+      public? true
     end
 
     belongs_to :student, KgEdu.Accounts.User do

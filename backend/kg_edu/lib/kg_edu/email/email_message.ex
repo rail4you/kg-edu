@@ -66,7 +66,7 @@ defmodule KgEdu.Email.EmailMessage do
 
     create :create do
       description("Create a new email message (doesn't send it)")
-      accept([:subject, :body, :parent_message_id])
+      accept([:subject, :body, :parent_message_id, :course_id])
 
       argument :sender_user_id, :uuid do
         allow_nil?(false)
@@ -106,7 +106,7 @@ defmodule KgEdu.Email.EmailMessage do
 
     create :send_email do
       description("Create and send an email message")
-      accept([:subject, :body, :parent_message_id])
+      accept([:subject, :body, :parent_message_id, :course_id])
 
       argument :sender_user_id, :uuid do
         allow_nil?(false)
@@ -176,23 +176,34 @@ defmodule KgEdu.Email.EmailMessage do
             original_sender_id = parent_message.sender_user_id
             original_receiver_id = parent_message.receiver_user_id
 
-            # For a reply, the direction is reversed
-            # Original: student -> teacher
-            # Reply: teacher -> student
-            new_sender_id = replier_id
-            new_receiver_id = original_sender_id
+            # 仅允许父消息的收件人回复（例如教师只能回复发给自己的学生提问）
+            if replier_id != original_receiver_id do
+              changeset
+              |> Ash.Changeset.add_error(
+                :sender_user_id,
+                "只有收件人才能回复该消息"
+              )
+            else
+              # For a reply, the direction is reversed
+              # Original: student -> teacher
+              # Reply: teacher -> student
+              new_sender_id = replier_id
+              new_receiver_id = original_sender_id
 
-            Logger.info("""
-            [REPLY EMAIL]
-            Parent Message: #{parent_id}
-            Original: #{original_sender_id} -> #{original_receiver_id}
-            Reply: #{new_sender_id} -> #{new_receiver_id}
-            Replier: #{replier_id}
-            """)
+              Logger.info("""
+              [REPLY EMAIL]
+              Parent Message: #{parent_id}
+              Original: #{original_sender_id} -> #{original_receiver_id}
+              Reply: #{new_sender_id} -> #{new_receiver_id}
+              Replier: #{replier_id}
+              """)
 
-            changeset
-            |> Ash.Changeset.change_attribute(:sender_user_id, new_sender_id)
-            |> Ash.Changeset.change_attribute(:receiver_user_id, new_receiver_id)
+              changeset
+              |> Ash.Changeset.change_attribute(:sender_user_id, new_sender_id)
+              |> Ash.Changeset.change_attribute(:receiver_user_id, new_receiver_id)
+              # 回复继承父消息的课程
+              |> Ash.Changeset.change_attribute(:course_id, parent_message.course_id)
+            end
 
           {:error, reason} ->
             Logger.error("[REPLY EMAIL] Failed to load parent message: #{inspect(reason)}")
@@ -318,6 +329,12 @@ defmodule KgEdu.Email.EmailMessage do
       public?(true)
     end
 
+    attribute :course_id, :uuid do
+      allow_nil?(true)
+      description("The course this email Q&A belongs to")
+      public?(true)
+    end
+
     timestamps(public?: true)
   end
 
@@ -344,6 +361,13 @@ defmodule KgEdu.Email.EmailMessage do
       destination_attribute(:id)
       source_attribute(:parent_message_id)
       description("Parent email message for thread/reply tracking")
+    end
+
+    belongs_to :course, KgEdu.Courses.Course do
+      public?(true)
+      allow_nil?(true)
+      source_attribute(:course_id)
+      description("The course this email Q&A belongs to")
     end
 
     has_many :sub_messages, __MODULE__ do
