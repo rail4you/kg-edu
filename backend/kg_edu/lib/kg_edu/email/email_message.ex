@@ -122,6 +122,46 @@ defmodule KgEdu.Email.EmailMessage do
       change(set_attribute(:receiver_user_id, arg(:receiver_user_id)))
       change(set_attribute(:status, :sending))
 
+      # 课程字段兜底：如果前端未传 course_id，自动取发送者注册的课程
+      # （优先收件教师所教的课程，否则取发送者最早注册的课程）
+      change(fn changeset, context ->
+        if Ash.Changeset.get_attribute(changeset, :course_id) do
+          changeset
+        else
+          sender_id = Ash.Changeset.get_attribute(changeset, :sender_user_id)
+          receiver_id = Ash.Changeset.get_attribute(changeset, :receiver_user_id)
+
+          picked =
+            if sender_id && receiver_id do
+              tenant =
+                to_string(context.tenant || "public")
+
+              query = """
+              SELECT e.course_id
+              FROM #{tenant}.course_enrollments e
+              JOIN #{tenant}.courses c ON c.id = e.course_id
+              WHERE e.member_id = $1
+              ORDER BY (c.teacher_id = $2) DESC, e.enrolled_at ASC
+              LIMIT 1
+              """
+
+              # Postgrex 的 uuid 参数需要 16 字节二进制
+              [sid, rid] = Enum.map([sender_id, receiver_id], &Ecto.UUID.dump!/1)
+
+              case KgEdu.Repo.query(query, [sid, rid]) do
+                {:ok, %{rows: [[course_id]]}} -> course_id
+                _ -> nil
+              end
+            end
+
+          if picked do
+            Ash.Changeset.change_attribute(changeset, :course_id, picked)
+          else
+            changeset
+          end
+        end
+      end)
+
       # After creating the message, send the email
       change(fn changeset, context ->
         Ash.Changeset.after_action(changeset, fn _changeset, email_message ->
