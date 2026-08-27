@@ -10,6 +10,7 @@ config :kg_edu, KgEduWeb.Endpoint,
   # 包含 Vite React SPA 构建产物的所有文件类型
   static_paths: ~w(
     assets fonts images logo files favicon.ico robots.txt index.html vite.svg
+    logo.jpg logo-light-full.png
     .well-known
   )
 
