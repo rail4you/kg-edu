@@ -652,8 +652,18 @@ defmodule KgEdu.Courses.Course do
 
           IO.puts("DEBUG: Videos linked to knowledge resources: #{knowledge_linked_videos}")
 
-          total_videos = chapter_linked_videos + knowledge_linked_videos
-          IO.puts("DEBUG: Final video count for course #{course_id}: #{total_videos}")
+          # 去重：同一视频可能同时关联章节与知识点，仅计一次
+          distinct_video_ids =
+            all_videos
+            |> Enum.filter(fn video ->
+              Map.get(video, :chapter_id) in chapter_ids or
+                Map.get(video, :knowledge_resource_id) in resource_ids
+            end)
+            |> Enum.map(& &1.id)
+            |> Enum.uniq()
+
+          total_videos = length(distinct_video_ids)
+          IO.puts("DEBUG: Final video count for course #{course_id} (distinct): #{total_videos}")
 
           video_stats = %{
             total: total_videos,
@@ -694,6 +704,21 @@ defmodule KgEdu.Courses.Course do
 
               {:error, error} ->
                 IO.puts("DEBUG: Error getting exercises: #{inspect(error)}")
+                %{total: 0}
+            end
+
+          # Get links statistics (without authorization) — 计入教学资源总数，与 /dashboard/resource 的 allResources 一致
+          link_stats =
+            case KgEdu.Courses.Link
+                 |> Ash.Query.filter(course_id: course_id)
+                 |> Ash.read(
+                   tenant: context.tenant,
+                   authorize?: false
+                 ) do
+              {:ok, links} ->
+                %{total: length(links)}
+
+              {:error, _} ->
                 %{total: 0}
             end
 
@@ -764,14 +789,16 @@ defmodule KgEdu.Courses.Course do
             videos: video_stats,
             homeworks: homework_stats,
             exercises: exercise_stats,
+            links: link_stats,
             activities: activity_stats,
             total_resources: %{
               files: file_stats.total,
               videos: video_stats.total,
               homeworks: homework_stats.total,
               exercises: exercise_stats.total,
+              links: link_stats.total,
               total:
-                file_stats.total + video_stats.total + homework_stats.total + exercise_stats.total
+                file_stats.total + video_stats.total + homework_stats.total + exercise_stats.total + link_stats.total
             },
             calculated_at: DateTime.utc_now()
           }
