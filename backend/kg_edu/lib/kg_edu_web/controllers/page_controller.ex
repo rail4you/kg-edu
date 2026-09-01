@@ -14,7 +14,7 @@ defmodule KgEduWeb.PageController do
     app_description = System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台")
     logo_light = System.get_env("BRANDING_LOGO_LIGHT", "/logo-light-full.png")
     logo_dark = System.get_env("BRANDING_LOGO_DARK", "/logo.jpg")
-    favicon = System.get_env("BRANDING_FAVICON", "/logo.jpg")
+    favicon = System.get_env("BRANDING_FAVICON", "/logo/yike-icon.png")
     contact_email = System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
     app_copyright = "#{app_name} © 2026 - 融合知识图谱与人工智能技术 | #{app_title}"
 
