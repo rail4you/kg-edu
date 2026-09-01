@@ -106,6 +106,9 @@ defmodule KgEduWeb.Router do
     get "/portal-config/admin", PageController, :get_portal_config_admin
     put "/portal-config/levels", PageController, :update_portal_levels
     put "/portal-config/pages", PageController, :save_portal_pages
+    get "/course-categories", PageController, :get_course_categories
+    get "/course-categories/admin", PageController, :get_course_categories_admin
+    put "/course-categories", PageController, :save_course_categories
     post "/chat/stream", ChatController, :stream_message
     get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
     post "/session/find-tenants", SessionController, :find_tenants

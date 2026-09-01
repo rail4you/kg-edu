@@ -363,6 +363,192 @@ defmodule KgEduWeb.PageController do
     render(conn, :home)
   end
 
+  # -------------------------------------------------------------------------
+  # 课程类别（首页推荐/新开模块 + 课程列表页 Tab）
+  # GET /api/course-categories          公开读取（只返回启用的类别及课程项）
+  # GET /api/course-categories/admin     仅超级管理员（含禁用类别）
+  # PUT /api/course-categories          仅超级管理员，全量替换（含类别排序/课程项）
+  # -------------------------------------------------------------------------
+
+  # 默认课程类别（首页推荐 / 新开；课程列表页 Tab）
+  @default_categories [
+    %{name: "推荐课程", slug: "recommended", sort_order: 0, enabled: true},
+    %{name: "新开课程", slug: "newest", sort_order: 1, enabled: true}
+  ]
+
+  # GET /api/course-categories — 公开读取
+  def get_course_categories(conn, _params) do
+    categories =
+      ensure_categories_seeded()
+      |> Enum.filter(& &1.enabled)
+
+    json(conn, %{
+      success: true,
+      data: %{categories: Enum.map(categories, &course_category_map/1)}
+    })
+  end
+
+  # GET /api/course-categories/admin — 仅超级管理员
+  def get_course_categories_admin(conn, _params) do
+    actor = conn.assigns[:actor]
+
+    if is_nil(actor) or actor.role != :super_admin do
+      json(conn, %{success: false, error: "仅超级管理员可查看课程类别"})
+    else
+      categories = ensure_categories_seeded()
+
+      json(conn, %{
+        success: true,
+        data: %{categories: Enum.map(categories, &course_category_map/1)}
+      })
+    end
+  end
+
+  # PUT /api/course-categories — 全量替换（类别 + 课程项，仅超级管理员）
+  def save_course_categories(conn, params) do
+    actor = conn.assigns[:actor]
+
+    if is_nil(actor) or actor.role != :super_admin do
+      json(conn, %{success: false, error: "仅超级管理员可修改课程类别"})
+    else
+      incoming = (params["data"] || params)["categories"] || []
+
+      existing = unwrap_list(KgEdu.SystemConfig.CourseCategory.list_all())
+
+      save_result =
+        incoming
+        |> Enum.with_index()
+        |> Enum.reduce_while({:ok, MapSet.new()}, fn {item, index}, {:ok, kept} ->
+          slug = normalize_slug(item["slug"], item["name"])
+
+          attrs = %{
+            name: item["name"] || "",
+            slug: slug,
+            sort_order: index,
+            enabled: item["enabled"] != false
+          }
+
+          with {:ok, category} <- upsert_category(existing, item, attrs) do
+            # 替换该类别下的课程项
+            case replace_category_items(category, item["items"] || []) do
+              :ok -> {:cont, {:ok, MapSet.put(kept, category.id)}}
+              :error -> {:halt, {:error, item["name"] || "未知"}}
+            end
+          else
+            {:error, _} -> {:halt, {:error, item["name"] || "未知"}}
+          end
+        end)
+
+      case save_result do
+        {:ok, kept_ids} ->
+          to_delete =
+            Enum.filter(existing, fn category ->
+              not MapSet.member?(kept_ids, category.id)
+            end)
+
+          Enum.each(to_delete, fn category ->
+            KgEdu.SystemConfig.CourseCategory.delete_category(category)
+          end)
+
+          json(conn, %{
+            success: true,
+            data: %{categories: Enum.map(ensure_categories_seeded(), &course_category_map/1)}
+          })
+
+        {:error, name} ->
+          json(conn, %{
+            success: false,
+            error: "课程类别「#{name}」保存失败：请检查名称与标识是否填写、且标识不重复"
+          })
+      end
+    end
+  end
+
+  # --- 课程类别工具函数 ---
+
+  defp ensure_categories_seeded do
+    categories = unwrap_list(KgEdu.SystemConfig.CourseCategory.list_all())
+
+    case categories do
+      [] ->
+        Enum.map(@default_categories, fn attrs ->
+          {:ok, category} = KgEdu.SystemConfig.CourseCategory.create_category(attrs)
+          category
+        end)
+
+      categories ->
+        Enum.sort_by(categories, & &1.sort_order)
+    end
+  end
+
+  # 按 id 或 slug 匹配已有类别，更新或新建
+  defp upsert_category(existing, item, attrs) do
+    matched =
+      case item["id"] do
+        nil -> Enum.find(existing, &(&1.slug == attrs.slug))
+        id -> Enum.find(existing, &(to_string(&1.id) == to_string(id)))
+      end
+
+    case matched do
+      nil -> KgEdu.SystemConfig.CourseCategory.create_category(attrs)
+      category -> KgEdu.SystemConfig.CourseCategory.update_category(category, attrs)
+    end
+  end
+
+  # 删除类别下旧课程项，写入新课程项
+  defp replace_category_items(category, items) do
+    old_items = unwrap_list(KgEdu.SystemConfig.CourseCategoryItem.list_all())
+
+    old_items
+    |> Enum.filter(&(&1.category_id == category.id))
+    |> Enum.each(fn item ->
+      KgEdu.SystemConfig.CourseCategoryItem.delete_item(item)
+    end)
+
+    result =
+      items
+      |> Enum.with_index()
+      |> Enum.reduce_while(:ok, fn {item, index}, :ok ->
+        attrs = %{
+          category_id: category.id,
+          tenant_schema: item["tenant_schema"] || "",
+          course_id: item["course_id"],
+          sort_order: index
+        }
+
+        case KgEdu.SystemConfig.CourseCategoryItem.create_item(attrs) do
+          {:ok, _} -> {:cont, :ok}
+          {:error, _} -> {:halt, :error}
+        end
+      end)
+
+    result
+  end
+
+  defp course_category_map(category) do
+    items =
+      unwrap_list(KgEdu.SystemConfig.CourseCategoryItem.list_all())
+      |> Enum.filter(&(&1.category_id == category.id))
+      |> Enum.sort_by(& &1.sort_order)
+      |> Enum.map(fn item ->
+        %{
+          id: item.id,
+          tenant_schema: item.tenant_schema,
+          course_id: item.course_id,
+          sort_order: item.sort_order
+        }
+      end)
+
+    %{
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      sort_order: category.sort_order,
+      enabled: category.enabled,
+      items: items
+    }
+  end
+
   # SPA fallback — 服务 React (Vite) 构建的 index.html
   # 所有未匹配的路径（React Router 路由）都由前端处理
   def index(conn, _params) do

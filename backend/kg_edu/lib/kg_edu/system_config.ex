@@ -36,6 +36,19 @@ defmodule KgEdu.SystemConfig do
       rpc_action(:update_template_page, :update)
       rpc_action(:delete_template_page, :destroy)
     end
+
+    resource KgEdu.SystemConfig.CourseCategory do
+      rpc_action(:list_course_categories, :read)
+      rpc_action(:create_course_category, :create)
+      rpc_action(:update_course_category, :update)
+      rpc_action(:delete_course_category, :destroy)
+    end
+
+    resource KgEdu.SystemConfig.CourseCategoryItem do
+      rpc_action(:list_course_category_items, :read)
+      rpc_action(:create_course_category_item, :create)
+      rpc_action(:delete_course_category_item, :destroy)
+    end
   end
 
   resources do
@@ -43,5 +56,7 @@ defmodule KgEdu.SystemConfig do
     resource(KgEdu.SystemConfig.SiteContentConfig)
     resource(KgEdu.SystemConfig.PortalLevel)
     resource(KgEdu.SystemConfig.TemplatePage)
+    resource(KgEdu.SystemConfig.CourseCategory)
+    resource(KgEdu.SystemConfig.CourseCategoryItem)
   end
 end
