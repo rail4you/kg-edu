@@ -100,6 +100,8 @@ defmodule KgEduWeb.Router do
     pipe_through :api
     get "/health", PageController, :health
     get "/branding", PageController, :branding
+    get "/site-content", PageController, :get_site_content
+    put "/site-content", PageController, :update_site_content
     post "/chat/stream", ChatController, :stream_message
     get "/knowledge/hierarchy/nested", NestedHierarchyController, :get_nested_hierarchy
     post "/session/find-tenants", SessionController, :find_tenants

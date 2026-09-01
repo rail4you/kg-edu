@@ -16,7 +16,7 @@ defmodule KgEduWeb.PageController do
     logo_dark = System.get_env("BRANDING_LOGO_DARK", "/logo.jpg")
     favicon = System.get_env("BRANDING_FAVICON", "/logo/yike-icon.png")
     contact_email = System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
-    app_copyright = "#{app_name} © 2026 - 融合知识图谱与人工智能技术 | #{app_title}"
+    app_copyright = System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台")
 
     json(conn, %{
       app_name: app_name,
@@ -28,6 +28,55 @@ defmodule KgEduWeb.PageController do
       favicon: favicon,
       contact_email: contact_email
     })
+  end
+
+  # 站点内容配置（平台简介 / 联系我们 / 隐私条款）— 超级管理员可写，公开可读
+  # GET /api/site-content
+  def get_site_content(conn, _params) do
+    case KgEdu.SystemConfig.SiteContentConfig.get_default() do
+      {:ok, [content | _]} ->
+        json(conn, %{success: true, data: site_content_map(content)})
+
+      _ ->
+        json(conn, %{success: true, data: nil})
+    end
+  end
+
+  # PUT /api/site-content — 仅超级管理员
+  def update_site_content(conn, params) do
+    actor = conn.assigns[:actor]
+
+    if is_nil(actor) or actor.role != :super_admin do
+      json(conn, %{success: false, error: "仅超级管理员可修改站点内容"})
+    else
+      data = params["data"] || params
+
+      attrs = %{
+        about_intro: data["about_intro"],
+        contact_email: data["contact_email"],
+        contact_address: data["contact_address"],
+        contact_hours: data["contact_hours"],
+        privacy_policy: data["privacy_policy"]
+      }
+
+      case KgEdu.SystemConfig.SiteContentConfig.save(attrs) do
+        {:ok, content} ->
+          json(conn, %{success: true, data: site_content_map(content)})
+
+        {:error, _} ->
+          json(conn, %{success: false, error: "保存失败"})
+      end
+    end
+  end
+
+  defp site_content_map(content) do
+    %{
+      about_intro: content.about_intro || "",
+      contact_email: content.contact_email || "",
+      contact_address: content.contact_address || "",
+      contact_hours: content.contact_hours || "",
+      privacy_policy: content.privacy_policy || ""
+    }
   end
 
   def home(conn, _params) do
