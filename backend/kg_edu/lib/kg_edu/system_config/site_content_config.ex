@@ -42,34 +42,15 @@ defmodule KgEdu.SystemConfig.SiteContentConfig do
     create :upsert do
       description "创建或更新站点内容配置（key 固定为 default）"
 
-      argument :about_intro, :string do
-        allow_nil? true
-        description "平台简介（多段文字用两个换行分隔）"
-      end
-
-      argument :contact_email, :string do
-        allow_nil? true
-        description "联系邮箱"
-      end
-
-      argument :contact_address, :string do
-        allow_nil? true
-        description "联系地址"
-      end
-
-      argument :contact_hours, :string do
-        allow_nil? true
-        description "工作时间"
-      end
-
-      argument :privacy_policy, :string do
-        allow_nil? true
-        description "隐私条款全文"
-      end
-
       upsert? true
       upsert_identity :unique_key
-      accept [:about_intro, :contact_email, :contact_address, :contact_hours, :privacy_policy]
+      accept [
+        :about_intro,
+        :contact_email,
+        :contact_address,
+        :contact_hours,
+        :privacy_policy
+      ]
       change set_attribute(:key, "default")
     end
   end
