@@ -31,14 +31,14 @@ defmodule KgEduWeb.PageController do
   end
 
   # 站点内容配置（平台简介 / 联系我们 / 隐私条款）— 超级管理员可写，公开可读
-  # GET /api/site-content
+  # GET /api/site-content — 未配置时返回当前生效的默认内容，便于管理端展示与编辑
   def get_site_content(conn, _params) do
     case KgEdu.SystemConfig.SiteContentConfig.get_default() do
       {:ok, [content | _]} ->
         json(conn, %{success: true, data: site_content_map(content)})
 
       _ ->
-        json(conn, %{success: true, data: nil})
+        json(conn, %{success: true, data: default_site_content()})
     end
   end
 
@@ -76,6 +76,19 @@ defmodule KgEduWeb.PageController do
       contact_address: content.contact_address || "",
       contact_hours: content.contact_hours || "",
       privacy_policy: content.privacy_policy || ""
+    }
+  end
+
+  # 未配置时的默认站点内容（与前端展示端默认一致）
+  defp default_site_content do
+    %{
+      about_intro:
+        "易课程是一款面向教育领域的智慧教学平台，致力于将知识图谱技术与人工智能深度融合，为教师和学生提供智能化的教学与学习体验。\n\n平台以知识图谱为核心驱动，以 AI 智能体为智慧引擎，以微专业为特色培养路径，构建覆盖教、学、管、评、研全链路的智慧教学生态。通过知识图谱引擎支撑知识点之间的多维关联，实现学习资源的精准匹配与个性化学习路径推荐，帮助院校构建高质量、高效率的数字化教学环境。",
+      contact_email: System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com"),
+      contact_address: "江苏省南京市",
+      contact_hours: "工作日 9:00 - 18:00",
+      privacy_policy:
+        "易课程·智慧教学系统及其所有内容，包括但不限于文字、图片、音频、视频、软件、程序、版面设计等，均受《中华人民共和国著作权法》及其他相关法律法规保护。未经书面授权，任何单位及个人不得以任何方式或理由对本平台内容进行使用、复制、修改、抄录或与其它产品捆绑使用。"
     }
   end
 
