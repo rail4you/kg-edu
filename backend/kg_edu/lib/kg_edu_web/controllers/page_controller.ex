@@ -9,12 +9,12 @@ defmodule KgEduWeb.PageController do
   # 品牌配置端点 — 从环境变量读取，支持部署时配置
   # 环境变量前缀: BRANDING_
   def branding(conn, _params) do
-    app_name = System.get_env("BRANDING_APP_NAME", "课堂星")
+    app_name = System.get_env("BRANDING_APP_NAME", "易课程")
     app_title = System.get_env("BRANDING_APP_TITLE", "智慧教学系统")
     app_description = System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台")
-    logo_light = System.get_env("BRANDING_LOGO_LIGHT", "/logo-light-full.png")
-    logo_dark = System.get_env("BRANDING_LOGO_DARK", "/logo.jpg")
-    favicon = System.get_env("BRANDING_FAVICON", "/logo/yike-icon.png")
+    logo_light = System.get_env("BRANDING_LOGO_LIGHT", "/logo/yike-home-light.png")
+    logo_dark = System.get_env("BRANDING_LOGO_DARK", "/logo/yike-home.png")
+    favicon = System.get_env("BRANDING_FAVICON", "/favicon/favicon.ico")
     contact_email = System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
     app_copyright = System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台")
 
