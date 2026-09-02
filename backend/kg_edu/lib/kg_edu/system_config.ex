@@ -49,6 +49,11 @@ defmodule KgEdu.SystemConfig do
       rpc_action(:create_course_category_item, :create)
       rpc_action(:delete_course_category_item, :destroy)
     end
+
+    resource KgEdu.SystemConfig.BrandingConfig do
+      rpc_action(:get_branding_config, :read_default)
+      rpc_action(:save_branding_config, :upsert)
+    end
   end
 
   resources do
@@ -58,5 +63,6 @@ defmodule KgEdu.SystemConfig do
     resource(KgEdu.SystemConfig.TemplatePage)
     resource(KgEdu.SystemConfig.CourseCategory)
     resource(KgEdu.SystemConfig.CourseCategoryItem)
+    resource(KgEdu.SystemConfig.BrandingConfig)
   end
 end

@@ -100,6 +100,7 @@ defmodule KgEduWeb.Router do
     pipe_through :api
     get "/health", PageController, :health
     get "/branding", PageController, :branding
+    put "/branding", PageController, :update_branding
     get "/site-content", PageController, :get_site_content
     put "/site-content", PageController, :update_site_content
     get "/portal-config", PageController, :get_portal_config

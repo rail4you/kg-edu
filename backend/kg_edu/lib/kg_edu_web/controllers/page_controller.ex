@@ -6,17 +6,18 @@ defmodule KgEduWeb.PageController do
     json(conn, %{status: "ok", service: "kg-edu-phoenix"})
   end
 
-  # 品牌配置端点 — 从环境变量读取，支持部署时配置
-  # 环境变量前缀: BRANDING_
+  # 品牌配置端点 — DB 优先，环境变量兜底，超级管理员可通过 PUT /api/branding 动态修改
   def branding(conn, _params) do
-    app_name = System.get_env("BRANDING_APP_NAME", "易课程")
-    app_title = System.get_env("BRANDING_APP_TITLE", "智慧教学系统")
-    app_description = System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台")
-    logo_light = System.get_env("BRANDING_LOGO_LIGHT", "/logo/yike-home-light.png")
-    logo_dark = System.get_env("BRANDING_LOGO_DARK", "/logo/yike-home.png")
-    favicon = System.get_env("BRANDING_FAVICON", "/favicon/favicon.ico")
-    contact_email = System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
-    app_copyright = System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台")
+    db = fetch_branding_from_db()
+
+    app_name = db[:app_name] || System.get_env("BRANDING_APP_NAME", "易课程")
+    app_title = db[:app_title] || System.get_env("BRANDING_APP_TITLE", "智慧教学系统")
+    app_description = db[:app_description] || System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台")
+    logo_light = db[:logo_light] || System.get_env("BRANDING_LOGO_LIGHT", "/logo/yike-home-light.png")
+    logo_dark = db[:logo_dark] || System.get_env("BRANDING_LOGO_DARK", "/logo/yike-home.png")
+    favicon = db[:favicon] || System.get_env("BRANDING_FAVICON", "/favicon/favicon.ico")
+    contact_email = db[:contact_email] || System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
+    app_copyright = db[:app_copyright] || System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台")
 
     json(conn, %{
       app_name: app_name,
@@ -29,6 +30,75 @@ defmodule KgEduWeb.PageController do
       contact_email: contact_email
     })
   end
+
+  # PUT /api/branding — 仅超级管理员
+  def update_branding(conn, params) do
+    actor = conn.assigns[:actor]
+
+    if is_nil(actor) or actor.role != :super_admin do
+      json(conn, %{success: false, error: "仅超级管理员可修改品牌配置"})
+    else
+      data = params["data"] || params
+
+      attrs = %{
+        app_name: data["app_name"],
+        app_title: data["app_title"],
+        app_description: data["app_description"],
+        app_copyright: data["app_copyright"],
+        logo_light: data["logo_light"],
+        logo_dark: data["logo_dark"],
+        favicon: data["favicon"],
+        contact_email: data["contact_email"]
+      }
+
+      case KgEdu.SystemConfig.BrandingConfig.save(attrs) do
+        {:ok, _} ->
+          json(conn, %{success: true, data: branding_map()})
+
+        {:error, _} ->
+          json(conn, %{success: false, error: "保存失败"})
+      end
+    end
+  end
+
+  defp branding_map do
+    db = fetch_branding_from_db()
+
+    %{
+      app_name: db[:app_name] || System.get_env("BRANDING_APP_NAME", "易课程"),
+      app_title: db[:app_title] || System.get_env("BRANDING_APP_TITLE", "智慧教学系统"),
+      app_description: db[:app_description] || System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台"),
+      app_copyright: db[:app_copyright] || System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台"),
+      logo_light: db[:logo_light] || System.get_env("BRANDING_LOGO_LIGHT", "/logo/yike-home-light.png"),
+      logo_dark: db[:logo_dark] || System.get_env("BRANDING_LOGO_DARK", "/logo/yike-home.png"),
+      favicon: db[:favicon] || System.get_env("BRANDING_FAVICON", "/favicon/favicon.ico"),
+      contact_email: db[:contact_email] || System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
+    }
+  end
+
+  defp fetch_branding_from_db do
+    case KgEdu.SystemConfig.BrandingConfig.get_default() do
+      {:ok, [record | _]} ->
+        %{
+          app_name: presence(record.app_name),
+          app_title: presence(record.app_title),
+          app_description: presence(record.app_description),
+          app_copyright: presence(record.app_copyright),
+          logo_light: presence(record.logo_light),
+          logo_dark: presence(record.logo_dark),
+          favicon: presence(record.favicon),
+          contact_email: presence(record.contact_email)
+        }
+
+      _ ->
+        %{}
+    end
+  end
+
+  defp presence(nil), do: nil
+  defp presence(""), do: nil
+  defp presence(v) when is_binary(v), do: String.trim(v) |> then(fn s -> if s == "", do: nil, else: s end)
+  defp presence(v), do: v
 
   # 站点内容配置（平台简介 / 联系我们 / 隐私条款）— 超级管理员可写，公开可读
   # GET /api/site-content — 未配置时返回当前生效的默认内容，便于管理端展示与编辑
