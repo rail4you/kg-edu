@@ -62,7 +62,7 @@ defmodule KgEdu.MajorAnalysis.JobPosition do
 
     update :update_job_position do
       description "Update a job position"
-      accept [:title, :description, :requirements, :salary_range, :source, :ai_analysis]
+      accept [:title, :description, :requirements, :salary_range, :source, :ai_analysis, :major_id]
       require_atomic? false
     end
 
