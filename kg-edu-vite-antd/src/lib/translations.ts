@@ -1,0 +1,91 @@
+export const TRANSLATIONS = {
+  KNOWLEDGE_TYPES: {
+    subject: "学科",
+    knowledge_unit: "知识单元",
+    knowledge_cell: "知识点",
+  },
+  IMPORTANCE_LEVELS: {
+    normal: "一般",
+    important: "重点",
+    hard: "难点",
+  },
+  GRAPH_LABELS: {
+    type: "类型",
+    description: "描述",
+    importance: "重要程度",
+    subject: "主题",
+    unit: "单元",
+    courseId: "课程ID",
+    knowledgeType: "知识类型",
+    importanceLevel: "重要程度",
+    position: "位置顺序",
+    tags: "标签",
+    title: "标题",
+    belongToCourse: "所属课程",
+  },
+  CONNECTION_TYPES: {
+    hierarchy: "层级关系",
+    dependency: "依赖关系",
+    related: "相关关系",
+    contain: "包含关系",
+    order: "属序关系",
+    relatedship: "相关关系",
+  },
+  // Default fallback values - actual values come from useQuestionLevelConfig hook
+  QUESTION_LEVELS: {
+    global: "全局问题",
+    concept: "概念问题",
+    method: "方法问题",
+  },
+  LOADING: {
+    courses: "正在加载课程...",
+    knowledgeTree: "正在加载知识树...",
+    knowledgeRelations: "正在加载知识关系...",
+    questionGraph: "加载问题图谱中...",
+  },
+  ERRORS: {
+    loadCoursesFailed: "加载课程失败",
+    loadKnowledgeTreeFailed: "加载知识树时出错",
+    loadKnowledgeRelationsFailed: "加载知识关系时出错",
+    unknownError: "未知错误",
+  },
+  INFO: {
+    noCoursesAvailable: "暂无可用课程，请先创建一些课程",
+    resourcePanelOpened: "资源面板已展开",
+    currentCourse: "当前课程",
+  },
+  UI: {
+    selectCourse: "选择课程",
+    allCourses: "所有课程",
+    knowledgeGraph: "知识图谱",
+    circleKnowledgeGraph: "知识圆形图谱",
+    knowledgeRelationGraph: "知识关系图谱",
+    questionGraph: "问题图谱",
+    courseSelector: "课程选择器",
+    nodeDetails: "节点详情",
+    questionDetails: "问题详情",
+    courseTitle: "课程标题",
+    courseDescription: "课程描述",
+    questionTitle: "问题标题",
+    questionDescription: "问题描述",
+    questionLevel: "问题级别",
+    questionId: "问题ID",
+  },
+  TOOLTIPS: {
+    clickNodeForDetails: "点击节点查看详情",
+    hoverForInfo: "鼠标悬停查看信息",
+    dragToPan: "拖拽可平移视图",
+    scrollToZoom: "滚轮可缩放",
+    hoverHighlightRelations: "悬停节点高亮关联关系",
+    radialLayoutDisplay: "放射状布局展示",
+  },
+};
+
+export const {
+  KNOWLEDGE_TYPES,
+  IMPORTANCE_LEVELS,
+  GRAPH_LABELS,
+  CONNECTION_TYPES,
+  QUESTION_LEVELS,
+} = TRANSLATIONS;
+export const { LOADING, ERRORS, INFO, UI, TOOLTIPS } = TRANSLATIONS;

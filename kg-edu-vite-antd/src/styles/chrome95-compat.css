@@ -1,0 +1,71 @@
+/**
+ * Chrome 95 兼容兜底 — 图谱/全景等 flex 布局在旧内核下高度塌陷
+ * 1. 所有 flex:1 的容器在旧 flexbox 中默认为 min-height:auto，会导致内部 height:100% 的
+ *    ECharts/canvas 被挤为 0 高。强制 min-height:0 使其可收缩。
+ * 2. Modal 遮罩的 backdrop-filter 需 -webkit- 前缀（已在 JS 中补，这里补 CSS 兜底）
+ * 3. inset:0 在 JS 中已补 top/right/bottom/left，这里补 CSS 文件中的 inset 兼容
+ */
+
+/* 布局根容器 — 保证 flex 子项可收缩 */
+.ant-layout,
+.ant-layout-content,
+.flex-tabs,
+.flex-tabs > .ant-tabs-content-holder,
+.flex-tabs > .ant-tabs-content-holder > .ant-tabs-content,
+.flex-tabs > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane,
+.flex-tabs > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane-active {
+  min-height: 0;
+}
+
+/* 图谱视图 — ECharts 容器必须有明确高度，旧内核下 height:100% 需配合 min-height:0 + min-width:0 */
+.mindmap-transform,
+.mindmap-container,
+[class*="graph-"],
+.ant-pro-layout-content,
+.ant-layout-content,
+.mindmap-node {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ECharts 容器在旧 flex 下 width:100% 需显式 flex:1 */
+div[style*="echarts"],
+div[ref="chartRef"],
+canvas {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 全景相册 — 桌面端 70vh 在旧内核下可能被 flex 压缩，兜底 min-height + 点击穿透 */
+.front-dashboard-feature-card--album,
+.front-dashboard-album-stage {
+  min-height: 0;
+  min-width: 0;
+}
+.front-dashboard-album-card.is-prev,
+.front-dashboard-album-card.is-next {
+  pointer-events: auto !important;
+}
+.front-dashboard-album-card.is-active {
+  pointer-events: auto !important;
+}
+.front-dashboard-album-card {
+  min-width: 0;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* 搜索框等 antd Input 在禁用 @layer 后，需保证自定义覆盖仍生效 */
+.cl-search-input .ant-input-affix-wrapper {
+  /* 双声明保证旧内核解析 */
+  border-radius: 24px;
+  -webkit-border-radius: 24px;
+}
+
+/* backdrop-filter 双前缀兜底（JS 中已补 WebkitBackdropFilter，这里补 CSS） */
+.front-dashboard-page .ant-card,
+.front-dashboard-glass-card,
+.front-dashboard-header {
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}

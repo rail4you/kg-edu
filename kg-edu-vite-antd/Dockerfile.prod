@@ -1,0 +1,22 @@
+FROM oven/bun:1-alpine
+WORKDIR /app
+
+RUN apk add --no-cache pandoc
+
+# Only install server-side dependencies
+COPY server.package.json ./package.json
+RUN bun install --production --no-save && \
+    rm -rf /root/.bun/install/cache && \
+    rm -rf /tmp/*
+
+# Copy application files
+COPY dist dist
+COPY server.ts .
+COPY server server
+COPY .pi .pi
+
+EXPOSE 3000
+ENV PORT=3000
+ENV NODE_ENV=production
+
+CMD ["bun", "run", "server.ts"]

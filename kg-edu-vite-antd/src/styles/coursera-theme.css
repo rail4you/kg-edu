@@ -1,0 +1,659 @@
+/* ========================================
+   Coursera 风格主题样式 - 可复用的通用样式
+   ======================================== */
+
+/* CSS 变量定义 - 主题色 */
+:root {
+  /* 主色调 */
+  --theme-primary: #2573E6;
+  --theme-primary-hover: #2563EB;
+  --theme-success: #52C41A;
+
+  /* 背景色 */
+  --theme-background: #F0F2F5;
+  --theme-card-bg: #FFFFFF;
+
+  /* 文字色 */
+  --theme-text-primary: #1F2937;
+  --theme-text-secondary: #6B7280;
+
+  /* 边框色 */
+  --theme-border: #E5E7EB;
+
+  /* 评分颜色 */
+  --theme-star: #F5C518;
+
+  /* 难度标签色 */
+  --theme-level-beginner: #52C41A;
+  --theme-level-intermediate: #2573E6;
+  --theme-level-advanced: #D4A843;
+}
+
+/* ========================================
+   布局容器
+   ======================================== */
+.theme-layout {
+  min-height: 100vh;
+  background: var(--theme-background);
+}
+
+.theme-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.theme-container-narrow {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ========================================
+   顶部导航
+   ======================================== */
+.theme-header {
+  background: var(--theme-card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid var(--theme-border);
+  height: 64px;
+}
+
+.theme-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-header-logo-icon {
+  font-size: 28px;
+  color: var(--theme-primary);
+}
+
+.theme-header-title {
+  color: var(--theme-text-primary);
+  margin: 0;
+  font-weight: 600;
+}
+
+.theme-header-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ========================================
+   Hero 区域
+   ======================================== */
+.theme-hero {
+  background: var(--theme-card-bg);
+  padding: 64px 24px 48px;
+  text-align: center;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.theme-hero-title {
+  color: var(--theme-text-primary);
+  margin-bottom: 12px;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.theme-hero-subtitle {
+  font-size: 18px;
+  color: var(--theme-text-secondary);
+  display: block;
+  margin-bottom: 32px;
+}
+
+/* 搜索框 */
+.theme-search-box {
+  display: flex;
+  max-width: 640px;
+  margin: 0 auto 20px;
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.theme-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 14px 16px;
+  font-size: 16px;
+}
+
+.theme-search-button {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+  border-radius: 0 !important;
+  padding: 0 32px;
+  height: auto !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+/* 热门标签 */
+.theme-popular-tags {
+  color: var(--theme-text-secondary);
+  font-size: 14;
+}
+
+.theme-popular-tag {
+  color: var(--theme-primary);
+  margin-left: 8px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.theme-popular-tag:hover {
+  text-decoration: underline;
+}
+
+/* ========================================
+   筛选栏
+   ======================================== */
+.theme-filter-bar {
+  background: var(--theme-card-bg);
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--theme-border);
+  position: sticky;
+  top: 64px;
+  z-index: 100;
+}
+
+.theme-filter-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.theme-filter-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.theme-filter-tab {
+  color: var(--theme-text-secondary);
+  font-weight: 400;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 8px 16px;
+  height: auto;
+  white-space: nowrap;
+}
+
+.theme-filter-tab-active {
+  color: var(--theme-primary);
+  font-weight: 600;
+  border-bottom: 3px solid var(--theme-primary);
+}
+
+/* ========================================
+   课程列表区域
+   ======================================== */
+.theme-content {
+  padding: 32px 24px;
+}
+
+.theme-result-count {
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: var(--theme-text-secondary);
+}
+
+.theme-result-count strong {
+  color: var(--theme-text-primary);
+}
+
+/* ========================================
+   课程卡片
+   ======================================== */
+.theme-course-card {
+  height: 100%;
+  border-radius: 8px !important;
+  overflow: hidden;
+  border: 1px solid var(--theme-border) !important;
+  transition: all 0.2s ease;
+}
+
+.theme-course-card:hover {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.theme-course-cover {
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.theme-course-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-course-cover-placeholder-icon {
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.theme-course-level-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  border: none;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.theme-course-enrolled-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--theme-success) !important;
+  color: #fff !important;
+  border: none;
+}
+
+.theme-course-body {
+  padding: 16px;
+}
+
+.theme-course-title {
+  margin-bottom: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  min-height: 42px;
+}
+
+.theme-course-org {
+  font-size: 13px;
+  color: var(--theme-text-secondary);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.theme-course-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.theme-course-meta {
+  display: flex;
+  gap: 12px;
+}
+
+/* ========================================
+   通用卡片
+   ======================================== */
+.theme-card {
+  border-radius: 8px !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: none !important;
+}
+
+.theme-card-hoverable:hover {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.theme-card-title {
+  color: var(--theme-text-primary);
+  margin-bottom: 12px;
+}
+
+.theme-card-title-primary {
+  color: var(--theme-primary);
+}
+
+/* ========================================
+   按钮样式
+   ======================================== */
+.theme-btn-primary {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+.theme-btn-primary:hover {
+  background: var(--theme-primary-hover) !important;
+  border-color: var(--theme-primary-hover) !important;
+}
+
+/* ========================================
+   加载和空状态
+   ======================================== */
+.theme-loading {
+  text-align: center;
+  padding: 100px;
+}
+
+.theme-loading-text {
+  margin-top: 16px;
+  color: var(--theme-text-secondary);
+}
+
+.theme-empty {
+  text-align: center;
+  padding: 64px;
+}
+
+/* ========================================
+   响应式网格
+   ======================================== */
+.theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -12px;
+}
+
+.theme-grid-item {
+  padding: 12px;
+}
+
+/* 4列 (>=1200px) */
+.theme-grid-4 {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .theme-grid-4 {
+    width: 50%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .theme-grid-4 {
+    width: 25%;
+  }
+}
+
+/* 3列 */
+.theme-grid-3 {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .theme-grid-3 {
+    width: 50%;
+  }
+}
+
+@media (min-width: 992px) {
+  .theme-grid-3 {
+    width: 33.333%;
+  }
+}
+
+/* 2列 */
+.theme-grid-2 {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .theme-grid-2 {
+    width: 50%;
+  }
+}
+
+/* ========================================
+   表格样式
+   ======================================== */
+.theme-table .ant-table-thead > tr > th {
+  background: var(--theme-background) !important;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  border-bottom: 1px solid var(--theme-border);
+  text-align: center;
+  vertical-align: middle;
+  padding: 12px 8px !important;
+}
+
+.theme-table .ant-table-thead > tr > th:first-child {
+  text-align: left;
+}
+
+.theme-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--theme-border);
+  vertical-align: middle;
+  padding: 10px 8px !important;
+  text-align: center;
+}
+
+.theme-table .ant-table-tbody > tr > td:first-child {
+  text-align: left;
+}
+
+.theme-table .ant-table-tbody > tr:hover > td {
+  background: var(--theme-background) !important;
+}
+
+.theme-table .ant-table-title {
+  padding: 4px 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.ant-card-body > .theme-table,
+.ant-card-body > * > .theme-table,
+.ant-card-body > * > * > .theme-table {
+  margin-top: -14px;
+}
+
+.theme-table .ant-table-cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========================================
+   表单样式
+   ======================================== */
+.theme-form .ant-form-item-label > label {
+  color: var(--theme-text-primary);
+  font-weight: 500;
+}
+
+.theme-form .ant-input,
+.theme-form .ant-select-selector,
+.theme-form .ant-picker {
+  border-color: var(--theme-border) !important;
+  border-radius: 4px !important;
+}
+
+.theme-form .ant-input:focus,
+.theme-form .ant-input:hover,
+.theme-form .ant-select-focused .ant-select-selector,
+.theme-form .ant-select-selector:hover {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* ========================================
+   Tabs 样式
+   ======================================== */
+.theme-tabs .ant-tabs-nav::before {
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.theme-tabs .ant-tabs-tab {
+  color: var(--theme-text-secondary);
+  padding: 12px 16px;
+}
+
+.theme-tabs .ant-tabs-tab:hover {
+  color: var(--theme-text-primary);
+}
+
+.theme-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--theme-primary);
+}
+
+.theme-tabs .ant-tabs-ink-bar {
+  background: var(--theme-primary);
+}
+
+/* ========================================
+   分页样式
+   ======================================== */
+.theme-pagination .ant-pagination-item {
+  border-color: var(--theme-border);
+}
+
+.theme-pagination .ant-pagination-item a {
+  color: var(--theme-text-secondary);
+}
+
+.theme-pagination .ant-pagination-item-active {
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.theme-pagination .ant-pagination-item-active a {
+  color: #fff;
+}
+
+.theme-pagination .ant-pagination-prev button,
+.theme-pagination .ant-pagination-next button {
+  color: var(--theme-text-secondary);
+}
+
+/* ========================================
+   标签样式
+   ======================================== */
+.theme-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.theme-tag-primary {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--theme-primary);
+  border: none;
+}
+
+.theme-tag-success {
+  background: rgba(24, 132, 44, 0.1);
+  color: var(--theme-success);
+  border: none;
+}
+
+.theme-tag-warning {
+  background: rgba(212, 168, 67, 0.1);
+  color: var(--theme-warning);
+  border: none;
+}
+
+/* ========================================
+   步骤条样式
+   ======================================== */
+.theme-steps .ant-steps-item-process .ant-steps-item-icon {
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.theme-steps .ant-steps-item-finish .ant-steps-item-icon {
+  border-color: var(--theme-primary);
+}
+
+.theme-steps .ant-steps-item-finish .ant-steps-item-icon .ant-steps-icon {
+  color: var(--theme-primary);
+}
+
+/* ========================================
+   徽标/数字样式
+   ======================================== */
+.theme-statistic .ant-statistic-title {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.theme-statistic .ant-statistic-content-value {
+  color: var(--theme-primary);
+}
+
+/* ========================================
+   面包屑样式
+   ======================================== */
+.theme-breadcrumb .ant-breadcrumb-link,
+.theme-breadcrumb .ant-breadcrumb-separator {
+  color: var(--theme-text-secondary);
+}
+
+.theme-breadcrumb a:hover {
+  color: var(--theme-primary);
+}
+
+/* ========================================
+   对话框/抽屉样式
+   ======================================== */
+.theme-modal .ant-modal-header {
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.theme-modal .ant-modal-title {
+  color: var(--theme-text-primary);
+  font-weight: 600;
+}
+
+.theme-drawer .ant-drawer-header {
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.theme-drawer .ant-drawer-title {
+  color: var(--theme-text-primary);
+  font-weight: 600;
+}
+
+/* ========================================
+   空状态样式
+   ======================================== */
+.theme-empty .ant-empty-description {
+  color: var(--theme-text-secondary);
+}
+
+/* ========================================
+   加载状态样式
+   ======================================== */
+.theme-spin .ant-spin-text {
+  color: var(--theme-text-secondary);
+}
+
+/* ========================================
+   知识树样式
+   ======================================== */
+.knowledge-tree .ant-tree-treenode {
+  padding: 6px 0;
+}
+
+.knowledge-tree .ant-tree-node-content-wrapper {
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.knowledge-tree .ant-tree-node-content-wrapper:hover {
+  background: #f0f4f8;
+}
+
+.knowledge-tree .ant-tree-switcher {
+  width: 20px;
+  height: 20px;
+}

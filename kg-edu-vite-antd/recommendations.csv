@@ -1,0 +1,4 @@
+id,task_type,course_id,message,status,extra_data,created_at,updated_at,user_id,teacher_id
+2f7588ab-ef39-4328-8b00-40023fb292c3,weak_knowledge_review,7,根据您的学习档案，我们推荐从「三色色相环」开始学习,pending,{},2026-03-10 00:00:00.000000,2026-03-10 00:00:00.000000,343a70e1-a61d-45ec-b5b8-4c070b451a96,cce2ba09-6971-44e0-8d7e-d016327a638f
+0232c05f-f619-416b-872a-76e76fe9fbcf,weak_knowledge_review,7,根据您的学习档案，我们推荐从「三色色相环」开始学习,pending,{},2026-03-10 00:00:00.000000,2026-03-10 00:00:00.000000,343a70e1-a61d-45ec-b5b8-4c070b451a96,cce2ba09-6971-44e0-8d7e-d016327a638f
+0201d452-e192-4cec-a3e4-d163df89bf3c,weak_knowledge_review,7,根据您的学习档案，我们推荐从「三色色相环」开始学习,pending,{},2026-03-10 00:00:00.000000,2026-03-10 00:00:00.000000,343a70e1-a61d-45ec-b5b8-4c070b451a96,cce2ba09-6971-44e0-8d7e-d016327a638f

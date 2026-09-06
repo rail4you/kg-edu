@@ -1,0 +1,122 @@
+.micro-majors-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 32px;
+}
+
+.micro-majors-page__header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.micro-majors-page__header h2 {
+  margin-bottom: 8px;
+}
+
+.micro-majors-page__header p {
+  font-size: 16px;
+  color: #666;
+}
+
+.micro-majors-page__loading,
+.micro-majors-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 400px;
+}
+
+.micro-majors-page__empty {
+  min-height: 400px;
+}
+
+.micro-majors-page__grid {
+  margin-top: 24px;
+}
+
+/* Micro Major Card */
+.micro-major-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.micro-major-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.micro-major-card__cover {
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+  background-color: #1890ff;
+}
+
+.micro-major-card__cover--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.micro-major-card .ant-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.micro-major-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.micro-major-card__school {
+  font-size: 12px;
+  color: #999;
+}
+
+.micro-major-card__title {
+  margin: 0 0 8px 0 !important;
+  line-height: 1.4;
+}
+
+.micro-major-card__intro {
+  color: #666;
+  font-size: 13px;
+  flex: 1;
+  margin-bottom: 12px !important;
+}
+
+.micro-major-card__meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.micro-major-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.micro-major-card__meta-item .anticon {
+  color: #999;
+}
+
+.micro-major-card__action {
+  width: 100%;
+  border-radius: 6px;
+  height: 36px;
+}

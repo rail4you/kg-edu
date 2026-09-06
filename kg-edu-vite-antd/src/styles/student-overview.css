@@ -1,0 +1,184 @@
+/* ========================================
+   学生端 - 课程概览（/dashboard/overview）
+   ======================================== */
+
+.ovw-page {
+  --ovw-radius: 14px;
+  --ovw-card-bg: #ffffff;
+  --ovw-border: 1px solid #edf3ff;
+  --ovw-text: #1f2937;
+  --ovw-muted: #6b7280;
+  --ovw-primary: #2573e6;
+  --ovw-primary-soft: rgba(37, 115, 230, 0.12);
+}
+
+/* ----- Tabs（顶部胶囊式 + 手机横滑） ----- */
+.ovw-tabs-wrapper {
+  margin: 0 0 20px;
+}
+
+.ovw-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: #f3f6fb;
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.ovw-tabs__item {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ovw-muted);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ovw-tabs__item:hover {
+  color: var(--ovw-text);
+}
+
+.ovw-tabs__item.is-active {
+  background: #ffffff;
+  color: var(--ovw-primary);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(37, 115, 230, 0.18);
+}
+
+/* ----- Hero 卡片 ----- */
+.ovw-hero {
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.ovw-hero__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* ----- 通用信息卡片 ----- */
+.ovw-page .ant-row,
+.ovw-page [class*="ant-row"] {
+  margin-bottom: 0;
+}
+
+/* ----- 文件/章节条目 ----- */
+.ovw-page .ant-descriptions {
+  background: var(--ovw-card-bg);
+  border-radius: var(--ovw-radius);
+  padding: 24px 28px;
+  border: var(--ovw-border);
+  box-shadow: 0 4px 16px rgba(0, 88, 190, 0.04);
+}
+
+.ovw-page .ant-descriptions-header {
+  margin-bottom: 18px;
+}
+
+.ovw-page .ant-descriptions-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ovw-text);
+}
+
+/* ----- 树形目录条目 ----- */
+.ovw-page .ant-tree {
+  background: var(--ovw-card-bg);
+  border-radius: var(--ovw-radius);
+  padding: 18px;
+  border: var(--ovw-border);
+}
+
+.ovw-page .ant-tree-node-content-wrapper:hover {
+  background: rgba(37, 115, 230, 0.06) !important;
+}
+
+/* ----- 移动端适配 ----- */
+@media (max-width: 640px) {
+  .ovw-page {
+    width: 100% !important;
+  }
+
+  .ovw-hero {
+    min-height: 140px !important;
+    margin-bottom: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .ovw-hero__inner {
+    padding: 16px 18px !important;
+    min-height: 140px !important;
+  }
+
+  /* Hero 内文字缩放 */
+  .ovw-hero div[style*="fontSize: 22"] {
+    font-size: 17px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.35 !important;
+  }
+
+  .ovw-hero div[style*="fontSize: 12"] {
+    font-size: 11px !important;
+  }
+
+  /* Tabs：粘性顶部 + 横滑 */
+  .ovw-tabs-wrapper {
+    position: sticky;
+    top: 76px;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    padding: 8px 0;
+    margin: 0 -8px 14px !important;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom: 1px solid #edf3ff;
+  }
+
+  .ovw-tabs {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    background: transparent;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .ovw-tabs__item {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+    scroll-snap-align: start;
+  }
+
+  /* 通用卡片紧致化 */
+  .ovw-page .ant-descriptions {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .ovw-page .ant-descriptions-title {
+    font-size: 16px !important;
+  }
+
+  .ovw-page .ant-tree {
+    padding: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  /* 章节附件列表项紧凑 */
+  .ovw-page .ant-list-item {
+    padding: 10px 12px !important;
+  }
+}

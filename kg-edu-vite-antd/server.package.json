@@ -1,0 +1,14 @@
+{
+  "name": "kg-edu-server",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ag-ui/client": "^0.0.45",
+    "@copilotkit/runtime": "^1.53.0",
+    "@earendil-works/pi-ai": "^0.75.1",
+    "@earendil-works/pi-coding-agent": "^0.75.1",
+    "ali-oss": "^6.23.0",
+    "hono": "^4.11.9",
+    "typebox": "^1.0.55"
+  }
+}

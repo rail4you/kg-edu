@@ -1,0 +1,103 @@
+node_modules/@ant-design/cssinjs-utils/lib/util/genStyleUtils.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/@rc-component/color-picker/lib/ColorPicker.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/@rc-component/color-picker/lib/components/ColorBlock.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/@rc-component/qrcode/lib/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/@rc-component/qrcode/lib/QRCodeCanvas.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/@rc-component/qrcode/lib/QRCodeSVG.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/@tanstack/query-core/build/legacy/focusManager.d.ts(6,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(9,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(115,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(156,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(205,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(266,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(427,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/hydration-BlEVG2Lp.d.ts(444,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/onlineManager.d.ts(6,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/queriesObserver.d.ts(11,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/removable.d.ts(2,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/@tanstack/query-core/build/legacy/timeoutManager.d.ts(41,5): error TS18028: Private identifiers are only available when targeting ECMAScript 2015 and higher.
+node_modules/antd/es/_util/hooks/useClosable.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/_util/hooks/useForceUpdate.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/_util/type.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/affix/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/app/App.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/app/context.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/button/button.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/button/buttonHelpers.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/checkbox/GroupContext.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/color-picker/ColorPicker.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/color-picker/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/config-provider/defaultRenderEmpty.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/descriptions/DescriptionsContext.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/flex/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/flex/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/float-button/BackTop.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/float-button/FloatButton.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/float-button/FloatButtonGroup.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/float-button/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/input/Input.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/list/context.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/list/Item.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/message/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/modal/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/modal/style/index.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/notification/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/notification/useNotification.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/qr-code/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/qr-code/interface.d.ts(14,18): error TS2320: Interface 'QRCodeProps' cannot simultaneously extend types 'QRProps' and 'HTMLAttributes<HTMLDivElement>'.
+  Named property 'style' of types 'QRProps' and 'HTMLAttributes<HTMLDivElement>' are not identical.
+node_modules/antd/es/slider/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/slider/index.d.ts(104,51): error TS2344: Type '"range"' does not satisfy the constraint 'never'.
+node_modules/antd/es/space/Addon.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/space/context.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/splitter/Panel.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/splitter/SplitBar.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/splitter/Splitter.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/tag/style/index.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/theme/context.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/tour/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/transfer/index.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/transfer/list.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/tree/Tree.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/antd/es/watermark/index.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-collapse/es/Collapse.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-dialog/lib/Dialog/Content/Panel.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-dropdown/lib/Dropdown.d.ts(3,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-field-form/es/Form.d.ts(4,59): error TS2503: Cannot find namespace 'JSX'.
+node_modules/rc-field-form/es/List.d.ts(18,81): error TS2503: Cannot find namespace 'JSX'.
+node_modules/rc-field-form/lib/Form.d.ts(4,59): error TS2503: Cannot find namespace 'JSX'.
+node_modules/rc-image/lib/Preview.d.ts(2,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-input/lib/BaseInput.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-input/lib/Input.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-input/lib/utils/commonUtils.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-mentions/lib/Mentions.d.ts(3,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-notification/lib/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-pagination/lib/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-pagination/lib/Options.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-pagination/lib/Pagination.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-rate/lib/Rate.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-rate/lib/Star.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-select/lib/BaseSelect/index.d.ts(73,29): error TS2503: Cannot find namespace 'JSX'.
+node_modules/rc-select/lib/BaseSelect/index.d.ts(75,32): error TS2503: Cannot find namespace 'JSX'.
+node_modules/rc-slider/lib/interface.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-steps/lib/Steps.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-table/lib/Table.d.ts(107,69): error TS2344: Type '<RecordType extends DefaultRecordType>(tableProps: TableProps<RecordType>, ref: Ref<Reference>) => Element' does not satisfy the constraint 'ComponentType<any>'.
+  Type '<RecordType extends DefaultRecordType>(tableProps: TableProps<RecordType>, ref: Ref<Reference>) => Element' is not assignable to type 'FunctionComponent<any>'.
+    Target signature provides too few arguments. Expected 2 or more, but got 1.
+node_modules/rc-tabs/lib/hooks/useIndicator.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-tabs/lib/interface.d.ts(2,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-textarea/lib/interface.d.ts(2,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-textarea/lib/TextArea.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-tree/lib/DropIndicator.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-tree/lib/TreeNode.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-upload/lib/AjaxUploader.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-upload/lib/Upload.d.ts(1,8): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/rc-virtual-list/lib/utils/CacheMap.d.ts(1,13): error TS1259: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+src/pages/teacher/graph-tree.tsx(15,8): error TS1192: Module '"/Users/bai/projects/kg-edu/kg-edu-vite-antd/node_modules/@types/dagre/index"' has no default export.
+src/pages/teacher/graph-tree.tsx(26,36): error TS2307: Cannot find module '@/components/KnowledgeResourcePanel' or its corresponding type declarations.
+src/pages/teacher/graph-tree.tsx(27,34): error TS2307: Cannot find module '@/lib/ash_rpc' or its corresponding type declarations.
+src/pages/teacher/graph-tree.tsx(28,25): error TS2307: Cannot find module '@/auth/auth-context' or its corresponding type declarations.
+src/pages/teacher/graph-tree.tsx(29,32): error TS2307: Cannot find module '@/lib/auth' or its corresponding type declarations.
+src/pages/teacher/graph-tree.tsx(30,34): error TS2307: Cannot find module '@/lib/tenant' or its corresponding type declarations.
+src/pages/teacher/graph-tree.tsx(31,32): error TS2307: Cannot find module '@/hooks/use-graph-course' or its corresponding type declarations.
+src/pages/teacher/graph-tree.tsx(32,28): error TS2307: Cannot find module '@/hooks/use-courses' or its corresponding type declarations.

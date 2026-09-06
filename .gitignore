@@ -7,8 +7,6 @@ ai-agent/KgAgent
 ai-agent/KgAgent
 ai-agent/KgAgent
 ai-agent/
-kg-edu-vite-antd
-kg-edu-vite-antd
 
 # Runtime files
 .dev-logs/

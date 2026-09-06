@@ -1,0 +1,45 @@
+.major-courses-page {
+  padding: 24px;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.major-courses-page .loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 0;
+}
+
+.major-courses-page .page-header {
+  margin-bottom: 24px;
+  border-radius: 8px;
+}
+
+.major-courses-page .courses-list {
+  border-radius: 8px;
+}
+
+.course-index {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e6f7ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #1890ff;
+  font-size: 12px;
+}
+
+.course-index .anticon {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.course-index span {
+  line-height: 1;
+}

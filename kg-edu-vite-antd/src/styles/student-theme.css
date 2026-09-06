@@ -1,0 +1,37 @@
+/* ========================================
+   学生端统一主题变量
+   基于 Stitch Dashboard - Refined Layout 设计系统
+   与 theme.ts 中的 JS 常量保持同步
+   ======================================== */
+
+:root {
+  /* 导航/框架 (Refined Layout 风格 - 浅色顶栏) */
+  --color-nav-bg: #FFFFFF;
+  --color-nav-hover: #F3F4F6;
+  --color-nav-text: #191C1D;
+  --color-nav-text-muted: #757780;
+
+  /* 主色调 */
+  --color-primary: #2573E6;
+  --color-primary-light: #D8E2FF;
+  --color-primary-hover: #1D5FCC;
+  --color-secondary: #6177A5;
+  --color-tertiary: #D16900;
+  --color-accent: #D16900;
+  --color-success: #10B981;
+
+  /* 背景 */
+  --color-bg: #F8F9FA;
+  --color-bg-page: #F8F9FA;
+  --color-bg-card: #FFFFFF;
+
+  /* 文字 */
+  --color-text-primary: #191C1D;
+  --color-text-secondary: #757780;
+
+  /* 边框 */
+  --color-border: #E1E3E4;
+
+  /* Footer */
+  --color-footer-bg: #191C1D;
+}

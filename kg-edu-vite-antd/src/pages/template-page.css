@@ -1,0 +1,80 @@
+/* 通用模板页样式 — 名称 + 概述 + 实际内容 */
+.template-page__title {
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.template-page__body {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+
+.template-page__overview {
+  font-size: 16px;
+  line-height: 2;
+  color: #555;
+  margin-bottom: 32px;
+  text-align: center;
+  padding: 20px 28px;
+  background: #fff;
+  border: 1px solid #e8eef7;
+  border-radius: 12px;
+}
+
+.template-page__content {
+  background: #fff;
+  border: 1px solid #e8eef7;
+  border-radius: 12px;
+  padding: 32px 36px;
+  font-size: 15px;
+  line-height: 2;
+  color: #333;
+}
+
+.template-page__content h1,
+.template-page__content h2,
+.template-page__content h3,
+.template-page__content h4 {
+  color: #1a1a2e;
+  font-weight: 600;
+  margin: 1.2em 0 0.6em;
+}
+
+.template-page__content h2 {
+  font-size: 20px;
+}
+
+.template-page__content h3 {
+  font-size: 17px;
+}
+
+.template-page__content p {
+  margin: 0.6em 0;
+}
+
+.template-page__content ul,
+.template-page__content ol {
+  padding-left: 1.6em;
+  margin: 0.6em 0;
+}
+
+.template-page__content li {
+  margin: 0.3em 0;
+}
+
+.template-page__content a {
+  color: #1677ff;
+}
+
+.template-page__content blockquote {
+  border-left: 4px solid #d9e6ff;
+  background: #f5f8ff;
+  margin: 0.8em 0;
+  padding: 0.5em 1em;
+  color: #555;
+}
+
+.template-page__empty {
+  padding: 48px 0;
+}

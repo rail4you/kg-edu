@@ -1,0 +1,13 @@
+node_modules
+src
+public
+*.ts
+!server.ts
+*.test.*
+*.spec.*
+.git
+.gitignore
+*.md
+.vscode
+.idea
+coverage

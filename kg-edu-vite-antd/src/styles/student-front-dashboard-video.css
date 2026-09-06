@@ -1,0 +1,102 @@
+/* 视频网格展示 */
+.front-dashboard-video-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+  height: 140px;
+}
+.front-dashboard-video-grid__featured {
+  position: relative;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.1);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+.front-dashboard-video-grid__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(70,135,230,0.3) 0%, rgba(10,37,86,0.6) 100%);
+}
+.front-dashboard-video-grid__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(7,18,37,0.8) 100%);
+}
+.front-dashboard-video-grid__meta {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.front-dashboard-video-grid__play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+}
+.front-dashboard-video-grid__title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.front-dashboard-video-grid__sub {
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  font-weight: 600;
+}
+.front-dashboard-video-grid__thumbs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+}
+.front-dashboard-video-grid__thumb {
+  position: relative;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.front-dashboard-video-grid__thumb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(7,18,37,0.2);
+}
+.front-dashboard-video-grid__thumb--empty {
+  background: rgba(255,255,255,0.05);
+}
+.front-dashboard-video-grid__more {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(7,18,37,0.6);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+

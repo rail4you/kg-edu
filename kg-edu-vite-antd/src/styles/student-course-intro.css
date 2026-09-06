@@ -1,0 +1,207 @@
+/* ========================================
+   学生端 - 课程概览（/dashboard/intro）移动端
+   注意：React inline 样式会转 kebab-case，
+   所以 CSS 属性选择器必须用 kebab-case 匹配。
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* ── 页面容器：Layout 已有 padding 0 8px，此处不再额外加 padding ── */
+  .ci-page {
+    width: 100% !important;
+  }
+
+  /* ── Hero 区域：7+5 网格 → 单列堆叠 ── */
+  .ci-page [style*="grid-template-columns: 7fr 5fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* ── 视频/图片容器：固定 320 → 自适应 ── */
+  .ci-page [style*="height: 320px"]:not([style*="flex-direction"]) {
+    height: auto !important;
+    aspect-ratio: 16 / 9 !important;
+    max-height: 240px !important;
+  }
+
+  /* 右侧信息列（也带 height: 320px 但有 flex-direction: column） */
+  .ci-page [style*="height: 320px"][style*="flex-direction: column"] {
+    height: auto !important;
+  }
+
+  /* Hero 标题区域 padding */
+  .ci-page [style*="padding: 28px 32px"] {
+    padding: 14px 16px !important;
+  }
+
+  /* 标题 26px → 18px */
+  .ci-page h1[style*="font-size: 26px"] {
+    font-size: 18px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Tag 紧凑 */
+  .ci-page [style*="padding: 4px 12px"][style*="border-radius: 20px"] {
+    padding: 3px 9px !important;
+    font-size: 11px !important;
+  }
+
+  /* ── Bento 12 列网格：改为 flex column，每个区域占一栏 ── */
+  .ci-page [style*="grid-template-columns: repeat(12"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .ci-page [style*="grid-column: span 4"],
+  .ci-page [style*="grid-column: span 8"] {
+    grid-column: auto !important;
+    width: 100% !important;
+  }
+
+  /* ── 内层 3 列统计网格：手机 2 列（≤480px 再 1 列） ── */
+  .ci-page [style*="grid-template-columns: repeat(3"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* 主统计数字 32px → 24px */
+  .ci-page [style*="font-size: 32px"] {
+    font-size: 24px !important;
+  }
+
+  /* 子统计数字 22px → 17px */
+  .ci-page [style*="font-size: 22px"][style*="line-height: 1.1"] {
+    font-size: 17px !important;
+  }
+
+  /* 统计卡片 padding */
+  .ci-page [style*="padding: 14px 16px"]:not([style*="background"]) {
+    padding: 10px 12px !important;
+  }
+
+  /* 大统计卡片 padding 22 → 14 */
+  .ci-page [style*="padding: 20px 22px"] {
+    padding: 14px !important;
+  }
+
+  /* 主容器 padding 24 → 14 */
+  .ci-page [style*="padding: 24px"][style*="box-shadow"] {
+    padding: 14px !important;
+  }
+
+  .ci-page [style*="padding: 20px 24px 0"] {
+    padding: 14px 14px 0 !important;
+  }
+
+  .ci-page [style*="padding: 20px 24px"] {
+    padding: 14px !important;
+  }
+
+  .ci-page [style*="padding: 8px 24px 20px"] {
+    padding: 4px 14px 14px !important;
+  }
+
+  /* 信息卡片 12px padding */
+  .ci-page [style*="padding: 12px"][style*="background: var(--front-surface"] {
+    padding: 10px !important;
+  }
+
+  /* 章节行内边距 */
+  .ci-page [style*="padding: 10px 14px"]:not([style*="flex"]):not([style*="display"]) {
+    padding: 8px 12px !important;
+  }
+
+  .ci-page [style*="padding: 7px 12px"] {
+    padding: 6px 10px !important;
+  }
+
+  /* 立即参加按钮 */
+  .ci-page button[style*="height: 44px"] {
+    height: 40px !important;
+    font-size: 14px !important;
+  }
+
+  /* 章节选项 grid 1fr 1fr 保持 2 列 */
+  .ci-page [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  /* 文本字号微调 */
+  .ci-page [style*="font-size: 13.5px"] {
+    font-size: 13px !important;
+  }
+
+  /* 教材链接内边距 */
+  .ci-page [style*="padding: 16px"][style*="background: var(--front-surface"] {
+    padding: 12px !important;
+  }
+
+  /* 缩略图宽度 */
+  .ci-page [style*="width: 140px"] {
+    width: 108px !important;
+  }
+
+  .ci-page [style*="width: 120px"] {
+    width: 96px !important;
+  }
+
+  /* Row gutter */
+  .ci-page .ant-row {
+    row-gap: 8px !important;
+  }
+
+  /* Section 间距 */
+  .ci-page section {
+    margin-bottom: 14px !important;
+  }
+
+  /* 装饰图标透明度 */
+  .ci-page [style*="opacity: 0.1"] {
+    opacity: 0.06 !important;
+  }
+
+  /* 大装饰图标 72px → 52px */
+  .ci-page [style*="font-size: 72px"] {
+    font-size: 52px !important;
+  }
+
+  /* 教材封面 72x100 → 56x80 */
+  .ci-page img[style*="width: 72px"] {
+    width: 56px !important;
+    height: 80px !important;
+  }
+
+  .ci-page div[style*="width: 72px"][style*="height: 100px"] {
+    width: 56px !important;
+    height: 80px !important;
+  }
+
+  /* 图标 32x32 → 26x26 */
+  .ci-page div[style*="width: 32px"][style*="height: 32px"] {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  /* ── 媒体 thumbnail 列表宽度 ── */
+  .ci-page [style*="width: 140"][style*="aspect-ratio"] {
+    width: 110px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 极窄屏：所有统计 1 列 */
+  .ci-page [style*="grid-template-columns: repeat(3"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ci-page [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 视频容器再缩 */
+  .ci-page [style*="height: 320px"]:not([style*="flex-direction"]) {
+    max-height: 200px !important;
+  }
+}
