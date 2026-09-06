@@ -194,6 +194,10 @@ body[data-theme="light"] {
 .home-hero::before {
   content: "";
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background:
     radial-gradient(circle at 16% 18%, rgba(143, 214, 255, 0.36) 0%, transparent 24%),
@@ -479,6 +483,10 @@ body[data-theme="light"] {
 .portal-course-card__cover::after {
   content: "";
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background: linear-gradient(
     180deg,
@@ -513,6 +521,10 @@ body[data-theme="light"] {
 
 .portal-course-card__cover-fallback {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   display: flex;
   align-items: center;
@@ -1154,12 +1166,20 @@ body[data-theme="light"] {
 .home-course-card__cover::after {
   content: "";
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background: linear-gradient(180deg, rgba(14, 45, 95, 0.06) 0%, rgba(14, 57, 121, 0.54) 100%);
 }
 
 .home-course-card__cover-icon {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   display: flex;
   align-items: center;
@@ -1879,6 +1899,10 @@ body[data-theme="light"] {
 /* ===== Mobile: Full-Screen Menu (代替 Drawer) ===== */
 .mobile-full-menu {
   position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 1200;
   background: rgba(5, 12, 24, 0.6);
@@ -2228,6 +2252,10 @@ body[data-theme="light"] {
 .home-hero-section::before {
   content: "";
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background:
     radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 30%),
@@ -3874,6 +3902,10 @@ body[data-theme="light"] {
 .xyedu-hero::before {
   content: "";
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background: var(--hero-overlay, none);
   z-index: 0;

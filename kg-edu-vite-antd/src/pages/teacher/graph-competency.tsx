@@ -3318,7 +3318,7 @@ export default function TeacherGraphCompetencyView() {
       {/* 右键菜单 */}
       {ctxMenuVisible && ctxMenuNode && (
         <>
-          <div style={{ position: "fixed", inset: 0, zIndex: 999 }} onClick={() => setCtxMenuVisible(false)} />
+          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, inset: 0, zIndex: 999 }} onClick={() => setCtxMenuVisible(false)} />
           <div
             style={{
               position: "fixed", left: ctxMenuPos.x, top: ctxMenuPos.y, zIndex: 1000,
@@ -3346,7 +3346,7 @@ export default function TeacherGraphCompetencyView() {
       {isMobile && mobilePopoverOpen && mobilePopoverNode && (
         <>
           <div
-            style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.3)" }}
+            style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, inset: 0, zIndex: 999, background: "rgba(0,0,0,0.3)" }}
             onClick={() => setMobilePopoverOpen(false)}
           />
           <div

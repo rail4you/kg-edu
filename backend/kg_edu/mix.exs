@@ -51,7 +51,7 @@ defmodule KgEdu.MixProject do
       {:picosat_elixir, "~> 0.2"},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:open_api_spex, "~> 3.0"},
-      {:tidewave, "~> 0.2", only: [:dev]},
+      # NOTE: tidewave removed (2026-09) — dev toolbar breaks Chrome<=86; see endpoint.ex
       {:ash_admin, "~> 0.13"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},

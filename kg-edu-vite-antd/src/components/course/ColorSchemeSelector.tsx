@@ -349,6 +349,10 @@ export default function ColorSchemeSelector({
                 <div
                   style={{
                     position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
                     inset: 0,
                     backgroundImage: courseData?.imageUrl
                       ? selectedScheme === "pure"
@@ -364,6 +368,10 @@ export default function ColorSchemeSelector({
                 <div
                   style={{
                     position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
                     inset: 0,
                     padding: 16,
                     display: "flex",

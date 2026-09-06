@@ -327,6 +327,10 @@ export default function LoginPage() {
                 <div
                   style={{
                     position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
                     inset: 0,
                     background: "linear-gradient(180deg, rgba(12,32,61,0.1) 0%, rgba(12,32,61,0.6) 100%)",
                     display: "flex",
@@ -465,6 +469,10 @@ export default function LoginPage() {
                 <div
                   style={{
                     position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
                     inset: 0,
                     background: "linear-gradient(180deg, rgba(12,32,61,0.08) 0%, rgba(12,32,61,0.62) 100%)",
                     display: "flex",

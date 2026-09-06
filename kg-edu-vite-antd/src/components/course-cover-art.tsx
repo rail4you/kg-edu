@@ -54,7 +54,7 @@ export default function CourseCoverArt({ seed, title, subtitle }: CourseCoverArt
   const flip = variant % 2 === 1;
 
   return (
-    <div aria-hidden={!title} style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+    <div aria-hidden={!title} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, inset: 0, overflow: "hidden" }}>
       <svg
         viewBox="0 0 300 170"
         width="100%"

@@ -26,9 +26,9 @@ defmodule KgEduWeb.Endpoint do
     gzip: not code_reloading?,
     only: KgEduWeb.static_paths()
 
-  if Code.ensure_loaded?(Tidewave) do
-    plug Tidewave
-  end
+  # NOTE: Tidewave dev toolbar removed (2026-09) — its injected toolbar uses
+  # Tailwind v4 + color-mix that Chrome<=86 cannot parse, breaking old-kernel
+  # browsers (unstyled buttons, oversized logo). Kept out intentionally.
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

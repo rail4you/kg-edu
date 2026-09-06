@@ -352,7 +352,7 @@ export function AIChatButton({ variant }: { variant?: "default" | "inline" | "fa
           <div
             style={{
               position: "fixed", top: 0, right: 0,
-              width: 420, maxWidth: "100vw", height: "100dvh",
+              width: 420, maxWidth: "100vw", height: "100vh",
               background: "#fff", boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
               zIndex: 10001, display: "flex", flexDirection: "column", overflow: "hidden",
             }}

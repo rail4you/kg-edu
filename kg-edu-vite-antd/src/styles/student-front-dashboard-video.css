@@ -16,6 +16,10 @@
 }
 .front-dashboard-video-grid__placeholder {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   display: flex;
   align-items: center;
@@ -24,6 +28,10 @@
 }
 .front-dashboard-video-grid__scrim {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background: linear-gradient(180deg, transparent 40%, rgba(7,18,37,0.8) 100%);
 }
@@ -83,6 +91,10 @@
 .front-dashboard-video-grid__thumb::before {
   content: '';
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background: rgba(7,18,37,0.2);
 }

@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
-import tidewave from 'tidewave/vite-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,7 +11,7 @@ const PORT = 8081;
 
 export default defineConfig({
   plugins: [
-    tidewave(), react(),
+    react(),
     legacy({
       // 兼容 Chrome 95 内核（常见政企/教育信创浏览器），同时覆盖 Safari 14 / Edge 95 / Firefox 95
       targets: ["chrome >= 95", "edge >= 95", "firefox >= 95", "safari >= 14", "ios >= 14"],

@@ -1,4 +1,4 @@
-defmodule KgEdu.Repo.Migrations.AddCode do
+defmodule KgEdu.Repo.Migrations.AddCourseEnrollmentsMemberId do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 

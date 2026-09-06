@@ -69,3 +69,34 @@ canvas {
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
+
+/* ===== Chrome <=86：`inset` 系列不被识别，antd 遮罩/弹窗整体错位 =====
+ * antd 的 .ant-modal-mask / .ant-modal-wrap、.ant-drawer / .ant-drawer-mask
+ * 全部只用 `position + inset: 0` 定位。Chrome 86 直接丢弃 inset 声明，
+ * 导致遮罩塌陷、弹窗被排到文档流末尾（视口之外）——表现为"点击弹窗类
+ * 功能毫无反应、控制台无任何报错"（课程相册全景即此症状）。
+ * cssinjs 只声明了 inset，从不声明四边，因此这里的显式四边定位在任何
+ * 浏览器下都与 inset:0 等价，不存在优先级/覆盖冲突，现代浏览器无感知。
+ */
+.ant-modal-mask,
+.ant-modal-wrap,
+.ant-drawer:not(.ant-drawer-inline),
+.ant-drawer-mask,
+.ant-spin-fullscreen {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+/* 上下方向 Drawer 的 content-wrapper 用了 inset-inline:0（87+ 才支持），同样兜底 */
+.ant-drawer-top > .ant-drawer-content-wrapper,
+.ant-drawer-bottom > .ant-drawer-content-wrapper {
+  left: 0;
+  right: 0;
+}
+
+/* 相册卡片媒体层：项目自身用的 inset:0 同理补齐（width/height 本就 100%，纯兜底） */
+.front-dashboard-album-card__media {
+  top: 0;
+  left: 0;
+}

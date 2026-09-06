@@ -1613,7 +1613,7 @@ export default function Page() {
               </div>
             )}
             <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-              <div key={activeView} style={{ position: "absolute", inset: 0 }}>
+              <div key={activeView} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, inset: 0 }}>
                 {renderKnowledgeContent()}
               </div>
             </div>
