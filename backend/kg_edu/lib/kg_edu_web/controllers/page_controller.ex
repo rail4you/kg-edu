@@ -355,7 +355,22 @@ defmodule KgEduWeb.PageController do
         end)
 
       levels ->
-        Enum.sort_by(levels, & &1.sort_order)
+        # 回填：老库只有旧层级时，补上新增的默认层级（按 level_key 判重，已有不动）
+        existing_keys = MapSet.new(levels, & &1.level_key)
+
+        backfilled =
+          Enum.flat_map(@default_levels, fn attrs ->
+            if MapSet.member?(existing_keys, attrs.level_key) do
+              []
+            else
+              case KgEdu.SystemConfig.PortalLevel.save(attrs) do
+                {:ok, level} -> [level]
+                _ -> []
+              end
+            end
+          end)
+
+        Enum.sort_by(levels ++ backfilled, & &1.sort_order)
     end
   end
 
@@ -370,7 +385,27 @@ defmodule KgEduWeb.PageController do
         end)
 
       pages ->
-        Enum.sort_by(pages, & &1.sort_order)
+        # 回填：老库在新增默认页（如合作单位/partners）之前就已建表时，
+        # 按 slug 判重补上缺失页（追加到末尾，已有页面的排序不动），保证新页面自动上线
+        existing_slugs = MapSet.new(pages, & &1.slug)
+        max_order = pages |> Enum.map(&(&1.sort_order || 0)) |> Enum.max(fn -> -1 end)
+
+        {backfilled, _} =
+          Enum.map_reduce(@default_pages, max_order, fn attrs, order ->
+            if MapSet.member?(existing_slugs, attrs.slug) do
+              {nil, order}
+            else
+              case KgEdu.SystemConfig.TemplatePage.create_page(%{
+                     attrs
+                     | sort_order: order + 1
+                   }) do
+                {:ok, page} -> {page, order + 1}
+                _ -> {nil, order}
+              end
+            end
+          end)
+
+        Enum.sort_by(pages ++ Enum.reject(backfilled, &is_nil/1), & &1.sort_order)
     end
   end
 

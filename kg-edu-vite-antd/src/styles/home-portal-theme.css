@@ -111,20 +111,24 @@ body[data-theme="light"] {
 .home-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  /* 三件套：8 个导航整体单行不换行，长 Tab（如合作单位）不再被挤到第二行 */
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .home-nav__button {
   height: 42px;
-  padding: 0 18px;
+  padding: 0 14px;
   border-radius: 21px;
   background: transparent;
   border: 1px solid transparent;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .home-nav__button:hover,
@@ -676,6 +680,14 @@ body[data-theme="light"] {
   font-weight: 800 !important;
   line-height: 1.35 !important;
   letter-spacing: 0.01em;
+  /* 三道防线：标题单行不换行 — 块级单元 + nowrap + 不被挤压 */
+  display: block !important;
+  min-width: 0;
+  flex-shrink: 0;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal;
 }
 
 /* 学校 | 教师行 — 深色高对比 */
@@ -710,9 +722,20 @@ body[data-theme="light"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* flex 子项允许收缩，否则长文本会把整行撑开、挤出卡片 */
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.portal-course-card__school-name {
+  /* 学校名优先保住，至多占一半宽度，超出截断 */
+  flex: 0 1 auto;
+  max-width: 46%;
 }
 
 .portal-course-card__school-teacher {
+  /* 教师名占据剩余空间，超出截断，不抢学校名位置 */
+  flex: 1 1 auto;
   color: #4b5563;
 }
 
@@ -724,14 +747,24 @@ body[data-theme="light"] {
   padding: 8px 14px 8px 12px !important;
   color: #5b626c !important;
   font-size: 13px !important;
-  /* 整数行高 + 纯 CSS 强制两行：不依赖 antd JS 测量，杜绝第三行漏出半截 */
   line-height: 20px !important;
+  /* 硬裁剪盒：border-box 56px = padding 16px + 2 行正文 40px；
+     即使内部截断失效，超出部分也绝不漏出盒外 */
+  box-sizing: border-box;
   min-height: 56px;
   max-height: 56px;
   overflow: hidden;
-  display: -webkit-box !important;
-  -webkit-line-clamp: 2 !important;
-  -webkit-box-orient: vertical !important;
+}
+
+/* 真正的两行截断层：必须是普通块级子盒（不能是 flex item，
+   否则 display:-webkit-box 会被块化失效） */
+.portal-course-card__description-inner {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .portal-course-card__subject-line {
@@ -776,7 +809,9 @@ body[data-theme="light"] {
   color: #1677ff;
   font-size: 13px;
   font-weight: 700;
+  /* 图标+文字三件套：整体一个单元、内部不换行、不被挤压 */
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .portal-course-card__progress .anticon {
@@ -794,6 +829,8 @@ body[data-theme="light"] {
   color: #9aa3b2;
   font-size: 13px;
   white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .portal-course-card__learners .anticon {
@@ -3832,7 +3869,9 @@ body[data-theme="light"] {
 }
 
 .nqc-card {
-  display: flex; flex-direction: column;
+  /* 普通块级堆叠：标题的 display:-webkit-box 两行截断才能生效
+    （flex 容器的直接子项会被块化，-webkit-line-clamp 失效漏出第三行） */
+  display: block;
   border: none; padding: 0; background: transparent;
   border-radius: 12px; overflow: hidden;
   box-shadow: 0 4px 12px rgba(22, 76, 156, 0.08);
@@ -3878,14 +3917,23 @@ body[data-theme="light"] {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
+  /* 2 行封顶：12px * 1.3 * 2 ≈ 31px，超出部分绝不漏出 */
+  max-height: 32px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .nqc-card__title {
   padding: 10px 10px 4px;
+  box-sizing: border-box;
   font-size: 14px; font-weight: 700; color: var(--home-text);
   line-height: 1.35;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
+  /* 2 行封顶：14px * 1.35 * 2 ≈ 37.8px，padding 计入盒内，总高度恒定不塌陷 */
   min-height: 38px;
+  max-height: 38px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .nqc-card__org, .nqc-card__teacher {
   padding: 0 10px; font-size: 11px; color: #8a96ad;

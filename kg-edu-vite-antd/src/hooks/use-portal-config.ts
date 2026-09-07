@@ -12,7 +12,7 @@ export const FIXED_NAV_ITEMS = [
   { key: "/micro-majors", label: "微专业" },
 ];
 
-export const MAX_NAV_ITEMS = 6;
+export const MAX_NAV_ITEMS = 8;
 
 export interface NavItem {
   key: string;
@@ -28,7 +28,7 @@ export function usePortalConfig() {
   });
 }
 
-/** 首页导航：固定 2 项（课程/微专业）+ 动态模板页（按 sort_order，只含启用项，总数上限 6，多出不显示） */
+/** 首页导航：固定 2 项（课程/微专业）+ 动态模板页（按 sort_order，只含启用项，总数上限 8，保证合作单位等默认页全部展示） */
 export function usePortalNavItems(): NavItem[] {
   const { data } = usePortalConfig();
   const pages = data?.pages ?? [];

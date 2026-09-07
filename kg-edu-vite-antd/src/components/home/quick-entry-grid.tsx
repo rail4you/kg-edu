@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Grid } from "antd";
 import {
   AppstoreOutlined,
-  TeamOutlined,
   ApartmentOutlined,
 } from "@ant-design/icons";
 import { usePortalNavItems } from "@/hooks/use-portal-config";
@@ -21,8 +20,9 @@ const NAV_ICON_SRC: Record<string, string> = {
   "/page/demo": "/icons/home/demo_package.svg",
   "/page/textbook": "/icons/home/digital_textbook.svg",
   "/page/about": "/icons/home/about_us.svg",
-  "/page/partners": "/icons/home/about_us.svg",
-  "/page/partners-college": "/icons/home/about_us.svg",
+  "/page/partners": "/icons/home/partners.svg",
+  "/page/partners-college": "/icons/home/partners.svg",
+  "/partners": "/icons/home/partners.svg",
 };
 
 function EntryImg({ src, label }: { src: string; label: string }) {
@@ -36,7 +36,7 @@ function getEntryIcon(key: string, label: string): React.ReactNode {
   if (NAV_ICON_SRC[key]) return <EntryImg src={NAV_ICON_SRC[key]} label={label} />;
   // 动态模板页按 slug 匹配
   if (key.includes("about")) return <EntryImg src="/icons/home/about_us.svg" label={label} />;
-  if (key.includes("partner")) return <TeamOutlined />;
+  if (key.includes("partner")) return <EntryImg src="/icons/home/partners.svg" label={label} />;
   if (key.includes("resource")) return <EntryImg src="/icons/home/resource_library.svg" label={label} />;
   if (key.includes("textbook")) return <EntryImg src="/icons/home/digital_textbook.svg" label={label} />;
   if (key.includes("demo")) return <EntryImg src="/icons/home/demo_package.svg" label={label} />;
@@ -53,7 +53,7 @@ export default function QuickEntryGrid() {
     return null;
   }
 
-  // 一行 4 个，多出换行：全部入口都显示（2 固定 + 动态模板页，hook 侧总数上限 6）
+  // 一行 4 个，多出换行：全部入口都显示（2 固定 + 动态模板页，hook 侧总数上限 8）
   const entries = navItems;
 
   return (

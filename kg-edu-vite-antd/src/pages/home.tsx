@@ -27,7 +27,7 @@ import { setCurrentTenant } from "@/lib/tenant";
 import "@/styles/home-portal-theme.css";
 
 const { Header, Content } = Layout;
-const { Paragraph, Text, Title } = Typography;
+const { Text, Title } = Typography;
 
 /** 品牌 Logo + 标题（使用动态配置） */
 function HomeBrandSection() {
@@ -90,11 +90,11 @@ function CourseCard({
         )}
       </div>
 
-      {/* Body — 参考智慧慕课：标题 / 学校|教师 / 简介 / 进行中|人数 */}
+      {/* Body — 参考智慧慕课：标题 / 学校|教师 / 简介 / 进行中|人数
+          纯 CSS 截断（home-portal-theme.css），不使用 antd ellipsis JS 测量，
+          避免 JS 与 -webkit-line-clamp 打架导致第三行漏出 */}
       <div className="portal-course-card__body">
-        <Text className="portal-course-card__title" ellipsis>
-          {course.title}
-        </Text>
+        <Text className="portal-course-card__title">{course.title}</Text>
 
         <div className="portal-course-card__school">
           <BankOutlined />
@@ -103,11 +103,13 @@ function CourseCard({
           <span className="portal-course-card__school-teacher">教师：{course.teacherName}</span>
         </div>
 
-        <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
-          {course.description && course.description !== course.title
-            ? course.description
-            : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
-        </Paragraph>
+        <div className="portal-course-card__description">
+          <span className="portal-course-card__description-inner">
+            {course.description && course.description !== course.title
+              ? course.description
+              : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
+          </span>
+        </div>
 
         <div className="portal-course-card__footer">
           <span
