@@ -3,7 +3,11 @@
  * 1. 所有 flex:1 的容器在旧 flexbox 中默认为 min-height:auto，会导致内部 height:100% 的
  *    ECharts/canvas 被挤为 0 高。强制 min-height:0 使其可收缩。
  * 2. Modal 遮罩的 backdrop-filter 需 -webkit- 前缀（已在 JS 中补，这里补 CSS 兜底）
- * 3. inset:0 在 JS 中已补 top/right/bottom/left，这里补 CSS 文件中的 inset 兼容
+ * 3. 【重要】永远不要写 `inset` 简写（含 top/right/bottom/left 四边同规则）：
+ *    生产构建的 esbuild 会把单规则四边合并成 `inset`，而 Chrome<=86 直接丢弃整条
+ *    `inset` 声明（静默失效、无报错）。正确写法是拆成两个同选择器规则：
+ *    一个放 top+left，另一个放 right+bottom（双属性无法合并，压缩后存活）。
+ *    tsx 行内样式不受影响（运行时样式，不经过 CSS 压缩），可保留 inset。
  */
 
 /* 布局根容器 — 保证 flex 子项可收缩 */
@@ -84,9 +88,15 @@ canvas {
 .ant-drawer-mask,
 .ant-spin-fullscreen {
   top: 0;
+  left: 0;
+}
+.ant-modal-mask,
+.ant-modal-wrap,
+.ant-drawer:not(.ant-drawer-inline),
+.ant-drawer-mask,
+.ant-spin-fullscreen {
   right: 0;
   bottom: 0;
-  left: 0;
 }
 /* 上下方向 Drawer 的 content-wrapper 用了 inset-inline:0（87+ 才支持），同样兜底 */
 .ant-drawer-top > .ant-drawer-content-wrapper,
@@ -99,4 +109,28 @@ canvas {
 .front-dashboard-album-card__media {
   top: 0;
   left: 0;
+}
+.front-dashboard-album-card__media {
+  right: 0;
+  bottom: 0;
+}
+
+/* 第三方 react-image-crop：源码是四边写法，构建压缩后同样变成 inset（见文件头注释 3），
+ * 图片裁剪遮罩在 86 下会错位。这里用拆分写法覆盖（与库规则同优先级，靠后出生效；
+ * 在 86 下库规则的 inset 被丢弃，本覆盖即实际定位；现代浏览器两者几何等价）。 */
+.ReactCrop__crop-mask {
+  top: 0;
+  left: 0;
+}
+.ReactCrop__crop-mask {
+  right: 0;
+  bottom: 0;
+}
+.ReactCrop--circular-crop .ReactCrop__crop-selection:after {
+  top: -1px;
+  left: -1px;
+}
+.ReactCrop--circular-crop .ReactCrop__crop-selection:after {
+  right: -1px;
+  bottom: -1px;
 }

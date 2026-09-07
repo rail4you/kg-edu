@@ -63,14 +63,15 @@
 .module-home-backdrop {
   position: absolute;
   top: 0;
-  right: 0;
-  bottom: 0;
   left: 0;
-  inset: 0;
   pointer-events: none;
-  background:
+    background:
     linear-gradient(90deg, rgba(232, 239, 249, 0.9) 0%, rgba(255, 255, 255, 0) 24%, rgba(255, 255, 255, 0) 76%, rgba(239, 232, 219, 0.86) 100%),
     linear-gradient(135deg, rgba(31, 95, 191, 0.06) 0%, rgba(255, 255, 255, 0) 42%, rgba(122, 74, 18, 0.06) 100%);
+}
+.module-home-backdrop {
+  right: 0;
+  bottom: 0;
 }
 
 .module-home-side-panel {
@@ -95,11 +96,12 @@
   content: "";
   position: absolute;
   top: 0;
+  left: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.06) 0%, rgba(15, 23, 42, 0.64) 100%);
+}
+.module-home-side-panel::after {
   right: 0;
   bottom: 0;
-  left: 0;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.06) 0%, rgba(15, 23, 42, 0.64) 100%);
 }
 
 .module-home-side-copy {
@@ -243,12 +245,13 @@
   content: "";
   position: absolute;
   top: 0;
-  right: 0;
-  bottom: auto;
   left: 0;
-  inset: 0 0 auto;
   height: 4px;
   background: linear-gradient(90deg, var(--module-accent), var(--module-dark));
+}
+.module-home-card::before {
+  right: 0;
+  bottom: auto;
 }
 
 .module-home-card::after {
