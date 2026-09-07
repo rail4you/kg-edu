@@ -1,5 +1,5 @@
 import { Empty, Skeleton, Tag, Typography } from "antd";
-import { BookOutlined, RightOutlined } from "@ant-design/icons";
+import { BankOutlined, BarChartOutlined, BookOutlined, EyeOutlined, RightOutlined } from "@ant-design/icons";
 import type { CatalogCourse, SubjectStat } from "@/hooks/use-course-catalog";
 
 const { Text, Title } = Typography;
@@ -101,14 +101,26 @@ export default function SubjectCourseSection({
                   </div>
                 </div>
                 <div className="portal-course-card__body">
-                  <Text className="portal-course-card__org" ellipsis>
-                    {course.orgName}
+                  <Text className="portal-course-card__title" ellipsis>
+                    {course.title}
                   </Text>
-                  <Text className="portal-course-card__teacher" ellipsis>
-                    {course.teacherName}
-                  </Text>
-                  <div className="portal-course-card__meta">
-                    <Text className="portal-course-card__count">{course.enrolledCount ?? course.browseCount ?? 0} 人学习</Text>
+                  <div className="portal-course-card__school">
+                    <BankOutlined />
+                    <span className="portal-course-card__school-name">{course.orgName}</span>
+                    <span className="portal-course-card__school-divider">|</span>
+                    <span className="portal-course-card__school-teacher">教师：{course.teacherName}</span>
+                  </div>
+                  <div className="portal-course-card__footer">
+                    <span
+                      className={`portal-course-card__progress ${course.isEnrolled ? "portal-course-card__progress--enrolled" : ""}`}
+                    >
+                      <BarChartOutlined />
+                      {course.isEnrolled ? "学习中" : "进行中"}
+                    </span>
+                    <span className="portal-course-card__learners">
+                      <EyeOutlined />
+                      {course.enrolledCount ?? course.browseCount ?? 0}人学习
+                    </span>
                   </div>
                 </div>
               </button>

@@ -14,6 +14,9 @@ import {
 } from "antd";
 import {
   AppstoreOutlined,
+  BankOutlined,
+  BarChartOutlined,
+  EyeOutlined,
   FireOutlined,
   MenuOutlined,
   SearchOutlined,
@@ -29,7 +32,7 @@ import { usePortalNavItems, useLevelTitleMap } from "@/hooks/use-portal-config";
 import { useCourseCategories } from "@/hooks/use-course-categories";
 import { themeColors } from "@/styles/theme";
 import { setCurrentTenant } from "@/lib/tenant";
-import CourseCoverArt, { TeacherInitial } from "@/components/course-cover-art";
+import CourseCoverArt from "@/components/course-cover-art";
 import "@/styles/home-portal-theme.css";
 
 const { Header, Content } = Layout;
@@ -64,6 +67,7 @@ function CourseCard({
   onClick: (course: CatalogCourse) => void;
 }) {
   const isPlaceholder = !course.imageUrl;
+  const studyCount = course.enrolledCount ?? course.browseCount ?? 0;
 
   return (
     <button
@@ -71,7 +75,7 @@ function CourseCard({
       className={`portal-course-card ${course.isEnrolled ? "is-enrolled" : "is-open"}`}
       onClick={() => onClick(course)}
     >
-      {/* Cover — 有图用图片，无图用生成式学术插画封面 */}
+      {/* Cover — 内嵌圆角封面，有图用图片，无图用生成式学术插画封面 */}
       <div
         className={`portal-course-card__cover ${isPlaceholder ? "is-art" : ""}`}
         style={
@@ -103,17 +107,17 @@ function CourseCard({
         )}
       </div>
 
-      {/* Body — compact meta */}
+      {/* Body — 参考智慧慕课：标题 / 学校|教师 / 简介 / 进行中|人数 */}
       <div className="portal-course-card__body">
-        <div className="portal-course-card__meta-top">
-          <Text className="portal-course-card__org" ellipsis>
-            {course.orgName}
-          </Text>
-          <Tag
-            className={`portal-course-card__status ${course.isEnrolled ? "portal-course-card__status--enrolled" : "portal-course-card__status--open"}`}
-          >
-            {course.isEnrolled ? "已选课" : "可选课"}
-          </Tag>
+        <Text className="portal-course-card__title" ellipsis>
+          {course.title}
+        </Text>
+
+        <div className="portal-course-card__school">
+          <BankOutlined />
+          <span className="portal-course-card__school-name">{course.orgName}</span>
+          <span className="portal-course-card__school-divider">|</span>
+          <span className="portal-course-card__school-teacher">教师：{course.teacherName}</span>
         </div>
 
         <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
@@ -121,13 +125,16 @@ function CourseCard({
         </Paragraph>
 
         <div className="portal-course-card__footer">
-          <div className="portal-course-card__teacher">
-            <TeacherInitial name={course.teacherName} avatar={course.teacherAvatar} />
-            <Text ellipsis>{course.teacherName}</Text>
-          </div>
-          <div className="portal-course-card__footer-right">
-            <Text className="portal-course-card__count">{course.enrolledCount ?? course.browseCount ?? 0} 人学习</Text>
-          </div>
+          <span
+            className={`portal-course-card__progress ${course.isEnrolled ? "portal-course-card__progress--enrolled" : ""}`}
+          >
+            <BarChartOutlined />
+            {course.isEnrolled ? "学习中" : "进行中"}
+          </span>
+          <span className="portal-course-card__learners">
+            <EyeOutlined />
+            {studyCount}人学习
+          </span>
         </div>
       </div>
     </button>

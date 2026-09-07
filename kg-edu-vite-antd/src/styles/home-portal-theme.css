@@ -35,7 +35,11 @@ body[data-theme="light"] {
 }
 
 .home-page {
-  background: var(--home-page-bg);
+  /* 极淡的顶部渐变：若隐若现的一点蓝光 + 白光，主体仍是页面底色 */
+  background:
+    radial-gradient(1000px 300px at 50% -100px, rgba(56, 130, 246, 0.08), rgba(56, 130, 246, 0) 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 280px),
+    var(--home-page-bg);
 }
 
 /* 门户页：让页面至少撑满屏幕高度，使课程列表 0-2 门课程或无课程时，底部蓝色 footer 不露出 */
@@ -349,8 +353,8 @@ body[data-theme="light"] {
 }
 
 .home-showcase {
-  /* 顶部留白：与两栏之间形成空白带，推荐卡片需滚动可见 */
-  padding: 80px 24px 72px;
+  /* 顶部与两栏之间只留窄间距 */
+  padding: 24px 24px 72px;
   position: relative;
   z-index: 1;
 }
@@ -363,11 +367,12 @@ body[data-theme="light"] {
 }
 
 .home-course-panel {
-  border-radius: 28px;
-  padding: 24px;
-  background: linear-gradient(180deg, rgba(240, 247, 255, 0.96) 0%, #ffffff 100%);
-  border: 1px solid rgba(214, 228, 255, 0.92);
-  box-shadow: var(--home-shadow);
+  border-radius: 0;
+  padding: 8px 0;
+  /* 去掉盒子边框与背景，页面底色直接作为容器背景（参考 Stitch 原型） */
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .home-course-panel__header {
@@ -382,47 +387,38 @@ body[data-theme="light"] {
 .home-course-panel__title-wrap {
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-
-.home-course-panel__icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(33, 119, 255, 0.14) 0%, rgba(61, 170, 255, 0.2) 100%);
-  color: var(--home-primary);
-  font-size: 18px;
+  gap: 12px;
 }
 
 .home-course-panel__title {
   margin: 0 !important;
   color: var(--home-text) !important;
-  font-size: 16px !important;
+  font-size: 24px !important;
   font-weight: 800 !important;
   letter-spacing: 0.02em;
 }
 
 .home-course-panel__more {
-  height: 38px;
-  padding: 0 16px;
+  height: auto;
+  padding: 4px 2px;
   border: none;
-  border-radius: 999px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: #edf5ff;
-  color: var(--home-primary-deep);
-  font-weight: 700;
+  gap: 6px;
+  color: var(--home-text-muted);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .home-course-panel__more:hover {
-  background: #dfeeff;
-  transform: translateY(-1px);
+  background: transparent;
+  color: var(--home-primary);
+  transform: none;
 }
 
 .portal-course-grid {
@@ -431,16 +427,16 @@ body[data-theme="light"] {
   gap: 14px;
 }
 
-/* ===== Portal Course Card — Professional Redesign ===== */
+/* ===== Portal Course Card — Xueyin-style white frame + outline ===== */
 
 .portal-course-card {
-  padding: 0;
+  padding: 10px;
   text-align: left;
-  border: 1px solid #e4e1d8;
-  border-radius: 14px;
+  border: 1.5px solid #e2e7f0;
+  border-radius: 18px;
   overflow: hidden;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(23, 26, 33, 0.04);
+  box-shadow: 0 2px 10px rgba(16, 24, 40, 0.05);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   display: flex;
@@ -448,18 +444,18 @@ body[data-theme="light"] {
 }
 
 .portal-course-card.is-enrolled {
-  border-color: #bfd4f5;
-  box-shadow: 0 1px 2px rgba(29, 78, 216, 0.06);
+  border-color: #bcd0f5;
+  box-shadow: 0 2px 10px rgba(29, 78, 216, 0.08);
 }
 
 .portal-course-card.is-open {
-  border-color: #e4e1d8;
+  border-color: #e2e7f0;
 }
 
 .portal-course-card:hover {
-  transform: translateY(-3px);
-  border-color: #d8d3c4;
-  box-shadow: 0 12px 24px rgba(23, 26, 33, 0.10), 0 1px 2px rgba(23, 26, 33, 0.04);
+  transform: translateY(-4px);
+  border-color: #b9cdf3;
+  box-shadow: 0 16px 32px rgba(23, 42, 90, 0.14), 0 2px 6px rgba(23, 26, 33, 0.06);
 }
 
 .portal-course-card--loading {
@@ -470,7 +466,7 @@ body[data-theme="light"] {
   transform: none;
 }
 
-/* Cover — 16:9 插画/图片区（参考 course-card-grid 风格） */
+/* Cover — 内嵌圆角封面（白色外框内 16:9，参考智慧慕课卡片） */
 .portal-course-card__cover {
   position: relative;
   width: 100%;
@@ -479,6 +475,9 @@ body[data-theme="light"] {
   background-size: cover;
   background-position: center;
   overflow: hidden;
+  border-radius: 12px;
+  outline: 1px solid rgba(16, 24, 40, 0.06);
+  outline-offset: -1px;
 }
 
 .portal-course-card__cover::after {
@@ -537,16 +536,16 @@ body[data-theme="light"] {
   bottom: 0;
 }
 
-/* --- Cover Badges --- */
+/* --- Cover Badges — 右上金色标签（参考「国家一流课程」） --- */
 .portal-course-card__cover-badges {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
+  top: 8px;
+  left: 8px;
+  right: 8px;
   z-index: 3;
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 6px;
 }
 
@@ -567,9 +566,10 @@ body[data-theme="light"] {
 }
 
 .portal-course-card__cover-badge--subject {
-  background: rgba(255, 255, 255, 0.88);
-  color: #0f46a0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  background: rgba(239, 246, 255, 0.92);
+  color: #2b6de8;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(30, 80, 180, 0.14);
 }
 
 .portal-course-card__cover-badge--enrolled {
@@ -608,14 +608,15 @@ body[data-theme="light"] {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.36);
 }
 
-/* --- Card Body (compact, ~1/3 of card) --- */
+/* --- Card Body — 智慧慕课式：标题 + 学校|教师 + 简介 + 状态/人数 --- */
 .portal-course-card__body {
   flex: 1;
-  padding: 10px 14px 12px;
+  padding: 12px 6px 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   min-height: 60px;
+  background: #ffffff;
 }
 
 .portal-course-card__meta-top {
@@ -669,17 +670,56 @@ body[data-theme="light"] {
 
 .portal-course-card__title {
   margin-bottom: 0 !important;
-  color: #16254b !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  line-height: 1.36 !important;
+  color: #111827 !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0.01em;
+}
+
+/* 学校 | 教师行 */
+.portal-course-card__school {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #4b5563;
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-course-card__school .anticon {
+  color: #9aa3b2;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.portal-course-card__school-divider {
+  color: #d1d5db;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.portal-course-card__school-name,
+.portal-course-card__school-teacher {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-course-card__school-teacher {
+  color: #4b5563;
 }
 
 .portal-course-card__description {
   margin-bottom: 0 !important;
-  color: #97a8c2 !important;
-  font-size: 12px !important;
-  line-height: 1.5 !important;
+  color: #8a919e !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  min-height: 40px;
 }
 
 .portal-course-card__subject-line {
@@ -706,12 +746,45 @@ body[data-theme="light"] {
 }
 
 .portal-course-card__footer {
-  padding-top: 8px;
-  border-top: 1px solid #f0f4fa;
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid #f1f4f8;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+/* 左：进行中（蓝色信号图标），右：人数（眼睛图标） */
+.portal-course-card__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #1677ff;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.portal-course-card__progress .anticon {
+  font-size: 14px;
+}
+
+.portal-course-card__progress--enrolled {
+  color: #0ea05a;
+}
+
+.portal-course-card__learners {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9aa3b2;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.portal-course-card__learners .anticon {
+  font-size: 14px;
 }
 
 .portal-course-card__footer-right {
@@ -774,6 +847,8 @@ body[data-theme="light"] {
   width: 100% !important;
   height: 0 !important;
   padding-top: 56.25% !important;
+  border-radius: 12px !important;
+  overflow: hidden;
 }
 /* ===== Course List Page ===== */
 
@@ -3342,12 +3417,13 @@ body[data-theme="light"] {
    Subject Course Section - 按学科分组的课程区块
    ============================================ */
 .portal-subject-section {
-  margin-bottom: 28px;
-  padding: 22px 24px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(243, 248, 255, 0.6) 0%, #ffffff 100%);
-  border: 1px solid var(--home-border);
-  box-shadow: 0 6px 20px rgba(22, 76, 156, 0.05);
+  margin-bottom: 8px;
+  padding: 4px 0;
+  border-radius: 0;
+  /* 去掉盒子边框与背景，页面底色直接作为容器背景（参考 Stitch 原型） */
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .portal-subject-section__header {

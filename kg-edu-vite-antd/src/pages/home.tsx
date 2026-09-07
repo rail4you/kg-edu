@@ -1,15 +1,12 @@
-import { type ReactNode, useMemo } from "react";
-import { Button, Empty, Grid, Layout, Skeleton, Tag, Typography } from "antd";
+import { useMemo } from "react";
+import { Button, Empty, Grid, Layout, Skeleton, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import {
-  BookOutlined,
-  ApartmentOutlined,
-  FireOutlined,
+  BankOutlined,
+  BarChartOutlined,
+  EyeOutlined,
   RightOutlined,
-  RocketOutlined,
   SearchOutlined,
-  StarOutlined,
-  TrophyOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -20,7 +17,7 @@ import MobilePromoBanner from "@/components/home/mobile-promo-banner";
 import MobileCourseSections from "@/components/home/national-quality-section";
 import QuickEntryGrid from "@/components/home/quick-entry-grid";
 import SubjectCategoryPanels from "@/components/home/subject-category-panels";
-import CourseCoverArt, { TeacherInitial } from "@/components/course-cover-art";
+import CourseCoverArt from "@/components/course-cover-art";
 import { useCourseCatalog, type CatalogCourse } from "@/hooks/use-course-catalog";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useBranding } from "@/hooks/use-branding";
@@ -31,17 +28,6 @@ import "@/styles/home-portal-theme.css";
 
 const { Header, Content } = Layout;
 const { Paragraph, Text, Title } = Typography;
-
-/** 课程类别模块图标（按 slug 映射，未匹配用默认） */
-function categorySectionIcon(slug: string): ReactNode {
-  const icons: Record<string, ReactNode> = {
-    recommended: <FireOutlined />,
-    newest: <BookOutlined />,
-    excellent: <TrophyOutlined />,
-    popular: <StarOutlined />,
-  };
-  return icons[slug] ?? <FireOutlined />;
-}
 
 /** 品牌 Logo + 标题（使用动态配置） */
 function HomeBrandSection() {
@@ -62,6 +48,7 @@ function CourseCard({
   onClick: (course: CatalogCourse) => void;
 }) {
   const isPlaceholder = !course.imageUrl;
+  const studyCount = course.enrolledCount ?? course.browseCount ?? 0;
 
   return (
     <button
@@ -69,7 +56,7 @@ function CourseCard({
       className={`portal-course-card ${course.isEnrolled ? "is-enrolled" : "is-open"}`}
       onClick={() => onClick(course)}
     >
-      {/* Cover — 有图用图片，无图用生成式学术插画封面 */}
+      {/* Cover — 内嵌圆角封面，有图用图片，无图用生成式学术插画封面 */}
       <div
         className={`portal-course-card__cover ${isPlaceholder ? "is-art" : ""}`}
         style={
@@ -86,7 +73,7 @@ function CourseCard({
           />
         )}
 
-        {/* Top badge row：只保留学科标签，已选课状态由正文状态标签统一表达 */}
+        {/* 右上金色学科标签（参考智慧慕课「国家一流课程」） */}
         <div className="portal-course-card__cover-badges">
           <span className="portal-course-card__cover-badge portal-course-card__cover-badge--subject">
             {course.standardSubject.name}
@@ -103,17 +90,17 @@ function CourseCard({
         )}
       </div>
 
-      {/* Body — compact meta info */}
+      {/* Body — 参考智慧慕课：标题 / 学校|教师 / 简介 / 进行中|人数 */}
       <div className="portal-course-card__body">
-        <div className="portal-course-card__meta-top">
-          <Text className="portal-course-card__org" ellipsis>
-            {course.orgName}
-          </Text>
-          <Tag
-            className={`portal-course-card__status ${course.isEnrolled ? "portal-course-card__status--enrolled" : "portal-course-card__status--open"}`}
-          >
-            {course.isEnrolled ? "已选课" : "可选课"}
-          </Tag>
+        <Text className="portal-course-card__title" ellipsis>
+          {course.title}
+        </Text>
+
+        <div className="portal-course-card__school">
+          <BankOutlined />
+          <span className="portal-course-card__school-name">{course.orgName}</span>
+          <span className="portal-course-card__school-divider">|</span>
+          <span className="portal-course-card__school-teacher">教师：{course.teacherName}</span>
         </div>
 
         <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
@@ -121,13 +108,16 @@ function CourseCard({
         </Paragraph>
 
         <div className="portal-course-card__footer">
-          <div className="portal-course-card__teacher">
-            <TeacherInitial name={course.teacherName} avatar={course.teacherAvatar} />
-            <Text ellipsis>{course.teacherName}</Text>
-          </div>
-          <div className="portal-course-card__footer-right">
-            <Text className="portal-course-card__count">{course.enrolledCount ?? course.browseCount ?? 0} 人学习</Text>
-          </div>
+          <span
+            className={`portal-course-card__progress ${course.isEnrolled ? "portal-course-card__progress--enrolled" : ""}`}
+          >
+            <BarChartOutlined />
+            {course.isEnrolled ? "学习中" : "进行中"}
+          </span>
+          <span className="portal-course-card__learners">
+            <EyeOutlined />
+            {studyCount}人学习
+          </span>
         </div>
       </div>
     </button>
@@ -136,14 +126,12 @@ function CourseCard({
 
 function CourseSection({
   title,
-  icon,
   courses,
   isLoading,
   onMore,
   onCourseClick,
 }: {
   title: string;
-  icon: ReactNode;
   courses: CatalogCourse[];
   isLoading: boolean;
   onMore: () => void;
@@ -153,7 +141,6 @@ function CourseSection({
     <section className="home-course-panel">
       <div className="home-course-panel__header">
         <div className="home-course-panel__title-wrap">
-          <span className="home-course-panel__icon">{icon}</span>
           <Title level={4} className="home-course-panel__title">
             {title}
           </Title>
@@ -360,7 +347,6 @@ export default function HomePage() {
                   <CourseSection
                     key={section.category.id}
                     title={section.category.name}
-                    icon={categorySectionIcon(section.category.slug)}
                     courses={section.courses.slice(0, 5)}
                     isLoading={isLoading}
                     onMore={() => navigate(`/courses?tab=${section.category.id}`)}
