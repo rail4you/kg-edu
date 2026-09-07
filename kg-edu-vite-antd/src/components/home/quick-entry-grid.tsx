@@ -8,7 +8,7 @@ import {
 import { usePortalNavItems } from "@/hooks/use-portal-config";
 
 /**
- * 首页 6 个快速入口（学银在线风格 3×2 网格）
+ * 首页快速入口（参考站风格：一行 4 个，超出换行，动态全显示）
  * - 桌面端专属（< 1024px 隐藏）
  * - hover 上浮 + 阴影
  * - 嵌入 .xyedu-portal-main__left 容器内
@@ -53,8 +53,8 @@ export default function QuickEntryGrid() {
     return null;
   }
 
-  // 快捷导航与顶部智慧导航一致：2 固定 + 4 动态 = 6 上限
-  const entries = navItems.slice(0, 6);
+  // 一行 4 个，多出换行：全部入口都显示（2 固定 + 动态模板页，hook 侧总数上限 6）
+  const entries = navItems;
 
   return (
     <section className="xyedu-quick-entry">

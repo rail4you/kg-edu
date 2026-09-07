@@ -353,17 +353,17 @@ body[data-theme="light"] {
 }
 
 .home-showcase {
-  /* 顶部与两栏之间只留窄间距 */
-  padding: 24px 24px 72px;
+  /* 两侧留白走 shell margin，与两栏区对齐 */
+  padding: 24px 0 72px;
   position: relative;
   z-index: 1;
 }
 
 .home-showcase__shell {
-  max-width: 1600px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0 180px;
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
 .home-course-panel {
@@ -423,8 +423,9 @@ body[data-theme="light"] {
 
 .portal-course-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
+  /* 参考站比例：每行 4 张大卡 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
 }
 
 /* ===== Portal Course Card — Xueyin-style white frame + outline ===== */
@@ -553,10 +554,10 @@ body[data-theme="light"] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 24px;
-  padding: 0 9px;
+  height: 26px;
+  padding: 0 11px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -611,10 +612,10 @@ body[data-theme="light"] {
 /* --- Card Body — 智慧慕课式：标题 + 学校|教师 + 简介 + 状态/人数 --- */
 .portal-course-card__body {
   flex: 1;
-  padding: 12px 6px 6px;
+  padding: 14px 8px 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   min-height: 60px;
   background: #ffffff;
 }
@@ -671,20 +672,21 @@ body[data-theme="light"] {
 .portal-course-card__title {
   margin-bottom: 0 !important;
   color: #111827 !important;
-  font-size: 19px !important;
+  font-size: 21px !important;
   font-weight: 800 !important;
   line-height: 1.35 !important;
   letter-spacing: 0.01em;
 }
 
-/* 学校 | 教师行 */
+/* 学校 | 教师行 — 深色高对比 */
 .portal-course-card__school {
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
-  color: #4b5563;
-  font-size: 12.5px;
+  color: #33393f;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
@@ -692,8 +694,8 @@ body[data-theme="light"] {
 }
 
 .portal-course-card__school .anticon {
-  color: #9aa3b2;
-  font-size: 13px;
+  color: #8a94a0;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
@@ -716,10 +718,20 @@ body[data-theme="light"] {
 
 .portal-course-card__description {
   margin-bottom: 0 !important;
-  color: #8a919e !important;
-  font-size: 12.5px !important;
-  line-height: 1.6 !important;
-  min-height: 40px;
+  /* 参考截图：简介放在浅灰蓝底框里，文字加深保证对比度 */
+  background: #f2f4f8;
+  border-radius: 8px;
+  padding: 8px 14px 8px 12px !important;
+  color: #5b626c !important;
+  font-size: 13px !important;
+  /* 整数行高 + 纯 CSS 强制两行：不依赖 antd JS 测量，杜绝第三行漏出半截 */
+  line-height: 20px !important;
+  min-height: 56px;
+  max-height: 56px;
+  overflow: hidden;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
 }
 
 .portal-course-card__subject-line {
@@ -746,9 +758,10 @@ body[data-theme="light"] {
 }
 
 .portal-course-card__footer {
-  padding-top: 10px;
-  margin-top: 2px;
-  border-top: 1px solid #f1f4f8;
+  /* 参考截图：底部无分隔线，直接贴着简介底框 */
+  padding-top: 2px;
+  margin-top: 0;
+  border-top: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -761,7 +774,7 @@ body[data-theme="light"] {
   align-items: center;
   gap: 5px;
   color: #1677ff;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -779,7 +792,7 @@ body[data-theme="light"] {
   align-items: center;
   gap: 5px;
   color: #9aa3b2;
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -3490,8 +3503,8 @@ body[data-theme="light"] {
 
 .portal-subject-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
 }
 
 /* legacy rules — kept as aliases for backward compatibility */
@@ -3903,7 +3916,7 @@ body[data-theme="light"] {
 
 /* =====================================================
  * 首页沉浸式 Hero（学银在线风格）
- * hero 覆盖顶栏，首屏高度到快捷导航+专业栏目，推荐课程需滚动可见
+ * hero 覆盖顶栏，固定 420px 横幅高度
  * ===================================================== */
 .home-immersive .home-header {
   position: absolute;
@@ -3922,28 +3935,33 @@ body[data-theme="light"] {
 }
 
 .home-immersive .xyedu-hero {
-  flex: 1;
-  padding: 110px 48px 50px;
-  /* hero 高度只留固定余量：快捷导航完整露出 + 下方一段空白，推荐卡片藏在首屏外 */
-  min-height: 0;
-  min-height: max(480px, calc(100vh - 390px));
+  flex: none;
+  padding: 110px 48px 56px;
+  /* 高横幅：首屏只装 hero + 两栏，推荐课程沉到首屏外 */
+  min-height: 600px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .home-immersive .xyedu-hero__slide {
-  min-height: 280px;
+  min-height: 240px;
+  gap: 26px;
 }
 
 .home-immersive .xyedu-hero__title {
-  font-size: clamp(48px, 6vw, 84px);
-  letter-spacing: 0.06em;
+  font-size: clamp(38px, 4.5vw, 60px);
+  letter-spacing: 0.04em;
+}
+
+/* 去掉 AI 课程等顶部标签 pill */
+.home-immersive .xyedu-hero__accent {
+  display: none;
 }
 
 .home-immersive .xyedu-hero__indicators {
   position: absolute;
-  bottom: 24px;
+  bottom: 20px;
   left: 0;
   right: 0;
   margin-top: 0;
@@ -3976,11 +3994,9 @@ body[data-theme="light"] {
 .xyedu-hero {
   position: relative;
   overflow: hidden;
-  padding: 104px 48px 72px;
-  /* 加高 hero：首屏到快捷导航 + 专业栏目为止，推荐课程需滚动可见
-   * 高度跟视口联动（页头 76 + 两栏约 314，留 30px 余量），矮屏保底 480px */
-  min-height: 480px;
-  min-height: max(480px, calc(100vh - 360px));
+  padding: 72px 48px 60px;
+  /* 参考站式横幅高度：固定 420px */
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4013,7 +4029,7 @@ body[data-theme="light"] {
 .xyedu-hero__shell {
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
   text-align: center;
@@ -4025,7 +4041,7 @@ body[data-theme="light"] {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  min-height: 280px;
+  min-height: 220px;
   animation: xyedu-hero-fade 0.6s ease;
 }
 
@@ -4052,7 +4068,7 @@ body[data-theme="light"] {
 
 .xyedu-hero__title {
   margin: 0;
-  font-size: 52px;
+  font-size: 44px;
   font-weight: 800;
   line-height: 1.2;
   color: #ffffff;
@@ -4102,37 +4118,39 @@ body[data-theme="light"] {
 
 /* =====================================================
  * 学银在线 主体左右两栏布局
- * 左：6 个快速入口（3×2 网格）
+ * 左：4 个快速入口（一行 4 列）
  * 右：4 个学科分类面板（2×2 网格）
  * ===================================================== */
 .xyedu-portal-main {
   position: relative;
-  padding: 24px 24px 8px;
+  padding: 32px 0 8px;
   background: transparent;
 }
 
 .xyedu-portal-main__shell {
-  max-width: 1600px;
-  margin: 0 auto;
+  /* 两侧空白走 shell 的 margin：任意屏幕宽度下都精确等于 180px */
+  max-width: none;
+  margin: 0 180px;
   display: grid;
-  grid-template-columns: minmax(0, 680px) minmax(0, 1fr);
+  /* 左 40% / 右 60% */
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
   gap: 24px;
-  /* 左右等高拉伸，保证两栏的第 1/2 行图标在同一水平线上 */
+  /* 参考截图：外壳压平透明，左右为独立白卡，页面底色直接做容器背景 */
   align-items: stretch;
-  background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(22, 77, 160, 0.08);
-  border: 1px solid rgba(22, 119, 255, 0.06);
-  padding: 26px 28px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .xyedu-portal-main__left {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
-  /* 顶部内边距清零，与右侧面板顶端对齐（图标顶对齐基准一致） */
-  padding: 0 8px 0 0;
+  /* 参考截图：快捷导航独立白卡，淡边框 */
+  background: #ffffff;
+  border: 1px solid #e4e9f1;
+  box-shadow: 0 6px 24px rgba(30, 64, 120, 0.06);
+  border-radius: 16px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   /* Chrome95 兼容：避免 height:100% 在 grid stretch 下解析为 auto 导致内部网格高度塌陷 */
@@ -4150,21 +4168,21 @@ body[data-theme="light"] {
 }
 
 .xyedu-portal-main__left-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1677FF 0%, #2FA8FF 100%);
   color: #ffffff;
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
 .xyedu-portal-main__left-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   color: #16386f;
   letter-spacing: 0.02em;
@@ -4173,14 +4191,14 @@ body[data-theme="light"] {
 .xyedu-portal-main__right {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  /* 与左侧快捷导航行高一致：等分两行 + 相同的行间距，保证两栏图标水平对齐 */
+  /* 两行等分，保证左右两栏等高对应；纵向间距收小 */
   grid-template-rows: 1fr 1fr;
-  gap: 10px 16px;
+  gap: 10px 20px;
   height: 100%;
 }
 
 /* =====================================================
- * 学银在线 6 个快速入口（3×2 网格）
+ * 参考站 4 个快速入口（一行 4 列）
  * ===================================================== */
 .xyedu-quick-entry {
   position: relative;
@@ -4194,26 +4212,26 @@ body[data-theme="light"] {
 
 .xyedu-quick-entry__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 1fr 1fr;
-  gap: 10px;
+  /* 一行 4 个，超出自动换行，动态入口全部显示 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
   flex: 1;
-  /* Chrome95 兼容：移除 height:100% 避免在 flex 列中高度计算异常，改用 min-height 保证 3x2 网格完整显示 */
+  /* Chrome95 兼容：移除 height:100% 避免在 flex 列中高度计算异常，改用 min-height 保证网格完整显示 */
   height: auto;
-  min-height: 230px;
+  min-height: 200px;
   align-content: stretch;
 }
 
 /* Chrome95 兼容：为不支持 gap 的极旧内核提供 margin 回退（95 已支持 gap，此为双保险） */
-@supports not (gap: 10px) {
+@supports not (gap: 6px) {
   .xyedu-quick-entry__grid {
     display: flex;
     flex-wrap: wrap;
-    margin: -5px;
+    margin: -3px;
   }
   .xyedu-quick-entry__card {
-    width: calc(33.333% - 10px);
-    margin: 5px;
+    width: calc(25% - 6px);
+    margin: 3px;
   }
 }
 
@@ -4223,8 +4241,8 @@ body[data-theme="light"] {
   align-items: center;
   /* 图标顶对齐：与右侧面板标题图标（面板顶部内边距 6px）保持同一水平线 */
   justify-content: flex-start;
-  gap: 10px;
-  padding: 6px 8px 10px;
+  gap: 4px;
+  padding: 0 2px 2px;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -4254,7 +4272,7 @@ body[data-theme="light"] {
   align-items: center;
   justify-content: center;
   color: var(--entry-color, #2f7cf6);
-  font-size: 40px;
+  font-size: 48px;
   box-shadow: none;
   background: transparent;
   transition: transform 0.25s ease;
@@ -4262,10 +4280,10 @@ body[data-theme="light"] {
   z-index: 1;
 }
 
-/* 设计稿图标（快捷导航：无背景前景图，比专业层级图标大一号） */
+/* 设计稿图标（快捷导航：无背景前景图，参考站大图标比例） */
 .xyedu-quick-entry__img {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
   display: block;
   user-select: none;
@@ -4286,7 +4304,7 @@ body[data-theme="light"] {
   font-size: 15px;
   font-weight: 700;
   color: #16386f;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4303,15 +4321,16 @@ body[data-theme="light"] {
  * ===================================================== */
 .xyedu-subject-panel {
   position: relative;
-  padding: 6px 8px;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  border: none;
+  padding: 10px 14px;
+  border-radius: 16px;
+  /* 参考截图：每个学科栏目独立白卡，同款淡边框 */
+  background: #ffffff;
+  border: 1px solid #e4e9f1;
+  box-shadow: 0 6px 24px rgba(30, 64, 120, 0.06);
   transition: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -4356,15 +4375,15 @@ body[data-theme="light"] {
   justify-content: center;
   color: var(--accent-color, #2f7cf6);
   background: transparent;
-  font-size: 22px;
+  font-size: 28px;
   flex-shrink: 0;
 }
 
-/* 设计稿图标（专业层级：带圆角背景，比快捷导航小一号） */
+/* 设计稿图标（专业层级：带圆角背景，与快捷导航同级大小） */
 .xyedu-subject-panel__img {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   object-fit: contain;
   display: block;
   user-select: none;
@@ -4377,7 +4396,7 @@ body[data-theme="light"] {
 
 .xyedu-subject-panel__title {
   margin: 0;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 800;
   color: #16386f;
   letter-spacing: 0.02em;
@@ -4411,7 +4430,7 @@ body[data-theme="light"] {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   color: #4a5e80;
   font-weight: 500;
   padding: 2px 0;

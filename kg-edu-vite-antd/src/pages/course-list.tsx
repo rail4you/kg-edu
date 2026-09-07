@@ -121,7 +121,9 @@ function CourseCard({
         </div>
 
         <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
-          {course.description || "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
+          {course.description && course.description !== course.title
+            ? course.description
+            : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
         </Paragraph>
 
         <div className="portal-course-card__footer">

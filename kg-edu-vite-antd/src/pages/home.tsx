@@ -104,7 +104,9 @@ function CourseCard({
         </div>
 
         <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
-          {course.description || "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
+          {course.description && course.description !== course.title
+            ? course.description
+            : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
         </Paragraph>
 
         <div className="portal-course-card__footer">
@@ -154,7 +156,7 @@ function CourseSection({
 
       {isLoading ? (
         <div className="portal-course-grid">
-          {Array.from({ length: 5 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="portal-course-card portal-course-card--loading">
               <Skeleton.Image active className="portal-course-card__skeleton-cover" />
               <div style={{ padding: 16 }}>
@@ -347,7 +349,7 @@ export default function HomePage() {
                   <CourseSection
                     key={section.category.id}
                     title={section.category.name}
-                    courses={section.courses.slice(0, 5)}
+                    courses={section.courses.slice(0, 4)}
                     isLoading={isLoading}
                     onMore={() => navigate(`/courses?tab=${section.category.id}`)}
                     onCourseClick={handleCourseClick}
