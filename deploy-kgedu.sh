@@ -28,6 +28,8 @@ SUPERADMIN_ID="${SUPERADMIN_ID:-superadmin}"
 SUPERADMIN_PASS="${SUPERADMIN_PASS:-Admin@123456}"
 SKIP_DB="${SKIP_DB:-0}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
+# 是否显式传入品牌参数（显式传入才覆盖远端品牌配置，否则保留远端已有值）
+BRAND_EXPLICIT=0
 
 # ── 参数解析 ────────────────────────────────────────────────────
 if [ $# -lt 2 ]; then
@@ -57,13 +59,13 @@ REMOTE_DIR="/home/$USER/kg_edu"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --name)        BRAND_NAME="$2";       shift 2 ;;
-    --title)       BRAND_TITLE="$2";      shift 2 ;;
-    --desc)        BRAND_DESC="$2";       shift 2 ;;
-    --logo-dark)   BRAND_LOGO_DARK="$2";  shift 2 ;;
-    --logo-light)  BRAND_LOGO_LIGHT="$2"; shift 2 ;;
-    --favicon)     BRAND_FAVICON="$2";    shift 2 ;;
-    --email)       BRAND_EMAIL="$2";      shift 2 ;;
+    --name)        BRAND_NAME="$2";       BRAND_EXPLICIT=1; shift 2 ;;
+    --title)       BRAND_TITLE="$2";      BRAND_EXPLICIT=1; shift 2 ;;
+    --desc)        BRAND_DESC="$2";       BRAND_EXPLICIT=1; shift 2 ;;
+    --logo-dark)   BRAND_LOGO_DARK="$2";  BRAND_EXPLICIT=1; shift 2 ;;
+    --logo-light)  BRAND_LOGO_LIGHT="$2"; BRAND_EXPLICIT=1; shift 2 ;;
+    --favicon)     BRAND_FAVICON="$2";    BRAND_EXPLICIT=1; shift 2 ;;
+    --email)       BRAND_EMAIL="$2";      BRAND_EXPLICIT=1; shift 2 ;;
     --skip-build)  SKIP_BUILD=1;          shift ;;
     --skip-db)     SKIP_DB=1;             shift ;;
     --admin-id)    SUPERADMIN_ID="$2";    shift 2 ;;
@@ -174,9 +176,34 @@ ok "远程环境就绪"
 step "Step 4/8: 同步部署文件..."
 ssh -o StrictHostKeyChecking=no "$REMOTE" "mkdir -p '$REMOTE_DIR/nginx/conf.d'"
 
-# 生成环境变量文件
-TMP_ENV=$(mktemp)
-cat > "$TMP_ENV" << ENVEOF
+# 生成环境变量文件（合并式：保留远端已有 .env，只回填缺失项）
+# 原因：整文件覆盖会轮换 SECRET_KEY_BASE（踢掉所有登录态），且旧模板的
+# 短密钥（<64 字节）会导致 session 中间件 500。此处只增不改，并修复短密钥。
+gen_secret() {
+  if command -v openssl &>/dev/null; then
+    openssl rand -base64 48
+  else
+    head -c 48 /dev/urandom | base64 | tr -d '\n'
+  fi
+}
+NEW_SECRET_KEY_BASE="$(gen_secret)"
+NEW_TOKEN_SIGNING_SECRET="$(gen_secret)"
+NEW_REACT_TOKEN_SECRET="$(gen_secret)"
+
+ssh -o StrictHostKeyChecking=no "$REMOTE" \
+  BRAND_NAME="$BRAND_NAME" BRAND_TITLE="$BRAND_TITLE" BRAND_DESC="$BRAND_DESC" \
+  BRAND_LOGO_DARK="$BRAND_LOGO_DARK" BRAND_LOGO_LIGHT="$BRAND_LOGO_LIGHT" \
+  BRAND_FAVICON="$BRAND_FAVICON" BRAND_EMAIL="$BRAND_EMAIL" \
+  BRAND_EXPLICIT="$BRAND_EXPLICIT" \
+  NEW_SECRET_KEY_BASE="$NEW_SECRET_KEY_BASE" \
+  NEW_TOKEN_SIGNING_SECRET="$NEW_TOKEN_SIGNING_SECRET" \
+  NEW_REACT_TOKEN_SECRET="$NEW_REACT_TOKEN_SECRET" \
+  REMOTE_DIR="$REMOTE_DIR" bash -s << 'ENV_EOF'
+set -e
+ENV_FILE="$REMOTE_DIR/.env"
+
+write_full_env() {
+  cat > "$ENV_FILE" << EOF
 # KgEdu 品牌配置 - 运行时可通过环境变量修改
 BRANDING_APP_NAME=$BRAND_NAME
 BRANDING_APP_TITLE=$BRAND_TITLE
@@ -185,15 +212,65 @@ BRANDING_LOGO_DARK=$BRAND_LOGO_DARK
 BRANDING_LOGO_LIGHT=$BRAND_LOGO_LIGHT
 BRANDING_FAVICON=$BRAND_FAVICON
 BRANDING_CONTACT_EMAIL=$BRAND_EMAIL
-SECRET_KEY_BASE=kgedu-prod-secret-key-base-change-in-production-$(date +%s)
-TOKEN_SIGNING_SECRET=kgedu-prod-token-secret-$(date +%s)
-REACT_TOKEN_SECRET=kgedu-react-token-secret-change-in-prod
+SECRET_KEY_BASE=$NEW_SECRET_KEY_BASE
+TOKEN_SIGNING_SECRET=$NEW_TOKEN_SIGNING_SECRET
+REACT_TOKEN_SECRET=$NEW_REACT_TOKEN_SECRET
 OPENAI_API_KEY=
 QWEN_API_KEY=
 DASHSCOPE_API_KEY=
-ENVEOF
-scp "$TMP_ENV" "$REMOTE:$REMOTE_DIR/.env" >/dev/null
-rm -f "$TMP_ENV"
+EOF
+}
+
+if [ ! -f "$ENV_FILE" ]; then
+  write_full_env
+  echo "  新建 .env（含 64 字节随机密钥）"
+else
+  cp "$ENV_FILE" "$ENV_FILE.bak-$(date +%Y%m%d%H%M%S)"
+  # 回填缺失项：已有值一律保留
+  for kv in \
+    "BRANDING_APP_NAME=$BRAND_NAME" \
+    "BRANDING_APP_TITLE=$BRAND_TITLE" \
+    "BRANDING_APP_DESCRIPTION=$BRAND_DESC" \
+    "BRANDING_LOGO_DARK=$BRAND_LOGO_DARK" \
+    "BRANDING_LOGO_LIGHT=$BRAND_LOGO_LIGHT" \
+    "BRANDING_FAVICON=$BRAND_FAVICON" \
+    "BRANDING_CONTACT_EMAIL=$BRAND_EMAIL" \
+    "SECRET_KEY_BASE=$NEW_SECRET_KEY_BASE" \
+    "TOKEN_SIGNING_SECRET=$NEW_TOKEN_SIGNING_SECRET" \
+    "REACT_TOKEN_SECRET=$NEW_REACT_TOKEN_SECRET" \
+    "OPENAI_API_KEY=" \
+    "QWEN_API_KEY=" \
+    "DASHSCOPE_API_KEY="; do
+    key="${kv%%=*}"
+    grep -q "^${key}=" "$ENV_FILE" || echo "$kv" >> "$ENV_FILE"
+  done
+  # 显式传入品牌参数时才覆盖远端品牌配置
+  if [ "$BRAND_EXPLICIT" = "1" ]; then
+    for kv in \
+      "BRANDING_APP_NAME=$BRAND_NAME" \
+      "BRANDING_APP_TITLE=$BRAND_TITLE" \
+      "BRANDING_APP_DESCRIPTION=$BRAND_DESC" \
+      "BRANDING_LOGO_DARK=$BRAND_LOGO_DARK" \
+      "BRANDING_LOGO_LIGHT=$BRAND_LOGO_LIGHT" \
+      "BRANDING_FAVICON=$BRAND_FAVICON" \
+      "BRANDING_CONTACT_EMAIL=$BRAND_EMAIL"; do
+      key="${kv%%=*}"
+      grep -v "^${key}=" "$ENV_FILE" > "$ENV_FILE.tmp" && echo "$kv" >> "$ENV_FILE.tmp"
+      mv "$ENV_FILE.tmp" "$ENV_FILE"
+    done
+    echo "  品牌配置已按本次参数更新"
+  fi
+  # 修复历史短密钥：SECRET_KEY_BASE <64 字节会导致 session 500
+  SECRET_LEN=$(awk -F= '$1=="SECRET_KEY_BASE"{print length($2)}' "$ENV_FILE")
+  if [ "${SECRET_LEN:-0}" -lt 64 ]; then
+    grep -v '^SECRET_KEY_BASE=' "$ENV_FILE" > "$ENV_FILE.tmp" \
+      && echo "SECRET_KEY_BASE=$NEW_SECRET_KEY_BASE" >> "$ENV_FILE.tmp"
+    mv "$ENV_FILE.tmp" "$ENV_FILE"
+    echo "  历史短密钥已更换为 64 字节（已有登录态会失效一次）"
+  fi
+  echo "  .env 已合并（保留已有值，仅回填缺失项）"
+fi
+ENV_EOF
 
 scp "$PROJECT_ROOT/docker-compose.prod.yml" "$REMOTE:$REMOTE_DIR/docker-compose.yml" >/dev/null
 scp "$PROJECT_ROOT/nginx/nginx.conf" "$REMOTE:$REMOTE_DIR/nginx/nginx.conf" >/dev/null
