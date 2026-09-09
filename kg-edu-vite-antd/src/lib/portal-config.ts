@@ -19,6 +19,7 @@ export interface TemplatePage {
   content: string;
   sortOrder: number;
   enabled: boolean;
+  icon: string;
 }
 
 export interface PortalConfig {
@@ -117,6 +118,7 @@ export async function savePortalPages(
             content: p.content,
             sort_order: p.sortOrder,
             enabled: p.enabled,
+            icon: p.icon || "",
           })),
         },
       }),
@@ -148,5 +150,6 @@ function parsePage(raw: any): TemplatePage {
     content: raw.content || "",
     sortOrder: raw.sort_order ?? 0,
     enabled: raw.enabled !== false,
+    icon: raw.icon || "",
   };
 }

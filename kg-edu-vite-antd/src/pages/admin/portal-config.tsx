@@ -16,6 +16,7 @@ import {
   ArrowDownOutlined,
   ArrowUpOutlined,
   DeleteOutlined,
+  LinkOutlined,
   PlusOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
@@ -28,6 +29,10 @@ import {
   type PortalLevel,
   type TemplatePage,
 } from "@/lib/portal-config";
+import {
+  QUICK_NAV_ICON_OPTIONS,
+  normalizeQuickNavIcon,
+} from "@/components/home/quick-nav-icons";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -126,6 +131,7 @@ export default function PortalConfigPage() {
         content: "",
         sortOrder: prev.length,
         enabled: true,
+        icon: "",
       },
     ]);
   };
@@ -165,9 +171,28 @@ export default function PortalConfigPage() {
       message.error("模板页名称不能为空");
       return;
     }
+    // 快捷导航上限：固定 2 项 + 启用模板页最多 6 项（与首页 MAX_NAV_ITEMS = 8 对应）
+    const enabledCount = pages.filter((p) => p.enabled).length;
+    if (enabledCount > 6) {
+      message.error(`启用的模板页为 ${enabledCount} 项，首页快捷导航最多展示 6 项，请先隐藏多余页面再保存`);
+      return;
+    }
+    // 图标必须从内置图标中选择（不允许留空走自动匹配）
+    const missingIconIndex = pages.findIndex((p) => !normalizeQuickNavIcon(p.icon));
+    if (missingIconIndex >= 0) {
+      message.error(
+        `第 ${missingIconIndex + 1} 项「${pages[missingIconIndex].name || "未命名"}」尚未选择快捷导航图标，请从内置图标中选择`
+      );
+      return;
+    }
     const slugSet = new Set<string>();
-    for (const p of pages) {
-      const slug = slugify(p.slug) || p.slug;
+    for (let i = 0; i < pages.length; i++) {
+      const p = pages[i];
+      const slug = slugify(p.slug);
+      if (!slug) {
+        message.error(`第 ${i + 1} 项「${p.name || "未命名"}」尚未填写网页标识符，请输入英文或拼音`);
+        return;
+      }
       if (slugSet.has(slug)) {
         message.error(`访问标识「${slug}」重复，请修改后再保存`);
         return;
@@ -176,7 +201,12 @@ export default function PortalConfigPage() {
     }
     setSavingPages(true);
     const result = await savePortalPages(
-      pages.map((p, i) => ({ ...p, name: p.name.trim(), sortOrder: i })),
+      pages.map((p, i) => ({
+        ...p,
+        name: p.name.trim(),
+        icon: normalizeQuickNavIcon(p.icon),
+        sortOrder: i,
+      })),
       headers
     );
     setSavingPages(false);
@@ -255,8 +285,8 @@ export default function PortalConfigPage() {
               模板页管理
             </Title>
             <Text type="secondary">
-              首页导航固定「课程 / 微专业」两项，其后按下方顺序展示模板页，总数上限 6 项（多出不显示）。
-              每个模板页包含名称、概述与实际内容，访问链接为 /page/访问标识
+              首页导航固定「课程 / 微专业」两项，其后按下方顺序展示模板页，启用项最多展示 6 项（超出将无法保存）。
+              每项可修改名称、更换图标，访问链接为 /page/访问标识
             </Text>
             <div style={{ marginTop: 8 }}>
               <Text type="secondary">
@@ -267,6 +297,15 @@ export default function PortalConfigPage() {
           <Button icon={<PlusOutlined />} onClick={addPage} disabled={!isSuperAdmin}>
             新增模板页
           </Button>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <Tag color={pages.filter((p) => p.enabled).length > 6 ? "red" : "blue"}>
+            已启用 {pages.filter((p) => p.enabled).length} / 6 项
+          </Tag>
+          <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+            共 {pages.length} 项 · 用 ↑ ↓ 调整顺序 · 点击图标可更换快捷导航图标
+          </Text>
         </div>
 
         <Form layout="vertical" disabled={!isSuperAdmin} style={{ width: "100%" }}>
@@ -306,17 +345,6 @@ export default function PortalConfigPage() {
                   />
                   <span style={{ fontSize: 13, color: "#666", minWidth: 120 }}>顺序：第 {index + 1} 位</span>
                   <div style={{ flex: 1 }} />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    /page/
-                  </Text>
-                  <Input
-                    style={{ width: 200 }}
-                    size="small"
-                    value={page.slug}
-                    onChange={(e) => updatePage(index, { slug: slugify(e.target.value) })}
-                    placeholder="访问标识（英文，留空自动生成）"
-                    disabled={!isSuperAdmin}
-                  />
                   <Switch
                     checked={page.enabled}
                     onChange={(checked) => updatePage(index, { enabled: checked })}
@@ -344,6 +372,108 @@ export default function PortalConfigPage() {
                     maxLength={30}
                     disabled={!isSuperAdmin}
                   />
+                </Form.Item>
+
+                <Form.Item
+                  label="网页标识符"
+                  style={{ marginBottom: 12 }}
+                  required
+                  extra={
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div>
+                        网页链接中的唯一标识，只能使用小写英文 / 拼音 / 数字 / 连字符，决定页面的访问地址。
+                      </div>
+                      <div>
+                        示例：教学资源库填 <Text code>resources</Text>，地址即为{" "}
+                        <Text code>/page/resources</Text>。
+                      </div>
+                      <div>页面发布后请勿随意修改，否则已分享出去的旧链接将失效。</div>
+                      {page.slug ? (
+                        <div>
+                          当前访问链接：<Text code>/page/{slugify(page.slug)}</Text>
+                        </div>
+                      ) : (
+                        <div>保存后可通过 /page/标识符 访问该页面。</div>
+                      )}
+                    </div>
+                  }
+                >
+                  <Input
+                    value={page.slug}
+                    onChange={(e) => updatePage(index, { slug: slugify(e.target.value) })}
+                    placeholder="请输入英文或拼音作为网页标识符，如：resources"
+                    maxLength={40}
+                    disabled={!isSuperAdmin}
+                    prefix={<LinkOutlined style={{ color: "#2f7cf6" }} />}
+                    style={{ fontWeight: 600 }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="快捷导航图标"
+                  style={{ marginBottom: 12 }}
+                  required
+                  extra="必须从下方内置图标中选择，保存后首页快捷导航即时更换"
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))",
+                      gap: 10,
+                      /* 19 个内置图标，限制宽度后每行约 10 个、共两行均匀分布 */
+                      maxWidth: 960,
+                    }}
+                  >
+                    {QUICK_NAV_ICON_OPTIONS.map((option) => {
+                      const selected = page.icon === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => updatePage(index, { icon: option.value })}
+                          disabled={!isSuperAdmin}
+                          title={option.label}
+                          style={{
+                            width: "100%",
+                            height: 88,
+                            borderRadius: 10,
+                            border: selected ? "2px solid #2f7cf6" : "1px solid #e8eef7",
+                            background: selected ? "#eef4ff" : "#fff",
+                            cursor: isSuperAdmin ? "pointer" : "not-allowed",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 4,
+                            padding: 6,
+                          }}
+                        >
+                          <img
+                            src={option.src}
+                            alt={option.label}
+                            style={{ width: 34, height: 34, objectFit: "contain" }}
+                            draggable={false}
+                          />
+                          <span
+                            style={{
+                              fontSize: 11,
+                              lineHeight: 1.3,
+                              color: selected ? "#2f7cf6" : "#666",
+                              textAlign: "center",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              overflowWrap: "break-word",
+                              maxWidth: "100%",
+                            }}
+                          >
+                            {option.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </Form.Item>
 
                 <Form.Item label="概述" style={{ marginBottom: 12 }} required>

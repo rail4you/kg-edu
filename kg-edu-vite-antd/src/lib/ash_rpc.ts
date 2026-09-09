@@ -1549,7 +1549,7 @@ export type PortalLevelResourceSchema = {
 // TemplatePage Schema
 export type TemplatePageResourceSchema = {
   __type: "Resource";
-  __primitiveFields: "id" | "name" | "slug" | "overview" | "content" | "sortOrder" | "enabled";
+  __primitiveFields: "id" | "name" | "slug" | "overview" | "content" | "sortOrder" | "enabled" | "icon";
   id: UUID;
   name: string;
   slug: string;
@@ -1557,6 +1557,7 @@ export type TemplatePageResourceSchema = {
   content: string | null;
   sortOrder: number;
   enabled: boolean;
+  icon: string | null;
 };
 
 
@@ -7521,6 +7522,12 @@ export type TemplatePageFilterInput = {
   enabled?: {
     eq?: boolean;
     notEq?: boolean;
+  };
+
+  icon?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
   };
 
 
@@ -104987,6 +104994,7 @@ export type CreateTemplatePageInput = {
   content?: string | null;
   sortOrder?: number;
   enabled?: boolean;
+  icon?: string | null;
 };
 
 export type CreateTemplatePageValidationErrors = {
@@ -104996,6 +105004,7 @@ export type CreateTemplatePageValidationErrors = {
   content?: string[];
   sortOrder?: string[];
   enabled?: string[];
+  icon?: string[];
 };
 
 export const createTemplatePageZodschema = z.object({
@@ -105005,6 +105014,7 @@ export const createTemplatePageZodschema = z.object({
   content: z.string().optional(),
   sortOrder: z.number().int().optional(),
   enabled: z.boolean().optional(),
+  icon: z.string().optional(),
 });
 
 export type CreateTemplatePageFields = UnifiedFieldSelection<TemplatePageResourceSchema>[];
@@ -105152,6 +105162,7 @@ export type UpdateTemplatePageInput = {
   content?: string | null;
   sortOrder?: number;
   enabled?: boolean;
+  icon?: string | null;
 };
 
 export type UpdateTemplatePageValidationErrors = {
@@ -105161,6 +105172,7 @@ export type UpdateTemplatePageValidationErrors = {
   content?: string[];
   sortOrder?: string[];
   enabled?: string[];
+  icon?: string[];
 };
 
 export const updateTemplatePageZodschema = z.object({
@@ -105170,6 +105182,7 @@ export const updateTemplatePageZodschema = z.object({
   content: z.string().optional(),
   sortOrder: z.number().int().optional(),
   enabled: z.boolean().optional(),
+  icon: z.string().optional(),
 });
 
 export type UpdateTemplatePageFields = UnifiedFieldSelection<TemplatePageResourceSchema>[];

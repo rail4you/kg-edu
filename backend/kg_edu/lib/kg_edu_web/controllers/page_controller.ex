@@ -171,6 +171,7 @@ defmodule KgEduWeb.PageController do
       name: "教学资源库",
       slug: "resources",
       sort_order: 0,
+      icon: "resource_library",
       overview: "汇聚优质教学资源，共建共享教育资源生态。",
       content:
         "教学资源库汇聚了涵盖多个学科领域的优质教学资源，包括视频课程、教学课件、实验指导、试题库等。平台支持资源上传、分类管理、在线预览与下载，为教师提供一站式的教学资源服务。\n\n## 视频课程资源\n\n汇聚数千门精品视频课程，覆盖医学、工学、理学等多个学科门类，支持在线播放与课件下载。\n\n## 教学课件库\n\n提供丰富的 PPT、PDF 教学课件资源，教师可参考借鉴，快速构建自己的课程教学内容。\n\n## 实验教学资源\n\n涵盖虚拟仿真实验、实验指导手册、实验报告模板等，助力实验教学环节的开展。"
@@ -179,6 +180,7 @@ defmodule KgEduWeb.PageController do
       name: "示范教学包",
       slug: "demo",
       sort_order: 1,
+      icon: "demo_package",
       overview: "汇集全国优秀教师的教学案例与课程设计，助力教师提升课程建设质量。",
       content:
         "示范教学包汇集了全国优秀教师的教学案例与课程设计，涵盖教案、课件、习题、实验指导等完整教学资源。通过借鉴优秀教学实践，帮助教师提升课程建设质量与教学效果。\n\n## 精品示范课程\n\n精选国家级、省级一流课程的教学设计方案，包含完整的教学大纲、教案、课件与考核方案。\n\n## 创新教学案例\n\n汇集混合式教学、翻转课堂、项目制学习等创新教学模式的实际应用案例与经验分享。\n\n## 教学名师讲堂\n\n邀请教学名师分享课程建设经验、教学设计理念与课堂教学技巧，促进教师专业发展。"
@@ -187,6 +189,7 @@ defmodule KgEduWeb.PageController do
       name: "数字教材",
       slug: "textbook",
       sort_order: 2,
+      icon: "digital_textbook",
       overview: "交互式、多媒体融合的现代教材体验，让教材向智能化、个性化学习工具转型。",
       content:
         "数字教材中心提供交互式、多媒体融合的现代教材体验。支持富媒体阅读、笔记标注、习题自测、学习进度追踪等功能，让教材从传统纸质向智能化、个性化学习工具转型。\n\n## 富媒体交互教材\n\n集成视频、音频、动画、3D 模型等多媒体元素，打造沉浸式阅读与学习体验。\n\n## 智能学习工具\n\n支持笔记标注、高亮标记、章节书签、语音朗读等功能，提升学习效率。\n\n## 自测与进度追踪\n\n每章节内置习题自测，自动批改并生成学习报告，帮助学生及时掌握学习情况。"
@@ -195,6 +198,7 @@ defmodule KgEduWeb.PageController do
       name: "合作单位",
       slug: "partners",
       sort_order: 3,
+      icon: "partners",
       overview: "与全国高等院校、教育研究机构、行业企业携手共建智慧教育新生态。",
       content:
         "我们与全国高等院校、教育研究机构、行业企业建立了广泛的合作关系，共同推进智慧教育的技术创新与教学改革。欢迎更多合作伙伴加入，共建智慧教育新生态。\n\n## 院校合作\n\n与高等院校建立合作关系，共同开展智慧教学实践与教学改革探索。\n\n## 科研合作\n\n与教育技术研究机构合作开展知识图谱、AI 教育应用等前沿课题研究，推动技术创新与成果转化。\n\n## 资源共建\n\n联合多所院校共建共享优质教学资源，形成覆盖广泛、质量优良的教育资源生态体系。"
@@ -203,6 +207,7 @@ defmodule KgEduWeb.PageController do
       name: "关于我们",
       slug: "about",
       sort_order: 4,
+      icon: "about_us",
       overview: "了解平台定位、发展理念与联系方式。",
       content:
         "易课程是一款面向教育领域的智慧教学平台，致力于将知识图谱技术与人工智能深度融合，为教师和学生提供智能化的教学与学习体验。\n\n平台以知识图谱为核心驱动，以 AI 智能体为智慧引擎，以微专业为特色培养路径，构建覆盖教、学、管、评、研全链路的智慧教学生态。通过知识图谱引擎支撑知识点之间的多维关联，实现学习资源的精准匹配与个性化学习路径推荐，帮助院校构建高质量、高效率的数字化教学环境。\n\n## 联系方式\n\n- 联系邮箱：demo@ketangxing.com\n- 工作时间：工作日 9:00 - 18:00\n- 联系地址：江苏省南京市"
@@ -294,7 +299,8 @@ defmodule KgEduWeb.PageController do
             overview: item["overview"] || "",
             content: item["content"] || "",
             sort_order: index,
-            enabled: item["enabled"] != false
+            enabled: item["enabled"] != false,
+            icon: normalize_icon(item["icon"])
           }
 
           result =
@@ -406,7 +412,27 @@ defmodule KgEduWeb.PageController do
           end)
 
         Enum.sort_by(pages ++ Enum.reject(backfilled, &is_nil/1), & &1.sort_order)
+        |> backfill_page_icons()
     end
+  end
+
+  # 回填图标：老数据 icon 为空时，按默认页 slug 补上默认图标（幂等，已有图标不动）。
+  # 保证管理端图标选择器显示正确选中态；前端 icon 为空时本就按 slug 兜底，显示不受影响。
+  defp backfill_page_icons(pages) do
+    default_icon_by_slug = Map.new(@default_pages, &{&1.slug, &1.icon})
+
+    Enum.map(pages, fn page ->
+      if (is_nil(page.icon) or page.icon == "") and Map.has_key?(default_icon_by_slug, page.slug) do
+        case KgEdu.SystemConfig.TemplatePage.update_page(page, %{
+               icon: default_icon_by_slug[page.slug]
+             }) do
+          {:ok, updated} -> updated
+          _ -> page
+        end
+      else
+        page
+      end
+    end)
   end
 
   defp unwrap_list({:ok, list}), do: list
@@ -431,8 +457,21 @@ defmodule KgEduWeb.PageController do
       overview: page.overview || "",
       content: page.content || "",
       sort_order: page.sort_order,
-      enabled: page.enabled
+      enabled: page.enabled,
+      icon: page.icon || ""
     }
+  end
+
+  # 规范化图标标识：仅保留小写字母/数字/下划线/连字符；非法或为空返回 ""
+  # 前端 icon 为空时按 slug 自动匹配，保证已有页面效果不变
+  defp normalize_icon(icon) do
+    normalized =
+      (icon || "")
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9_-]/, "")
+      |> String.trim("-_")
+
+    if String.length(normalized) > 40, do: String.slice(normalized, 0, 40), else: normalized
   end
 
   # 规范化 slug：仅保留小写字母/数字/连字符；为空时自动生成

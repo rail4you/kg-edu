@@ -7,9 +7,9 @@ import {
 } from "@/lib/portal-config";
 
 /** 固定导航：课程 + 微专业（首页智慧导航前两项固定） */
-export const FIXED_NAV_ITEMS = [
-  { key: "/courses", label: "课程" },
-  { key: "/micro-majors", label: "微专业" },
+export const FIXED_NAV_ITEMS: NavItem[] = [
+  { key: "/courses", label: "课程", icon: "course" },
+  { key: "/micro-majors", label: "微专业", icon: "micro_major" },
 ];
 
 export const MAX_NAV_ITEMS = 8;
@@ -17,6 +17,7 @@ export const MAX_NAV_ITEMS = 8;
 export interface NavItem {
   key: string;
   label: string;
+  icon: string;
 }
 
 /** 门户配置（公开只读），缓存 60s */
@@ -35,7 +36,7 @@ export function usePortalNavItems(): NavItem[] {
   const dynamic = pages
     .filter((p) => p.enabled)
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((p) => ({ key: `/page/${p.slug}`, label: p.name }))
+    .map((p) => ({ key: `/page/${p.slug}`, label: p.name, icon: p.icon || "" }))
     .slice(0, MAX_NAV_ITEMS - FIXED_NAV_ITEMS.length);
   return [...FIXED_NAV_ITEMS, ...dynamic];
 }

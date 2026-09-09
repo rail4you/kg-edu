@@ -4,9 +4,10 @@ defmodule KgEdu.SystemConfig.TemplatePage do
 
   - 存储于 public schema（无租户上下文），由超级管理员维护。
   - 每页包含：名称（name）、访问标识（slug）、概述（overview）、实际内容（content）、
-    排序（sort_order）、是否启用（enabled）。
+    排序（sort_order）、是否启用（enabled）、图标（icon）。
   - 首页导航按 sort_order 顺序展示启用的模板页，访问链接为 `/page/<slug>`。
   - content 支持 Markdown 富文本（分段、标题、列表等）。
+  - icon 为快捷导航图标标识（如 course / exam），对应前端 public/icons/home/<icon>.svg。
   """
 
   use Ash.Resource,
@@ -40,12 +41,12 @@ defmodule KgEdu.SystemConfig.TemplatePage do
     read :read
 
     create :create do
-      accept [:name, :slug, :overview, :content, :sort_order, :enabled]
+      accept [:name, :slug, :overview, :content, :sort_order, :enabled, :icon]
     end
 
     update :update do
       require_atomic? false
-      accept [:name, :slug, :overview, :content, :sort_order, :enabled]
+      accept [:name, :slug, :overview, :content, :sort_order, :enabled, :icon]
     end
 
     destroy :destroy
@@ -99,6 +100,12 @@ defmodule KgEdu.SystemConfig.TemplatePage do
       allow_nil? false
       default true
       description "是否在首页导航展示"
+      public? true
+    end
+
+    attribute :icon, :string do
+      allow_nil? true
+      description "快捷导航图标标识（对应前端 public/icons/home/<icon>.svg，空则按 slug 自动匹配）"
       public? true
     end
 

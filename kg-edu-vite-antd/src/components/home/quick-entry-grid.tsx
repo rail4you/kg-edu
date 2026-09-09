@@ -1,47 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { Grid } from "antd";
-import {
-  AppstoreOutlined,
-  ApartmentOutlined,
-} from "@ant-design/icons";
+import { AppstoreOutlined } from "@ant-design/icons";
 import { usePortalNavItems } from "@/hooks/use-portal-config";
+import { getQuickNavIconSrc } from "./quick-nav-icons";
 
 /**
  * 首页快速入口（参考站风格：一行 4 个，超出换行，动态全显示）
  * - 桌面端专属（< 1024px 隐藏）
  * - hover 上浮 + 阴影
  * - 嵌入 .xyedu-portal-main__left 容器内
- * - 图标使用设计稿 SVG（无背景底色版本，public/icons/home/）
+ * - 图标使用预置 SVG（public/icons/home/），管理端可在模板页管理中更换
  */
-const NAV_ICON_SRC: Record<string, string> = {
-  "/courses": "/icons/home/course.svg",
-  "/micro-majors": "/icons/home/micro_major.svg",
-  "/page/resources": "/icons/home/resource_library.svg",
-  "/page/demo": "/icons/home/demo_package.svg",
-  "/page/textbook": "/icons/home/digital_textbook.svg",
-  "/page/about": "/icons/home/about_us.svg",
-  "/page/partners": "/icons/home/partners.svg",
-  "/page/partners-college": "/icons/home/partners.svg",
-  "/partners": "/icons/home/partners.svg",
-};
-
 function EntryImg({ src, label }: { src: string; label: string }) {
   return <img src={src} alt={label} className="xyedu-quick-entry__img" draggable={false} />;
 }
 
 // 参考站风格：图标本身彩色、无底色
 const ENTRY_COLORS = ["#2f7cf6", "#22a06b", "#2f7cf6", "#f59e0b", "#f59e0b", "#2f7cf6", "#22a06b", "#2f7cf6"];
-
-function getEntryIcon(key: string, label: string): React.ReactNode {
-  if (NAV_ICON_SRC[key]) return <EntryImg src={NAV_ICON_SRC[key]} label={label} />;
-  // 动态模板页按 slug 匹配
-  if (key.includes("about")) return <EntryImg src="/icons/home/about_us.svg" label={label} />;
-  if (key.includes("partner")) return <EntryImg src="/icons/home/partners.svg" label={label} />;
-  if (key.includes("resource")) return <EntryImg src="/icons/home/resource_library.svg" label={label} />;
-  if (key.includes("textbook")) return <EntryImg src="/icons/home/digital_textbook.svg" label={label} />;
-  if (key.includes("demo")) return <EntryImg src="/icons/home/demo_package.svg" label={label} />;
-  return <ApartmentOutlined />;
-}
 
 export default function QuickEntryGrid() {
   const navigate = useNavigate();
@@ -72,7 +47,7 @@ export default function QuickEntryGrid() {
               className="xyedu-quick-entry__icon"
               aria-hidden="true"
             >
-              {getEntryIcon(item.key, item.label)}
+              <EntryImg src={getQuickNavIconSrc(item.key, item.icon)} label={item.label} />
             </div>
             <div className="xyedu-quick-entry__text">
               <div className="xyedu-quick-entry__label">{item.label}</div>
