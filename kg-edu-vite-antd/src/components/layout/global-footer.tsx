@@ -7,6 +7,42 @@ import { fetchSiteContent } from "@/lib/site-content";
 
 const { Text } = Typography;
 
+/** 页脚链接：固定行高 + 对称内边距，保证视觉间距完全一致 */
+const FOOTER_LINK_STYLE: React.CSSProperties = {
+  color: "rgba(255,255,255,0.8)",
+  fontSize: 15,
+  fontWeight: 500,
+  lineHeight: "22px",
+  padding: "4px 20px",
+  cursor: "pointer",
+  transition: "color 0.2s",
+  userSelect: "none",
+  whiteSpace: "nowrap",
+};
+
+function FooterLink({ label, onClick, style }: { label: string; onClick: () => void; style?: React.CSSProperties }) {
+  return (
+    <Text
+      style={{ ...FOOTER_LINK_STYLE, ...style }}
+      onClick={onClick}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
+      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
+    >
+      {label}
+    </Text>
+  );
+}
+
+/** 链接之间的 1px 竖向分隔线（固定尺寸，不随文字变化） */
+function FooterDivider() {
+  return (
+    <span
+      aria-hidden="true"
+      style={{ width: 1, height: 12, background: "rgba(255,255,255,0.25)", flexShrink: 0 }}
+    />
+  );
+}
+
 const GlobalFooter: React.FC = () => {
   const [contactOpen, setContactOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -52,74 +88,40 @@ const GlobalFooter: React.FC = () => {
           : colors.footerBg,
         color: "#FFFFFF",
         // 底部留白：滚到底时版权条不贴视口底边，避免像被裁掉
-        padding: "24px 24px 48px",
+        padding: "28px 24px 48px",
       }}
     >
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      {/* 同一居中容器：两行内容共用中线 */}
+      <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
+        {/* 第一行：链接，flex 严格居中 */}
         <div
           style={{
-            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontSize: 13,
-              cursor: "pointer",
-              transition: "color 0.2s",
-            }}
-            onClick={() => navigate("/about")}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-          >
-            关于我们
-          </Text>
-          <Text style={{ color: "rgba(255,255,255,0.3)", margin: "0 12px", fontSize: 13 }}>
-            丨
-          </Text>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontSize: 13,
-              cursor: "pointer",
-              transition: "color 0.2s",
-            }}
-            onClick={() => setContactOpen(true)}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-          >
-            联系我们
-          </Text>
-          <Text style={{ color: "rgba(255,255,255,0.3)", margin: "0 12px", fontSize: 13 }}>
-            丨
-          </Text>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontSize: 13,
-              cursor: "pointer",
-              transition: "color 0.2s",
-            }}
-            onClick={() => setPrivacyOpen(true)}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-          >
-            隐私条款
-          </Text>
+          <FooterLink label="关于我们" onClick={() => navigate("/about")} />
+          <FooterDivider />
+          <FooterLink label="联系我们" onClick={() => setContactOpen(true)} />
+          <FooterDivider />
+          <FooterLink label="隐私条款" onClick={() => setPrivacyOpen(true)} />
         </div>
 
+        {/* 第二行：版权文本，与链接行同容器居中，字号明显更小 */}
         <div
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            marginTop: 16,
-            paddingTop: 16,
+            borderTop: "1px solid rgba(255,255,255,0.15)",
+            marginTop: 18,
+            paddingTop: 18,
             textAlign: "center",
           }}
         >
           <Text
             style={{
-              color: "rgba(255,255,255,0.4)",
-              fontSize: 12,
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 11,
+              lineHeight: 2,
             }}
           >
             {branding.app_copyright}

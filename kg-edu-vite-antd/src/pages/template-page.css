@@ -1,22 +1,44 @@
 /* 通用模板页样式 — 名称 + 概述 + 实际内容 */
+
+/* Hero 标题区：扁平单色，无装饰元素，内容居中 */
+.template-page__hero {
+  background: #0b4ca8;
+  padding: 44px 24px 40px;
+  text-align: center;
+}
+
+.template-page__hero-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
 .template-page__title {
   color: #ffffff !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-size: 30px !important;
+  letter-spacing: 4px;
+  text-indent: 4px;
+  text-align: center !important;
 }
 
 .template-page__body {
   max-width: 1140px;
+  width: 100%;
   margin: 0 auto;
   padding: 40px 24px 64px;
+  /* 纵向撑满剩余空间，白色正文卡背景延伸至页脚 */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
+/* 概述与正文统一左对齐、统一左右内边距，保证两块内容的左边缘严格对齐 */
 .template-page__overview {
   font-size: 16px;
   line-height: 2;
   color: #555;
-  margin-bottom: 32px;
-  text-align: center;
-  padding: 20px 28px;
+  margin-bottom: 24px;
+  text-align: left;
+  padding: 24px 36px;
   background: #fff;
   border: 1px solid #e8eef7;
   border-radius: 12px;
@@ -30,6 +52,8 @@
   font-size: 15px;
   line-height: 2;
   color: #333;
+  /* 内容不足时卡片背景向下延伸，占满正文区 */
+  flex: 1;
 }
 
 .template-page__content h1,
@@ -43,6 +67,9 @@
 
 .template-page__content h2 {
   font-size: 20px;
+  padding-left: 12px;
+  border-left: 4px solid #1a6dd8;
+  line-height: 1.5;
 }
 
 .template-page__content h3 {
@@ -65,6 +92,8 @@
 
 .template-page__content a {
   color: #1677ff;
+  /* 长链接不断行顶出容器，与正文保持同一左对齐基准 */
+  overflow-wrap: anywhere;
 }
 
 .template-page__content blockquote {

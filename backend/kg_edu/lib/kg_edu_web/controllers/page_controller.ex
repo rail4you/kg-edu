@@ -17,7 +17,7 @@ defmodule KgEduWeb.PageController do
     logo_dark = db[:logo_dark] || System.get_env("BRANDING_LOGO_DARK", "/logo/yike-home.png")
     favicon = db[:favicon] || System.get_env("BRANDING_FAVICON", "/favicon/favicon.ico")
     contact_email = db[:contact_email] || System.get_env("BRANDING_CONTACT_EMAIL", "demo@ketangxing.com")
-    app_copyright = db[:app_copyright] || System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台")
+    app_copyright = db[:app_copyright] || System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学系统")
 
     json(conn, %{
       app_name: app_name,
@@ -68,7 +68,7 @@ defmodule KgEduWeb.PageController do
       app_name: db[:app_name] || System.get_env("BRANDING_APP_NAME", "易课程"),
       app_title: db[:app_title] || System.get_env("BRANDING_APP_TITLE", "智慧教学系统"),
       app_description: db[:app_description] || System.get_env("BRANDING_APP_DESCRIPTION", "融合知识图谱与人工智能技术的智慧教学平台"),
-      app_copyright: db[:app_copyright] || System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台"),
+      app_copyright: db[:app_copyright] || System.get_env("BRANDING_COPYRIGHT", "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学系统"),
       logo_light: db[:logo_light] || System.get_env("BRANDING_LOGO_LIGHT", "/logo/yike-home-light.png"),
       logo_dark: db[:logo_dark] || System.get_env("BRANDING_LOGO_DARK", "/logo/yike-home.png"),
       favicon: db[:favicon] || System.get_env("BRANDING_FAVICON", "/favicon/favicon.ico"),

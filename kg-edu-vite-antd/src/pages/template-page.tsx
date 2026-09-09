@@ -76,7 +76,7 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
         </div>
       </Header>
 
-      <Content style={{ flex: 1, display: "flex", flexDirection: "column", background: "#f8fafc" }}>
+      <Content style={{ flex: 1, display: "flex", flexDirection: "column", background: "#f0f2f5" }}>
         {isLoading ? (
           <div style={{ maxWidth: 900, margin: "48px auto", width: "100%", padding: "0 24px" }}>
             <Skeleton active paragraph={{ rows: 6 }} />
@@ -90,24 +90,18 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
             </Empty>
           </div>
         ) : (
-          <>
+          /* 标题 + 内容占满视口高度（header 76px），内容不足时页脚仍沉底 */
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 76px)" }}>
             {/* Hero：页面名称 */}
-            <div
-              className="template-page__hero"
-              style={{
-                background: "linear-gradient(135deg, #0B4CA8 0%, #1A6DD8 50%, #0E63D8 100%)",
-                padding: "56px 24px 48px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ maxWidth: 1140, margin: "0 auto" }}>
-                <Title level={2} className="template-page__title" style={{ margin: 0, fontWeight: 700 }}>
+            <div className="template-page__hero">
+              <div className="template-page__hero-inner">
+                <Title level={2} className="template-page__title" style={{ margin: 0, fontWeight: 800 }}>
                   {page?.name}
                 </Title>
               </div>
             </div>
 
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
               <div className="template-page__body">
                 {/* 概述 */}
                 {page?.overview ? (
@@ -128,7 +122,7 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
       </Content>
 

@@ -17,7 +17,7 @@ export const DEFAULT_BRANDING: BrandingConfig = {
   app_name: "易课程",
   app_title: "智慧教学系统",
   app_description: "融合知识图谱与人工智能技术的智慧教学平台",
-  app_copyright: "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学平台",
+  app_copyright: "易课程 © 2026 - 融合知识图谱与人工智能技术 | 智慧教学系统",
   logo_light: "/logo/yike-home-light.png",
   logo_dark: "/logo/yike-home.png",
   favicon: "/favicon/favicon.ico",
