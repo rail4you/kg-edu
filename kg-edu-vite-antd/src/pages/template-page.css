@@ -1,59 +1,64 @@
-/* 通用模板页样式 — 名称 + 概述 + 实际内容 */
+/* 通用模板页样式 — 标题 + 介绍 + 正文同一张介绍页 */
 
-/* Hero 标题区：扁平单色，无装饰元素，内容居中 */
-.template-page__hero {
-  background: #0b4ca8;
-  padding: 44px 24px 40px;
-  text-align: center;
-}
-
-.template-page__hero-inner {
-  max-width: 1140px;
-  margin: 0 auto;
-}
-
-.template-page__title {
-  color: #ffffff !important;
-  font-size: 30px !important;
-  letter-spacing: 4px;
-  text-indent: 4px;
-  text-align: center !important;
-}
-
+/* 介绍页主体：单张白页承载全部内容，内容不足时向下延伸占满视口 */
 .template-page__body {
   max-width: 1140px;
   width: 100%;
   margin: 0 auto;
   padding: 40px 24px 64px;
-  /* 纵向撑满剩余空间，白色正文卡背景延伸至页脚 */
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* 概述与正文统一左对齐、统一左右内边距，保证两块内容的左边缘严格对齐 */
-.template-page__overview {
-  font-size: 16px;
-  line-height: 2;
-  color: #555;
-  margin-bottom: 24px;
-  text-align: left;
-  padding: 24px 36px;
+.template-page__sheet {
   background: #fff;
   border: 1px solid #e8eef7;
   border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(30, 64, 120, 0.05);
+  padding: 48px 56px 56px;
+  flex: 1;
 }
 
+/* 标题：只保留字号、颜色、对齐，不加字距阴影等，保持中文字形清晰 */
+.template-page__title {
+  color: #17233f !important;
+  font-size: 24px !important;
+  text-align: left !important;
+}
+
+/* 介绍：引导段，加大加粗强调，与标题、正文同一左对齐基准 */
+.template-page__lead {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.9;
+  color: #333;
+  text-align: left;
+  margin: 20px 0 0;
+}
+
+/* 介绍与正文之间的通栏细分割线 */
+.template-page__sheet-divider {
+  height: 1px;
+  background: #edf1f7;
+  margin: 32px 0 8px;
+}
+
+/* 正文：由介绍页统一承载卡片样式，此处只保留排版 */
 .template-page__content {
-  background: #fff;
-  border: 1px solid #e8eef7;
-  border-radius: 12px;
-  padding: 32px 36px;
   font-size: 15px;
   line-height: 2;
   color: #333;
-  /* 内容不足时卡片背景向下延伸，占满正文区 */
-  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .template-page__sheet {
+    padding: 32px 20px 40px;
+  }
+
+  .template-page__title {
+    font-size: 24px !important;
+  }
 }
 
 .template-page__content h1,
@@ -66,9 +71,10 @@
 }
 
 .template-page__content h2 {
-  font-size: 20px;
-  padding-left: 12px;
-  border-left: 4px solid #1a6dd8;
+  font-size: 22px;
+  color: #17233f;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf1f7;
   line-height: 1.5;
 }
 
@@ -97,10 +103,11 @@
 }
 
 .template-page__content blockquote {
-  border-left: 4px solid #d9e6ff;
-  background: #f5f8ff;
+  background: #f6f8fb;
+  border: 1px solid #e8eef7;
+  border-radius: 8px;
   margin: 0.8em 0;
-  padding: 0.5em 1em;
+  padding: 0.6em 1.2em;
   color: #555;
 }
 

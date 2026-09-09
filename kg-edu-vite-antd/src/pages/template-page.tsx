@@ -90,36 +90,35 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
             </Empty>
           </div>
         ) : (
-          /* 标题 + 内容占满视口高度（header 76px），内容不足时页脚仍沉底 */
+          /* 介绍页整体占满视口高度（header 76px），内容不足时页脚仍沉底 */
           <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 76px)" }}>
-            {/* Hero：页面名称 */}
-            <div className="template-page__hero">
-              <div className="template-page__hero-inner">
-                <Title level={2} className="template-page__title" style={{ margin: 0, fontWeight: 800 }}>
-                  {page?.name}
-                </Title>
-              </div>
-            </div>
-
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
               <div className="template-page__body">
-                {/* 概述 */}
-                {page?.overview ? (
-                  <Paragraph className="template-page__overview">{page.overview}</Paragraph>
-                ) : null}
+                {/* 标题 + 介绍 + 正文同一张介绍页 */}
+                <div className="template-page__sheet">
+                  <Title level={2} className="template-page__title" style={{ margin: 0 }}>
+                    {page?.name}
+                  </Title>
 
-                {/* 实际内容 */}
-                {page?.content ? (
-                  <div className="template-page__content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{page.content}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <Empty
-                    className="template-page__empty"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="页面内容正在完善中"
-                  />
-                )}
+                  {page?.overview ? (
+                    <Paragraph className="template-page__lead">{page.overview}</Paragraph>
+                  ) : null}
+
+                  {page?.content ? (
+                    <>
+                      <div className="template-page__sheet-divider" aria-hidden="true" />
+                      <div className="template-page__content">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{page.content}</ReactMarkdown>
+                      </div>
+                    </>
+                  ) : (
+                    <Empty
+                      className="template-page__empty"
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="页面内容正在完善中"
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
