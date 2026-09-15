@@ -127,7 +127,7 @@ export type ChapterResourceSchema = {
 // File Schema
 export type FileResourceSchema = {
   __type: "Resource";
-  __primitiveFields: "id" | "filename" | "assetId" | "playbackId" | "path" | "size" | "fileType" | "purpose" | "source" | "createdById" | "courseId" | "knowledgeResourceId";
+  __primitiveFields: "id" | "filename" | "assetId" | "playbackId" | "path" | "size" | "fileType" | "purpose" | "source" | "createdById" | "sortOrder" | "insertedAt" | "courseId" | "knowledgeResourceId";
   id: UUID;
   filename: string;
   assetId: string | null;
@@ -138,6 +138,8 @@ export type FileResourceSchema = {
   purpose: string;
   source: string | null;
   createdById: UUID | null;
+  sortOrder: number | null;
+  insertedAt: UtcDateTimeUsec;
   courseId: UUID | null;
   knowledgeResourceId: UUID | null;
   course: { __type: "Relationship"; __resource: CourseResourceSchema | null; };
@@ -2066,6 +2068,26 @@ export type FileFilterInput = {
     eq?: UUID;
     notEq?: UUID;
     in?: Array<UUID>;
+  };
+
+  sortOrder?: {
+    eq?: number;
+    notEq?: number;
+    greaterThan?: number;
+    greaterThanOrEqual?: number;
+    lessThan?: number;
+    lessThanOrEqual?: number;
+    in?: Array<number>;
+  };
+
+  insertedAt?: {
+    eq?: UtcDateTimeUsec;
+    notEq?: UtcDateTimeUsec;
+    greaterThan?: UtcDateTimeUsec;
+    greaterThanOrEqual?: UtcDateTimeUsec;
+    lessThan?: UtcDateTimeUsec;
+    lessThanOrEqual?: UtcDateTimeUsec;
+    in?: Array<UtcDateTimeUsec>;
   };
 
   courseId?: {
@@ -19141,6 +19163,154 @@ export async function validateDeleteFile(
   }
 
   return result as ValidateDeleteFileResult;
+}
+
+
+export type ReorderFilesInput = {
+  items: Array<Record<string, any>>;
+};
+
+export type ReorderFilesValidationErrors = {
+  items?: {  }[];
+};
+
+export const reorderFilesZodschema = z.object({
+  items: z.array(z.record(z.string(), z.any())),
+});
+
+type InferReorderFilesResult = Record<string, any>;
+
+export type ReorderFilesResult = | { success: true; data: InferReorderFilesResult; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function reorderFiles(
+  config: {
+  tenant: string;
+  input: ReorderFilesInput;
+  hookCtx?: ActionHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ReorderFilesResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("reorder_files", config);
+  }
+
+  const payload = {
+    action: "reorder_files",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("reorder_files", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ReorderFilesResult;
+}
+
+
+export type ValidateReorderFilesResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateReorderFiles(
+  config: {
+  tenant: string;
+  input: ReorderFilesInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateReorderFilesResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("reorder_files", config);
+  }
+
+  const payload = {
+    action: "reorder_files",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateReorderFilesResult;
 }
 
 

@@ -208,9 +208,8 @@ export default function ResourcePage() {
     queryFn: async () => {
       const result = await listFiles({
         tenant,
-        fields: ["id", "filename", "path", "size", "fileType", "knowledgeResourceId"],
+        fields: ["id", "filename", "path", "size", "fileType", "knowledgeResourceId", "sortOrder"],
         filter: selectedCourseId ? { courseId: { eq: selectedCourseId } } : undefined,
-        sort: "-filename",
         page: { limit: 100, offset: 0 },
         headers: getHeaders(user),
       });

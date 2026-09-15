@@ -79,6 +79,7 @@ defmodule KgEdu.Courses.File do
     define :list_files_by_purpose, action: :by_purpose
     define :list_files_by_knowledge_resource, action: :by_knowledge_resource
     define :list_files_by_creator, action: :by_creator
+    define :reorder_files, action: :reorder
     define :list_ai_generated_files_by_course, action: :ai_generated_by_course
     define :generate_example_files, action: :generate_examples
     define :download_file, action: :download_file
@@ -93,6 +94,10 @@ defmodule KgEdu.Courses.File do
     read :read do
       primary? true
       description "List files with optional pagination"
+
+      prepare fn query, _opts ->
+        Ash.Query.sort(query, sort_order: :asc, inserted_at: :desc)
+      end
 
       pagination do
         required? false
@@ -391,6 +396,69 @@ defmodule KgEdu.Courses.File do
       change set_attribute(:knowledge_resource_id, nil)
     end
 
+    update :set_sort_order do
+      description "更新文件排序权重（手动排序）"
+      require_atomic? false
+      accept [:sort_order]
+    end
+
+    action :reorder, :map do
+      description "批量重排文件顺序"
+
+      argument :items, {:array, :map} do
+        description "要排序的文件列表，包含 id 和 sort_order(order)"
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        items = input.arguments.items
+        tenant = context.tenant
+
+        results =
+          Enum.map(items, fn item ->
+            id = Map.get(item, "id") || Map.get(item, :id)
+            order = Map.get(item, "order") || Map.get(item, "sort_order") || Map.get(item, :sort_order)
+
+            if id do
+              case Ash.get(KgEdu.Courses.File, id,
+                     tenant: tenant,
+                     actor: context.actor,
+                     authorize?: false
+                   ) do
+                {:ok, file} ->
+                  file
+                  |> Ash.Changeset.for_update(:set_sort_order, %{sort_order: order},
+                    tenant: tenant,
+                    actor: context.actor,
+                    authorize?: false
+                  )
+                  |> Ash.update(tenant: tenant, actor: context.actor, authorize?: false)
+                  |> case do
+                    {:ok, _} -> {:ok, %{id: id, success: true, sort_order: order}}
+                    {:error, error} -> {:error, %{id: id, error: inspect(error)}}
+                  end
+
+                {:error, error} ->
+                  {:error, %{id: id, error: inspect(error)}}
+              end
+            else
+              {:error, %{error: "Missing id"}}
+            end
+          end)
+
+        errors = Enum.filter(results, fn
+          {:error, _} -> true
+          _ -> false
+        end)
+
+        if Enum.empty?(errors) do
+          {:ok, %{success: true, updated: length(items)}}
+        else
+          {:error, %{message: "部分更新失败", errors: errors}}
+        end
+      end
+    end
+
     action :log_file_view do
       description "Log file view activity"
 
@@ -511,7 +579,19 @@ defmodule KgEdu.Courses.File do
       description "ID of the user who created this file"
     end
 
-    create_timestamp :inserted_at
+    attribute :sort_order, :integer do
+      allow_nil? true
+      public? true
+      writable? true
+      default 2_000_000_000
+      description "排序权重，用于教师端手动排序；默认为大值，使新上传文件按插入时间倒序排在前/手动排序后排在后"
+    end
+
+    create_timestamp :inserted_at do
+      public? true
+      description "上传时间"
+    end
+
     update_timestamp :updated_at
   end
 

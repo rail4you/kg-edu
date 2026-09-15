@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -31,12 +31,17 @@ import {
   CloseCircleOutlined,
   StopOutlined,
   EyeOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  MenuOutlined,
+  SortAscendingOutlined,
 } from "@ant-design/icons";
 import {
   listFiles,
   deleteFile,
   createFile,
+  reorderFiles,
   type ListFilesFields,
   type CreateFileFields,
 } from "@/lib/ash_rpc";
@@ -68,6 +73,8 @@ const FILE_FIELDS: ListFilesFields = [
   "courseId",
   "assetId",
   "playbackId",
+  "sortOrder",
+  "insertedAt",
 ];
 
 type FileType = {
@@ -81,12 +88,13 @@ type FileType = {
   courseId: string | null;
   assetId: string | null;
   playbackId: string | null;
+  sortOrder: number | null;
+  insertedAt?: string | null;
 };
 
 export default function FileManagement() {
   const navigate = useNavigate();
   const { canEdit } = useEditPermission();
-  const [page, setPage] = useState(1);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
@@ -131,7 +139,7 @@ export default function FileManagement() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["files", tenant, page, selectedCourseId],
+    queryKey: ["files", tenant, selectedCourseId],
     queryFn: async () => {
       const baseFilter = { createdById: { eq: user?.id } };
       const filter = selectedCourseId
@@ -142,7 +150,7 @@ export default function FileManagement() {
         tenant,
         fields: FILE_FIELDS,
         filter,
-        page: { limit: 10, offset: (page - 1) * 10, count: true },
+        page: { limit: 1000, offset: 0 },
         headers: getAuthHeaders(user) as Record<string, string>,
       });
 
@@ -155,7 +163,120 @@ export default function FileManagement() {
   });
 
   const fileList = extractArrayData(filesData);
-  const totalCount = (filesData as any)?.count || 0;
+
+  // 手动排序状态：以 sortOrder 为基准的完整顺序（学生端也将沿用此顺序）
+  const [orderedFiles, setOrderedFiles] = useState<FileType[]>([]);
+  // 列排序状态（受控，AntD Table 原生排序）
+  const [sortedInfo, setSortedInfo] = useState<{
+    columnKey?: string;
+    order?: "ascend" | "descend";
+  }>({});
+  const [isReordering, setIsReordering] = useState(false);
+
+  // 当服务端数据变化时同步手动排序顺序。
+  // 注意：依赖 `filesData`（TanStack Query 的稳定内存引用），并用函数式更新
+  // 防止数组引用变化导致无限循环（Maximum update depth exceeded）。
+  useEffect(() => {
+    const ordered = [...fileList].sort((a, b) => {
+      const oa = a.sortOrder ?? 2_000_000_000;
+      const ob = b.sortOrder ?? 2_000_000_000;
+      if (oa !== ob) return oa - ob;
+      // 同权重时按上传时间倒序（最新在前）
+      const ta = a.insertedAt ? new Date(a.insertedAt).getTime() : 0;
+      const tb = b.insertedAt ? new Date(b.insertedAt).getTime() : 0;
+      return tb - ta;
+    });
+    setOrderedFiles((prev) => {
+      // 内容未变化时返回原引用，避免触发多余渲染/循环
+      if (
+        prev.length === ordered.length &&
+        prev.every((f, i) => f.id === ordered[i]?.id)
+      ) {
+        return prev;
+      }
+      return ordered;
+    });
+  }, [filesData]);
+
+  // 持久化手动排序到后端（学生端同步）
+  const persistOrder = async (nextOrder: FileType[]) => {
+    const items = nextOrder.map((f, i) => ({
+      id: f.id,
+      order: i + 1,
+    }));
+    setIsReordering(true);
+    try {
+      const result = await reorderFiles({
+        tenant,
+        input: { items },
+        headers: getAuthHeaders(user) as Record<string, string>,
+      });
+      if (result.success) {
+        setOrderedFiles(nextOrder.map((f, i) => ({ ...f, sortOrder: i + 1 })));
+      } else {
+        message.error("排序保存失败，请重试");
+      }
+    } catch (e: any) {
+      message.error(e?.message || "排序保存失败，请重试");
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+  const moveFile = async (record: FileType, direction: "up" | "down") => {
+    const idx = displayList.findIndex((f) => f.id === record.id);
+    if (idx === -1) return;
+    const target = direction === "up" ? idx - 1 : idx + 1;
+    if (target < 0 || target >= displayList.length) return;
+    const next = [...displayList];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    // 若处于列排序视图，点击上下移将切换到手动排序
+    if (sortedInfo.order) {
+      message.info("已切换到手动排序");
+    }
+    setSortedInfo({});
+    await persistOrder(next);
+  };
+
+  // 当前是否为手动排序模式（未按列排序时）。
+  // 手动模式下保持 sort_order 顺序，可用于上移/下移。
+  const isManualMode = !sortedInfo.order;
+  // 是否已建立手动顺序（存在非默认大值的 sortOrder）
+  const hasManualOrder = orderedFiles.some(
+    (f) => (f.sortOrder ?? 0) > 0 && (f.sortOrder ?? 0) < 2_000_000_000
+  );
+
+  // 表格实际展示顺序：手动模式 = orderedFiles；列排序时镜像 AntD 的排序结果。
+  // 用于上移/下移按钮的边界判断与移动（与当前看到的位置一致）。
+  const displayList = useMemo(() => {
+    if (!sortedInfo.order || !sortedInfo.columnKey) return orderedFiles;
+    const dir = sortedInfo.order === "ascend" ? 1 : -1;
+    const list = [...orderedFiles];
+    list.sort((a, b) => {
+      switch (sortedInfo.columnKey) {
+        case "filename":
+          return (a.filename || "").localeCompare(b.filename || "") * dir;
+        case "fileType":
+          return (
+            getFileExtension(a.filename).localeCompare(getFileExtension(b.filename)) * dir
+          );
+        case "size":
+          return ((a.size || 0) - (b.size || 0)) * dir;
+        case "insertedAt":
+          return (
+            (new Date(a.insertedAt || 0).getTime() || 0) -
+              (new Date(b.insertedAt || 0).getTime() || 0)
+          ) * dir;
+        default:
+          return 0;
+      }
+    });
+    return list;
+  }, [orderedFiles, sortedInfo]);
+
+  // 每行在展示顺序中的位置（用于禁用首/尾行的上/下移）
+  const getDisplayIndex = (record: FileType) =>
+    displayList.findIndex((f) => f.id === record.id);
 
   const handleSingleFileUpload = async (
     file: File,
@@ -333,7 +454,6 @@ export default function FileManagement() {
       queryClient.invalidateQueries({
         queryKey: ["files", tenant],
       });
-      setPage(1);
 
       setUploadDialogOpen(false);
       setSelectedFiles([]);
@@ -599,6 +719,14 @@ export default function FileManagement() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const formatDateTime = (iso?: string | null) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "-";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
   const getFileExtension = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
     return ext ? ext.toUpperCase() : "文件";
@@ -623,11 +751,20 @@ export default function FileManagement() {
       key: "filename",
       width: 250,
       ellipsis: true,
+      sorter: (a: FileType, b: FileType) =>
+        (a.filename || "").localeCompare(b.filename || ""),
+      sortOrder:
+        sortedInfo.columnKey === "filename" ? sortedInfo.order : undefined,
     },
     {
       title: "类型",
       key: "fileType",
       width: 100,
+      align: "center",
+      sorter: (a: FileType, b: FileType) =>
+        getFileExtension(a.filename).localeCompare(getFileExtension(b.filename)),
+      sortOrder:
+        sortedInfo.columnKey === "fileType" ? sortedInfo.order : undefined,
       render: (_: unknown, record: FileType) => {
         const ext = getFileExtension(record.filename);
         return <Tag color={getFileTypeColor(ext)}>{ext}</Tag>;
@@ -638,13 +775,30 @@ export default function FileManagement() {
       dataIndex: "size",
       key: "size",
       width: 100,
+      align: "center",
+      sorter: (a: FileType, b: FileType) => (a.size || 0) - (b.size || 0),
+      sortOrder: sortedInfo.columnKey === "size" ? sortedInfo.order : undefined,
       render: (size: number) => <Text>{formatFileSize(size)}</Text>,
+    },
+    {
+      title: "上传时间",
+      dataIndex: "insertedAt",
+      key: "insertedAt",
+      width: 150,
+      align: "center",
+      sorter: (a: FileType, b: FileType) =>
+        (new Date(a.insertedAt || 0).getTime() || 0) -
+        (new Date(b.insertedAt || 0).getTime() || 0),
+      sortOrder:
+        sortedInfo.columnKey === "insertedAt" ? sortedInfo.order : undefined,
+      render: (t?: string) => <Text>{formatDateTime(t)}</Text>,
     },
     {
       title: "用途",
       dataIndex: "purpose",
       key: "purpose",
       width: 120,
+      align: "center",
       ellipsis: true,
       render: (purpose: string) => {
         const purposeMap: Record<string, string> = {
@@ -660,10 +814,40 @@ export default function FileManagement() {
     {
       title: "操作",
       key: "action",
-      width: 120,
+      width: 150,
       align: "center",
       render: (_: unknown, record: FileType) => (
         <Space>
+          {canEdit && (
+            <Space size={0}>
+              <Button
+                type="text"
+                icon={<ArrowUpOutlined />}
+                disabled={isReordering || getDisplayIndex(record) <= 0}
+                onClick={() => moveFile(record, "up")}
+                title={
+                  getDisplayIndex(record) <= 0
+                    ? "已是第一个资源，无法上移"
+                    : "上移（切换到手动排序）"
+                }
+              />
+              <Button
+                type="text"
+                icon={<ArrowDownOutlined />}
+                disabled={
+                  isReordering ||
+                  getDisplayIndex(record) < 0 ||
+                  getDisplayIndex(record) >= displayList.length - 1
+                }
+                onClick={() => moveFile(record, "down")}
+                title={
+                  getDisplayIndex(record) >= displayList.length - 1
+                    ? "已是最后一个资源，无法下移"
+                    : "下移（切换到手动排序）"
+                }
+              />
+            </Space>
+          )}
           <Button
             type="text"
             icon={<EyeOutlined />}
@@ -748,7 +932,6 @@ export default function FileManagement() {
             value={selectedCourseId}
             onChange={(value) => {
               setSelectedCourseId(value);
-              setPage(1);
             }}
             loading={coursesLoading}
             placeholder="请选择课程"
@@ -767,7 +950,6 @@ export default function FileManagement() {
               size="small"
               onClick={() => {
                 setSelectedCourseId("");
-                setPage(1);
               }}
             >
               清除
@@ -791,11 +973,19 @@ export default function FileManagement() {
         <Table
           className="theme-table"
           columns={columns}
-          dataSource={fileList}
+          dataSource={orderedFiles}
           rowKey="id"
-          loading={isLoading}
+          loading={isLoading || isReordering}
+          onChange={(_, __, sorter: any) => {
+            const s = Array.isArray(sorter) ? sorter[0] : sorter;
+            if (s && s.order) {
+              setSortedInfo({ columnKey: s.columnKey as string, order: s.order });
+            } else {
+              setSortedInfo({});
+            }
+          }}
           title={() => (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Space>
                 <Button
                   type="primary"
@@ -805,14 +995,55 @@ export default function FileManagement() {
                 >
                   批量上传
                 </Button>
+                {canEdit && (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "2px 10px",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      border: "1px solid #c5c9cf",
+                      background: "#f5f6f8",
+                      color: "#555c66",
+                    }}
+                  >
+                    {!isManualMode ? (
+                      <>
+                        <SortAscendingOutlined />
+                        按{
+                          sortedInfo.columnKey === "filename"
+                            ? "文件名"
+                            : sortedInfo.columnKey === "fileType"
+                              ? "类型"
+                              : sortedInfo.columnKey === "size"
+                                ? "大小"
+                                : sortedInfo.columnKey === "insertedAt"
+                                  ? "上传时间"
+                                  : "列"
+                        }排序
+                      </>
+                    ) : hasManualOrder ? (
+                      <>
+                        <MenuOutlined />
+                        手动排序
+                      </>
+                    ) : (
+                      <>
+                        <MenuOutlined />
+                        上传时间倒序
+                      </>
+                    )}
+                  </span>
+                )}
               </Space>
             </div>
           )}
           pagination={{
-            current: page,
             pageSize: 10,
-            total: totalCount,
-            onChange: (newPage) => setPage(newPage),
+            showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
           }}
         />

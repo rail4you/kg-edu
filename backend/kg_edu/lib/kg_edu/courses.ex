@@ -70,6 +70,7 @@ defmodule KgEdu.Courses do
       # rpc_action :upload_file, :upload
       rpc_action(:create_file, :create)
       rpc_action(:delete_file, :destroy)
+      rpc_action(:reorder_files, :reorder)
       rpc_action(:link_file_to_knowledge, :link_file_to_knowledge)
       rpc_action(:unlink_file_from_knowledge, :unlink_file_from_knowledge)
       rpc_action(:list_ai_generated_files_by_course, :ai_generated_by_course)
