@@ -727,9 +727,11 @@ export default function FileManagement() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
-  const getFileExtension = (filename: string) => {
-    const ext = filename.split(".").pop()?.toLowerCase();
-    return ext ? ext.toUpperCase() : "文件";
+  const getFileExtension = (filename?: string) => {
+    const name = filename || "";
+    const ext = name.split(".").pop()?.toLowerCase();
+    if (!ext || (ext === name && !name.includes("."))) return "文件";
+    return ext.toUpperCase();
   };
 
   const getFileTypeColor = (fileType: string): string => {
@@ -744,7 +746,7 @@ export default function FileManagement() {
     return "default";
   };
 
-  const columns: TableProps<FileType>["columns"] = [
+  const columns: TableProps<FileType>["columns"] = useMemo(() => [
     {
       title: "文件名",
       dataIndex: "filename",
@@ -807,6 +809,15 @@ export default function FileManagement() {
           resource: "资源",
           other: "其他",
           general: "通用",
+          course_file: "课程文件",
+          course_image: "课程图片",
+          ai_generated: "AI生成",
+          exercise: "练习题",
+          homework: "作业",
+          video: "视频",
+          link: "链接",
+          course_cover: "课程封面",
+          avatar: "头像",
         };
         return purposeMap[purpose] || purpose || "-";
       },
@@ -884,7 +895,7 @@ export default function FileManagement() {
         </Space>
       ),
     },
-  ];
+  ], [sortedInfo, orderedFiles, canEdit, isReordering, deleteMutation.isPending]);
 
   if (!tenant) {
     return (
