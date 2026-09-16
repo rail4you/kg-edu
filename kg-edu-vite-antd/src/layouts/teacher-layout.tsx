@@ -467,18 +467,35 @@ export default function TeacherLayout() {
   const [searchInputVisible, setSearchInputVisible] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const [openKeys, setOpenKeys] = useState<string[]>([
-    "/teacher/personal",
-    "/teacher/ai-workspace",
-    "/teacher/course",
-    "/teacher/knowledge",
-    "/teacher/major",
-    "/teacher/graph",
-    "/teacher/resource",
-    "/teacher/statistics",
-    "/teacher/email",
-    "/teacher/system",
-  ]);
+  const [openKeys, setOpenKeys] = useState<string[]>(() => {
+    // 从 localStorage 恢复上次打开的菜单分组，避免切换模块/刷新后回到初始状态
+    try {
+      const saved = localStorage.getItem("teacher-open-keys");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      "/teacher/personal",
+      "/teacher/ai-workspace",
+      "/teacher/course",
+      "/teacher/knowledge",
+      "/teacher/major",
+      "/teacher/graph",
+      "/teacher/resource",
+      "/teacher/statistics",
+      "/teacher/email",
+      "/teacher/system",
+    ];
+  });
+
+  // 持久化菜单分组展开状态
+  useEffect(() => {
+    try {
+      localStorage.setItem("teacher-open-keys", JSON.stringify(openKeys));
+    } catch {}
+  }, [openKeys]);
 
   const tenant = currentTenant?.schemaName || "";
   const headers = getAuthHeaders(user) as Record<string, string>;
@@ -486,6 +503,35 @@ export default function TeacherLayout() {
   const menuData = useMemo(() => getMenuData(t), [t]);
   const menuDataRef = useRef(menuData);
   menuDataRef.current = menuData;
+
+  // 由当前路径推导菜单选中项（支持带参数子路由的前缀匹配）——必须在 menuData 之后
+  const menuFlatRoutes = useMemo(() => flattenMenuRoutes(menuData), [menuData]);
+  const selectedKeys = useMemo(() => {
+    const p = location.pathname;
+    const exact = menuFlatRoutes.find((r) => r.path === p);
+    if (exact?.path) return [exact.path];
+    const byPrefix = menuFlatRoutes
+      .filter((r) => r.path && p.startsWith(r.path + "/"))
+      .sort((a, b) => (b.path?.length || 0) - (a.path?.length || 0));
+    return byPrefix[0]?.path ? [byPrefix[0].path] : [];
+  }, [location.pathname, menuFlatRoutes]);
+
+  // 当前页面所属的一级分组：切换页面时自动展开对应菜单，同步页面状态
+  const currentGroupPath = useMemo(() => {
+    const sel = selectedKeys[0];
+    if (!sel) return null;
+    return (
+      menuData.find((g) => g.routes?.some((r) => r.path === sel))?.path || null
+    );
+  }, [selectedKeys, menuData]);
+
+  useEffect(() => {
+    if (currentGroupPath) {
+      setOpenKeys((prev) =>
+        prev.includes(currentGroupPath) ? prev : [...prev, currentGroupPath]
+      );
+    }
+  }, [currentGroupPath]);
 
   const updateRecentViews = useCallback((path: string) => {
     const nameKey = PATH_TO_KEY[path];
@@ -937,6 +983,7 @@ export default function TeacherLayout() {
         location={{ pathname: location.pathname }}
         route={{ path: "/", routes: dynamicMenuData }}
         menuProps={{
+          selectedKeys,
           openKeys,
           onOpenChange: (keys) => setOpenKeys(keys as string[]),
         }}

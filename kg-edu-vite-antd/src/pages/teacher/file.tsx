@@ -255,7 +255,7 @@ export default function FileManagement() {
     list.sort((a, b) => {
       switch (sortedInfo.columnKey) {
         case "filename":
-          return (a.filename || "").localeCompare(b.filename || "") * dir;
+          return naturalCompare(a.filename, b.filename) * dir;
         case "fileType":
           return (
             getFileExtension(a.filename).localeCompare(getFileExtension(b.filename)) * dir
@@ -734,6 +734,39 @@ export default function FileManagement() {
     return ext.toUpperCase();
   };
 
+  // 文件名自然序比较：先按文本片段比较，数字片段按数值大小比较。
+  // 例："第一章第7节" < "第一章第12节"（同一前缀下 7 < 12）
+  const naturalCompare = (a?: string, b?: string): number => {
+    const sa = String(a || "");
+    const sb = String(b || "");
+    // 按数字/非数字交替拆分为片段
+    const re = /(\d+)|(\D+)/g;
+    const chunksA = sa.match(re) || [];
+    const chunksB = sb.match(re) || [];
+    const len = Math.max(chunksA.length, chunksB.length);
+    for (let i = 0; i < len; i++) {
+      const ca = chunksA[i];
+      const cb = chunksB[i];
+      if (ca === undefined) return -1;
+      if (cb === undefined) return 1;
+      const na = /^\d+$/.test(ca);
+      const nb = /^\d+$/.test(cb);
+      if (na && nb) {
+        const diff = parseInt(ca, 10) - parseInt(cb, 10);
+        if (diff !== 0) return diff;
+        // 数值相同（如 007 与 7）：位数少的在前
+        if (ca.length !== cb.length) return ca.length - cb.length;
+      } else if (na !== nb) {
+        // 一边是数字一边是文本：文本在前，数字在后
+        return na ? 1 : -1;
+      } else {
+        const c = ca.localeCompare(cb, "zh-Hans-CN");
+        if (c !== 0) return c;
+      }
+    }
+    return 0;
+  };
+
   const getFileTypeColor = (fileType: string): string => {
     const type = fileType.toLowerCase();
     if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(type)) return "blue";
@@ -754,7 +787,7 @@ export default function FileManagement() {
       width: 250,
       ellipsis: true,
       sorter: (a: FileType, b: FileType) =>
-        (a.filename || "").localeCompare(b.filename || ""),
+        naturalCompare(a.filename, b.filename),
       sortOrder:
         sortedInfo.columnKey === "filename" ? sortedInfo.order : undefined,
     },
