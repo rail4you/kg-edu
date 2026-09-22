@@ -81,9 +81,17 @@ defmodule KgEdu.Knowledge.Exercise do
       filter(expr(ai_type == :ai_generated))
 
       prepare(fn query, _context ->
+        query =
+          case Ash.Query.get_argument(query, :course_id) do
+            nil -> query
+            course_id -> Ash.Query.filter(query, course_id == ^course_id)
+          end
+
+        limit = Ash.Query.get_argument(query, :limit) || 10
+
         query
         |> Ash.Query.sort(inserted_at: :desc)
-        |> Ash.Query.limit(10)
+        |> Ash.Query.limit(limit)
       end)
     end
 
@@ -270,7 +278,7 @@ defmodule KgEdu.Knowledge.Exercise do
       run(fn input, context ->
         course_id = input.arguments.course_id
         knowledge_name = input.arguments.knowledge_name
-        chapter_name = input.arguments.chapter_name
+        chapter_name = input.arguments[:chapter_name]
         exercise_type = input.arguments.exercise_type
         number = input.arguments.number
 

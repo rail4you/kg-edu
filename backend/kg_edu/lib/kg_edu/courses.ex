@@ -1,7 +1,16 @@
 defmodule KgEdu.Courses do
   use Ash.Domain,
     otp_app: :kg_edu,
-    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc]
+    extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc, AshAi]
+
+  # P0: 仅暴露只读查询为 MCP tools（演示/助教调用），写操作不暴露
+  tools do
+    tool :list_courses, KgEdu.Courses.Course, :read
+    tool :get_course, KgEdu.Courses.Course, :get
+    tool :list_chapters, KgEdu.Courses.Chapter, :read
+    tool :list_files, KgEdu.Courses.File, :read
+    tool :list_videos, KgEdu.Courses.Video, :read
+  end
 
   admin do
     show?(true)
@@ -63,6 +72,7 @@ defmodule KgEdu.Courses do
       rpc_action(:update_chapter, :update)
       rpc_action(:delete_chapter, :destroy)
       rpc_action(:reorder_chapters, :reorder)
+      rpc_action(:generate_chapter_graph, :generate_knowledge_graph)
     end
 
     resource KgEdu.Courses.File do
@@ -141,6 +151,23 @@ defmodule KgEdu.Courses do
       rpc_action(:delete_subject_category, :destroy)
     end
 
+    resource KgEdu.Courses.VideoAnalysis do
+      rpc_action(:create_video_analysis, :create)
+      rpc_action(:update_video_analysis, :update)
+      rpc_action(:delete_video_analysis, :destroy)
+      rpc_action(:get_video_analysis, :read)
+      rpc_action(:list_video_analyses, :read)
+      rpc_action(:get_analysis_by_video, :by_video)
+      rpc_action(:list_analyses_by_course, :by_course)
+    end
+
+    resource KgEdu.Courses.VideoKnowledgeMark do
+      rpc_action(:create_mark, :create)
+      rpc_action(:delete_mark, :destroy)
+      rpc_action(:list_marks, :read)
+      rpc_action(:get_marks_by_video, :by_video)
+    end
+
     resource KgEdu.Courses.CourseVideo do
       rpc_action(:create_course_video, :create)
       rpc_action(:list_course_videos, :read)
@@ -189,6 +216,8 @@ defmodule KgEdu.Courses do
 
   resources do
     resource(KgEdu.Courses.Course)
+    resource(KgEdu.Courses.VideoAnalysis)
+    resource(KgEdu.Courses.VideoKnowledgeMark)
     resource(KgEdu.Courses.CourseEnrollment)
     resource(KgEdu.Courses.CourseAssignment)
     resource(KgEdu.Courses.Chapter)

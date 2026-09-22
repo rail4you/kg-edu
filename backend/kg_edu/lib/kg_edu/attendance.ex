@@ -48,10 +48,18 @@ defmodule KgEdu.Attendance do
       rpc_action :list_records, :read
       rpc_action :get_record, :by_id
     end
+
+    resource KgEdu.Attendance.FaceCheckLog do
+      rpc_action(:log_face_check, :create)
+      rpc_action(:list_face_checks, :read)
+      rpc_action(:list_face_checks_by_user, :by_user)
+      rpc_action(:list_face_checks_by_course, :by_course)
+    end
   end
 
   resources do
     resource KgEdu.Attendance.CheckInSession
     resource KgEdu.Attendance.CheckInRecord
+    resource KgEdu.Attendance.FaceCheckLog
   end
 end

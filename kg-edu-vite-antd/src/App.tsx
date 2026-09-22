@@ -22,6 +22,15 @@ import TeacherQuestion from "./pages/teacher/question";
 import TeacherFile from "./pages/teacher/file";
 import TeacherExamStatistics from "./pages/teacher/exam-statistics";
 import TeacherExamGrading from "./pages/teacher/exam-grading";
+import TeacherExamPrint from "./pages/teacher/exam-print";
+import TeacherCourseVideoAnalysis from "./pages/teacher/course-video-analysis";
+import TeacherCustomForm from "./pages/teacher/custom-form";
+import TeacherAiPractice from "./pages/teacher/ai-practice";
+import TeacherFaceCheck from "./pages/teacher/face-check";
+import TeacherAssistantPlugins from "./pages/teacher/assistant-plugins";
+import TeacherResearchTrack from "./pages/teacher/research-track";
+import StudentMyForms from "./pages/student/my-forms";
+import PortalShowcase from "./pages/portal-showcase";
 import TeacherVideo from "./pages/teacher/video";
 import TeacherSettings from "./pages/teacher/settings";
 import TeacherAiExercise from "./pages/teacher/ai-exercise";
@@ -34,6 +43,7 @@ import TeacherDiscussionSession from "./pages/teacher/discussion-session";
 import TeacherExamExercises from "./pages/teacher/exam-exercises";
 import TeacherExamGradeDetail from "./pages/teacher/exam-grade-detail";
 import TeacherActivitySummary from "./pages/teacher/activity-summary";
+import TeacherDataInsight from "./pages/teacher/data-insight";
 import TeacherBookInfo from "./pages/teacher/book-info";
 import TeacherCourseDetail from "./pages/teacher/course-detail";
 import TeacherCourseCategory from "./pages/teacher/course-category";
@@ -195,8 +205,10 @@ function ScrollToTop() {
     document.querySelectorAll<HTMLElement>("*").forEach((el) => {
       const style = window.getComputedStyle(el);
       if ((style.overflowY === "auto" || style.overflow === "auto") && el.scrollTop > 0) {
-        // 仅对主布局相关的可滚动区域生效，避免误触下拉菜单等
-        if (el.clientHeight > 200) {
+        // 仅对主布局相关的可滚动区域生效，避免误触下拉菜单等；
+        // 侧边导航菜单（.ant-layout-sider 内）的滚动位置必须保留，
+        // 否则每次切换页面菜单都会被置顶跳回顶部
+        if (el.clientHeight > 200 && !el.closest(".ant-layout-sider")) {
           el.scrollTop = 0;
         }
       }
@@ -216,6 +228,7 @@ export default function App() {
       <Route path="/about" element={<TemplatePage slug="about" />} />
       <Route path="/resources" element={<TemplatePage slug="resources" />} />
       <Route path="/demo" element={<TemplatePage slug="demo" />} />
+      <Route path="/portal-showcase" element={<PortalShowcase />} />
       <Route path="/textbook" element={<TemplatePage slug="textbook" />} />
       <Route path="/partners" element={<TemplatePage slug="partners" />} />
       {/* 动态模板页（超级管理员新增的页面，访问 /page/<slug>） */}
@@ -280,6 +293,7 @@ export default function App() {
         <Route path="exam-statistics/:examId" element={<TeacherExamStatistics />} />
         <Route path="exam-grading" element={<TeacherExamGrading />} />
         <Route path="exam-grading/:examId" element={<TeacherExamGrading />} />
+        <Route path="exam-print/:examId" element={<TeacherExamPrint />} />
         <Route path="video" element={<TeacherVideo />} />
         <Route path="settings" element={<TeacherSettings />} />
         <Route path="ai-exercise" element={<TeacherAiExercise />} />
@@ -288,12 +302,20 @@ export default function App() {
         <Route path="graph-knowledge" element={<GraphLayout><TeacherGraphKnowledge /></GraphLayout>} />
         <Route path="course-info" element={<TeacherCourseInfo />} />
         <Route path="course-video" element={<TeacherCourseVideo />} />
+        <Route path="course-video-analysis" element={<TeacherCourseVideoAnalysis />} />
+        <Route path="course-video-analysis/:videoId" element={<TeacherCourseVideoAnalysis />} />
+        <Route path="custom-form" element={<TeacherCustomForm />} />
+        <Route path="ai-practice" element={<TeacherAiPractice />} />
+        <Route path="face-check" element={<TeacherFaceCheck />} />
+        <Route path="assistant-plugins" element={<TeacherAssistantPlugins />} />
+        <Route path="research-track" element={<TeacherResearchTrack />} />
         <Route path="course-evaluation" element={<TeacherCourseEvaluation />} />
         <Route path="discussion-session" element={<TeacherDiscussionSession />} />
         <Route path="exam-exercises" element={<TeacherExamExercises />} />
         <Route path="exam-exercises/:examId" element={<TeacherExamExercises />} />
         <Route path="exam-grade-detail/:studentExamId" element={<TeacherExamGradeDetail />} />
         <Route path="activity-summary" element={<TeacherActivitySummary />} />
+        <Route path="data-insight" element={<TeacherDataInsight />} />
         <Route path="book-info" element={<TeacherBookInfo />} />
         <Route path="course/:courseId" element={<TeacherCourseDetail />} />
         <Route path="course-category" element={<TeacherCourseCategory />} />
@@ -390,6 +412,7 @@ export default function App() {
         <Route path="exam-courses" element={<StudentExamCourses />} />
         <Route path="exam-courses/:courseId" element={<StudentExamCourses />} />
         <Route path="exam-list/:courseId" element={<StudentExamList />} />
+        <Route path="my-forms" element={<StudentMyForms />} />
         <Route path="exam-taking/:examId" element={<StudentExamTaking />} />
         
         {/* 认知与图谱功能 */}

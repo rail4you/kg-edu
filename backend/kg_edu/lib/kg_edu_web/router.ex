@@ -115,6 +115,17 @@ defmodule KgEduWeb.Router do
     post "/session/find-tenants", SessionController, :find_tenants
     post "/generate_ai_exercise", GenerationController, :generate_exercise
     get "/admin/system-info", SystemInfoController, :get_info
+    # P0: AI 语音合成（Qwen TTS）
+    get "/tts/voices", TtsController, :voices
+    post "/tts/synthesize", TtsController, :synthesize
+    # P2: 视频 AI 解析
+    post "/video-analysis/analyze", VideoAnalysisController, :analyze
+    get "/video-analysis/:id", VideoAnalysisController, :show
+    get "/video-analysis/:id/marks", VideoAnalysisController, :marks
+    # P3: 表单 AI（填表/公式）与实践评估
+    post "/forms/ai-fill", FormsAiController, :ai_fill
+    post "/forms/ai-formula", FormsAiController, :ai_formula
+    post "/practice/evaluate", PracticeController, :evaluate
   end
 
   # Legacy /agent prefix — frontend still calls with /agent/* URLs
@@ -164,6 +175,21 @@ defmodule KgEduWeb.Router do
   scope "/api/assistant", KgEduWeb do
     pipe_through :api
     post "/ag-ui", ChatController, :stream_message
+    # 需求 10：助教插件
+    get "/settings", AssistantController, :settings
+    post "/settings", AssistantController, :save_settings
+    get "/plugins", AssistantController, :plugins
+    post "/plugin-run", AssistantController, :plugin_run
+    get "/mcp-tools", AssistantController, :mcp_tools
+  end
+
+  # 需求 12：AI 追踪
+  scope "/api/track", KgEduWeb do
+    pipe_through :api
+    get "/search", TrackController, :search
+    get "/author", TrackController, :author
+    post "/twin-chat", TrackController, :twin_chat
+    get "/venue-digest", TrackController, :venue_digest
   end
 
   scope "/live", KgEduWeb do
@@ -229,6 +255,13 @@ defmodule KgEduWeb.Router do
     pipe_through :api
     post "/run", KgEduWeb.AshTypescriptRpcController, :run
     post "/validate", KgEduWeb.AshTypescriptRpcController, :validate
+  end
+
+  # P0: ash_ai MCP Server（仅 MCP 功能）— 暴露 Domain tools 给 MCP 客户端（AI 助教/插件）
+  # 演示环境允许匿名连接；生产建议加 ApiKey/OAuth 鉴权
+  scope "/mcp" do
+    pipe_through :api
+    forward "/", AshAi.Mcp.Router, otp_app: :kg_edu, protocol_version_statement: "2024-11-05"
   end
 
   scope "/api/json" do

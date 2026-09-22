@@ -52,7 +52,7 @@ defmodule KgEdu.ExcelImport do
 
       when is_binary(excel_file) and is_list(attributes) do
 
-    with {:ok, binary_data} <- Base.decode64(excel_file),
+    with {:ok, binary_data} <- decode_base64(excel_file),
 
          {:ok, temp_path} <- create_temp_file(binary_data),
 
@@ -636,8 +636,15 @@ defmodule KgEdu.ExcelImport do
   # (see doc above)
 # Create a temporary file for Excel processing.
 
-  defp create_temp_file(binary_data) do
+  # Base.decode64/1 返回裸 :error 原子，统一转成 {:error, _} 供 with 承接
+  defp decode_base64(content) do
+    case Base.decode64(content) do
+      {:ok, binary} -> {:ok, binary}
+      :error -> {:error, "Invalid base64 data"}
+    end
+  end
 
+  defp create_temp_file(binary_data) do
     temp_path = get_temp_path()
 
     case File.write(temp_path, binary_data) do

@@ -35,7 +35,8 @@ import {
   HolderOutlined,
   UploadOutlined,
   DownloadOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  ApartmentOutlined
 } from "@ant-design/icons";
 import {
   DndContext,
@@ -63,6 +64,7 @@ import {
   listVideos,
   linkVideoToChapter,
   getFileTemplateBySection,
+  generateChapterGraph,
 } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
 import { getAuthHeaders } from "@/lib/auth";
@@ -724,6 +726,33 @@ export default function ChapterManagement() {
     setVideoModalOpen(true);
   };
 
+  // P2: 章节一键转知识图谱（聚合章节树+视频文档 → LLM 抽取 → 自动关联）
+  const [graphLoadingId, setGraphLoadingId] = React.useState<string | null>(null);
+  const handleGenerateGraph = async (chapter: ChapterRow) => {
+    setGraphLoadingId(chapter.id);
+    try {
+      const result = await generateChapterGraph({
+        tenant,
+        input: { chapterId: chapter.id },
+        headers: getAuthHeaders(user) as Record<string, string>,
+      });
+      if (result.success && result.data) {
+        const d = result.data as any;
+        message.success(
+          `知识图谱已生成：新增知识点 ${d.resourcesCreated ?? d.resources_created ?? 0} 个，` +
+            `关系 ${d.relationsCreated ?? d.relations_created ?? 0} 条，` +
+            `关联视频 ${d.linkedVideos ?? d.linked_videos ?? 0} 个、文档 ${d.linkedFiles ?? d.linked_files ?? 0} 个`,
+        );
+      } else {
+        message.error((result as any)?.errors?.[0]?.message || "生成失败");
+      }
+    } catch {
+      message.error("生成失败，请稍后重试");
+    } finally {
+      setGraphLoadingId(null);
+    }
+  };
+
   const handleVideoSelect = () => {
     if (!selectedChapter || !selectedVideo) return;
     linkVideoMutation.mutate({
@@ -843,6 +872,15 @@ export default function ChapterManagement() {
             onClick={() => handleVideoLinkClick(record)}
           >
             视频
+          </ReadonlyActionButton>
+          <ReadonlyActionButton
+            type="link"
+            size="small"
+            icon={<ApartmentOutlined />}
+            loading={graphLoadingId === record.id}
+            onClick={() => handleGenerateGraph(record)}
+          >
+            图谱
           </ReadonlyActionButton>
           {canEdit && (
             <Dropdown

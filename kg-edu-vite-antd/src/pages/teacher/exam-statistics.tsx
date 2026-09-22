@@ -2,7 +2,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as echarts from "echarts";
 import { useRef, useEffect } from "react";
-import { Card, Row, Col, Typography, Spin, Statistic, Empty, Button } from "antd";
+import { Card, Row, Col, Typography, Spin, Statistic, Empty, Button, Tabs, Table, Tag } from "antd";
 import {
   BarChartOutlined,
   RiseOutlined,
@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useParams , useNavigate } from "react-router-dom";
-import { getStudentExamsByExam } from "@/lib/ash_rpc";
+import { getStudentExamsByExam, getExamAnalysis } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 
@@ -154,6 +154,21 @@ export default function ExamStatistics() {
     enabled: !!examId && !!user,
   });
 
+  // P1: 试卷分析（题型/难易度统计 + 题目明细 + 正确率）
+  const { data: paperAnalysis, isLoading: analysisLoading } = useQuery({
+    queryKey: ["exam-analysis", examId],
+    queryFn: async () => {
+      const result = await getExamAnalysis({
+        tenant: currentTenant?.schemaName || "",
+        input: { examId: examId! },
+        headers: getAuthHeaders(user) as Record<string, string>,
+      });
+      if (result.success && result.data) return result.data as any;
+      return null;
+    },
+    enabled: !!examId && !!user,
+  });
+
   useEffect(() => {
     if (!statsData || !chartRef.current) return;
 
@@ -222,6 +237,121 @@ export default function ExamStatistics() {
     );
   }
 
+  // —— P1 试卷分析渲染 ——
+  const pick = (obj: any, camel: string, snake: string) => obj?.[camel] ?? obj?.[snake];
+  const typeName = (t: string) =>
+    ({
+      multiple_choice: "单选题",
+      multiple_response: "多选题",
+      true_false: "判断题",
+      fill_in_blank: "填空题",
+      essay: "问答题",
+      term_definition: "名词解释",
+      case_study: "案例题",
+    } as Record<string, string>)[t] || t;
+  const diffName = (d: number) =>
+    ({ 1: "容易", 2: "较易", 3: "中等", 4: "较难", 5: "困难" } as Record<number, string>)[d] ||
+    `L${d}`;
+
+  const renderAnalysis = () => {
+    if (analysisLoading) return <Card style={{ marginTop: 24 }}><Spin /></Card>;
+    if (!paperAnalysis) return null;
+    const byType = pick(paperAnalysis, "byType", "by_type") || [];
+    const byDiff = pick(paperAnalysis, "byDifficulty", "by_difficulty") || [];
+    const items = pick(paperAnalysis, "items", "items") || [];
+    const totalScore = pick(paperAnalysis, "totalScore", "total_score") || 0;
+    const totalQ = pick(paperAnalysis, "totalQuestions", "total_questions") || items.length;
+    return (
+      <>
+        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          <Col xs={24} md={12}>
+            <Card title={`题型统计（共 ${totalQ} 题 / ${totalScore} 分）`}>
+              <Table
+                size="small"
+                pagination={false}
+                rowKey="key"
+                dataSource={byType}
+                columns={[
+                  { title: "题型", dataIndex: "key", render: (v: string) => typeName(v) },
+                  { title: "题量", dataIndex: "count" },
+                  { title: "分数", dataIndex: "score" },
+                  {
+                    title: "分数占比",
+                    render: (_: any, r: any) =>
+                      totalScore ? `${Math.round((r.score / totalScore) * 100)}%` : "-",
+                  },
+                ]}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card title="难易度统计">
+              <Table
+                size="small"
+                pagination={false}
+                rowKey="key"
+                dataSource={byDiff}
+                columns={[
+                  {
+                    title: "难易度",
+                    dataIndex: "key",
+                    render: (v: number) => (
+                      <Tag color={v >= 4 ? "red" : v === 3 ? "orange" : "green"}>{diffName(v)}</Tag>
+                    ),
+                  },
+                  { title: "题量", dataIndex: "count" },
+                  { title: "分数", dataIndex: "score" },
+                ]}
+              />
+            </Card>
+          </Col>
+        </Row>
+        <Card title="题目明细（含跨考试正确率）" style={{ marginTop: 16 }}>
+          <Table
+            size="small"
+            rowKey="exam_exercise_id"
+            dataSource={[...items].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))}
+            columns={[
+              { title: "题号", dataIndex: "order", width: 60 },
+              { title: "题干", dataIndex: "title", ellipsis: true },
+              { title: "题型", dataIndex: "question_type", width: 90, render: (v: string) => typeName(v) },
+              {
+                title: "难易度",
+                dataIndex: "difficulty",
+                width: 80,
+                render: (v: number) => <Tag>{diffName(v)}</Tag>,
+                filters: [1, 2, 3, 4, 5].map((d) => ({ text: diffName(d), value: d })),
+                onFilter: (v: any, r: any) => r.difficulty === v,
+              },
+              {
+                title: "知识点",
+                dataIndex: "knowledge_point",
+                width: 120,
+                ellipsis: true,
+                render: (v: string) => v || <Text type="secondary">未关联</Text>,
+              },
+              { title: "分数", dataIndex: "points", width: 60 },
+              {
+                title: "正确率",
+                dataIndex: "correct_rate",
+                width: 110,
+                sorter: (a: any, b: any) => (a.correct_rate ?? -1) - (b.correct_rate ?? -1),
+                render: (v: number | null, r: any) =>
+                  v == null ? (
+                    <Text type="secondary">暂无作答</Text>
+                  ) : (
+                    <Text style={{ color: v >= 0.6 ? "#52c41a" : "#ff4d4f" }}>
+                      {Math.round(v * 100)}%（{r.attempts}次）
+                    </Text>
+                  ),
+              },
+            ]}
+          />
+        </Card>
+      </>
+    );
+  };
+
   return (
     <div
       style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}
@@ -246,6 +376,10 @@ export default function ExamStatistics() {
         <Title level={4} style={{ margin: 0, fontWeight: 700, color: "#333" }}>
           考试统计分析
         </Title>
+        <div style={{ flex: 1 }} />
+        <Button type="primary" onClick={() => navigate(`/teacher/dashboard/exam-print/${examId}`)}>
+          打印试卷
+        </Button>
       </div>
 
       <div className="exam-statistics-wrap" style={{ padding: 24 }}>
@@ -394,6 +528,7 @@ export default function ExamStatistics() {
             </div>
           </Card>
         )}
+        {renderAnalysis()}
       </div>
     </div>
   );

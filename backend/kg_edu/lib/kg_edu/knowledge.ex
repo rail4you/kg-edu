@@ -3,6 +3,13 @@ defmodule KgEdu.Knowledge do
     otp_app: :kg_edu,
     extensions: [AshAdmin.Domain, AshJsonApi.Domain, AshPhoenix, AshTypescript.Rpc, AshAi]
 
+  # P0: 仅暴露只读查询为 MCP tools（演示/助教调用），写操作不暴露
+  tools do
+    tool :list_knowledge_resources, KgEdu.Knowledge.Resource, :read
+    tool :search_knowledge_resources, KgEdu.Knowledge.Resource, :search
+    tool :list_knowledge_by_course, KgEdu.Knowledge.Resource, :by_course
+  end
+
   admin do
     show?(true)
   end
@@ -61,6 +68,16 @@ defmodule KgEdu.Knowledge do
       rpc_action(:export_exercise_template, :export_exercise_template)
       rpc_action(:move_exercise_up, :move_up)
       rpc_action(:move_exercise_down, :move_down)
+    end
+
+    resource KgEdu.Knowledge.PracticeAttempt do
+      rpc_action(:create_practice_attempt, :create)
+      rpc_action(:update_practice_attempt, :update)
+      rpc_action(:delete_practice_attempt, :destroy)
+      rpc_action(:get_practice_attempt, :read)
+      rpc_action(:list_practice_attempts, :read)
+      rpc_action(:list_attempts_by_user, :by_user)
+      rpc_action(:list_attempts_by_course, :by_course)
     end
 
     resource KgEdu.Knowledge.Question do
@@ -181,6 +198,8 @@ defmodule KgEdu.Knowledge do
       rpc_action(:get_exams_by_creator, :by_creator)
       rpc_action(:add_exercise_to_exam, :add_exercise)
       rpc_action(:remove_exercise_from_exam, :remove_exercise)
+      rpc_action(:get_exam_content, :get_exam_content)
+      rpc_action(:get_exam_analysis, :get_exam_analysis)
     end
 
     resource KgEdu.Knowledge.ExamExercise do
@@ -281,6 +300,7 @@ defmodule KgEdu.Knowledge do
     resource(KgEdu.Knowledge.Relation)
     resource(KgEdu.Knowledge.RelationType)
     resource(KgEdu.Knowledge.Exercise)
+    resource(KgEdu.Knowledge.PracticeAttempt)
     resource(KgEdu.Knowledge.Question)
     resource(KgEdu.Knowledge.QuestionConnection)
     resource(KgEdu.Knowledge.Homework)

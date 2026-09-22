@@ -134,7 +134,7 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
       },
       {
         path: "/teacher/dashboard/ai-exercise",
-        name: t("menu.aiExercise"),
+        name: `${t("menu.aiExercise")} ★`,
         icon: <EditOutlined />,
       },
       {
@@ -191,7 +191,7 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
       },
       {
         path: "/teacher/dashboard/course-video",
-        name: t("menu.courseVideo"),
+        name: `${t("menu.courseVideo")} ★`,
         icon: <VideoCameraOutlined />,
       },
       {
@@ -262,7 +262,7 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
     routes: [
       {
         path: "/teacher/dashboard/chapter",
-        name: t("menu.chapter"),
+        name: `${t("menu.chapter")} ★`,
         icon: <BookOutlined />,
       },
       {
@@ -292,7 +292,7 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
       },
       {
         path: "/teacher/dashboard/exam-management",
-        name: t("menu.examManagement"),
+        name: `${t("menu.examManagement")} ★`,
         icon: <ScheduleOutlined />,
       },
       {
@@ -384,6 +384,48 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
     ],
   },
   {
+    path: "/teacher/demo",
+    name: "智慧课程演示",
+    icon: <StarFilled style={{ color: "#faad14" }} />,
+    routes: [
+      {
+        path: "/teacher/dashboard/ai-practice",
+        name: "AI 实践 ★",
+        icon: <RobotOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/face-check",
+        name: "人脸抓拍 ★",
+        icon: <SafetyCertificateOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/custom-form",
+        name: "自定义表单 ★",
+        icon: <FileTextOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/course-video-analysis",
+        name: "视频解析 ★",
+        icon: <VideoCameraOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/data-insight",
+        name: "数据智能 ★",
+        icon: <BarChartOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/assistant-plugins",
+        name: "助教插件 ★",
+        icon: <MacCommandOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/research-track",
+        name: "学术追踪 ★",
+        icon: <SearchOutlined />,
+      },
+    ],
+  },
+  {
     path: "/teacher/system",
     name: t("menu.systemSettings"),
     icon: <SettingOutlined />,
@@ -443,6 +485,13 @@ const PATH_TO_KEY: Record<string, string> = {
   "/teacher/dashboard/job-competency-graphs": "课程能力图谱",
   "/teacher/dashboard/job-competency-graphs/": "课程能力图谱",
   "/teacher/dashboard/settings": "menu.systemSettings",
+  "/teacher/dashboard/ai-practice": "AI 实践 ★",
+  "/teacher/dashboard/face-check": "人脸抓拍 ★",
+  "/teacher/dashboard/custom-form": "自定义表单 ★",
+  "/teacher/dashboard/course-video-analysis": "视频解析 ★",
+  "/teacher/dashboard/data-insight": "数据智能 ★",
+  "/teacher/dashboard/assistant-plugins": "助教插件 ★",
+  "/teacher/dashboard/research-track": "学术追踪 ★",
 };
 
 export default function TeacherLayout() {

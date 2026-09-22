@@ -29,6 +29,7 @@ defmodule KgEdu.Activity.ActivityLog do
     define :log_mm_video_view, action: :log_mm_video_view
     define :log_mm_exercise_submit, action: :log_mm_exercise_submit
     define :log_mm_resource_download, action: :log_mm_resource_download
+    define :log_notice, action: :log_notice
     define :get_activity_log, action: :by_id
     define :list_activity_logs, action: :read
     define :list_activity_logs_by_user, action: :by_user
@@ -430,6 +431,36 @@ defmodule KgEdu.Activity.ActivityLog do
       change set_attribute(:micro_major_name, arg(:micro_major_name))
       change set_attribute(:metadata, arg(:metadata))
     end
+
+    # 需求 10：通知推送落库（站内通知记录，生产可同步厂商推送 SDK）
+    create :log_notice do
+      description "Log a push notification record"
+
+      argument :user_id, :uuid do
+        allow_nil? false
+        description "Target user ID"
+      end
+
+      argument :title, :string do
+        allow_nil? false
+      end
+
+      argument :content, :string do
+        allow_nil? true
+        default ""
+      end
+
+      change set_attribute(:action_type, :notice)
+      change set_attribute(:resource_type, "Notice")
+      change set_attribute(:user_id, arg(:user_id))
+      change set_attribute(:resource_id, "00000000-0000-0000-0000-000000000000")
+
+      change fn changeset, _ ->
+        title = Ash.Changeset.get_argument(changeset, :title)
+        content = Ash.Changeset.get_argument(changeset, :content) || ""
+        Ash.Changeset.change_attribute(changeset, :metadata, %{title: title, content: content})
+      end
+    end
   end
 
   policies do
@@ -454,7 +485,7 @@ defmodule KgEdu.Activity.ActivityLog do
     attribute :action_type, :atom do
       allow_nil? false
       public? true
-      constraints one_of: [:file_view, :video_view, :exercise_submit, :homework_submit, :mm_video_view, :mm_exercise_submit, :mm_resource_download]
+      constraints one_of: [:file_view, :video_view, :exercise_submit, :homework_submit, :mm_video_view, :mm_exercise_submit, :mm_resource_download, :notice]
       description "Type of action performed"
     end
 

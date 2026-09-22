@@ -32,7 +32,8 @@ import {
   PictureOutlined,
   VideoCameraOutlined,
   UploadOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  FundOutlined
 } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload/interface";
 import {
@@ -491,6 +492,17 @@ export default function CourseVideoManagementPage() {
             onClick={() => handlePreviewVideo(courseVideo)}
           />
         </Tooltip>
+        {!isImage(courseVideo) && (
+          <Tooltip title="AI 解析（摘要/分段/打点/词云）">
+            <Button
+              size="small"
+              type="text"
+              icon={<FundOutlined />}
+              style={{ color: "#722ed1" }}
+              onClick={() => navigate(`/teacher/dashboard/course-video-analysis/${courseVideo.id}`)}
+            />
+          </Tooltip>
+        )}
         <Tooltip title="编辑">
           <ReadonlyActionButton
             size="small"

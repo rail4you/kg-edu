@@ -276,7 +276,9 @@ defmodule KgEduWeb.GenerationController do
                 Content: ex.question_content,
                 Options: if(ex.options, do: Jason.encode!(ex.options), else: nil),
                 Answer: ex.answer,
-                Points: points
+                Points: points,
+                Difficulty: ex.difficulty,
+                KnowledgeResourceId: ex.knowledge_resource_id
               }
             end)
 
@@ -285,6 +287,7 @@ defmodule KgEduWeb.GenerationController do
             QuestionTypeName: type_name,
             RequestedCount: count,
             ActualCount: length(available),
+            PointsPerQuestion: points,
             Exercises: exercises
           }
         end)
@@ -292,7 +295,7 @@ defmodule KgEduWeb.GenerationController do
 
       total_points =
         sections
-        |> Enum.map(fn s -> s[:ActualCount] * 2 end)
+        |> Enum.map(fn s -> s[:ActualCount] * (s[:PointsPerQuestion] || 2) end)
         |> Enum.sum()
 
       json(conn, %{

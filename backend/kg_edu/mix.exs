@@ -45,7 +45,8 @@ defmodule KgEdu.MixProject do
       {:ash_typescript, "~> 0.6"},
       {:cinder, "~> 0.6"},
       # {:mdex, "~> 0.7"},
-      # {:ash_ai, "~> 0.2"},
+      # P0: 仅使用 MCP 功能（tools 暴露 + MCP Server），不用 chat/vectorize
+      {:ash_ai, "~> 0.8"},
       {:usage_rules, "~> 0.1", only: [:dev]},
       {:bcrypt_elixir, "~> 3.0"},
       {:picosat_elixir, "~> 0.2"},
@@ -92,6 +93,7 @@ defmodule KgEdu.MixProject do
       {:cors_plug, "~> 3.0"},
       {:xlsxir, "~> 1.6"},
       {:elixlsx, "~> 0.6"},
+      {:phoenix_test, "~> 0.12", only: :test},
       {:daisy_ui_components, "~> 0.9"}
     ]
   end

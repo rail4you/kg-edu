@@ -27,6 +27,7 @@ defmodule KgEdu.Courses.Chapter do
       rpc_action :update_chapter, :update
       rpc_action :delete_chapter, :destroy
       rpc_action :reorder_chapters, :reorder
+      rpc_action :generate_chapter_graph, :generate_knowledge_graph
     end
   end
 
@@ -47,6 +48,7 @@ defmodule KgEdu.Courses.Chapter do
     define :get_chapter_with_subchapters, action: :get_with_subchapters
     define :get_course_full_hierarchy, action: :course_full_hierarchy
     define :reorder_chapters, action: :reorder
+    define :generate_chapter_graph, action: :generate_knowledge_graph
   end
 
   actions do
@@ -217,6 +219,19 @@ defmodule KgEdu.Courses.Chapter do
         else
           {:error, %{message: "部分更新失败", errors: errors}}
         end
+      end
+    end
+
+    # P2: 章节一键转知识图谱（聚合章节树 + 视频文档 → LLM 抽取 → 自动关联资源）
+    action :generate_knowledge_graph, :map do
+      description "Generate knowledge graph from a chapter tree"
+
+      argument :chapter_id, :uuid do
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        KgEdu.Courses.ChapterGraph.generate(input.arguments.chapter_id, context.tenant)
       end
     end
   end

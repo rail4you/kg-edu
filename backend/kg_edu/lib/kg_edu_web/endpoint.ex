@@ -36,6 +36,8 @@ defmodule KgEduWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
+    # P0: ash_ai Dev MCP 探针 → http://localhost:4000/ash_ai/mcp
+    plug AshAi.Mcp.Dev, otp_app: :kg_edu, protocol_version_statement: "2024-11-05"
     # plug AshPhoenix.Plug.CheckCodegenStatus  # Temporarily disabled for testing
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :kg_edu
   end

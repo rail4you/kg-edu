@@ -27,6 +27,7 @@ defmodule KgEdu.Application do
       {Phoenix.PubSub, name: KgEdu.PubSub},
       KgEduWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :kg_edu]},
+      {Task.Supervisor, name: KgEdu.TaskSupervisor},
       KgEdu.Agent.SessionContext
     ]
 

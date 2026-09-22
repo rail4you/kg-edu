@@ -1,83 +1,64 @@
 defmodule KgEdu.Knowledge.ImportServiceTest do
-  use ExUnit.Case, async: false
+  use KgEdu.DataCase, async: false
+
+  import KgEdu.AccountsFixtures
 
   alias KgEdu.Knowledge.ImportService
   alias KgEdu.Knowledge.Resource
   alias KgEdu.Knowledge.RelationType
-  alias KgEdu.Knowledge.Relation
   alias KgEdu.Courses.Course
+  alias KgEdu.Test.ExcelTestHelper
 
   describe "Excel validation" do
-    test "validates excel format correctly" do
-      # Test with valid Excel data (base64 encoded minimal Excel)
-      # This is a basic test - in practice you'd use real Excel files
-      valid_excel_data = create_test_excel_data()
+    test "validates real excel format" do
+      b64 =
+        ExcelTestHelper.create_test_excel_base64([
+          ["说明行"],
+          ["一级知识点", "二级知识点", "三级知识点", "知识点名称", "描述", "重要性", "排序"],
+          ["数学", "代数", "方程", "一元一次方程", "基础", "重要", 1],
+          ["数学", "代数", "方程", "二元一次方程组", "进阶", "重要", 2]
+        ])
 
-      case ImportService.validate_excel_format(valid_excel_data) do
-        {:ok, result} ->
-          assert %{
-                   sheet1_valid: true,
-                   sheet2_valid: true,
-                   sheet1_rows: _,
-                   sheet2_rows: _
-                 } = result
+      assert {:ok, %{sheet_valid: true, sheet_rows: 2}} =
+               ImportService.validate_excel_format(b64)
+    end
 
-        {:error, _} ->
-          # Expected for this test since we're using dummy data
-          :ok
-      end
+    test "rejects invalid excel data" do
+      assert {:error, _} = ImportService.validate_excel_format("dGVzdCBkYXRh")
     end
   end
 
   describe "Import functionality" do
     test "can create knowledge resources from import data" do
-      # Create a test course first
-      {:ok, course} = create_test_course()
+      user = user_fixture()
 
-      # Test knowledge resource creation
+      {:ok, course} =
+        Course.create_course(
+          %{title: "Test Course", description: "A test course for import testing", teacher_id: user.id},
+          tenant: test_tenant()
+        )
+
       knowledge_attrs = %{
         name: "Test Knowledge",
         description: "Test Description",
-        knowledge_type: :knowledge_cell,
+        knowledge_type: :subject,
         course_id: course.id,
-        importance_level: :normal
+        importance_level: "normal"
       }
 
-      assert {:ok, _knowledge} = Resource.create_knowledge_resource(knowledge_attrs)
+      assert {:ok, _knowledge} =
+               Resource.create_knowledge_resource(knowledge_attrs, tenant: test_tenant())
     end
 
     test "can create relation types" do
       relation_attrs = %{
-        name: "test_relation",
+        name: "test_relation_#{System.unique_integer([:positive])}",
         display_name: "Test Relation",
         description: "A test relation type"
       }
 
-      assert {:ok, _relation_type} = RelationType.create_relation_type(relation_attrs)
+      assert {:ok, _relation_type} =
+               RelationType.create_relation_type(relation_attrs, tenant: test_tenant())
     end
-  end
-
-  # Helper functions
-  defp create_test_excel_data do
-    # Create a minimal base64 string for testing
-    # In practice, you'd encode an actual Excel file
-    # Base64 for "test data"
-    "dGVzdCBkYXRh"
-  end
-
-  defp create_test_course do
-    course_attrs = %{
-      title: "Test Course",
-      description: "A test course for import testing",
-      teacher_id: get_test_user_id()
-    }
-
-    Course.create_course(course_attrs)
-  end
-
-  defp get_test_user_id do
-    # In a real test, you'd create a test user or use fixtures
-    # For now, return a UUID that might exist
-    "00000000-0000-0000-0000-000000000000"
   end
 end

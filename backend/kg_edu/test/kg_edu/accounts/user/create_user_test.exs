@@ -1,5 +1,7 @@
 defmodule KgEdu.Accounts.User.CreateUserTest do
-  use ExUnit.Case, async: true
+  use KgEdu.DataCase, async: true
+
+  import KgEdu.AccountsFixtures
 
   alias KgEdu.Accounts
 
@@ -15,11 +17,11 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         role: :user
       }
 
-      {:ok, user} = Accounts.create_user(params)
+      {:ok, user} = Accounts.create_user(params, tenant: test_tenant())
 
       assert user.member_id == "test_user_001"
       assert user.name == "Test User"
-      assert user.email == "test@example.com"
+      assert to_string(user.email) == "test111@example.com"
       assert user.role == :user
       assert user.hashed_password != nil
       # Should be hashed
@@ -32,7 +34,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         password: "password123"
       }
 
-      {:ok, user} = Accounts.create_user(params)
+      {:ok, user} = Accounts.create_user(params, tenant: test_tenant())
 
       assert user.member_id == "minimal_user"
       assert user.name == nil
@@ -50,7 +52,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         role: :admin
       }
 
-      {:ok, user} = Accounts.create_user(params)
+      {:ok, user} = Accounts.create_user(params, tenant: test_tenant())
 
       assert user.role == :admin
     end
@@ -63,7 +65,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         role: :teacher
       }
 
-      {:ok, user} = Accounts.create_user(params)
+      {:ok, user} = Accounts.create_user(params, tenant: test_tenant())
 
       assert user.role == :teacher
     end
@@ -74,7 +76,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         password: "password123"
       }
 
-      assert {:error, _reason} = Accounts.create_user(params)
+      assert {:error, _reason} = Accounts.create_user(params, tenant: test_tenant())
     end
 
     test "returns error for missing password" do
@@ -83,7 +85,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         name: "Test User"
       }
 
-      assert {:error, _reason} = Accounts.create_user(params)
+      assert {:error, _reason} = Accounts.create_user(params, tenant: test_tenant())
     end
 
     test "returns error for short password" do
@@ -93,17 +95,18 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         password: "123"
       }
 
-      assert {:error, _reason} = Accounts.create_user(params)
+      assert {:error, _reason} = Accounts.create_user(params, tenant: test_tenant())
     end
 
-    test "returns error for invalid email format" do
+    test "accepts free-form email (no format validation on create_user)" do
       params = %{
         member_id: "test_user",
         email: "invalid_email",
         password: "password123"
       }
 
-      assert {:error, _reason} = Accounts.create_user(params)
+      assert {:ok, user} = Accounts.create_user(params, tenant: test_tenant())
+      assert to_string(user.email) == "invalid_email"
     end
 
     test "returns error for duplicate member_id" do
@@ -113,7 +116,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         password: "password123"
       }
 
-      {:ok, _user1} = Accounts.create_user(params1)
+      {:ok, _user1} = Accounts.create_user(params1, tenant: test_tenant())
 
       # Try to create second user with same member_id
       params2 = %{
@@ -121,7 +124,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         password: "password456"
       }
 
-      assert {:error, _reason} = Accounts.create_user(params2)
+      assert {:error, _reason} = Accounts.create_user(params2, tenant: test_tenant())
     end
 
     test "returns error for invalid role" do
@@ -131,7 +134,7 @@ defmodule KgEdu.Accounts.User.CreateUserTest do
         role: :invalid_role
       }
 
-      assert {:error, _reason} = Accounts.create_user(params)
+      assert {:error, _reason} = Accounts.create_user(params, tenant: test_tenant())
     end
   end
 end

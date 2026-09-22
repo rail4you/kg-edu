@@ -139,7 +139,9 @@ config :kg_edu,
     KgEdu.Attendance,
     KgEdu.GroupTask,
     KgEdu.MajorAnalysis,
-    KgEdu.SystemConfig
+    KgEdu.SystemConfig,
+    KgEdu.Insights,
+    KgEdu.Forms
   ]
 
 # Configures the endpoint

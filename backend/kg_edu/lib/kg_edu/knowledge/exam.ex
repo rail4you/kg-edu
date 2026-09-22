@@ -35,6 +35,7 @@ defmodule KgEdu.Knowledge.Exam do
     define :create_exam, action: :create
     define :create_exam_with_exercises, action: :create_with_exercises
     define :get_exam_content, action: :get_exam_content
+    define :get_exam_analysis, action: :get_exam_analysis
     define :update_exam, action: :update
     define :delete_exam, action: :destroy
     define :add_exercise_to_exam, action: :add_exercise
@@ -487,6 +488,21 @@ defmodule KgEdu.Knowledge.Exam do
 
       prepare fn query, _context ->
         Ash.Query.load(query, exam_exercises: [:exercise])
+      end
+    end
+
+    # P1: 试卷分析 — 题型统计（题量/分数）、难易度统计（题量/分数）、
+    # 题目明细（含跨考试正确率：该题在所有已批改作答中的得分率）
+    action :get_exam_analysis, :map do
+      description "Analyze exam paper: stats by type/difficulty plus per-question correct rate"
+
+      argument :exam_id, :uuid do
+        allow_nil? false
+        description "The exam ID to analyze"
+      end
+
+      run fn input, context ->
+        KgEdu.Knowledge.ExamAnalysis.analyze(input.arguments.exam_id, context.tenant)
       end
     end
   end

@@ -47,7 +47,7 @@ import {
   updateExamExercise,
   getExam,
 } from "@/lib/ash_rpc";
-import { previewExam } from "@/lib/agent_api";
+import { previewExam, generateAiExercise } from "@/lib/agent_api";
 import type { PreviewSection, PreviewExercise } from "@/lib/agent_api";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -166,6 +166,9 @@ export default function ExamExercises() {
   >([]);
   const [loadingExerciseStats, setLoadingExerciseStats] = useState(false);
   const [composeConfig, setComposeConfig] = useState<ComposeConfigItem[]>([]);
+  // P1: 组卷大纲文本 + 单题 AI 重出 loading
+  const [outlineText, setOutlineText] = useState("");
+  const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
 
   const tenant = currentTenant?.schemaName || "";
 
@@ -647,6 +650,112 @@ export default function ExamExercises() {
   const handleRecompose = () => {
     setPreviewDialogOpen(false);
     setAutoComposeOpen(true);
+  };
+
+  // P1: 解析组卷大纲文本 → 填充智能组卷配置
+  // 支持行格式如：单选题 5题 每题2分 难度1,2 ／ 多选 3 2
+  const handleParseOutline = () => {
+    const typeKeywords: Array<{ keys: string[]; type: string }> = [
+      { keys: ["单选"], type: "multiple_choice" },
+      { keys: ["多选"], type: "multiple_response" },
+      { keys: ["判断"], type: "true_false" },
+      { keys: ["填空"], type: "fill_in_blank" },
+      { keys: ["问答", "简答", "论述"], type: "essay" },
+      { keys: ["名词解释"], type: "term_definition" },
+      { keys: ["案例"], type: "case_study" },
+    ];
+    const lines = outlineText.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) {
+      message.warning("请先粘贴组卷大纲");
+      return;
+    }
+    let matched = 0;
+    const next = composeConfig.map((c) => ({ ...c, enabled: false, count: 0 }));
+    for (const line of lines) {
+      const hit = typeKeywords.find(({ keys }) => keys.some((k) => line.includes(k)));
+      if (!hit) continue;
+      const idx = next.findIndex((c) => c.questionType === hit.type);
+      if (idx < 0) continue;
+      const countMatch = line.match(/(\d+)\s*题/);
+      const nums = (line.match(/\d+/g) || []).map(Number);
+      const count = countMatch ? Number(countMatch[1]) : nums[0] || 0;
+      const pointsMatch = line.match(/每题\s*(\d+)\s*分/) || line.match(/(\d+)\s*分\s*\/\s*题/);
+      const points = pointsMatch ? Number(pointsMatch[1]) : nums[1] || next[idx].pointsPerQuestion || 2;
+      const diffMatch = line.match(/难度\s*([1-5,\s、-]+)/);
+      let difficulties = next[idx].difficulties;
+      if (diffMatch) {
+        const parts = diffMatch[1].split(/[,\s、]+/).map(Number).filter((n) => n >= 1 && n <= 5);
+        if (parts.length > 0) difficulties = [...new Set(parts)];
+      }
+      next[idx] = {
+        ...next[idx],
+        enabled: true,
+        count: Math.min(next[idx].maxCount || count, count),
+        pointsPerQuestion: points,
+        difficulties,
+      };
+      matched += 1;
+    }
+    if (matched === 0) {
+      message.warning("未能从大纲中识别题型，请检查格式（如：单选题 5题 每题2分 难度1,2）");
+      return;
+    }
+    setComposeConfig(next);
+    message.success(`已按大纲填充 ${matched} 类题型配置`);
+  };
+
+  // P1: 预览中对单题 AI 重新出题（同题型/难度新生成一题并替换该行）
+  const handleRegenerateOne = async (section: PreviewSection, exercise: PreviewExercise) => {
+    const courseId = (examData as any)?.data?.courseId;
+    if (!courseId) {
+      message.warning("无法确定课程，暂不能重新出题");
+      return;
+    }
+    const config = composeConfig.find((c) => c.questionType === section.questionType);
+    setRegeneratingIds((prev) => new Set(prev).add(exercise.id));
+    try {
+      const result = await generateAiExercise({
+        tenant,
+        input: {
+          courseId,
+          knowledgeName: (examData as any)?.data?.title || "",
+          exerciseType: section.questionType,
+          number: 1,
+          difficulty: config?.difficulties?.[0] || 3,
+        },
+        headers: getHeaders(user),
+      });
+      const created = (result as any)?.data?.data;
+      const fresh = Array.isArray(created) ? created[0] : null;
+      if (result.success && fresh?.id) {
+        setPreviewSections((prev) =>
+          prev.map((s) =>
+            s.questionType === section.questionType
+              ? {
+                  ...s,
+                  actualCount: s.actualCount,
+                  exercises: s.exercises.map((ex) =>
+                    ex.id === exercise.id
+                      ? { ...ex, id: fresh.id, title: fresh.title || ex.title }
+                      : ex,
+                  ),
+                }
+              : s,
+          ),
+        );
+        message.success("已重新出一题并替换");
+      } else {
+        message.error((result as any)?.message || "重新出题失败");
+      }
+    } catch (e) {
+      message.error("重新出题失败，请稍后重试");
+    } finally {
+      setRegeneratingIds((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.delete(exercise.id);
+        return nextSet;
+      });
+    }
   };
 
   const handleRemoveFromPreview = (exerciseId: string) => {
@@ -1299,6 +1408,34 @@ export default function ExamExercises() {
           </Text>
         </div>
 
+        {/* P1: 组卷大纲 → 一键填充配置 */}
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 16,
+            background: "#f6f0ff",
+            borderRadius: 8,
+            border: "1px solid #d3adf7",
+          }}
+        >
+          <Text strong>组卷大纲</Text>
+          <Text type="secondary" style={{ marginLeft: 8 }}>
+            每行一类题型，如：单选题 5题 每题2分 难度1,2
+          </Text>
+          <Input.TextArea
+            rows={3}
+            value={outlineText}
+            onChange={(e) => setOutlineText(e.target.value)}
+            placeholder={"单选题 5题 每题2分 难度1,2\n判断题 5题 每题2分 难度1\n问答题 2题 每题10分 难度3"}
+            style={{ marginTop: 8 }}
+          />
+          <div style={{ marginTop: 8, textAlign: "right" }}>
+            <Button type="primary" ghost onClick={handleParseOutline}>
+              按大纲填充配置
+            </Button>
+          </div>
+        </div>
+
         {loadingExerciseStats ? (
           <div
             style={{ display: "flex", justifyContent: "center", padding: 48 }}
@@ -1595,6 +1732,15 @@ export default function ExamExercises() {
                         {exerciseIndex + 1}.
                       </Text>
                       <Text style={{ flex: 1 }}>{exercise.title}</Text>
+                      <Tooltip title="AI 重新出一题并替换">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<ReloadOutlined />}
+                          loading={regeneratingIds.has(exercise.id)}
+                          onClick={() => handleRegenerateOne(section, exercise)}
+                        />
+                      </Tooltip>
                       <Button
                         type="text"
                         danger
