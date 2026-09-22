@@ -57,6 +57,17 @@ USER="$1"; shift
 REMOTE="$USER@$HOST"
 REMOTE_DIR="/home/$USER/kg_edu"
 
+# 护栏：47.99.245.49 已迁移到宝塔接管 80/443（HTTPS），通用流程里的
+# docker nginx 会抢端口，禁止再用本脚本往这台发布，请改用专用流程。
+if [ "$HOST" = "47.99.245.49" ]; then
+  echo ""
+  echo -e "${RED}${BOLD}  已拦截：${HOST} 是宝塔 HTTPS 服务器（yikecheng.com）${NC}"
+  echo -e "  本脚本会同步含 nginx 的 compose 并 up -d 全量，会冲掉宝塔的 80/443。"
+  echo -e "  请改用专用流程: ${BOLD}./deploy-yikecheng.sh [--skip-build]${NC}"
+  echo ""
+  exit 1
+fi
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --name)        BRAND_NAME="$2";       BRAND_EXPLICIT=1; shift 2 ;;

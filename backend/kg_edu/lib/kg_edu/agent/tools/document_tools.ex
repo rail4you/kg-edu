@@ -947,7 +947,7 @@ defmodule KgEdu.Agent.Tools.DocumentTools do
 
     if File.exists?(script) do
       # Build NODE_PATH for pptxgenjs resolution:
-      # 1. System env NODE_PATH (Docker: /usr/local/lib/node_modules)
+      # 1. System env NODE_PATH (Docker: /opt/bun/install/global/node_modules)
       # 2. agent-server/node_modules (dev env)
       # 3. Global npm prefix
       node_paths =

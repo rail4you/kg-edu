@@ -1,0 +1,87 @@
+# ============================================================
+# KgEdu 生产 compose（宝塔 TLS 专用）
+# 目标服务器: 47.99.245.49（yikecheng.com / www.yikecheng.com）
+#
+# 与 docker-compose.prod.yml 的唯一区别：删除了 nginx 服务。
+# 原因：该服务器 80/443 由宝塔 Nginx 接管（面板站点 yikecheng.com
+# 反代到 127.0.0.1:4000 + Let's Encrypt 证书 + 强制 HTTPS），
+# docker 里再起 nginx 会抢端口导致宝塔站点挂掉。
+#
+# 使用方式：仅由 deploy-yikecheng.sh 同步到远端，别用其它
+# deploy 脚本往这台发布（deploy-kgedu.sh 已对该 IP 做拦截）。
+# ============================================================
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: kg-edu-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kg_edu_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kg-edu-network
+
+  # Elixir Phoenix Backend（API + React SPA 静态文件）
+  # 宝塔 Nginx 反代到本机 4000；后端重启期间前台短暂 502，属正常
+  backend:
+    image: registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest
+    container_name: kg-edu-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@db:5432/kg_edu_dev
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - TOKEN_SIGNING_SECRET=${TOKEN_SIGNING_SECRET}
+      - PHX_HOST=localhost
+      - PORT=4000
+      - PHX_SERVER=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - REACT_TOKEN_SECRET=${REACT_TOKEN_SECRET:-kg-edu-local-react-token-secret-change-in-prod-32}
+      - BRANDING_APP_NAME=${BRANDING_APP_NAME}
+      - BRANDING_APP_TITLE=${BRANDING_APP_TITLE}
+      - BRANDING_APP_DESCRIPTION=${BRANDING_APP_DESCRIPTION}
+      - BRANDING_LOGO_DARK=${BRANDING_LOGO_DARK}
+      - BRANDING_LOGO_LIGHT=${BRANDING_LOGO_LIGHT}
+      - BRANDING_FAVICON=${BRANDING_FAVICON}
+      - BRANDING_CONTACT_EMAIL=${BRANDING_CONTACT_EMAIL}
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/priv/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - kg-edu-network
+
+  # 注意：没有 nginx 服务（宝塔接管 80/443，勿加回）
+
+volumes:
+  postgres_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  kg-edu-network:
+    driver: bridge

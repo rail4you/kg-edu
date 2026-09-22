@@ -53,7 +53,28 @@ defmodule Mix.Tasks.BuildFrontend do
 
     Mix.shell().info([:green, "==> ", :reset, "Copying dist to priv/static..."])
 
-    # 确保 priv/static 存在
+    # priv/static 下有少量 git 跟踪的源文件（如 files/template.xlsx、logo/ 品牌图），
+    # 只清构建产物（.gitignore 忽略部分），保留跟踪文件，否则旧 hash 文件无限累积进镜像
+    backend_dir = Path.expand("../../..", __DIR__)
+
+    case System.cmd("git", ["clean", "-fdX", "priv/static"],
+           cd: backend_dir,
+           stderr_to_stdout: true
+         ) do
+      {_, 0} ->
+        :ok
+
+      {output, _} ->
+        # 无 git 环境时降级：只删已知的构建产物路径
+        Mix.shell().info("git clean unavailable, falling back to targeted cleanup: #{output}")
+        File.rm_rf!(Path.join(static_dir, "assets"))
+        File.rm_rf!(Path.join(static_dir, "cache_manifest.json"))
+
+        for pattern <- ["index*.html", "index*.html.gz", "*.gz"] do
+          Path.wildcard(Path.join(static_dir, pattern)) |> Enum.each(&File.rm_rf!/1)
+        end
+    end
+
     File.mkdir_p!(static_dir)
 
     # 复制所有 dist 内容到 priv/static

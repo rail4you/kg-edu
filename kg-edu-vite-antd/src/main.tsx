@@ -1,5 +1,3 @@
-// 兼容老内核 — 必须在所有业务代码之前
-import "./polyfills";
 // fetch 拦截器 — 必须在所有模块导入前加载，确保最先安装
 import { installFetchInterceptor } from "./lib/fetch-interceptor";
 installFetchInterceptor();

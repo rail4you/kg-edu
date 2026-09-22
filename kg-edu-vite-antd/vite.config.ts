@@ -2,7 +2,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import legacy from "@vitejs/plugin-legacy";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,15 +11,6 @@ const PORT = 8081;
 export default defineConfig({
   plugins: [
     react(),
-    legacy({
-      // 兼容 Chrome 95 内核（常见政企/教育信创浏览器），同时覆盖 Safari 14 / Edge 95 / Firefox 95
-      targets: ["chrome >= 95", "edge >= 95", "firefox >= 95", "safari >= 14", "ios >= 14"],
-      modernPolyfills: true,
-      // 为旧浏览器额外注入 regenerator-runtime，兼容 async/await 转换后的代码
-      additionalLegacyPolyfills: ["regenerator-runtime/runtime"],
-      renderLegacyChunks: true,
-      polyfills: true,
-    }),
   ],
   resolve: {
     alias: {
@@ -128,13 +118,12 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     minify: "esbuild",
-    // 兼容性：现代包以 es2015 为底线，CSS 目标锁定 chrome95，避免输出旧浏览器不支持的语法
-    target: "es2015",
-    cssTarget: "chrome95",
-    modulePreload: { polyfill: true },
+    // 现代浏览器基线（与 package.json browserslist 一致）：es2022 原生输出，
+    // 不再为旧浏览器做转译/polyfill，构建更快、产物更小
+    target: "es2022",
+    modulePreload: { polyfill: false },
   },
   css: {
-    // 让 postcss/autoprefixer 按 browserslist 处理 backdrop-filter / gap 等前缀
     postcss: "./postcss.config.js",
   },
   preview: { port: PORT, host: true },

@@ -15,6 +15,15 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_HOST="${REMOTE_HOST:-root@123.57.141.233}"
 REMOTE_DIR="${REMOTE_DIR:-/root/kg_edu}"
 
+# ── 护栏：47.99.245.49 已迁移到宝塔接管 80/443（HTTPS），本脚本会
+# 同步含 nginx 的 compose 并 up -d 全量，会冲掉宝塔站点，禁止使用。
+# 该服务器请改用专用流程：./deploy-yikecheng.sh [--skip-build]
+case "${REMOTE_HOST}" in
+  *47.99.245.49*)
+    echo "已拦截：${REMOTE_HOST} 是宝塔 HTTPS 服务器，请改用 ./deploy-yikecheng.sh" >&2
+    exit 1 ;;
+esac
+
 # ── 镜像配置 ───────────────────────────────────────────────
 PLATFORM="${PLATFORM:-linux/amd64}"
 IMAGE="${IMAGE:-registry.cn-zhangjiakou.aliyuncs.com/myelixir/kg_edu_backend:latest}"

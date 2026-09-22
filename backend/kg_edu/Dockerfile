@@ -37,15 +37,16 @@ RUN mix release
 # Stage 2: Runtime
 FROM ubuntu:jammy-20240808
 
-# ── Minimal runtime deps (no nodejs/npm, use Bun instead) ──────────────
+# ── Minimal runtime deps ─────────────────────────────────────────────────
+# pandoc: Markdown→DOCX (priv/skills/document/tools/generate_docx.js 在用)
+# python3 + PIL: 图片文字渲染 (priv/scripts/render_text_bg.py)
+# 注意：libreoffice / fonts-noto-cjk / pymupdf 未被任何代码调用
+# (仅 docs/digital-human-video-platform-plan.md 的 P2 规划提及)，不装以省 ~900MB
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl libssl3 libncurses6 locales ca-certificates \
     curl unzip wget gnupg \
     pandoc \
-    python3 python3-pil python3-pip \
-    libreoffice \
-    fonts-noto-cjk \
-    && pip3 install --no-cache-dir pymupdf \
+    python3 python3-pil \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install PostgreSQL 16 client (pg_dump + psql) ─────────────────────
@@ -57,13 +58,15 @@ RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
     && apt-get install -y --no-install-recommends postgresql-client-16 \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Install Bun (single binary ~100MB, replaces nodejs+npm ~500MB) ────
-RUN curl -fsSL https://bun.sh/install | bash
-ENV BUN_INSTALL=/root/.bun
-ENV PATH="/root/.bun/bin:$PATH"
+# ── Install Bun once into /opt/bun (root 安装、app 用户共用，
+#    避免之前 /root/.bun 再 cp 一份到 /home/app/.bun 的双份浪费 ~100MB) ──
+ENV BUN_INSTALL=/opt/bun
+ENV PATH="/opt/bun/bin:$PATH"
 
 # ── Install pptxgenjs via Bun ──────────────────────────────────────────
-RUN bun install -g pptxgenjs@3.12.0
+RUN curl -fsSL https://bun.sh/install | bash \
+    && bun install -g pptxgenjs@3.12.0 \
+    && rm -rf /tmp/* /root/.cache
 
 # ── Set locale ────────────────────────────────────────────────────────
 RUN locale-gen en_US.UTF-8
@@ -71,13 +74,11 @@ ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 
 # ── Runtime ENV ───────────────────────────────────────────────────────
 ENV MIX_ENV=prod PORT=4000 \
-    NODE_PATH=/root/.bun/install/global/node_modules
+    NODE_PATH=/opt/bun/install/global/node_modules
 
 # ── Create app user ───────────────────────────────────────────────────
-RUN groupadd -g 1000 app && useradd -u 1000 -g app -s /bin/bash -m app
-
-# Copy bun for app user
-RUN cp -r /root/.bun /home/app/.bun && chown -R app:app /home/app/.bun
+RUN groupadd -g 1000 app && useradd -u 1000 -g app -s /bin/bash -m app \
+    && chown -R app:app /opt/bun
 
 WORKDIR /app
 
@@ -86,9 +87,8 @@ COPY --from=builder --chown=app:app /app/_build/prod/rel/kg_edu ./
 RUN mkdir -p priv/uploads && chown -R app:app priv
 
 USER app
-ENV BUN_INSTALL=/home/app/.bun
-ENV PATH="/home/app/.bun/bin:$PATH"
-ENV NODE_PATH=/home/app/.bun/install/global/node_modules
+ENV PATH="/opt/bun/bin:$PATH"
+ENV NODE_PATH=/opt/bun/install/global/node_modules
 
 EXPOSE 4000
 CMD ["bin/kg_edu", "start"]

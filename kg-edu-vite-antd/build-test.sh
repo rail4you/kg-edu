@@ -25,7 +25,8 @@ pkill -f "vite" 2>/dev/null || true
 sleep 1
 
 bun install
-NODE_OPTIONS="--max-old-space-size=8192" bunx vite build
+# 去掉 @vitejs/plugin-legacy 后单次构建即可，4GB 足够（之前双构建才需 8GB）
+NODE_OPTIONS="--max-old-space-size=4096" bunx vite build
 
 echo "==> Verifying dist..."
 if [ ! -f "dist/index.html" ]; then
@@ -39,6 +40,11 @@ echo ""
 echo "==> Step 2: Copying dist to Phoenix priv/static..."
 
 cd "$BACKEND_DIR"
+# priv/static 下有少量 git 跟踪的源文件（如 files/template.xlsx、logo/ 品牌图），
+# 不能整目录删除；用 git clean 只清构建产物（.gitignore 忽略部分），保留跟踪文件。
+# 否则旧 hash 文件 + digest 产物无限累积（曾涨到 1.8G 并全部打进镜像）
+git clean -fdX priv/static
+mkdir -p priv/static
 cp -r "$FRONTEND_DIR/dist/"* priv/static/
 
 echo "==> Running phx.digest..."
