@@ -1748,15 +1748,35 @@ export type FormDefResourceSchema = {
 // FormSubmission Schema
 export type FormSubmissionResourceSchema = {
   __type: "Resource";
-  __primitiveFields: "id" | "submitterId" | "values" | "status" | "reviewNote" | "reviewerId" | "formId";
+  __primitiveFields: "id" | "submitterId" | "values" | "status" | "reviewNote" | "reviewerId" | "assignmentId" | "formId";
   id: UUID;
   submitterId: UUID | null;
   values: Record<string, any>;
   status: "submitted" | "approved" | "rejected";
   reviewNote: string | null;
   reviewerId: UUID | null;
+  assignmentId: UUID | null;
   formId: UUID;
   form: { __type: "Relationship"; __resource: FormDefResourceSchema; };
+  assignment: { __type: "Relationship"; __resource: FormAssignmentResourceSchema | null; };
+};
+
+
+
+// FormAssignment Schema
+export type FormAssignmentResourceSchema = {
+  __type: "Resource";
+  __primitiveFields: "id" | "formId" | "studentId" | "assignedById" | "submissionId" | "dueAt" | "status";
+  id: UUID;
+  formId: UUID;
+  studentId: UUID;
+  assignedById: UUID | null;
+  submissionId: UUID | null;
+  dueAt: UtcDateTime | null;
+  status: "pending" | "submitted";
+  form: { __type: "Relationship"; __resource: FormDefResourceSchema; };
+  student: { __type: "Relationship"; __resource: UserResourceSchema; };
+  assignedBy: { __type: "Relationship"; __resource: UserResourceSchema | null; };
 };
 
 
@@ -8331,6 +8351,12 @@ export type FormSubmissionFilterInput = {
     in?: Array<UUID>;
   };
 
+  assignmentId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
   formId?: {
     eq?: UUID;
     notEq?: UUID;
@@ -8339,6 +8365,67 @@ export type FormSubmissionFilterInput = {
 
 
   form?: FormDefFilterInput;
+
+  assignment?: FormAssignmentFilterInput;
+
+};
+export type FormAssignmentFilterInput = {
+  and?: Array<FormAssignmentFilterInput>;
+  or?: Array<FormAssignmentFilterInput>;
+  not?: Array<FormAssignmentFilterInput>;
+
+  id?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  formId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  studentId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  assignedById?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  submissionId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  dueAt?: {
+    eq?: UtcDateTime;
+    notEq?: UtcDateTime;
+    greaterThan?: UtcDateTime;
+    greaterThanOrEqual?: UtcDateTime;
+    lessThan?: UtcDateTime;
+    lessThanOrEqual?: UtcDateTime;
+    in?: Array<UtcDateTime>;
+  };
+
+  status?: {
+    eq?: "pending" | "submitted";
+    notEq?: "pending" | "submitted";
+    in?: Array<"pending" | "submitted">;
+  };
+
+
+  form?: FormDefFilterInput;
+
+  student?: UserFilterInput;
+
+  assignedBy?: UserFilterInput;
 
 };
 
@@ -115484,18 +115571,21 @@ export type SubmitFormInput = {
   formId: UUID;
   submitterId?: UUID | null;
   values: Record<string, any>;
+  assignmentId?: UUID | null;
 };
 
 export type SubmitFormValidationErrors = {
   formId?: string[];
   submitterId?: string[];
   values?: {  };
+  assignmentId?: string[];
 };
 
 export const submitFormZodschema = z.object({
   formId: z.uuid(),
   submitterId: z.uuid().optional(),
   values: z.record(z.string(), z.any()),
+  assignmentId: z.uuid().optional(),
 });
 
 export type SubmitFormFields = UnifiedFieldSelection<FormSubmissionResourceSchema>[];
@@ -116600,6 +116690,1120 @@ export async function validateListFormSubmissionsBySubmitter(
   }
 
   return result as ValidateListFormSubmissionsBySubmitterResult;
+}
+
+
+export type AssignFormToStudentsInput = {
+  formId: UUID;
+  studentIds: Array<UUID>;
+  dueAt?: UtcDateTime;
+  assignedById?: UUID;
+};
+
+export type AssignFormToStudentsValidationErrors = {
+  formId?: string[];
+  studentIds?: string[][];
+  dueAt?: string[];
+  assignedById?: string[];
+};
+
+export const assignFormToStudentsZodschema = z.object({
+  formId: z.uuid(),
+  studentIds: z.array(z.uuid()),
+  dueAt: z.iso.datetime().optional(),
+  assignedById: z.uuid().optional(),
+});
+
+type InferAssignFormToStudentsResult = Record<string, any>;
+
+export type AssignFormToStudentsResult = | { success: true; data: InferAssignFormToStudentsResult; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function assignFormToStudents(
+  config: {
+  tenant: string;
+  input: AssignFormToStudentsInput;
+  hookCtx?: ActionHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<AssignFormToStudentsResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("assign_form_to_students", config);
+  }
+
+  const payload = {
+    action: "assign_form_to_students",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("assign_form_to_students", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as AssignFormToStudentsResult;
+}
+
+
+export type ValidateAssignFormToStudentsResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateAssignFormToStudents(
+  config: {
+  tenant: string;
+  input: AssignFormToStudentsInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateAssignFormToStudentsResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("assign_form_to_students", config);
+  }
+
+  const payload = {
+    action: "assign_form_to_students",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateAssignFormToStudentsResult;
+}
+
+
+export type MarkFormSubmittedInput = {
+  submissionId?: UUID | null;
+};
+
+export type MarkFormSubmittedValidationErrors = {
+  submissionId?: string[];
+};
+
+export const markFormSubmittedZodschema = z.object({
+  submissionId: z.uuid().optional(),
+});
+
+export type MarkFormSubmittedFields = UnifiedFieldSelection<FormAssignmentResourceSchema>[];
+
+type InferMarkFormSubmittedResult<
+  Fields extends MarkFormSubmittedFields,
+> = InferResult<FormAssignmentResourceSchema, Fields>;
+
+export type MarkFormSubmittedResult<Fields extends MarkFormSubmittedFields> = | { success: true; data: InferMarkFormSubmittedResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function markFormSubmitted<Fields extends MarkFormSubmittedFields>(
+  config: {
+  tenant: string;
+  primaryKey: UUID;
+  input: MarkFormSubmittedInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<MarkFormSubmittedResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("mark_form_submitted", config);
+  }
+
+  const payload = {
+    action: "mark_form_submitted",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey,
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("mark_form_submitted", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as MarkFormSubmittedResult<Fields>;
+}
+
+
+export type ValidateMarkFormSubmittedResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateMarkFormSubmitted(
+  config: {
+  tenant: string;
+  primaryKey: string;
+  input: MarkFormSubmittedInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateMarkFormSubmittedResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("mark_form_submitted", config);
+  }
+
+  const payload = {
+    action: "mark_form_submitted",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateMarkFormSubmittedResult;
+}
+
+
+
+export type RevokeFormAssignmentResult = | { success: true; data: {}; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function revokeFormAssignment(
+  config: {
+  tenant: string;
+  primaryKey: UUID;
+  hookCtx?: ActionHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<RevokeFormAssignmentResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("revoke_form_assignment", config);
+  }
+
+  const payload = {
+    action: "revoke_form_assignment",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("revoke_form_assignment", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as RevokeFormAssignmentResult;
+}
+
+
+export type ValidateRevokeFormAssignmentResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateRevokeFormAssignment(
+  config: {
+  tenant: string;
+  primaryKey: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateRevokeFormAssignmentResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("revoke_form_assignment", config);
+  }
+
+  const payload = {
+    action: "revoke_form_assignment",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateRevokeFormAssignmentResult;
+}
+
+
+export type GetFormAssignmentFields = UnifiedFieldSelection<FormAssignmentResourceSchema>[];
+
+
+type InferGetFormAssignmentResult<
+  Fields extends GetFormAssignmentFields,
+  Page extends GetFormAssignmentConfig["page"] = undefined
+> = ConditionalPaginatedResultMixed<Page, Array<InferResult<FormAssignmentResourceSchema, Fields>>, {
+  results: Array<InferResult<FormAssignmentResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  count?: number | null;
+  type: "offset";
+}, {
+  results: Array<InferResult<FormAssignmentResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  after: string | null;
+  before: string | null;
+  previousPage: string;
+  nextPage: string;
+  count?: number | null;
+  type: "keyset";
+}>;
+
+export type GetFormAssignmentConfig = {
+  tenant: string;
+  hookCtx?: ActionHookContext;
+  fields: GetFormAssignmentFields;
+  filter?: FormAssignmentFilterInput;
+  sort?: string;
+  page?: (
+    {
+      limit?: number;
+      offset?: number;
+      count?: boolean;
+    } | {
+      limit?: number;
+      after?: string;
+      before?: string;
+    }
+  );
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+};
+
+export type GetFormAssignmentResult<Fields extends GetFormAssignmentFields, Page extends GetFormAssignmentConfig["page"] = undefined> = | { success: true; data: InferGetFormAssignmentResult<Fields, Page>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getFormAssignment<Fields extends GetFormAssignmentFields, Config extends GetFormAssignmentConfig>(
+  config: Config & { fields: Fields }
+): Promise<GetFormAssignmentResult<Fields, Config["page"]>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("get_form_assignment", config);
+  }
+
+  const payload = {
+    action: "get_form_assignment",
+    tenant: config.tenant,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort }),
+    ...(config.page && { page: config.page })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("get_form_assignment", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as GetFormAssignmentResult<Fields, Config["page"]>;
+}
+
+
+export type ValidateGetFormAssignmentResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetFormAssignment(
+  config: {
+  tenant: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetFormAssignmentResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("get_form_assignment", config);
+  }
+
+  const payload = {
+    action: "get_form_assignment",
+    tenant: config.tenant
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateGetFormAssignmentResult;
+}
+
+
+export type ListFormAssignmentsFields = UnifiedFieldSelection<FormAssignmentResourceSchema>[];
+
+
+type InferListFormAssignmentsResult<
+  Fields extends ListFormAssignmentsFields,
+  Page extends ListFormAssignmentsConfig["page"] = undefined
+> = ConditionalPaginatedResultMixed<Page, Array<InferResult<FormAssignmentResourceSchema, Fields>>, {
+  results: Array<InferResult<FormAssignmentResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  count?: number | null;
+  type: "offset";
+}, {
+  results: Array<InferResult<FormAssignmentResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  after: string | null;
+  before: string | null;
+  previousPage: string;
+  nextPage: string;
+  count?: number | null;
+  type: "keyset";
+}>;
+
+export type ListFormAssignmentsConfig = {
+  tenant: string;
+  hookCtx?: ActionHookContext;
+  fields: ListFormAssignmentsFields;
+  filter?: FormAssignmentFilterInput;
+  sort?: string;
+  page?: (
+    {
+      limit?: number;
+      offset?: number;
+      count?: boolean;
+    } | {
+      limit?: number;
+      after?: string;
+      before?: string;
+    }
+  );
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+};
+
+export type ListFormAssignmentsResult<Fields extends ListFormAssignmentsFields, Page extends ListFormAssignmentsConfig["page"] = undefined> = | { success: true; data: InferListFormAssignmentsResult<Fields, Page>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listFormAssignments<Fields extends ListFormAssignmentsFields, Config extends ListFormAssignmentsConfig>(
+  config: Config & { fields: Fields }
+): Promise<ListFormAssignmentsResult<Fields, Config["page"]>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("list_form_assignments", config);
+  }
+
+  const payload = {
+    action: "list_form_assignments",
+    tenant: config.tenant,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort }),
+    ...(config.page && { page: config.page })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("list_form_assignments", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ListFormAssignmentsResult<Fields, Config["page"]>;
+}
+
+
+export type ValidateListFormAssignmentsResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListFormAssignments(
+  config: {
+  tenant: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListFormAssignmentsResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("list_form_assignments", config);
+  }
+
+  const payload = {
+    action: "list_form_assignments",
+    tenant: config.tenant
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateListFormAssignmentsResult;
+}
+
+
+export type ListFormAssignmentsByFormInput = {
+  formId: UUID;
+};
+
+export type ListFormAssignmentsByFormValidationErrors = {
+  formId?: string[];
+};
+
+export const listFormAssignmentsByFormZodschema = z.object({
+  formId: z.uuid(),
+});
+
+export type ListFormAssignmentsByFormFields = UnifiedFieldSelection<FormAssignmentResourceSchema>[];
+type InferListFormAssignmentsByFormResult<
+  Fields extends ListFormAssignmentsByFormFields,
+> = Array<InferResult<FormAssignmentResourceSchema, Fields>>;
+
+export type ListFormAssignmentsByFormResult<Fields extends ListFormAssignmentsByFormFields> = | { success: true; data: InferListFormAssignmentsByFormResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listFormAssignmentsByForm<Fields extends ListFormAssignmentsByFormFields>(
+  config: {
+  tenant: string;
+  input: ListFormAssignmentsByFormInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  filter?: FormAssignmentFilterInput;
+  sort?: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ListFormAssignmentsByFormResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("list_form_assignments_by_form", config);
+  }
+
+  const payload = {
+    action: "list_form_assignments_by_form",
+    tenant: config.tenant,
+    input: config.input,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("list_form_assignments_by_form", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ListFormAssignmentsByFormResult<Fields>;
+}
+
+
+export type ValidateListFormAssignmentsByFormResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListFormAssignmentsByForm(
+  config: {
+  tenant: string;
+  input: ListFormAssignmentsByFormInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListFormAssignmentsByFormResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("list_form_assignments_by_form", config);
+  }
+
+  const payload = {
+    action: "list_form_assignments_by_form",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateListFormAssignmentsByFormResult;
+}
+
+
+export type ListFormAssignmentsByStudentInput = {
+  studentId: UUID;
+};
+
+export type ListFormAssignmentsByStudentValidationErrors = {
+  studentId?: string[];
+};
+
+export const listFormAssignmentsByStudentZodschema = z.object({
+  studentId: z.uuid(),
+});
+
+export type ListFormAssignmentsByStudentFields = UnifiedFieldSelection<FormAssignmentResourceSchema>[];
+type InferListFormAssignmentsByStudentResult<
+  Fields extends ListFormAssignmentsByStudentFields,
+> = Array<InferResult<FormAssignmentResourceSchema, Fields>>;
+
+export type ListFormAssignmentsByStudentResult<Fields extends ListFormAssignmentsByStudentFields> = | { success: true; data: InferListFormAssignmentsByStudentResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listFormAssignmentsByStudent<Fields extends ListFormAssignmentsByStudentFields>(
+  config: {
+  tenant: string;
+  input: ListFormAssignmentsByStudentInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  filter?: FormAssignmentFilterInput;
+  sort?: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ListFormAssignmentsByStudentResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("list_form_assignments_by_student", config);
+  }
+
+  const payload = {
+    action: "list_form_assignments_by_student",
+    tenant: config.tenant,
+    input: config.input,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("list_form_assignments_by_student", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ListFormAssignmentsByStudentResult<Fields>;
+}
+
+
+export type ValidateListFormAssignmentsByStudentResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListFormAssignmentsByStudent(
+  config: {
+  tenant: string;
+  input: ListFormAssignmentsByStudentInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListFormAssignmentsByStudentResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("list_form_assignments_by_student", config);
+  }
+
+  const payload = {
+    action: "list_form_assignments_by_student",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateListFormAssignmentsByStudentResult;
 }
 
 

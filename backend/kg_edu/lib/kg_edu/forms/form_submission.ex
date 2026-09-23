@@ -38,7 +38,7 @@ defmodule KgEdu.Forms.FormSubmission do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:form_id, :submitter_id, :values]
+      accept [:form_id, :submitter_id, :values, :assignment_id]
 
       change set_attribute(:status, :submitted)
     end
@@ -112,6 +112,12 @@ defmodule KgEdu.Forms.FormSubmission do
       public? true
     end
 
+    attribute :assignment_id, :uuid do
+      allow_nil? true
+      public? true
+      description "关联的 FormAssignment.id；为 NULL 表示历史数据 / 未走分配流"
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -119,6 +125,11 @@ defmodule KgEdu.Forms.FormSubmission do
   relationships do
     belongs_to :form, KgEdu.Forms.FormDef do
       allow_nil? false
+      public? true
+    end
+
+    belongs_to :assignment, KgEdu.Forms.FormAssignment do
+      allow_nil? true
       public? true
     end
   end

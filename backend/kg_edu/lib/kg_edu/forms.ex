@@ -25,10 +25,21 @@ defmodule KgEdu.Forms do
       rpc_action(:list_form_submissions_by_form, :by_form)
       rpc_action(:list_form_submissions_by_submitter, :by_submitter)
     end
+
+    resource KgEdu.Forms.FormAssignment do
+      rpc_action(:assign_form_to_students, :assign_to_students)
+      rpc_action(:mark_form_submitted, :mark_submitted)
+      rpc_action(:revoke_form_assignment, :revoke)
+      rpc_action(:get_form_assignment, :read)
+      rpc_action(:list_form_assignments, :list)
+      rpc_action(:list_form_assignments_by_form, :by_form)
+      rpc_action(:list_form_assignments_by_student, :by_student)
+    end
   end
 
   resources do
     resource(KgEdu.Forms.FormDef)
     resource(KgEdu.Forms.FormSubmission)
+    resource(KgEdu.Forms.FormAssignment)
   end
 end

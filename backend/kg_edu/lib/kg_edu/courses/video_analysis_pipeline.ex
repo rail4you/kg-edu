@@ -142,8 +142,27 @@ defmodule KgEdu.Courses.VideoAnalysisPipeline do
     end
   end
 
+  defp resolve_video(%{video_type: "video", video_id: vid, course_id: cid}, opts) do
+    case KgEdu.Courses.Video.get_video(vid, Keyword.put(opts, :load, [:chapter])) do
+      {:ok, nil} ->
+        {:error, "视频不存在"}
+
+      {:ok, %{asset_id: url}} when is_binary(url) and url != "" ->
+        {:ok, url, cid}
+
+      {:ok, %{playback_id: url}} when is_binary(url) and url != "" ->
+        {:ok, url, cid}
+
+      {:ok, _} ->
+        {:error, "视频无可转写 URL"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp resolve_video(%{video_type: other}, _opts),
-    do: {:error, "暂仅支持课程视频解析（video_type=#{other}）"}
+    do: {:error, "暂不支持的 video_type=#{inspect(other)}"}
 
   defp build_result(sentences, course_id, opts) do
     segments = group_sentences(sentences)
