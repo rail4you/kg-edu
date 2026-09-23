@@ -272,7 +272,7 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
       },
       {
         path: "/teacher/dashboard/video",
-        name: t("menu.video"),
+        name: `${t("menu.video")} ★`,
         icon: <VideoCameraOutlined />,
       },
       {
@@ -404,11 +404,6 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
         icon: <FileTextOutlined />,
       },
       {
-        path: "/teacher/dashboard/course-video-analysis",
-        name: "视频解析 ★",
-        icon: <VideoCameraOutlined />,
-      },
-      {
         path: "/teacher/dashboard/data-insight",
         name: "数据智能 ★",
         icon: <BarChartOutlined />,
@@ -465,7 +460,7 @@ const PATH_TO_KEY: Record<string, string> = {
   "/teacher/dashboard/graph-competency": "menu.graphCompetency",
   "/teacher/dashboard/chapter": "menu.chapter",
   "/teacher/dashboard/file": "menu.file",
-  "/teacher/dashboard/video": "menu.video",
+  "/teacher/dashboard/video": "menu.video ★",
   "/teacher/dashboard/exercise": "menu.exercise",
   "/teacher/dashboard/question": "menu.question",
   "/teacher/dashboard/homework": "menu.homework",
@@ -488,7 +483,6 @@ const PATH_TO_KEY: Record<string, string> = {
   "/teacher/dashboard/ai-practice": "AI 实践 ★",
   "/teacher/dashboard/face-check": "人脸抓拍 ★",
   "/teacher/dashboard/custom-form": "自定义表单 ★",
-  "/teacher/dashboard/course-video-analysis": "视频解析 ★",
   "/teacher/dashboard/data-insight": "数据智能 ★",
   "/teacher/dashboard/assistant-plugins": "助教插件 ★",
   "/teacher/dashboard/research-track": "学术追踪 ★",

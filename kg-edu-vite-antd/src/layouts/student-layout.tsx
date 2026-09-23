@@ -82,6 +82,7 @@ const navGroups: NavGroup[] = [
   {
     label: "工具",
     items: [
+      { key: "/dashboard/data-forms", label: "数据表单", icon: <FileOutlined /> },
       { key: "/dashboard/teacher", label: "教师团队", icon: <TeamOutlined /> },
       { key: "/dashboard/email-qa", label: "邮件问答", icon: <MailOutlined /> },
     ],
@@ -120,8 +121,10 @@ export default function StudentLayout() {
   }, [commandSearch, allNavItems]);
 
   const handleCommandSelect = useCallback((key: string) => {
-    const params = searchParams.toString();
-    navigate(params ? `${key}?${params}` : key);
+    const params = new URLSearchParams(searchParams);
+    params.delete("tenant");
+    const str = params.toString();
+    navigate(str ? `${key}?${str}` : key);
     setCommandVisible(false);
     setCommandSearch("");
     setCommandIndex(0);
@@ -175,8 +178,12 @@ export default function StudentLayout() {
   const courseTitle = courseData?.title || "";
 
   const handleNavClick = (key: string) => {
-    const params = searchParams.toString();
-    navigate(params ? `${key}?${params}` : key);
+    // 跳到任意子路由时，丢掉 ?tenant= 查询串 — 当前租户由 sessionStorage["tenant"] / localStorage["selected_tenant"] 决定。
+    // 不带 query 的导航也保留原本行为；其它参数（如 courseId）会跟随。
+    const params = new URLSearchParams(searchParams);
+    params.delete("tenant");
+    const str = params.toString();
+    navigate(str ? `${key}?${str}` : key);
     setMobileNavOpen(false);
   };
 

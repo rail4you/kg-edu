@@ -698,16 +698,87 @@ export default function LoginPage() {
         width={isMobile ? "calc(100vw - 24px)" : 400}
       >
         <p style={{ color: "#666", marginBottom: 16 }}>您的账号存在于多个组织中，请选择要登录的组织：</p>
+        {(() => {
+          const urlTenantHint = redirectParam
+            ? new URLSearchParams(
+                redirectParam.includes("?")
+                  ? redirectParam.split("?")[1] || ""
+                  : ""
+              ).get("tenant") || ""
+            : "";
+          const hasUrlHint =
+            !!urlTenantHint &&
+            matchedTenants.some((t) => t.schemaName === urlTenantHint);
+          const matchInList = !urlTenantHint
+            ? null
+            : matchedTenants.find((t) => t.schemaName === urlTenantHint) || null;
+
+          if (!hasUrlHint) {
+            return (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: "8px 12px",
+                  background: "#fff7e6",
+                  border: "1px solid #ffd591",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  color: "#874d00",
+                }}
+              >
+                {urlTenantHint ? (
+                  <>
+                    ⚠ 本链接属于租户 <code>{urlTenantHint}</code>，但你当前账号无权访问。下面的列表是该账号可登录的组织。
+                  </>
+                ) : null}
+              </div>
+            );
+          }
+          return null;
+        })()}
         <List
           dataSource={matchedTenants}
-          renderItem={(tenant) => (
-            <List.Item
-              style={{ cursor: "pointer", padding: "12px 16px", borderRadius: 8 }}
-              onClick={() => handleLoginWithTenant(tenant)}
-            >
-              <List.Item.Meta title={tenant.tenantName || tenant.schemaName} />
-            </List.Item>
-          )}
+          renderItem={(tenant) => {
+            const urlTenantHint = redirectParam
+              ? new URLSearchParams(
+                  redirectParam.includes("?")
+                    ? redirectParam.split("?")[1] || ""
+                    : ""
+                ).get("tenant") || ""
+              : "";
+            const recommended = tenant.schemaName === urlTenantHint;
+            return (
+              <List.Item
+                style={{
+                  cursor: "pointer",
+                  padding: "12px 16px",
+                  borderRadius: 8,
+                  border: recommended ? "2px solid #1890ff" : "1px solid transparent",
+                  background: recommended ? "#e6f7ff" : undefined,
+                }}
+                onClick={() => handleLoginWithTenant(tenant)}
+              >
+                <List.Item.Meta
+                  title={
+                    <span>
+                      {tenant.tenantName || tenant.schemaName}
+                      {recommended && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 12,
+                            color: "#1890ff",
+                          }}
+                        >
+                          （与链接匹配，推荐）
+                        </span>
+                      )}
+                    </span>
+                  }
+                />
+              </List.Item>
+            );
+          }}
         />
       </Modal>
     </Layout>

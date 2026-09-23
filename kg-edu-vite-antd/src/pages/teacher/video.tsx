@@ -30,7 +30,8 @@ import {
   EyeOutlined,
   FolderOutlined,
   CheckOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  FundOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -55,6 +56,8 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
+import VideoAnalysisDrawer from "./components/video-analysis-drawer";
+import { getChapter } from "@/lib/ash_rpc";
 import type {
   VideoResourceSchema,
 } from "@/lib/ash_rpc";
@@ -106,6 +109,15 @@ export default function VideoManagementPage() {
   const [searchText, setSearchText] = useState<string>("");
   const [chapterSearchText, setChapterSearchText] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysisTarget, setAnalysisTarget] = useState<{
+    id: string;
+    title: string;
+    assetId?: string | null;
+    chapterId?: string | null;
+  } | null>(null);
+  const [analysisCourseId, setAnalysisCourseId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<VideoFormData>({
     title: "",
@@ -727,6 +739,30 @@ export default function VideoManagementPage() {
     setPreviewDialogOpen(true);
   };
 
+  const openAnalysis = async (video: VideoResourceSchema) => {
+    const chapterId = (video as any).chapterId || null;
+    setAnalysisTarget({
+      id: video.id,
+      title: video.title || "",
+      assetId: video.assetId,
+      chapterId,
+    });
+    setAnalysisCourseId(selectedCourseId || null);
+    setAnalysisOpen(true);
+
+    if (!selectedCourseId && chapterId) {
+      const r = await getChapter({
+        tenant: currentTenant?.schemaName || "",
+        input: { id: chapterId },
+        fields: [{ course: ["id"] }],
+        headers: getAuthHeaders(user) as Record<string, string>,
+      });
+      if (r.success && (r as any).data?.course?.id) {
+        setAnalysisCourseId((r as any).data.course.id);
+      }
+    }
+  };
+
   const handleCourseSelect = (courseId: string | undefined) => {
     setSelectedCourseId(courseId || "");
   };
@@ -812,7 +848,7 @@ export default function VideoManagementPage() {
     {
       title: "操作",
       key: "action",
-      width: 240,
+      width: 300,
       render: (_: any, record: VideoResourceSchema) => (
         <Space>
           <Button
@@ -821,6 +857,14 @@ export default function VideoManagementPage() {
             onClick={() => handlePreviewVideo(record)}
           >
             预览
+          </Button>
+          <Button
+            size="small"
+            type="primary"
+            icon={<FundOutlined />}
+            onClick={() => openAnalysis(record)}
+          >
+            AI 解析
           </Button>
           <Button
             size="small"
@@ -920,6 +964,15 @@ export default function VideoManagementPage() {
             onClick={() => handlePreviewVideo(video)}
           >
             预览
+          </Button>,
+          <Button
+            key="analyze"
+            size="small"
+            type="primary"
+            icon={<FundOutlined />}
+            onClick={() => openAnalysis(video)}
+          >
+            AI 解析
           </Button>,
           <ReadonlyActionButton
             key="edit"
@@ -1382,6 +1435,19 @@ export default function VideoManagementPage() {
       {renderCreateDialog()}
       {renderEditDialog()}
       {renderPreviewDialog()}
+
+      {analysisTarget && (
+        <VideoAnalysisDrawer
+          open={analysisOpen}
+          onClose={() => setAnalysisOpen(false)}
+          videoId={analysisTarget.id}
+          videoUrl={analysisTarget.assetId}
+          videoTitle={analysisTarget.title}
+          courseId={analysisCourseId}
+          tenant={currentTenant?.schemaName || ""}
+          headers={getAuthHeaders(user) as Record<string, string>}
+        />
+      )}
     </div>
   );
 }

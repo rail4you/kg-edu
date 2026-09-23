@@ -23,7 +23,7 @@ import TeacherFile from "./pages/teacher/file";
 import TeacherExamStatistics from "./pages/teacher/exam-statistics";
 import TeacherExamGrading from "./pages/teacher/exam-grading";
 import TeacherExamPrint from "./pages/teacher/exam-print";
-import TeacherCourseVideoAnalysis from "./pages/teacher/course-video-analysis";
+// 旧的 course-video-analysis 路由已下线（重定向到 /teacher/dashboard/video），原文件保留以便回溯
 import TeacherCustomForm from "./pages/teacher/custom-form";
 import TeacherAiPractice from "./pages/teacher/ai-practice";
 import TeacherFaceCheck from "./pages/teacher/face-check";
@@ -147,6 +147,7 @@ import StudentMicroMajors from "./pages/student/micro-majors";
 import StudentMMCoursePage from "./pages/student/mm-course-page";
 import StudentMMTimeline from "./pages/student/mm-timeline";
 import StudentCurriculum from "./pages/student/curriculum";
+import StudentDataForms from "./pages/student/data-forms";
 import MicroMajorsPage from "./pages/micro-majors";
 import MicroMajorDetailPage from "./pages/micro-major-detail";
 import AdminDashboard from "./pages/admin/dashboard";
@@ -302,8 +303,8 @@ export default function App() {
         <Route path="graph-knowledge" element={<GraphLayout><TeacherGraphKnowledge /></GraphLayout>} />
         <Route path="course-info" element={<TeacherCourseInfo />} />
         <Route path="course-video" element={<TeacherCourseVideo />} />
-        <Route path="course-video-analysis" element={<TeacherCourseVideoAnalysis />} />
-        <Route path="course-video-analysis/:videoId" element={<TeacherCourseVideoAnalysis />} />
+        <Route path="course-video-analysis" element={<Navigate to="/teacher/dashboard/video" replace />} />
+        <Route path="course-video-analysis/:videoId" element={<Navigate to="/teacher/dashboard/video" replace />} />
         <Route path="custom-form" element={<TeacherCustomForm />} />
         <Route path="ai-practice" element={<TeacherAiPractice />} />
         <Route path="face-check" element={<TeacherFaceCheck />} />
@@ -413,6 +414,7 @@ export default function App() {
         <Route path="exam-courses/:courseId" element={<StudentExamCourses />} />
         <Route path="exam-list/:courseId" element={<StudentExamList />} />
         <Route path="my-forms" element={<StudentMyForms />} />
+        <Route path="data-forms" element={<StudentDataForms />} />
         <Route path="exam-taking/:examId" element={<StudentExamTaking />} />
         
         {/* 认知与图谱功能 */}
