@@ -48,9 +48,12 @@ interface FieldItem {
 
 export default function CustomForm() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, tenant: authTenant, loading: authLoading } = useAuth();
+  // 优先使用登录态里的当前租户（JWT 同一来源），fallback 到 localStorage。
   const currentTenant = getCurrentTenant();
-  const tenant = currentTenant?.schemaName || "";
+  const tenant = authTenant || currentTenant?.schemaName || "";
+  const tenantLabel =
+    currentTenant?.name || currentTenant?.schemaName || tenant || "当前租户";
   const headers = getAuthHeaders(user) as Record<string, string>;
 
   const [builderTitle, setBuilderTitle] = useState("");
@@ -178,7 +181,7 @@ export default function CustomForm() {
   const studentLabel = (id: string) => {
     const s = studentsMap[id];
     if (!s) return id?.slice(0, 8) + "…";
-    return `${s.name}${s.memberId ? `（${s.memberId}）` : ""}`;
+    return `${s.name}${s.memberId ? `（${s.memberId}）` : ""} · ${tenantLabel}`;
   };
 
   const addField = () => {
@@ -596,7 +599,16 @@ export default function CustomForm() {
               placeholder="不限制截止时间"
             />
           </Form.Item>
-          <Form.Item label="选择学生（可搜索）">
+          <Form.Item
+            label={
+              <span>
+                选择学生{" "}
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  （仅显示当前租户 <Text code>{tenantLabel}</Text> 的学生）
+                </Text>
+              </span>
+            }
+          >
             <Input
               placeholder="按姓名 / 学号搜索"
               value={studentSearch}
@@ -616,12 +628,20 @@ export default function CustomForm() {
               onSearch={setStudentSearch}
               options={(studentsQuery.data || []).map((u: any) => ({
                 value: u.id,
-                label: `${u.name || "(无名)"}（${u.memberId || u.id.slice(0, 6)}）`,
+                label: `${u.name || "(无名)"}（${u.memberId || u.id.slice(0, 6)}）· ${tenantLabel}`,
               }))}
               maxTagCount={3}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              已选 {assignStudentIds.length} 人
+              {tenant ? (
+                <>
+                  已选 {assignStudentIds.length} 人 ｜ 租户 <Text code>{tenant}</Text>
+                </>
+              ) : (
+                <Text type="warning">
+                  ⚠ 当前未识别到租户，请重新登录后再分配
+                </Text>
+              )}
             </Text>
           </Form.Item>
         </Form>
