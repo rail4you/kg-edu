@@ -181,7 +181,7 @@ export default function CustomForm() {
   const studentLabel = (id: string) => {
     const s = studentsMap[id];
     if (!s) return id?.slice(0, 8) + "…";
-    return `${s.name}${s.memberId ? `（${s.memberId}）` : ""} · ${tenantLabel}`;
+    return `${s.name}${s.memberId ? `（${s.memberId}）` : ""}`;
   };
 
   const addField = () => {
@@ -628,7 +628,7 @@ export default function CustomForm() {
               onSearch={setStudentSearch}
               options={(studentsQuery.data || []).map((u: any) => ({
                 value: u.id,
-                label: `${u.name || "(无名)"}（${u.memberId || u.id.slice(0, 6)}）· ${tenantLabel}`,
+                label: `${u.name || "(无名)"}（${u.memberId || u.id.slice(0, 6)}）`,
               }))}
               maxTagCount={3}
             />
