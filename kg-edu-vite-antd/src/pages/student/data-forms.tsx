@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card, Button, Typography, Spin, Input, Select, Radio, Checkbox,
@@ -35,12 +35,45 @@ interface Assignment {
 export default function StudentDataForms() {
   const navigate = useNavigate();
   const { user, tenant: authTenant, loading: authLoading } = useAuth();
-  // 优先使用登录态里的当前租户（来自 sessionStorage["tenant"]），fallback 到 localStorage。
-  // 忽略 URL 上的 ?tenant= 查询串，避免被链接里的旧/错误租户带跑。
-  const tenant =
-    authTenant ||
-    getCurrentTenant()?.schemaName ||
-    "";
+
+  // 监听 sessionStorage 修改事件（登录/退出时改值触发），
+  // 触发本地 bump，让 React 重新计算 tenant 下面的查询。
+  const [tenantTick, setTenantTick] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "tenant" || e.key === "user_data") setTenantTick((t) => t + 1);
+    };
+    window.addEventListener("storage", onStorage);
+    // 也监听同 tab 内手动 sessionStorage.setItem — 抛个 setTimeout 触发自定义事件
+    const orig = sessionStorage.setItem.bind(sessionStorage);
+    sessionStorage.setItem = function (k: string, v: string) {
+      const ret = orig(k, v);
+      if (k === "tenant" || k === "user_data") {
+        window.dispatchEvent(
+          new StorageEvent("storage", { key: k, newValue: v }),
+        );
+      }
+      return ret;
+    };
+    return () => {
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  // 每帧直接从 sessionStorage 读最新租户，避免依赖 React Context 的状态时序。
+  // 兜底链：sessionStorage["tenant"] -> useAuth() 的同步状态 -> localStorage -> ""。
+  const tenant = (() => {
+    // 读 tenantTick 触发依赖，登录/退出时刷新
+    void tenantTick;
+    if (typeof window === "undefined") return authTenant || "";
+    return (
+      sessionStorage.getItem("tenant") ||
+      authTenant ||
+      getCurrentTenant()?.schemaName ||
+      ""
+    );
+  })();
 
   const [urlTenant] = useSearchParams();
   const urlTenantHint = urlTenant.get("tenant") || "";
