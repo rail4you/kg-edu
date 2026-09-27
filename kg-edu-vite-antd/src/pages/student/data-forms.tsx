@@ -110,6 +110,8 @@ export default function StudentDataForms() {
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const headers = getAuthHeaders(user) as Record<string, string>;
+
   const assignmentsQuery = useQuery({
     queryKey: ["my-form-assignments", tenant, user?.id],
     queryFn: async () => {
@@ -125,7 +127,7 @@ export default function StudentDataForms() {
       if (!r.success) return [];
       return (r.data as any) || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!tenant,
   });
   const assignments: Assignment[] = assignmentsQuery.data || [];
 
