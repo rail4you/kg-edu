@@ -24,6 +24,9 @@ import { useBranding } from "@/hooks/use-branding";
 import { usePortalNavItems, useLevelTitleMap } from "@/hooks/use-portal-config";
 import { useCourseCategories } from "@/hooks/use-course-categories";
 import { setCurrentTenant } from "@/lib/tenant";
+import { getAuthHeaders } from "@/lib/auth";
+import { listMicroMajors, listOrganizations, listCoursesByMicroMajor } from "@/lib/ash_rpc";
+import { extractArrayData } from "@/utils/api-helpers";
 import "@/styles/home-portal-theme.css";
 
 const { Header, Content } = Layout;
@@ -223,6 +226,66 @@ export default function HomePage() {
     [courses, levelTitleMap]
   );
 
+  // 首页微专业区：取真实微专业前 3 个（跨学校，复用列表页查询逻辑）
+  const { data: homeMajors = [] } = useQuery({
+    queryKey: ["home-micro-majors"],
+    queryFn: async () => {
+      const headers = user ? getAuthHeaders(user) as Record<string, string> : undefined;
+      const orgResult = await listOrganizations({ tenant: "public", fields: ["id", "name", "schemaName"] });
+      if (!orgResult.success) return [];
+      const orgs = extractArrayData<{ id: string; name?: string | null; schemaName?: string | null }>(orgResult);
+      const collected: unknown[] = [];
+      for (const org of orgs) {
+        if (!org.schemaName || collected.length >= 3) break;
+        try {
+          const r = await listMicroMajors({
+            tenant: org.schemaName,
+            fields: ["id", "name", "intro", "projectBackground", "learningCycle", "tuitionFee", "coverUrl", "status", { microMajorCourses: ["id"] }],
+            sort: "sortOrder",
+            page: { limit: 10, offset: 0 },
+            headers,
+          });
+          if (r.success) {
+            for (const m of extractArrayData<Record<string, unknown>>(r)) {
+              if (m.status === "active" || !m.status) {
+                // 取该微专业课程标题（供卡片“你将学习”预览）
+                let courseTitles: string[] = [];
+                try {
+                  const cr = await listCoursesByMicroMajor({
+                    tenant: org.schemaName,
+                    input: { microMajorId: m.id as string },
+                    fields: ["id", "title", "sortOrder"],
+                    sort: "sortOrder",
+                    headers,
+                  });
+                  if (cr.success) {
+                    courseTitles = extractArrayData<{ title?: string | null }>(cr)
+                      .map((c) => c.title || "")
+                      .filter(Boolean);
+                  }
+                } catch { /* 忽略课程标题失败 */ }
+                collected.push({ ...m, courseTitles, _tenant: org.schemaName, _orgName: org.name || org.schemaName });
+                if (collected.length >= 3) break;
+              }
+            }
+          }
+        } catch { /* 忽略单个学校失败 */ }
+      }
+      return collected as Array<{
+        id: string; name: string; intro?: string | null; projectBackground?: string | null;
+        learningCycle?: string | null; tuitionFee?: string | null; coverUrl?: string | null;
+        microMajorCourses?: Array<{ id: string }>; courseTitles: string[]; _tenant: string; _orgName: string;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
+  const handleMajorClick = (m: { id: string; _tenant: string; _orgName: string }) => {
+    setCurrentTenant({ id: m._tenant, name: m._orgName, schemaName: m._tenant });
+    navigate(`/micro-majors/${m._tenant}/${m.id}`);
+  };
+
   const handleNav = (path: string) => {
     navigate(path);
   };
@@ -395,7 +458,19 @@ export default function HomePage() {
               <div className="ed-featured">
                 {recommendedCourses.slice(0, 3).map((c, i) => (
                   <article key={c.id} className="ed-course">
-                    <a className={`ed-course__art v${i + 1}`} onClick={() => handleCourseClick(c)}>
+                    <a
+                      className={`ed-course__art v${i + 1}`}
+                      onClick={() => handleCourseClick(c)}
+                      style={
+                        c.imageUrl
+                          ? {
+                              backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${c.imageUrl})`,
+                              backgroundSize: "cover",
+                              backgroundPosition: "center",
+                            }
+                          : undefined
+                      }
+                    >
                       <span className="ed-course__index">{c.standardSubject.name || "课程"} · 0{i + 1}</span>
                       <strong>{c.title}</strong>
                       <span className="ed-course__sub">{c.orgName}</span>
@@ -411,27 +486,69 @@ export default function HomePage() {
               </div>
             </section>
 
-            {/* 微专业入口：编辑风格，保持跳转真实数据页 */}
-            <section className="ed-section ed-container" style={{ paddingTop: 0 }}>
+            {/* 微专业：真实数据，对齐原型 homepageMajors 结构 */}
+            <section className="ed-section ed-container">
               <div className="ed-section__title">
                 <div><h2>围绕一个方向，学成一项能力。</h2></div>
                 <a className="ed-text-link" onClick={() => navigate("/micro-majors")}>探索全部微专业 →</a>
               </div>
               <div className="ed-section__intro"><p>把相关课程连成路径，让每一门课都朝着同一个目标前进。</p></div>
-              <div className="ed-featured">
-                {(categorySections[0]?.courses.slice(0, 3) || []).map((c, i) => (
-                  <article key={c.id} className="ed-course">
-                    <a className={`ed-course__art v${i + 1}`} onClick={() => navigate("/micro-majors")}>
-                      <span className="ed-course__index">微专业 · 路径 0{i + 1}</span>
-                      <strong>{c.title}</strong>
-                    </a>
-                    <div className="ed-course__body">
-                      <h3>{c.title}</h3>
-                      <p>{c.orgName} · {c.teacherName}</p>
-                      <div className="ed-course__footer"><span>微专业相关课程</span><span>查看路径 →</span></div>
-                    </div>
-                  </article>
-                ))}
+              <div className="major-grid">
+                {homeMajors.map((m) => {
+                  const theme = /数据|商务|分析/.test(m.name) ? "theme-blue" : /设计|艺术|表达/.test(m.name) ? "theme-purple" : /制造|材料|工程|智能/.test(m.name) ? "theme-teal" : "theme-default";
+                  const desc = m.intro || m.projectBackground || "暂无简介";
+                  return (
+                    <article key={m.id} className="major-card">
+                      <a
+                        className={`major-card-cover ${theme}`}
+                        onClick={() => handleMajorClick(m)}
+                        style={
+                          m.coverUrl
+                            ? {
+                                backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${m.coverUrl})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                              }
+                            : undefined
+                        }
+                      >
+                        <span className="major-code">{m._orgName || "微专业"}</span>
+                        <span className="major-cover-title">{m.name}</span>
+                        <span className="major-cover-bottom">{m.learningCycle || "系统学习"}<span aria-hidden="true">↗</span></span>
+                      </a>
+                      <div className="major-card-content">
+                        <div className="major-tags">
+                          {m.learningCycle && <span>{m.learningCycle}</span>}
+                          <span>{m.microMajorCourses?.length || 0} 门课程</span>
+                        </div>
+                        <h3><a onClick={() => handleMajorClick(m)}>{m.name}微专业</a></h3>
+                        <p className="major-desc" title={desc}>{desc}</p>
+                        {(m.courseTitles.length > 0 || (m.microMajorCourses?.length || 0) > 0) ? (
+                          <div className="major-course-preview">
+                            <div><b>你将学习</b><small>{m.microMajorCourses?.length || m.courseTitles.length} 门系列课程</small></div>
+                            {m.courseTitles.length > 0 && (
+                              <ol>
+                                {m.courseTitles.slice(0, 3).map((t, ti) => (
+                                  <li key={ti}><span>0{ti + 1}</span>{t}</li>
+                                ))}
+                              </ol>
+                            )}
+                            <a className="major-more-courses" onClick={() => handleMajorClick(m)}>查看全部 {m.microMajorCourses?.length || m.courseTitles.length} 门课程 <span>→</span></a>
+                          </div>
+                        ) : (
+                          <div className="major-course-preview">
+                            <div><b>你将学习</b><small>系列课程筹备中</small></div>
+                            <ol>
+                              <li><span>--</span>课程体系即将公布，敬请期待</li>
+                            </ol>
+                            <a className="major-more-courses" onClick={() => handleMajorClick(m)}>了解微专业详情 <span>→</span></a>
+                          </div>
+                        )}
+                        <div className="major-card-bottom"><span>{m.tuitionFee || m._orgName || "微专业"}</span><a onClick={() => handleMajorClick(m)}>了解微专业 ↗</a></div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </section>
             </div>

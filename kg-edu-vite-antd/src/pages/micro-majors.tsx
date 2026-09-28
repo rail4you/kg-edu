@@ -111,7 +111,19 @@ function MicroMajorCard({
 
   return (
     <article className="major-card">
-      <a className={`major-card-cover ${themeClass}`} onClick={() => onClick(major)}>
+      <a
+        className={`major-card-cover ${themeClass}`}
+        onClick={() => onClick(major)}
+        style={
+          major.coverUrl
+            ? {
+                backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${major.coverUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
+      >
         <span className="major-code">{orgName || "MICRO MAJOR"}</span>
         <span className="major-cover-title">{major.name}</span>
         <span className="major-cover-bottom">{major.learningCycle || "系统学习"}<span aria-hidden="true">↗</span></span>

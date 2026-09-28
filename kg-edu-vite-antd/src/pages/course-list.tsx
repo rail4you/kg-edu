@@ -76,7 +76,7 @@ function CourseCard({
       <a
         className={`ed-course__art v${artVariant}`}
         onClick={() => onClick(course)}
-        style={isPlaceholder ? undefined : { backgroundImage: `url(${course.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={isPlaceholder ? undefined : { backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${course.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
       >
         <span className="ed-course__index">{course.standardSubject.name?.toUpperCase() || "COURSE"}</span>
         <strong>{course.title}</strong>
