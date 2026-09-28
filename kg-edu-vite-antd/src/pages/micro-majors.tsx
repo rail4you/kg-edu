@@ -35,6 +35,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { listMicroMajors, myMicroMajorEnrollments, myApplications, listOrganizations } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
 import "@/styles/home-portal-theme.css";
+import "@/styles/portal-editorial.css";
 
 const { Header, Content } = Layout;
 const { Paragraph, Text } = Typography;
@@ -99,83 +100,33 @@ function MicroMajorCard({
     rejected: { color: "#ff4d4f", label: "已拒绝", icon: "❌" },
   };
   const cfg = enrollmentStatus ? statusConfig[enrollmentStatus] : null;
-  const isPlaceholder = !major.coverUrl;
   const orgName = (major as any)._orgName || "";
+  const themeClass = /数据|商务|分析/.test(major.name || "")
+    ? "theme-blue"
+    : /设计|艺术|表达/.test(major.name || "")
+      ? "theme-purple"
+      : /制造|材料|工程|智能/.test(major.name || "")
+        ? "theme-teal"
+        : "theme-default";
 
   return (
-    <button
-      type="button"
-      className={`portal-course-card ${enrollmentStatus === "active" ? "is-enrolled" : "is-open"}`}
-      onClick={() => onClick(major)}
-    >
-      {/* Cover — image with gradient overlay, badges overlaid */}
-      <div
-        className={`portal-course-card__cover ${isPlaceholder ? "is-placeholder" : "has-cover"}`}
-        style={
-          !isPlaceholder
-            ? { backgroundImage: `url(${major.coverUrl})` }
-            : undefined
-        }
-      >
-        {isPlaceholder && (
-          <div className="portal-course-card__cover-fallback">
-            <ApartmentOutlined />
-          </div>
-        )}
-
-        {/* Top badge row */}
-        <div className="portal-course-card__cover-badges">
-          {cfg ? (
-            <span className="portal-course-card__cover-badge" style={{ background: cfg.color }}>
-              {cfg.icon} {cfg.label}
-            </span>
-          ) : isLoggedIn ? (
-            <span className="portal-course-card__cover-badge" style={{ background: "#1890ff" }}>
-              + 报名
-            </span>
-          ) : null}
+    <article className="major-card">
+      <a className={`major-card-cover ${themeClass}`} onClick={() => onClick(major)}>
+        <span className="major-code">{orgName || "MICRO MAJOR"}</span>
+        <span className="major-cover-title">{major.name}</span>
+        <span className="major-cover-bottom">{major.learningCycle || "系统学习"}<span aria-hidden="true">↗</span></span>
+      </a>
+      <div className="major-card-content">
+        <div className="major-tags">
+          {major.learningCycle && <span>{major.learningCycle}</span>}
+          <span>{major.microMajorCourses?.length || 0} 门课程</span>
+          <span>{cfg ? cfg.label : "招生中"}</span>
         </div>
-
-        {/* Bottom overlay: major name on image */}
-        <div className="portal-course-card__cover-overlay">
-          <div className="portal-course-card__cover-overlay-title">
-            {major.name}
-          </div>
-        </div>
+        <h3><a onClick={() => onClick(major)}>{major.name}微专业</a></h3>
+        <p className="major-desc" title={major.intro || major.projectBackground || "暂无简介"}>{major.intro || major.projectBackground || "暂无简介"}</p>
+        <div className="major-card-bottom"><span>{major.tuitionFee || orgName || "微专业"}</span><a onClick={() => onClick(major)}>了解微专业 ↗</a></div>
       </div>
-
-      {/* Body — compact meta info */}
-      <div className="portal-course-card__body">
-        <div className="portal-course-card__meta-top">
-          <Text className="portal-course-card__org" ellipsis>
-            {orgName || (major.responsibleTeacher?.name ? `负责人: ${major.responsibleTeacher.name}` : "微专业")}
-          </Text>
-          {major.learningCycle && (
-            <Tag className="portal-course-card__status portal-course-card__status--open" style={{ fontSize: 12, padding: "0 8px", borderRadius: 4, lineHeight: "20px" }}>
-              {major.learningCycle}
-            </Tag>
-          )}
-        </div>
-
-        <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
-          {major.intro || major.projectBackground || "暂无简介"}
-        </Paragraph>
-
-        <div className="portal-course-card__footer">
-          <div className="portal-course-card__teacher">
-            <BookOutlined style={{ fontSize: 14 }} />
-            <Text ellipsis style={{ fontSize: 12 }}>
-              {major.microMajorCourses?.length || 0} 门课程
-            </Text>
-          </div>
-          <div className="portal-course-card__footer-right">
-            {major.tuitionFee && (
-              <span className="portal-course-card__study-badge">{major.tuitionFee}</span>
-            )}
-          </div>
-        </div>
-      </div>
-    </button>
+    </article>
   );
 }
 
@@ -419,11 +370,11 @@ export default function MicroMajorListPage() {
 
   return (
     <Layout className="home-page cl-page">
-      <Header className="home-header">
+      <Header className="home-header ed-top">
         <div className="home-header__inner">
           <div className="home-header__left">
             <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_light} alt={branding.app_name} className="home-brand__logo" />
+              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
               <div className="home-brand__title">{branding.app_title}</div>
             </div>
             {!isMobile && (
@@ -475,39 +426,16 @@ export default function MicroMajorListPage() {
       />
 
       <Content>
-        {/* Hero Banner */}
-        <section
-          className="home-hero-section"
-          style={{
-            background: "linear-gradient(135deg, rgba(8,27,62,0.45) 0%, rgba(8,27,62,0.28) 100%), url('/assets/micro-major-hero.jpg') center/cover no-repeat",
-            minHeight: isMobile ? 220 : undefined,
-            padding: isMobile ? "32px 0" : undefined,
-          }}
-        >
-          <div className="home-hero-section__inner">
-            <div className="home-hero-section__content">
-              <div className="home-hero-section__headline">
-                <h1 className="home-hero-section__title" style={isMobile ? { fontSize: 24 } : undefined}>
-                  微专业
-                </h1>
-              </div>
-              <p className="home-hero-section__subtitle" style={isMobile ? { fontSize: 13 } : undefined}>
-                微专业是面向产业人才需求，整合多学科知识与技能，
-                打造「即学即用」的复合型人才培养方案
-              </p>
-              {!isMobile && (
-                <div className="home-hero-section__cta">
-                  <span className="home-hero-section__cta-item">🚀 急需紧缺型</span>
-                  <span className="home-hero-section__cta-item">💼 应用技能型</span>
-                  <span className="home-hero-section__cta-item">🔮 交叉复合型</span>
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="ed-container">
+        {/* 原型风格目录 Hero */}
+        <section className="major-directory-hero">
+          <h1>用一段系统学习，<br />打开新的专业可能。</h1>
+          <p>发现适合你的微专业，从课程体系到实践成果，找到清晰的成长路径。</p>
+          <div className="major-hero-foot"><span>系统化课程</span><span>项目实践</span><span>能力进阶</span></div>
         </section>
 
-        {/* Talent Direction Cards */}
-        {!isMobile && (
+        {/* Talent Direction Cards removed - prototype style */}
+        {false && (
           <section className="micro-major-hero-panel">
             <div className="micro-major-hero-panel__inner">
               <div className="micro-major-hero-panel__grid">
@@ -634,14 +562,14 @@ export default function MicroMajorListPage() {
           </div>
         </section>
 
-        {/* Course List */}
-        <section className="cl-list-section">
-          <div className="cl-list-section__inner" style={isMobile ? { padding: "0 14px 24px" } : undefined}>
+        {/* Course List - prototype major-grid */}
+        <section>
+          <div style={isMobile ? { padding: "0 0 24px" } : undefined}>
             {isLoading ? (
-              <div className={`portal-course-grid ${!isMobile ? "portal-course-grid--wide" : ""}`} style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12 } : undefined}>
+              <div className="major-grid">
                 {Array.from({ length: isMobile ? 4 : 12 }).map((_, index) => (
-                  <div key={index} className="portal-course-card portal-course-card--loading">
-                    <Skeleton.Image active className="portal-course-card__skeleton-cover" />
+                  <div key={index} className="major-card">
+                    <Skeleton.Image active style={{ width: "100%", height: 178 }} />
                     <div style={{ padding: 16 }}>
                       <Skeleton active paragraph={{ rows: 2 }} title={{ width: "80%" }} />
                     </div>
@@ -650,7 +578,7 @@ export default function MicroMajorListPage() {
               </div>
             ) : paginatedMajors.length > 0 ? (
               <>
-                <div className={`portal-course-grid ${!isMobile ? "portal-course-grid--wide" : ""}`} style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12 } : undefined}>
+                <div className="major-grid">
                   {paginatedMajors.map((major: MicroMajorItem) => (
                     <MicroMajorCard
                       key={`${major.id}_${(major as any)._tenant || selectedTenant || ""}`}
@@ -682,6 +610,7 @@ export default function MicroMajorListPage() {
             )}
           </div>
         </section>
+        </div>
       </Content>
 
       <GlobalFooter />

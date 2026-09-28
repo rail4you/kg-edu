@@ -34,6 +34,7 @@ import { themeColors } from "@/styles/theme";
 import { setCurrentTenant } from "@/lib/tenant";
 import CourseCoverArt from "@/components/course-cover-art";
 import "@/styles/home-portal-theme.css";
+import "@/styles/portal-editorial.css";
 
 const { Header, Content } = Layout;
 const { Paragraph, Text, Title } = Typography;
@@ -68,78 +69,33 @@ function CourseCard({
 }) {
   const isPlaceholder = !course.imageUrl;
   const studyCount = course.enrolledCount ?? course.browseCount ?? 0;
+  const artVariant = (course.id.charCodeAt(0) + course.title.length) % 3 + 1;
 
   return (
-    <button
-      type="button"
-      className={`portal-course-card ${course.isEnrolled ? "is-enrolled" : "is-open"}`}
-      onClick={() => onClick(course)}
-    >
-      {/* Cover — 内嵌圆角封面，有图用图片，无图用生成式学术插画封面 */}
-      <div
-        className={`portal-course-card__cover ${isPlaceholder ? "is-art" : ""}`}
-        style={
-          !isPlaceholder
-            ? { backgroundImage: `url(${course.imageUrl})` }
-            : undefined
-        }
+    <article className="ed-course">
+      <a
+        className={`ed-course__art v${artVariant}`}
+        onClick={() => onClick(course)}
+        style={isPlaceholder ? undefined : { backgroundImage: `url(${course.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
       >
-        {isPlaceholder && (
-          <CourseCoverArt
-            seed={course.id}
-            title={course.title}
-            subtitle={course.orgName}
-          />
-        )}
-
-        <div className="portal-course-card__cover-badges">
-          <span className="portal-course-card__cover-badge portal-course-card__cover-badge--subject">
-            {course.standardSubject.name}
-          </span>
-        </div>
-
-        {!isPlaceholder && (
-          <div className="portal-course-card__cover-overlay">
-            <div className="portal-course-card__cover-overlay-title">
-              {course.title}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Body — 参考智慧慕课：标题 / 学校|教师 / 简介 / 进行中|人数 */}
-      <div className="portal-course-card__body">
-        <Text className="portal-course-card__title" ellipsis>
-          {course.title}
-        </Text>
-
-        <div className="portal-course-card__school">
-          <BankOutlined />
-          <span className="portal-course-card__school-name">{course.orgName}</span>
-          <span className="portal-course-card__school-divider">|</span>
-          <span className="portal-course-card__school-teacher">教师：{course.teacherName}</span>
-        </div>
-
-        <Paragraph className="portal-course-card__description" ellipsis={{ rows: 2 }}>
+        <span className="ed-course__index">{course.standardSubject.name?.toUpperCase() || "COURSE"}</span>
+        <strong>{course.title}</strong>
+        <span className="ed-course__sub">{course.orgName}</span>
+      </a>
+      <div className="ed-course__body">
+        <div className="ed-course__meta"><span>{course.standardSubject.name}</span><small>{course.isEnrolled ? "学习中" : "智慧课程"}</small></div>
+        <h3><a onClick={() => onClick(course)}>{course.title}</a></h3>
+        <p title={course.description || course.title}>
           {course.description && course.description !== course.title
             ? course.description
             : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
-        </Paragraph>
-
-        <div className="portal-course-card__footer">
-          <span
-            className={`portal-course-card__progress ${course.isEnrolled ? "portal-course-card__progress--enrolled" : ""}`}
-          >
-            <BarChartOutlined />
-            {course.isEnrolled ? "学习中" : "进行中"}
-          </span>
-          <span className="portal-course-card__learners">
-            <EyeOutlined />
-            {studyCount}人学习
-          </span>
+        </p>
+        <div className="ed-course__footer">
+          <span>{course.teacherName ? `教师：${course.teacherName}` : course.orgName}</span>
+          <span>{studyCount}人学习 →</span>
         </div>
       </div>
-    </button>
+    </article>
   );
 }
 
@@ -298,11 +254,11 @@ export default function CourseListPage() {
 
   return (
     <Layout className="home-page cl-page">
-      <Header className="home-header">
+      <Header className="home-header ed-top">
         <div className="home-header__inner">
           <div className="home-header__left">
             <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_light} alt={branding.app_name} className="home-brand__logo" />
+              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
               <div className="home-brand__title">{branding.app_title}</div>
             </div>
             {!isMobile && (
@@ -359,6 +315,12 @@ export default function CourseListPage() {
       />
 
       <Content>
+        <div className="ed-container">
+        {/* 原型课程页顶部：标题 + 描述 */}
+        <div className="ed-page-head">
+          <h1>探索课程</h1>
+          <p>找到适合自己的学习方向。</p>
+        </div>
         {/* 移动端：紧凑筛选条 - 下拉框选择器 */}
         {isMobile ? (
           <section className="cl-filter-bar cl-filter-bar--mobile" style={{ padding: "8px 14px", background: "#fff" }}>
@@ -525,10 +487,10 @@ export default function CourseListPage() {
             </div>
 
             {isLoading ? (
-              <div className={`portal-course-grid ${!isMobile ? "portal-course-grid--wide" : ""}`} style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
+              <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
                 {Array.from({ length: isMobile ? 6 : 12 }).map((_, index) => (
-                  <div key={index} className="portal-course-card portal-course-card--loading">
-                    <Skeleton.Image active className="portal-course-card__skeleton-cover" />
+                  <div key={index} className="ed-course">
+                    <Skeleton.Image active style={{ width: "100%", height: 200 }} />
                     <div style={{ padding: 16 }}>
                       <Skeleton active paragraph={{ rows: 3 }} title={{ width: "80%" }} />
                     </div>
@@ -537,7 +499,7 @@ export default function CourseListPage() {
               </div>
             ) : paginatedCourses.length > 0 ? (
               <>
-                <div className={`portal-course-grid ${!isMobile ? "portal-course-grid--wide" : ""}`} style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
+                <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
                   {paginatedCourses.map((course) => (
                     <CourseCard key={`${course.id}_${course.orgSchemaName}`} course={course} onClick={handleCourseClick} />
                   ))}
@@ -563,6 +525,7 @@ export default function CourseListPage() {
             )}
           </div>
         </section>
+        </div>
       </Content>
 
       <GlobalFooter />

@@ -80,6 +80,74 @@ const GlobalFooter: React.FC = () => {
   const privacyPolicy = siteContent?.privacyPolicy ||
     "易课程·智慧教学系统及其所有内容，包括但不限于文字、图片、音频、视频、软件、程序、版面设计等，均受《中华人民共和国著作权法》及其他相关法律法规保护。未经书面授权，任何单位及个人不得以任何方式或理由对本平台内容进行使用、复制、修改、抄录或与其它产品捆绑使用。";
 
+  // 门户端浅色页脚：单行布局（品牌 + 导航 + 动态版权，文本均来自品牌配置）
+  if (isPortal) {
+    const portalLinks = [
+      { label: "课程", to: "/courses" },
+      { label: "微专业", to: "/micro-majors" },
+      { label: "关于我们", to: "/about" },
+    ];
+    return (
+      <div style={{ background: "#fff", borderTop: "1px solid #e3e9f1", padding: "20px 40px" }}>
+        <div
+          style={{
+            maxWidth: 1320,
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            flexWrap: "wrap",
+            textAlign: "center",
+          }}
+        >
+          <nav style={{ display: "flex", gap: 22 }} aria-label="页脚导航">
+            {portalLinks.map((l) => (
+              <a
+                key={l.label}
+                onClick={() => navigate(l.to)}
+                style={{ color: "#42546e", fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#2859df")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#42546e")}
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+          <span style={{ color: "#c6d3e5" }}>|</span>
+          <span style={{ fontSize: 12, color: "#9aa8ba" }}>
+            © 2026 {branding.app_name} · {branding.app_title}
+          </span>
+          <span>
+            <a onClick={() => setContactOpen(true)} style={{ fontSize: 12, color: "#758293", cursor: "pointer", whiteSpace: "nowrap" }}>联系我们</a>
+            <span style={{ margin: "0 8px", fontSize: 12, color: "#c6d3e5" }}>/</span>
+            <a onClick={() => setPrivacyOpen(true)} style={{ fontSize: 12, color: "#758293", cursor: "pointer", whiteSpace: "nowrap" }}>隐私条款</a>
+          </span>
+        </div>
+
+        <Modal title="联系我们" open={contactOpen} onCancel={() => setContactOpen(false)} footer={null} width={420}>
+          <div style={{ lineHeight: 2.2, fontSize: 14 }}>
+            <p><strong>邮箱：</strong>{contactEmail}</p>
+            <p><strong>地址：</strong>{contactAddress}</p>
+            <p style={{ color: "#8c8c8c", marginTop: 12, fontSize: 13 }}>{contactHours}</p>
+          </div>
+        </Modal>
+
+        <Modal title="隐私条款" open={privacyOpen} onCancel={() => setPrivacyOpen(false)} footer={null} width={560}>
+          <div style={{ lineHeight: 2, fontSize: 13, color: "#595959" }}>
+            <p><strong>版权声明</strong></p>
+            <p style={{ whiteSpace: "pre-line" }}>{privacyPolicy}</p>
+            <p><strong>隐私保护</strong></p>
+            <p>我们重视用户隐私保护。本平台收集的用户信息仅用于提供教学服务，不会向第三方出售、出租或以其他方式分享您的个人信息，法律法规要求或政府主管部门依法要求除外。</p>
+            <p><strong>免责声明</strong></p>
+            <p>本平台致力于提供准确的教育内容和服务，但不对内容的绝对准确性和完整性作出保证。用户因使用本平台内容而产生的任何直接或间接损失，本平台不承担法律责任。</p>
+            <p style={{ color: "#8c8c8c", marginTop: 8 }}>最后更新日期：2026 年 1 月 1 日</p>
+          </div>
+        </Modal>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{

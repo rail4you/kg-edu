@@ -55,7 +55,7 @@ import {
   type MicroMajorTeacher,
 } from "@/hooks/use-micro-major-catalog";
 import "@/styles/home-portal-theme.css";
-import "./micro-major-detail.css";
+import "@/styles/portal-editorial.css";
 
 const { Header, Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -314,11 +314,11 @@ export default function MicroMajorDetailPage() {
   if (majorLoading) {
     return (
       <Layout className="home-page cl-page" style={{ overflowX: "hidden" }}>
-        <Header className="home-header">
+        <Header className="home-header ed-top">
           <div className="home-header__inner">
             <div className="home-header__left">
               <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-                <img src={branding.logo_light} alt={branding.app_name} className="home-brand__logo" />
+                <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
                 <div className="home-brand__title">{branding.app_title}</div>
               </div>
             </div>
@@ -369,11 +369,11 @@ export default function MicroMajorDetailPage() {
   if (!major) {
     return (
       <Layout className="home-page cl-page" style={{ overflowX: "hidden" }}>
-        <Header className="home-header">
+        <Header className="home-header ed-top">
           <div className="home-header__inner">
             <div className="home-header__left">
               <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-                <img src={branding.logo_light} alt={branding.app_name} className="home-brand__logo" />
+                <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
                 <div className="home-brand__title">{branding.app_title}</div>
               </div>
             </div>
@@ -423,11 +423,11 @@ export default function MicroMajorDetailPage() {
 
   return (
     <Layout className="home-page cl-page" style={{ overflowX: "hidden" }}>
-      <Header className="home-header">
+      <Header className="home-header ed-top">
         <div className="home-header__inner">
           <div className="home-header__left">
             <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_light} alt={branding.app_name} className="home-brand__logo" />
+              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
               <div className="home-brand__title">{branding.app_title}</div>
             </div>
             {!isMobile && (
@@ -479,69 +479,30 @@ export default function MicroMajorDetailPage() {
       />
 
       <Content>
-        {/* Hero Section - 沉浸式封面 */}
-        <section className="mm-detail-hero">
-          <div className="mm-detail-hero__bg">
-            <img src={heroCover} alt="" className="mm-detail-hero__bg-image" />
-            <div className="mm-detail-hero__bg-overlay" />
+        <div className="ed-container" style={{ paddingTop: 32 }}>
+        {/* 原型风格 Hero：深色介绍 + 白色行动卡，数据为真实接口 */}
+        <section className="major-detail-hero theme-blue">
+          <div>
+            <div className="major-code">{major.learningCycle || "MICRO MAJOR"}</div>
+            <h1>{major.name}<br /><span style={{ fontWeight: 400 }}>微专业</span></h1>
+            <p>{major.intro || major.projectBackground || "围绕产业需求与岗位能力构建课程组合，帮助学习者系统完成专业能力提升。"}</p>
+            <div className="major-detail-tags"><span>{major.learningCycle || "-"}</span><span>{courses.length} 门课程</span><span>{totals.credit || "-"} 学分</span></div>
           </div>
-          <div className="mm-detail-hero__inner">
-            <div className="mm-detail-hero__content">
-              <div className="mm-detail-hero__title-row">
-                <Title className="mm-detail-hero__title">{major.name}</Title>
-                <Space>
-                  {user && isPending && (
-                    <Tag icon={<ClockCircleFilled />} color="warning" style={{ padding: "4px 12px", borderRadius: 6, fontSize: 13 }}>
-                      审核中
-                    </Tag>
-                  )}
-                  {user && isEnrolled && (
-                    <Tag icon={<CheckCircleFilled />} color="success" style={{ padding: "4px 12px", borderRadius: 6, fontSize: 13 }}>
-                      学习中
-                    </Tag>
-                  )}
-                  {user && isCompleted && (
-                    <Tag icon={<TrophyOutlined />} color="blue" style={{ padding: "4px 12px", borderRadius: 6, fontSize: 13 }}>
-                      已结业
-                    </Tag>
-                  )}
-                  {user && isRejected && (
-                    <Tag icon={<CloseCircleFilled />} color="error" style={{ padding: "4px 12px", borderRadius: 6, fontSize: 13 }}>
-                      已拒绝
-                    </Tag>
-                  )}
-                  <Button icon={<ArrowLeftOutlined />} className="mm-detail-back" onClick={() => navigate(`/micro-majors?tenant=${tenant}`)}>
-                    返回微专业列表
-                  </Button>
-                </Space>
-              </div>
-              <Paragraph className="mm-detail-hero__intro">
-                {major.intro || major.projectBackground || "围绕产业需求与岗位能力构建课程组合，帮助学习者系统完成专业能力提升。"}
-              </Paragraph>
-              <div className="mm-detail-stats">
-                <div className="mm-detail-stats__item">
-                  <span className="mm-detail-stats__value">{courses.length}</span>
-                  <span className="mm-detail-stats__label">课程数</span>
-                </div>
-                <div className="mm-detail-stats__divider" />
-                <div className="mm-detail-stats__item">
-                  <span className="mm-detail-stats__value">{totals.credit || "-"}</span>
-                  <span className="mm-detail-stats__label">总学分</span>
-                </div>
-                <div className="mm-detail-stats__divider" />
-                <div className="mm-detail-stats__item">
-                  <span className="mm-detail-stats__value">{totals.period || "-"}</span>
-                  <span className="mm-detail-stats__label">总学时</span>
-                </div>
-                <div className="mm-detail-stats__divider" />
-                <div className="mm-detail-stats__item">
-                  <span className="mm-detail-stats__value">{major.learningCycle || "-"}</span>
-                  <span className="mm-detail-stats__label">学习周期</span>
-                </div>
-              </div>
-            </div>
+          <div className="major-enrollment">
+            <small>循序渐进 · 从理解到应用</small>
+            <h2>找到你的下一步</h2>
+            <p style={{ color: "#62738a", fontSize: 13 }}>了解课程安排与适合人群，再开始这一段学习。</p>
+            {!user ? (
+              <button className="primary" onClick={() => navigate("/login")}>登录后报名 →</button>
+            ) : isEnrolled ? (
+              <button className="primary" onClick={() => courses[0] && handleMMCourseClick(courses[0])}>进入学习空间 →</button>
+            ) : (
+              <button className="primary" onClick={handleApply}>报名申请 →</button>
+            )}
+            <a href="#courses" style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 12 }}>先看看具体课程 ↓</a>
           </div>
         </section>
+        <nav className="major-anchor-nav"><a href="#overview">专业介绍</a><a href="#courses">课程体系 <span>{courses.length}</span></a><a href="#teachers">教师团队</a></nav>
 
         {/* Info Strip */}
         <section className="mm-detail-info-strip">
@@ -739,6 +700,7 @@ export default function MicroMajorDetailPage() {
             </Card>
           </div>
         </section>
+        </div>
       </Content>
     
 

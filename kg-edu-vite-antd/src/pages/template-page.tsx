@@ -8,7 +8,7 @@ import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/auth/auth-context";
 import { usePortalConfig, usePortalNavItems, findTemplatePage } from "@/hooks/use-portal-config";
 import "@/styles/home-portal-theme.css";
-import "./template-page.css";
+import "@/styles/portal-editorial.css";
 
 const { Header, Content } = Layout;
 const { Title, Paragraph } = Typography;
@@ -39,11 +39,11 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
 
   return (
     <Layout className="home-page" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header className="home-header">
+      <Header className="home-header ed-top">
         <div className="home-header__inner">
           <div className="home-header__left">
             <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_light} alt={branding.app_name} className="home-brand__logo" />
+              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
               <div className="home-brand__title">{branding.app_title}</div>
             </div>
             <div className="home-nav">
@@ -90,23 +90,21 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
             </Empty>
           </div>
         ) : (
-          /* 介绍页整体占满视口高度（header 76px），内容不足时页脚仍沉底 */
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 76px)" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              <div className="template-page__body">
-                {/* 标题 + 介绍 + 正文同一张介绍页 */}
-                <div className="template-page__sheet">
-                  <Title level={2} className="template-page__title" style={{ margin: 0 }}>
-                    {page?.name}
-                  </Title>
+          /* 原型编辑风格：面包屑 + 白底介绍页，数据来自门户配置，内容区撑满视口 */
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 84px)", background: "#f5f7fb" }}>
+            <div className="ed-container" style={{ width: "100%", flex: 1, display: "flex", flexDirection: "column" }}>
+              <div className="template-sheet" style={{ marginTop: 32, flex: 1 }}>
+                <Title level={2} className="template-page__title" style={{ margin: 0 }}>
+                  {page?.name}
+                </Title>
 
                   {page?.overview ? (
-                    <Paragraph className="template-page__lead">{page.overview}</Paragraph>
+                    <Paragraph className="template-sheet__lead">{page.overview}</Paragraph>
                   ) : null}
 
                   {page?.content ? (
                     <>
-                      <div className="template-page__sheet-divider" aria-hidden="true" />
+                      <div className="template-sheet__divider" aria-hidden="true" />
                       <div className="template-page__content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{page.content}</ReactMarkdown>
                       </div>
@@ -119,7 +117,6 @@ export default function TemplatePage({ slug: fixedSlug }: TemplatePageProps) {
                     />
                   )}
                 </div>
-              </div>
             </div>
           </div>
         )}
