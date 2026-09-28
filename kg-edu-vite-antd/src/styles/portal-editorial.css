@@ -161,7 +161,7 @@
 .ed-search-row select { border: 1px solid #e3e9f1; border-radius: 8px; padding: 9px 12px; color: #202f47; background: #fff; }
 /* 课程筛选条贴合原型卡片 */
 .ed-container .cl-filter-bar { background: transparent !important; border: 0 !important; padding: 0 !important; }
-.ed-container .cl-filter-bar__inner { max-width: none !important; margin: 0 !important; padding: 20px 22px !important; }
+.ed-container .cl-filter-bar__inner { max-width: none !important; margin: 0 !important; padding: 16px 20px !important; background: #fff !important; border: 1px solid #eef2f6 !important; border-radius: 12px; box-shadow: none !important; }
 .cl-filter-bar__inner { background: #fff; border: 1px solid #e3e9f1; border-radius: 12px; padding: 20px 22px; box-shadow: 0 3px 16px rgba(21,50,84,.03); }
 .ed-container .cl-filter-tag, .ed-container .cl-tabs__item { border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 6px 4px; margin-right: 18px; font-size: 14px; color: #62738a; position: relative; height: auto; border-radius: 0; font-weight: 400; }
 .ed-container .cl-filter-tag:hover, .ed-container .cl-tabs__item:hover { color: #2859df !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
