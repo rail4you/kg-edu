@@ -294,6 +294,18 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
         path: "/teacher/dashboard/exam-management",
         name: `${t("menu.examManagement")} ★`,
         icon: <ScheduleOutlined />,
+        routes: [
+          {
+            path: "/teacher/dashboard/exam-management",
+            name: t("menu.examManagement"),
+            icon: <ScheduleOutlined />,
+          },
+          {
+            path: "/teacher/dashboard/face-check",
+            name: "人脸抓拍 ★",
+            icon: <SafetyCertificateOutlined />,
+          },
+        ],
       },
       {
         path: "/teacher/dashboard/group-management",
@@ -392,11 +404,6 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
         path: "/teacher/dashboard/ai-practice",
         name: "AI 实践 ★",
         icon: <RobotOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/face-check",
-        name: "人脸抓拍 ★",
-        icon: <SafetyCertificateOutlined />,
       },
       {
         path: "/teacher/dashboard/custom-form",

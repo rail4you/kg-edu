@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card, Button, Typography, Spin, Input, Select, Switch, Table, Tag, Space,
-  Modal, message, Row, Col, DatePicker, Tabs, Empty, Popconfirm, Form,
+  Modal, message, Row, Col, DatePicker, Tabs, Empty, Popconfirm, Form, Dropdown,
 } from "antd";
 import {
   ArrowLeftOutlined, PlusOutlined, DeleteOutlined, FunctionOutlined,
@@ -45,6 +45,62 @@ interface FieldItem {
   options?: string[];
   expression?: string;
 }
+
+interface FormPreset {
+  title: string;
+  category: string;
+  fields: FieldItem[];
+}
+
+const FORM_PRESETS: FormPreset[] = [
+  {
+    title: "调查问卷",
+    category: "问卷",
+    fields: [
+      { key: "name", label: "姓名", type: "text", required: true },
+      { key: "grade", label: "年级/班级", type: "text", required: false },
+      { key: "satisfaction", label: "总体满意度", type: "radio", required: true, options: ["非常满意", "满意", "一般", "不满意"] },
+      { key: "likes", label: "您最喜欢的课程或环节", type: "checkbox", required: false, options: ["课堂教学", "实践操作", "小组讨论", "课后作业"] },
+      { key: "comment", label: "意见建议", type: "textarea", required: false },
+      { key: "join_again", label: "是否愿意参加后续活动", type: "radio", required: true, options: ["愿意", "不愿意"] },
+    ],
+  },
+  {
+    title: "请假申请",
+    category: "请假",
+    fields: [
+      { key: "name", label: "姓名", type: "text", required: true },
+      { key: "leave_type", label: "请假类型", type: "select", required: true, options: ["事假", "病假", "年假"] },
+      { key: "start_date", label: "开始日期", type: "date", required: true },
+      { key: "end_date", label: "结束日期", type: "date", required: true },
+      { key: "reason", label: "请假事由", type: "textarea", required: false },
+    ],
+  },
+  {
+    title: "报名表",
+    category: "报名",
+    fields: [
+      { key: "name", label: "姓名", type: "text", required: true },
+      { key: "student_no", label: "学号", type: "text", required: true },
+      { key: "class", label: "班级", type: "select", required: false, options: ["一年级", "二年级", "三年级", "四年级"] },
+      { key: "phone", label: "联系电话", type: "number", required: true },
+      { key: "projects", label: "报名项目", type: "checkbox", required: true, options: ["编程", "美术", "音乐", "体育"] },
+      { key: "note", label: "备注", type: "textarea", required: false },
+    ],
+  },
+  {
+    title: "报销申请",
+    category: "报销",
+    fields: [
+      { key: "name", label: "报销人", type: "text", required: true },
+      { key: "item", label: "报销项目", type: "text", required: true },
+      { key: "amount", label: "金额（元）", type: "number", required: true },
+      { key: "date", label: "报销日期", type: "date", required: true },
+      { key: "invoice", label: "发票附件", type: "attachment", required: false },
+      { key: "note", label: "说明", type: "textarea", required: false },
+    ],
+  },
+];
 
 export default function CustomForm() {
   const navigate = useNavigate();
@@ -184,17 +240,46 @@ export default function CustomForm() {
     return `${s.name}${s.memberId ? `（${s.memberId}）` : ""}`;
   };
 
+  const renderSubmissionValues = (values: any, formId: string) => {
+    if (!values || typeof values !== "object") return <Text type="secondary">-</Text>;
+    const schema = Array.isArray(formsById[formId]?.schema) ? formsById[formId].schema : [];
+    const labelMap = Object.fromEntries(schema.map((f: any) => [f.key, f.label || f.key]));
+    const entries = Object.entries(values);
+    if (entries.length === 0) return <Text type="secondary">-</Text>;
+    return (
+      <div style={{ fontSize: 12, maxWidth: 320 }}>
+        {entries.map(([k, val]) => {
+          const label = labelMap[k] || k;
+          const display = Array.isArray(val) ? val.join("、") : val == null ? "-" : String(val);
+          return (
+            <div key={k} style={{ lineHeight: 1.7, whiteSpace: "normal" }}>
+              <Text type="secondary">{label}：</Text>
+              {display}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const addField = () => {
     const n = builderFields.length + 1;
-    setBuilderFields([...builderFields, { key: `field${n}`, label: `题目${n}`, type: "text", required: false }]);
+    setBuilderFields([...builderFields, { key: `field${n}`, label: `字段${n}`, type: "text", required: false }]);
   };
 
   const [builderOpen, setBuilderOpen] = useState(false);
 
-  const openBuilder = () => {
+  const openBuilderWith = (preset?: FormPreset) => {
     resetBuilder();
+    if (preset) {
+      setBuilderTitle(preset.title);
+      setBuilderCategory(preset.category);
+      setBuilderFields(preset.fields.map((f) => ({ ...f, options: f.options ? [...f.options] : undefined })));
+    }
     setBuilderOpen(true);
   };
+
+  const openBuilder = () => openBuilderWith();
 
   const closeBuilder = () => {
     setBuilderOpen(false);
@@ -212,12 +297,12 @@ export default function CustomForm() {
   const editForm = async (id: string) => {
     const r = await getFormDef({
       tenant,
-      input: { id },
+      filter: { id: { eq: id } },
       fields: ["id", "title", "category", "schema", "description"],
       headers,
     });
-    if (r.success && r.data) {
-      const f = r.data as any;
+    if (r.success && Array.isArray(r.data)) {
+      const f = (r.data as any[])[0];
       setBuilderTitle(f.title || "");
       setBuilderCategory(f.category || "申请");
       setBuilderFields((f.schema || []) as FieldItem[]);
@@ -230,7 +315,7 @@ export default function CustomForm() {
 
   const saveForm = async () => {
     if (!builderTitle.trim() || builderFields.length === 0) {
-      message.warning("请填写标题并添加题目");
+      message.warning("请填写标题并添加字段");
       return;
     }
     const input = { title: builderTitle, category: builderCategory, schema: builderFields as any };
@@ -375,13 +460,24 @@ export default function CustomForm() {
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <Text strong style={{ fontSize: 16 }}>表单模板列表</Text>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={openBuilder}
+                    <Dropdown
+                      trigger={["click"]}
+                      menu={{
+                        items: [
+                          { key: "blank", label: "空白表单", onClick: () => openBuilderWith() },
+                          { type: "divider" },
+                          ...FORM_PRESETS.map((p) => ({
+                            key: p.title,
+                            label: p.title,
+                            onClick: () => openBuilderWith(p),
+                          })),
+                        ],
+                      }}
                     >
-                      新建表单模板
-                    </Button>
+                      <Button type="primary" icon={<PlusOutlined />}>
+                        新建表单模板
+                      </Button>
+                    </Dropdown>
                   </div>
                   <Card>
                     {formsList.length === 0 ? (
@@ -527,11 +623,7 @@ export default function CustomForm() {
                         {
                           title: "填报内容",
                           dataIndex: "values",
-                          render: (v: any) => (
-                            <Text style={{ fontSize: 12 }} ellipsis>
-                              {v ? JSON.stringify(v).slice(0, 80) : "-"}
-                            </Text>
-                          ),
+                          render: (v: any, r: any) => renderSubmissionValues(v, r.formId),
                         },
                         {
                           title: "状态",
@@ -635,7 +727,7 @@ export default function CustomForm() {
             <Text type="secondary" style={{ fontSize: 12 }}>
               {tenant ? (
                 <>
-                  已选 {assignStudentIds.length} 人 ｜ 租户 <Text code>{tenant}</Text>
+                  已选 {assignStudentIds.length} 人 ｜ 租户 <Text code>{tenantLabel}</Text>
                 </>
               ) : (
                 <Text type="warning">
@@ -680,7 +772,7 @@ export default function CustomForm() {
                 <Input
                   value={f.label}
                   onChange={(e) => { const n = [...builderFields]; n[i] = { ...n[i], label: e.target.value }; setBuilderFields(n); }}
-                  style={{ width: 150 }} placeholder="题干"
+                  style={{ width: 150 }} placeholder="字段名"
                 />
                 <Select
                   value={f.type}
@@ -743,7 +835,7 @@ export default function CustomForm() {
           ))}
         </div>
         <Space style={{ marginTop: 16 }}>
-          <Button icon={<PlusOutlined />} onClick={addField}>添加题目</Button>
+          <Button icon={<PlusOutlined />} onClick={addField}>添加字段</Button>
           <Button type="primary" onClick={saveForm}>
             {editingId ? "保存修改" : "保存表单"}
           </Button>

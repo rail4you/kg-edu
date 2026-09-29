@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card, Button, Typography, Spin, Input, Select, Radio, Checkbox,
-  Upload, message, Tag, Space, Empty, Tabs, Modal, Alert,
+  Upload, message, Tag, Space, Empty, Tabs, Modal, Alert, Row, Col,
 } from "antd";
 import {
   ArrowLeftOutlined, UploadOutlined, RobotOutlined, SendOutlined,
@@ -144,11 +144,12 @@ export default function StudentDataForms() {
         formIds.map(async (fid) => {
           const r = await getFormDef({
             tenant,
-            input: { id: fid },
+            filter: { id: { eq: fid } },
             fields: ["id", "title", "category", "schema"],
             headers,
           });
-          if (r.success && r.data) out[fid] = r.data;
+          const row = r.success && Array.isArray(r.data) ? (r.data as any[])[0] : null;
+          if (row) out[fid] = row;
         }),
       );
       return out;
@@ -166,23 +167,23 @@ export default function StudentDataForms() {
     if (!form) {
       const r = await getFormDef({
         tenant,
-        input: { id: a.formId },
+        filter: { id: { eq: a.formId } },
         fields: ["id", "title", "category", "schema"],
         headers,
       });
-      if (r.success && r.data) form = r.data;
+      if (r.success && Array.isArray(r.data)) form = (r.data as any[])[0];
     }
     setActiveForm(form || null);
 
     if (a.status === "submitted" && a.submissionId) {
       const sR = await getFormSubmission({
         tenant,
-        input: { id: a.submissionId },
+        filter: { id: { eq: a.submissionId } },
         fields: ["id", "values", "status", "reviewNote"],
         headers,
       });
-      if (sR.success && sR.data) {
-        const sub = sR.data as any;
+      if (sR.success && Array.isArray(sR.data)) {
+        const sub = (sR.data as any[])[0];
         setSubmission(sub);
         setValues(sub.values || {});
       }
@@ -418,142 +419,163 @@ export default function StudentDataForms() {
     const f = formsById[a.formId];
     const title = f?.title || a.formId.slice(0, 8) + "…";
     const category = f?.category;
+    const fieldCount = Array.isArray(f?.schema) ? f.schema.length : 0;
     return (
       <Card
         key={a.id}
         size="small"
-        style={{ marginBottom: 12 }}
         hoverable
         onClick={() => openAssignment(a)}
+        style={{ height: "100%", borderRadius: 12 }}
+        styles={{ body: { display: "flex", flexDirection: "column", height: "100%" } }}
       >
-        <Space direction="vertical" size={4} style={{ width: "100%" }}>
-          <Space wrap>
-            <Text strong style={{ fontSize: 16 }}>{title}</Text>
-            {category && <Tag>{category}</Tag>}
-            <Tag color={mode === "pending" ? "orange" : "green"}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+            <Text strong style={{ fontSize: 16, lineHeight: 1.4 }}>{title}</Text>
+            <Tag color={mode === "pending" ? "orange" : "green"} style={{ margin: 0 }}>
               {mode === "pending" ? "待填写" : "已提交"}
             </Tag>
-          </Space>
-          {a.dueAt && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              截止时间：{dayjs(a.dueAt).format("YYYY-MM-DD")}
-            </Text>
-          )}
-          {mode === "submitted" && submission && a.id === activeAssignmentId ? null : null}
-        </Space>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            {category && <Tag color="blue">{category}</Tag>}
+            {fieldCount > 0 && <Tag color="purple">{fieldCount} 个字段</Tag>}
+          </div>
+          <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 12 }}>
+            {a.dueAt ? `截止：${dayjs(a.dueAt).format("YYYY-MM-DD")}` : "不限截止时间"}
+          </Text>
+        </div>
+        <Button
+          type={mode === "pending" ? "primary" : "default"}
+          icon={mode === "pending" ? <EditOutlined /> : <FileTextOutlined />}
+          block
+          style={{ marginTop: 12 }}
+          onClick={(e) => { e.stopPropagation(); openAssignment(a); }}
+        >
+          {mode === "pending" ? "去填写" : "查看详情"}
+        </Button>
       </Card>
     );
   };
 
   if (activeAssignmentId && activeForm) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-        <div style={{ padding: 16, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={closeAssignment} style={{ color: "#1890ff" }} />
-          <Title level={4} style={{ margin: 0 }}>{activeForm.title}</Title>
+      <div style={{ padding: "20px 24px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={closeAssignment}>
+            返回
+          </Button>
         </div>
-        <div style={{ padding: 16, maxWidth: 720, margin: "0 auto" }}>
-          <Card>
-            {submission && (
-              <Card
-                size="small"
-                style={{ marginBottom: 16, background: "#f6ffed", borderColor: "#b7eb8f" }}
-                title={
-                  <Space>
-                    <Text strong>提交状态：</Text>
-                    <Tag color={submission.status === "approved" ? "green" : submission.status === "rejected" ? "red" : "orange"}>
-                      {submission.status === "approved" ? "已批准" : submission.status === "rejected" ? "已驳回" : "待审核"}
-                    </Tag>
-                  </Space>
-                }
-              >
-                {submission.reviewNote && (
-                  <Text type="secondary">教师备注：{submission.reviewNote}</Text>
-                )}
-              </Card>
-            )}
+        <Title level={4} style={{ marginBottom: 4 }}>{activeForm.title}</Title>
+        <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+          填写表单内容并提交，等待教师审核
+        </Text>
+        <Card>
+          {submission && (
+            <Card
+              size="small"
+              style={{ marginBottom: 16, background: "#f6ffed", borderColor: "#b7eb8f" }}
+              title={
+                <Space>
+                  <Text strong>提交状态：</Text>
+                  <Tag color={submission.status === "approved" ? "green" : submission.status === "rejected" ? "red" : "orange"}>
+                    {submission.status === "approved" ? "已批准" : submission.status === "rejected" ? "已驳回" : "待审核"}
+                  </Tag>
+                </Space>
+              }
+            >
+              {submission.reviewNote && (
+                <Text type="secondary">教师备注：{submission.reviewNote}</Text>
+              )}
+            </Card>
+          )}
 
-            {!readOnly && (
-              <Card
-                size="small"
-                title={<span><RobotOutlined /> AI 填表（自然语言回填）</span>}
-                style={{ marginBottom: 16, background: "#f6f0ff" }}
-              >
-                <Input.TextArea
-                  rows={2}
-                  value={aiText}
-                  onChange={(e) => setAiText(e.target.value)}
-                  placeholder="如：因感冒请假三天，从明天开始"
-                  style={{ marginBottom: 8 }}
-                />
-                <Button loading={aiLoading} onClick={() => aiFill("text")}>
-                  按描述回填
-                </Button>
-              </Card>
-            )}
-
-            {(activeForm.schema || []).map((f: any) => (
-              <div key={f.key} style={{ marginBottom: 12 }}>
-                <Text strong>
-                  {f.required && <span style={{ color: "red" }}>* </span>}
-                  {f.label}
-                </Text>
-                <div style={{ marginTop: 4 }}>{renderField(f, readOnly)}</div>
-              </div>
-            ))}
-
-            {!readOnly && (
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={doSubmit}
-                loading={submitting}
-                block
-                size="large"
-                style={{ marginTop: 16 }}
-              >
-                提交（进入教师审核）
+          {!readOnly && (
+            <Card
+              size="small"
+              title={<span><RobotOutlined /> AI 填表（自然语言回填）</span>}
+              style={{ marginBottom: 16, background: "#f6f0ff" }}
+            >
+              <Input.TextArea
+                rows={2}
+                value={aiText}
+                onChange={(e) => setAiText(e.target.value)}
+                placeholder="如：因感冒请假三天，从明天开始"
+                style={{ marginBottom: 8 }}
+              />
+              <Button loading={aiLoading} onClick={() => aiFill("text")}>
+                按描述回填
               </Button>
-            )}
-          </Card>
-        </div>
+            </Card>
+          )}
+
+          <Row gutter={[16, 16]}>
+            {(activeForm.schema || []).map((f: any) => (
+              <Col xs={24} md={12} key={f.key}>
+                <div style={{ border: "1px solid #f0f0f0", borderRadius: 8, padding: "12px 14px", background: "#fafafa" }}>
+                  <Text strong>
+                    {f.required && <span style={{ color: "red" }}>* </span>}
+                    {f.label}
+                  </Text>
+                  <div style={{ marginTop: 8 }}>{renderField(f, readOnly)}</div>
+                </div>
+              </Col>
+            ))}
+          </Row>
+
+          {!readOnly && (
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={doSubmit}
+              loading={submitting}
+              block
+              size="large"
+              style={{ marginTop: 16 }}
+            >
+              提交（进入教师审核）
+            </Button>
+          )}
+        </Card>
       </div>
     );
   }
 
 return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 16, background: "white", borderBottom: "1px solid #e0e0f0", display: "flex", alignItems: "center", gap: 8 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>数据表单</Title>
+    <div style={{ padding: "20px 24px" }}>
+      <div style={{ marginBottom: 16 }}>
+        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+          返回
+        </Button>
       </div>
+      <Title level={4} style={{ marginBottom: 4 }}>数据表单</Title>
+      <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+        填写教师分配的表单，并跟踪提交审核状态
+      </Text>
       {tenantMismatch && (
-        <div style={{ padding: "0 16px" }}>
-          <Alert
-            type="warning"
-            showIcon
-            style={{ margin: "12px 0 0" }}
-            message="租户不一致"
-            description={
-              <span>
-                本链接属于租户 <Text code>{urlTenantHint}</Text>，但你当前登录的是 <Text code>{tenant}</Text>。
-                看到的可能是空数据。点击下方按钮退出并重新登录，会自动跳回此链接。
-                <br />
-                <Button
-                  danger
-                  type="primary"
-                  size="small"
-                  style={{ marginTop: 8 }}
-                  onClick={switchToUrlTenant}
-                >
-                  退出并用本链接的租户重新登录
-                </Button>
-              </span>
-            }
-          />
-        </div>
+        <Alert
+          type="warning"
+          showIcon
+          style={{ margin: "0 0 16px" }}
+          message="租户不一致"
+          description={
+            <span>
+              本链接属于租户 <Text code>{urlTenantHint}</Text>，但你当前登录的是 <Text code>{tenant}</Text>。
+              看到的可能是空数据。点击下方按钮退出并重新登录，会自动跳回此链接。
+              <br />
+              <Button
+                danger
+                type="primary"
+                size="small"
+                style={{ marginTop: 8 }}
+                onClick={switchToUrlTenant}
+              >
+                退出并用本链接的租户重新登录
+              </Button>
+            </span>
+          }
+        />
       )}
-      <div style={{ padding: 16, maxWidth: 720, margin: "0 auto" }}>
+      <Card>
         <Tabs
           defaultActiveKey="pending"
           items={[
@@ -564,7 +586,13 @@ return (
                 pendingList.length === 0 ? (
                   <Empty description="暂无待填写的表单" />
                 ) : (
-                  pendingList.map((a) => renderAssignmentCard(a, "pending"))
+                  <Row gutter={[16, 16]}>
+                    {pendingList.map((a) => (
+                      <Col xs={24} sm={12} md={8} key={a.id}>
+                        {renderAssignmentCard(a, "pending")}
+                      </Col>
+                    ))}
+                  </Row>
                 ),
             },
             {
@@ -574,12 +602,18 @@ return (
                 submittedList.length === 0 ? (
                   <Empty description="暂无已提交的表单" />
                 ) : (
-                  submittedList.map((a) => renderAssignmentCard(a, "submitted"))
+                  <Row gutter={[16, 16]}>
+                    {submittedList.map((a) => (
+                      <Col xs={24} sm={12} md={8} key={a.id}>
+                        {renderAssignmentCard(a, "submitted")}
+                      </Col>
+                    ))}
+                  </Row>
                 ),
             },
           ]}
         />
-      </div>
+      </Card>
     </div>
   );
 }

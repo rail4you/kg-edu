@@ -312,6 +312,17 @@ defmodule KgEduWeb.ChatController do
   defp build_opts(_agent_type, tenant, params) do
     opts = KgEdu.Chat.edu_config()
 
+    # Honor a caller-supplied system prompt (used by AI practice scenarios and
+    # other custom role-play agents). Falls back to the built-in assistant prompt.
+    custom_prompt = params["systemPrompt"] || (params["forwardedProps"] || %{})["systemPrompt"]
+
+    opts =
+      if is_binary(custom_prompt) and custom_prompt != "" do
+        Keyword.put(opts, :system_prompt, custom_prompt)
+      else
+        opts
+      end
+
     if tenant do
       user_id = params["userId"] || (params["forwardedProps"] || %{})["userId"]
       KgEdu.Agent.SessionContext.put(tenant: tenant, user_id: user_id)

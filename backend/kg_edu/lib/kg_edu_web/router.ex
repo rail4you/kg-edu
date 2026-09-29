@@ -149,6 +149,7 @@ defmodule KgEduWeb.Router do
   # Competency graph, curriculum generation, and exam preview endpoints
   scope "/", KgEduWeb do
     pipe_through :api
+    post "/api/chat", ChatController, :stream_message
     post "/competency-graph/generate", GenerationController, :generate_competency_graph
     post "/curriculum/generate", GenerationController, :generate_curriculum
     post "/exam/preview", GenerationController, :preview_exam

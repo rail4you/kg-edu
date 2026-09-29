@@ -9,36 +9,41 @@ import {
   Spin,
   Input,
   Table,
-  Tabs,
   Space,
-  Select,
-  InputNumber,
-  Checkbox,
+  Tag,
   message,
   Row,
   Col,
-  List,
   Divider,
 } from "antd";
-import { ArrowLeftOutlined, SendOutlined, PrinterOutlined, SaveOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SendOutlined, PrinterOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useNavigate } from "react-router-dom";
-import {
-  askDataQuestion,
-  buildDataReport,
-  buildDataTable,
-  createReportTemplate,
-  listReportTemplates,
-} from "@/lib/ash_rpc";
+import { askDataQuestion, buildDataReport } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 
 const { Title, Text, Paragraph } = Typography;
 
 const QUICK_QUESTIONS = [
-  "某院系近1个月课程签到率",
-  "各院系资源上传量统计",
-  "本学期课堂活动开展情况",
+  "数据总览",
+  "各课程知识点分布",
+  "知识点分类分布",
+  "作业分布",
+  "考试分布",
+  "课堂活动分布",
+];
+
+const KPI_COLORS = [
+  "#1890ff",
+  "#722ed1",
+  "#eb2f96",
+  "#13c2c2",
+  "#fa8c16",
+  "#52c41a",
+  "#2f54eb",
+  "#f5222d",
+  "#a0d911",
 ];
 
 function ChartBlock({ option }: { option: any }) {
@@ -58,6 +63,21 @@ function ChartBlock({ option }: { option: any }) {
   return <div ref={ref} style={{ height: 300 }} />;
 }
 
+/** 把问答返回的 [label, value] 行构造成柱状图 option */
+function answerChartOption(answer: any) {
+  const cols: string[] = answer?.columns || [];
+  const rows: any[] = answer?.rows || [];
+  if (cols.length < 2 || rows.length === 0) return null;
+  const [labelCol, valueCol] = cols;
+  return {
+    tooltip: { trigger: "axis" },
+    grid: { left: 8, right: 16, top: 24, bottom: 8, containLabel: true },
+    xAxis: { type: "category", data: rows.map((r) => String(r[0] ?? "-")), axisLabel: { interval: 0, rotate: rows.length > 6 ? 30 : 0 } },
+    yAxis: { type: "value" },
+    series: [{ type: "bar", data: rows.map((r) => r[1] ?? 0), itemStyle: { color: "#1890ff", borderRadius: [4, 4, 0, 0] }, barMaxWidth: 40 }],
+  };
+}
+
 export default function DataInsight() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -65,7 +85,31 @@ export default function DataInsight() {
   const tenant = currentTenant?.schemaName || "";
   const headers = getAuthHeaders(user) as Record<string, string>;
 
-  // —— 问答 ——
+  // —— 数据总览 KPI ——
+  const [kpis, setKpis] = useState<any[]>([]);
+  const [overviewSummary, setOverviewSummary] = useState("");
+  const [overviewInsight, setOverviewInsight] = useState("");
+  const [overviewLoading, setOverviewLoading] = useState(false);
+
+  const loadOverview = async () => {
+    setOverviewLoading(true);
+    try {
+      const r = await askDataQuestion({ tenant, input: { question: "数据总览", days: 30 }, headers });
+      if (r.success && r.data) {
+        setKpis(r.data.kpis || []);
+        setOverviewSummary(r.data.summary || "");
+        setOverviewInsight(r.data.ai_insight || "");
+      }
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) loadOverview();
+  }, [user]);
+
+  // —— AI 问答 ——
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<any>(null);
@@ -83,99 +127,22 @@ export default function DataInsight() {
     }
   };
 
-  // —— 报告 ——
-  const [theme, setTheme] = useState("某学期课堂活动开展情况分析");
-  const [outline, setOutline] = useState<Array<{ title: string; dataset: string; description: string }>>([]);
+  // —— AI 报告 ——
+  const [theme, setTheme] = useState("课程与知识点分析");
   const [report, setReport] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
 
-  const genOutline = async () => {
+  const genReport = async () => {
+    if (!theme.trim()) return;
     setReportLoading(true);
     try {
-      const r = await buildDataReport({ tenant, input: { theme, days: 30 }, headers });
-      if (r.success && r.data) {
-        const d = r.data as any;
-        setOutline(d.outline || []);
-        setReport(d);
-      } else message.error("生成失败");
-    } finally {
-      setReportLoading(false);
-    }
-  };
-
-  const regenWithOutline = async () => {
-    setReportLoading(true);
-    try {
-      const r = await buildDataReport({
-        tenant,
-        input: { theme, days: 30, outline: outline as any },
-        headers,
-      });
+      const r = await buildDataReport({ tenant, input: { theme: theme.trim(), days: 30 }, headers });
       if (r.success && r.data) setReport(r.data);
       else message.error("生成失败");
     } finally {
       setReportLoading(false);
     }
   };
-
-  // —— 报表 ——
-  const [dataset, setDataset] = useState("upload");
-  const [days, setDays] = useState(30);
-  const [tableData, setTableData] = useState<any>(null);
-  const [tableLoading, setTableLoading] = useState(false);
-
-  const genTable = async () => {
-    setTableLoading(true);
-    try {
-      const r = await buildDataTable({
-        tenant,
-        input: { dataset, days, sortDir: "desc" },
-        headers,
-      });
-      if (r.success && r.data) setTableData(r.data);
-      else message.error((r as any)?.errors?.[0]?.message || "生成失败");
-    } finally {
-      setTableLoading(false);
-    }
-  };
-
-  const exportCsv = () => {
-    if (!tableData) return;
-    const cols: string[] = tableData.columns;
-    const lines = [cols.join(",")].concat(
-      tableData.rows.map((row: any) => cols.map((c) => JSON.stringify(row[c] ?? "")).join(",")),
-    );
-    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${dataset}-报表.csv`;
-    a.click();
-  };
-
-  const saveTemplate = async (kind: "report" | "table", name: string, config: any) => {
-    const r = await createReportTemplate({ tenant, input: { name, kind, config }, fields: ["id", "name"], headers });
-    if (r.success) {
-      message.success("模板已保存");
-      refetchTemplates();
-    } else message.error("保存失败");
-  };
-
-  const { data: templates, refetch: refetchTemplates } = useQuery({
-    queryKey: ["report-templates"],
-    queryFn: async () => {
-      const r = await listReportTemplates({ tenant, fields: ["id", "name", "kind", "config"], headers });
-      return r.success ? (r.data as any[]) : [];
-    },
-    enabled: !!user,
-  });
-
-  if (authLoading) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
 
   const answerCols = (answer?.columns || []).map((c: string) => ({
     title: c,
@@ -189,193 +156,138 @@ export default function DataInsight() {
     return obj;
   });
 
+  if (authLoading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <style>{`@media print {.data-insight-noprint { display: none !important; }}`}</style>
-      <div className="data-insight-noprint" style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
         <Title level={4} style={{ margin: 0 }}>AI 数据智能</Title>
+        <Text type="secondary" style={{ marginLeft: 8 }}>基于教学运行数据的智能问答与统计报告</Text>
       </div>
 
       <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
-        <Tabs
-          defaultActiveKey="qa"
-          items={[
-            {
-              key: "qa",
-              label: "AI 数据问答",
-              children: (
-                <Card>
-                  <Space.Compact style={{ width: "100%" }}>
-                    <Input
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      onPressEnter={() => doAsk()}
-                      placeholder="如：某院系近1个月课程签到率"
-                    />
-                    <Button type="primary" icon={<SendOutlined />} loading={asking} onClick={() => doAsk()}>
-                      提问
-                    </Button>
-                  </Space.Compact>
-                  <div style={{ marginTop: 8 }}>
-                    {QUICK_QUESTIONS.map((q) => (
-                      <Button key={q} type="link" size="small" onClick={() => { setQuestion(q); doAsk(q); }}>
-                        {q}
-                      </Button>
-                    ))}
+        {/* 数据总览 */}
+        <Card
+          title="数据总览"
+          loading={overviewLoading}
+          extra={
+            <Button type="link" icon={<ReloadOutlined />} size="small" onClick={loadOverview}>
+              刷新
+            </Button>
+          }
+        >
+          {overviewSummary && <Paragraph style={{ marginBottom: 16 }}>{overviewSummary}</Paragraph>}
+          <Row gutter={[12, 12]}>
+            {kpis.map((k, i) => (
+              <Col xs={8} sm={6} md={4} key={k.label || i}>
+                <div style={{ border: "1px solid #f0f0f0", borderRadius: 10, padding: "14px 10px", textAlign: "center", background: "#fafafa" }}>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: KPI_COLORS[i % KPI_COLORS.length] }}>
+                    {k.value}
+                    <span style={{ fontSize: 13, fontWeight: 400, color: "#999", marginLeft: 2 }}>{k.suffix}</span>
                   </div>
-                  {answer && (
-                    <div style={{ marginTop: 16 }}>
-                      <Paragraph strong>{answer.summary}</Paragraph>
-                      {answerRows.length > 0 && (
-                        <Table size="small" columns={answerCols} dataSource={answerRows.slice(0, 50)} pagination={{ pageSize: 10 }} />
-                      )}
-                      {answer.ai_insight && (
-                        <Card size="small" title="AI 解读" style={{ marginTop: 12, background: "#f6f0ff" }}>
-                          <Paragraph>{answer.ai_insight}</Paragraph>
-                        </Card>
-                      )}
-                    </div>
+                  <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>{k.label}</div>
+                </div>
+              </Col>
+            ))}
+          </Row>
+          {overviewInsight && (
+            <Card size="small" title="AI 解读" style={{ marginTop: 16, background: "#f6f0ff" }}>
+              <Paragraph style={{ margin: 0 }}>{overviewInsight}</Paragraph>
+            </Card>
+          )}
+        </Card>
+
+        {/* AI 数据问答 */}
+        <Card title="AI 数据问答" style={{ marginTop: 16 }}>
+          <Space.Compact style={{ width: "100%" }}>
+            <Input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onPressEnter={() => doAsk()}
+              placeholder="输入问题，如：各课程知识点分布"
+            />
+            <Button type="primary" icon={<SendOutlined />} loading={asking} onClick={() => doAsk()}>
+              提问
+            </Button>
+          </Space.Compact>
+          <div style={{ marginTop: 8 }}>
+            {QUICK_QUESTIONS.map((q) => (
+              <Button key={q} type="link" size="small" onClick={() => { setQuestion(q); doAsk(q); }}>
+                {q}
+              </Button>
+            ))}
+          </div>
+          {answer && (
+            <div style={{ marginTop: 16 }}>
+              <Paragraph strong>{answer.summary}</Paragraph>
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <ChartBlock option={answerChartOption(answer)} />
+                </Col>
+                <Col xs={24} md={12}>
+                  {answerRows.length > 0 && (
+                    <Table size="small" columns={answerCols} dataSource={answerRows} pagination={answerRows.length > 10 ? { pageSize: 10 } : false} />
                   )}
+                </Col>
+              </Row>
+              {answer.ai_insight && (
+                <Card size="small" title="AI 解读" style={{ marginTop: 12, background: "#f6f0ff" }}>
+                  <Paragraph style={{ margin: 0 }}>{answer.ai_insight}</Paragraph>
                 </Card>
-              ),
-            },
-            {
-              key: "report",
-              label: "AI 数据报告",
-              children: (
-                <>
-                  <Card className="data-insight-noprint">
-                    <Space.Compact style={{ width: "100%" }}>
-                      <Input value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="分析主题" />
-                      <Button type="primary" loading={reportLoading} onClick={genOutline}>
-                        生成大纲与报告
-                      </Button>
-                    </Space.Compact>
-                    {outline.length > 0 && (
-                      <div style={{ marginTop: 12 }}>
-                        <Text strong>大纲（可改标题后重新生成）：</Text>
-                        {outline.map((o, i) => (
-                          <div key={i} style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                            <Input value={o.title} onChange={(e) => {
-                              const n = [...outline];
-                              n[i] = { ...n[i], title: e.target.value };
-                              setOutline(n);
-                            }} />
-                            <Select value={o.dataset} onChange={(v) => {
-                              const n = [...outline];
-                              n[i] = { ...n[i], dataset: v };
-                              setOutline(n);
-                            }} style={{ width: 140 }} options={["signin", "upload", "activity"].map((d) => ({ value: d, label: d }))} />
-                          </div>
-                        ))}
-                        <Button style={{ marginTop: 8 }} loading={reportLoading} onClick={regenWithOutline}>
-                          按调整后大纲重新生成
-                        </Button>
-                      </div>
-                    )}
-                  </Card>
-                  {report?.sections?.map((s: any, i: number) => (
-                    <Card key={i} title={s.title} style={{ marginTop: 16 }}>
-                      <Paragraph>{s.text}</Paragraph>
-                      <Row gutter={16}>
-                        <Col xs={24} md={12}>
-                          <ChartBlock option={s.chart} />
-                        </Col>
-                        <Col xs={24} md={12}>
-                          <Table
-                            size="small"
-                            pagination={false}
-                            columns={(s.table?.columns || []).map((c: string) => ({ title: c, dataIndex: c, key: c, render: (v: any) => String(v ?? "-") }))}
-                            dataSource={(s.table?.rows || []).slice(0, 20).map((r: any, j: number) => ({ key: j, ...r }))}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  ))}
-                  {report && (
-                    <div className="data-insight-noprint" style={{ marginTop: 16, display: "flex", gap: 8 }}>
-                      <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
-                        导出 PDF（打印）
-                      </Button>
-                      <Button icon={<SaveOutlined />} onClick={() => saveTemplate("report", theme, { theme, outline })}>
-                        保存为模板
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ),
-            },
-            {
-              key: "table",
-              label: "AI 数据报表",
-              children: (
-                <Card>
-                  <Space wrap>
-                    <Select value={dataset} onChange={setDataset} style={{ width: 200 }} options={[
-                      { value: "signin", label: "课程签到明细" },
-                      { value: "upload", label: "各院系资源上传量" },
-                      { value: "activity", label: "课堂活动统计" },
-                    ]} />
-                    <span>近 <InputNumber value={days} onChange={(v) => setDays(v || 30)} min={1} max={365} /> 天</span>
-                    <Button type="primary" loading={tableLoading} onClick={genTable}>
-                      生成报表
-                    </Button>
-                    {tableData && (
-                      <>
-                        <Button onClick={exportCsv}>导出 CSV</Button>
-                        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>打印</Button>
-                        <Button icon={<SaveOutlined />} onClick={() => saveTemplate("table", `${dataset}报表`, { dataset, days })}>
-                          保存为模板
-                        </Button>
-                      </>
-                    )}
-                  </Space>
-                  {tableData && (
-                    <Table
-                      style={{ marginTop: 16 }}
-                      size="small"
-                      columns={tableData.columns.map((c: string) => ({ title: c, dataIndex: c, key: c, sorter: (a: any, b: any) => (a[c] > b[c] ? 1 : -1), render: (v: any) => String(v ?? "-") }))}
-                      dataSource={tableData.rows.map((r: any, i: number) => ({ key: i, ...r }))}
-                    />
-                  )}
-                  {templates && templates.length > 0 && (
-                    <>
-                      <Divider>已保存模板</Divider>
-                      <List
-                        size="small"
-                        dataSource={templates}
-                        renderItem={(t: any) => (
-                          <List.Item
-                            actions={[
-                              <Button key="load" type="link" size="small" onClick={() => {
-                                const c = t.config || {};
-                                if (t.kind === "table") {
-                                  setDataset(c.dataset || "upload");
-                                  setDays(c.days || 30);
-                                  message.info("已载入报表模板配置，请点击生成报表");
-                                } else {
-                                  setTheme(c.theme || "");
-                                  setOutline(c.outline || []);
-                                  message.info("已载入报告模板，请到报告页生成");
-                                }
-                              }}>
-                                载入
-                              </Button>,
-                            ]}
-                          >
-                            <Text>{t.name}</Text>
-                            <Text type="secondary" style={{ marginLeft: 8 }}>{t.kind === "table" ? "报表" : "报告"}</Text>
-                          </List.Item>
-                        )}
-                      />
-                    </>
-                  )}
-                </Card>
-              ),
-            },
-          ]}
-        />
+              )}
+            </div>
+          )}
+        </Card>
+
+        {/* AI 数据报告 */}
+        <Card title="AI 数据报告" style={{ marginTop: 16 }}>
+          <Space.Compact style={{ width: "100%" }}>
+            <Input value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="分析主题，如：课程与知识点分析" onPressEnter={genReport} />
+            <Button type="primary" loading={reportLoading} onClick={genReport}>
+              生成报告
+            </Button>
+          </Space.Compact>
+          <Text type="secondary" style={{ display: "block", marginTop: 8 }}>
+            系统会根据主题自动生成包含文字解读、统计图与数据表的报告（基于课程、知识点、作业、考试、课堂活动等真实数据）。
+          </Text>
+
+          {report?.sections?.map((s: any, i: number) => (
+            <Card key={i} size="small" title={<span>{i + 1}. {s.title}　{s.dataset && <Tag color="blue">{s.dataset}</Tag>}</span>} style={{ marginTop: 16 }}>
+              <Paragraph style={{ color: "#555" }}>{s.text}</Paragraph>
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <ChartBlock option={s.chart} />
+                </Col>
+                <Col xs={24} md={12}>
+                  <Table
+                    size="small"
+                    pagination={false}
+                    columns={(s.table?.columns || []).map((c: string) => ({ title: c, dataIndex: c, key: c, render: (v: any) => String(v ?? "-") }))}
+                    dataSource={(s.table?.rows || []).slice(0, 20).map((r: any, j: number) => ({ key: j, ...r }))}
+                  />
+                </Col>
+              </Row>
+            </Card>
+          ))}
+          {report && (
+            <Divider style={{ marginTop: 24 }}>报表与统计图已由 AI 基于真实数据生成</Divider>
+          )}
+        </Card>
+
+        {report && (
+          <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+            <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
+              导出 PDF（打印）
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

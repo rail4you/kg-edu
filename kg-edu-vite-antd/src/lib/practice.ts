@@ -72,7 +72,9 @@ export const SCENARIOS: Array<{
   },
 ];
 
-/** 最小 SSE 解析：读取 TEXT_MESSAGE_CONTENT.delta 拼接 */
+/** 最小 SSE 解析：读取 data 行 JSON 中的 type/delta 拼接。
+ * 后端 ChatController.sse_write 只写 `data: {"type":"TEXT_MESSAGE_CONTENT","delta":"..."}`，
+ * 不带 `event:` 行（event: 分支仅为兼容旧格式保留）。 */
 export async function chatOnce(opts: {
   message: string;
   systemPrompt: string;
@@ -96,6 +98,7 @@ export async function chatOnce(opts: {
   const decoder = new TextDecoder();
   let full = "";
   let buf = "";
+  let runError = "";
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -106,11 +109,21 @@ export async function chatOnce(opts: {
     for (const line of parts) {
       if (line.startsWith("event:")) {
         isContent = line.includes("TEXT_MESSAGE_CONTENT");
-      } else if (line.startsWith("data:") && isContent) {
+      } else if (line.startsWith("data:")) {
+        const raw = line.slice(5).trim();
+        if (!raw) continue;
         try {
-          const delta = JSON.parse(line.slice(5).trim()).delta || "";
-          full += delta;
-          opts.onToken?.(delta);
+          const evt = JSON.parse(raw);
+          const type = typeof evt.type === "string" ? evt.type : "";
+          if (type === "TEXT_MESSAGE_CONTENT" || (type === "" && isContent)) {
+            const delta = typeof evt.delta === "string" ? evt.delta : "";
+            if (delta) {
+              full += delta;
+              opts.onToken?.(delta);
+            }
+          } else if (type === "RUN_ERROR") {
+            runError = typeof evt.message === "string" ? evt.message : "未知错误";
+          }
         } catch {
           /* ignore */
         }
@@ -118,6 +131,7 @@ export async function chatOnce(opts: {
       }
     }
   }
+  if (!full && runError) throw new Error(runError);
   return full;
 }
 

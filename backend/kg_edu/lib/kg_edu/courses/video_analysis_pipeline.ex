@@ -1,6 +1,6 @@
 defmodule KgEdu.Courses.VideoAnalysisPipeline do
   @moduledoc """
-  P2: 视频解析流水线 — ASR 转写 → 分段 → LLM 摘要 → 知识点匹配打点 → 词云。
+  P2: 视频解析流水线 — 内容理解（Qwen VL 时间轴）→ 分段 → LLM 摘要 → 知识点匹配打点 → 词云。
 
   `run/2` 在 `KgEdu.TaskSupervisor` 下异步执行；纯函数部分可单测。
   """
@@ -17,7 +17,7 @@ defmodule KgEdu.Courses.VideoAnalysisPipeline do
     with {:ok, analysis} <- fetch_analysis(analysis_id, opts),
          :ok <- mark_status(analysis, :processing, opts),
          {:ok, video_url, course_id} <- resolve_video(analysis, opts),
-         {:ok, sentences} <- KgEdu.Agent.AsrService.transcribe_url(video_url),
+         {:ok, sentences} <- KgEdu.Agent.VideoVlService.transcribe_url(video_url),
          {:ok, result} <- build_result(sentences, course_id, opts) do
       persist_done(analysis, result, opts)
     else

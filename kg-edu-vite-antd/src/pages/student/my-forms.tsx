@@ -45,8 +45,8 @@ export default function MyForms() {
     queryKey: ["my-form-def", activeFormId],
     queryFn: async () => {
       if (!activeFormId) return null;
-      const r = await getFormDef({ tenant, input: { id: activeFormId }, fields: ["id", "title", "schema"], headers });
-      return r.success ? (r.data as any) : null;
+      const r = await getFormDef({ tenant, filter: { id: { eq: activeFormId } }, fields: ["id", "title", "schema"], headers });
+      return r.success && Array.isArray(r.data) ? (r.data as any[])[0] : null;
     },
     enabled: !!activeFormId && !!user,
   });

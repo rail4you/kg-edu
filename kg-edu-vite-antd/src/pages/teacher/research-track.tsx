@@ -1,9 +1,9 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card, Button, Typography, Spin, Input, Tabs, Tag, Space, message,
-  List, Avatar, Divider,
+  List, Avatar, Divider, Table,
 } from "antd";
 import { ArrowLeftOutlined, SearchOutlined, StarOutlined, StarFilled, SendOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
@@ -13,6 +13,44 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 
 const { Title, Text, Paragraph } = Typography;
+
+/** 各栏目的示例数据（真实可检索/可追踪的学术条目） */
+const EXAMPLE_INTERESTS = [
+  "graph neural networks",
+  "large language models",
+  "computer vision",
+  "reinforcement learning",
+  "federated learning",
+];
+const EXAMPLE_SCHOLARS = ["Yoshua Bengio", "Geoffrey Hinton", "Andrew Ng", "Fei-Fei Li"];
+const EXAMPLE_VENUES = ["Nature", "Science", "NeurIPS", "ICML", "Cell"];
+
+function followTypeLabel(kind: string) {
+  return kind === "scholar" ? "学者" : kind === "venue" ? "期刊" : "研究兴趣";
+}
+function followTypeColor(kind: string) {
+  return kind === "scholar" ? "gold" : kind === "venue" ? "green" : "purple";
+}
+function followDetail(f: any) {
+  const ex = f.extra || {};
+  if (f.kind === "scholar") {
+    const parts: string[] = [];
+    if (ex.affiliation) parts.push(ex.affiliation);
+    if (ex.works != null) parts.push(`论文 ${ex.works}`);
+    if (ex.cited != null) parts.push(`被引 ${ex.cited}`);
+    if (Array.isArray(ex.topics) && ex.topics.length) parts.push(ex.topics.join("、"));
+    return parts.length ? parts.join(" · ") : "学者";
+  }
+  if (f.kind === "venue") {
+    return ex.works != null ? `收录 ${ex.works} 篇` : "期刊";
+  }
+  const parts: string[] = [];
+  if (Array.isArray(ex.authors) && ex.authors.length) parts.push(ex.authors.join(", "));
+  if (ex.venue) parts.push(ex.venue);
+  if (ex.year) parts.push(ex.year);
+  if (ex.cited != null) parts.push(`被引 ${ex.cited}`);
+  return parts.length ? parts.join(" · ") : "研究作品";
+}
 
 export default function ResearchTrack() {
   const navigate = useNavigate();
@@ -26,6 +64,7 @@ export default function ResearchTrack() {
   const [works, setWorks] = useState<any[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
+  const [exampleLoading, setExampleLoading] = useState(false);
 
   // —— 学者 ——
   const [scholarName, setScholarName] = useState("");
@@ -40,11 +79,41 @@ export default function ResearchTrack() {
   const [digest, setDigest] = useState<any>(null);
   const [digestLoading, setDigestLoading] = useState(false);
 
+  // —— 进入页面自动加载各栏目示例（真实数据） ——
+  useEffect(() => {
+    if (!user) return;
+    doSearchWorks();
+    loadExampleScholars();
+    setVenue(EXAMPLE_VENUES[0]);
+  }, [user]);
+
+  const loadExampleScholars = async () => {
+    setExampleLoading(true);
+    try {
+      const seen = new Set<string>();
+      const all: any[] = [];
+      for (const name of EXAMPLE_SCHOLARS) {
+        try {
+          const r = await api(`/search?type=authors&query=${encodeURIComponent(name)}&limit=2`);
+          for (const a of r?.data?.authors || []) {
+            if (!seen.has(a.id)) {
+              seen.add(a.id);
+              all.push(a);
+            }
+          }
+        } catch { /* 忽略单个示例加载失败 */ }
+      }
+      setAuthors(all.slice(0, 8));
+    } finally {
+      setExampleLoading(false);
+    }
+  };
+
   const { data: follows, refetch: refetchFollows } = useQuery({
     queryKey: ["research-follows"],
     queryFn: async () => {
       if (!user?.id) return [];
-      const r = await listFollowsByUser({ tenant, input: { userId: user.id }, fields: ["id", "kind", "label", "refId"], headers });
+      const r = await listFollowsByUser({ tenant, input: { userId: user.id }, fields: ["id", "kind", "label", "refId", "extra"], headers });
       return r.success ? (r.data as any[]) : [];
     },
     enabled: !!user?.id,
@@ -128,10 +197,10 @@ export default function ResearchTrack() {
     }
   };
 
-  const follow = async (kind: "interest" | "scholar" | "venue", refId: string, label: string) => {
+  const follow = async (kind: "interest" | "scholar" | "venue", refId: string, label: string, extra?: any) => {
     const r = await followResearch({
       tenant,
-      input: { userId: user?.id, kind, refId, label },
+      input: { userId: user?.id, kind, refId, label, extra },
       fields: ["id"],
       headers,
     });
@@ -169,6 +238,12 @@ export default function ResearchTrack() {
                     <Input value={interest} onChange={(e) => setInterest(e.target.value)} onPressEnter={() => doSearchWorks()} placeholder="输入研究兴趣，如：graph neural networks" />
                     <Button type="primary" icon={<SearchOutlined />} loading={searching} onClick={() => doSearchWorks()}>搜索</Button>
                   </Space.Compact>
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary">示例兴趣：</Text>
+                    {EXAMPLE_INTERESTS.map((t) => (
+                      <Tag key={t} color="blue" style={{ cursor: "pointer", margin: 2 }} onClick={() => { setInterest(t); doSearchWorks(t); }}>{t}</Tag>
+                    ))}
+                  </div>
                   {topics.length > 0 && (
                     <div style={{ marginTop: 8 }}>
                       <Text type="secondary">推荐相关方向：</Text>
@@ -183,7 +258,7 @@ export default function ResearchTrack() {
                     renderItem={(w: any) => (
                       <List.Item
                         actions={[
-                          <Button key="f" type="link" size="small" icon={<StarOutlined />} onClick={() => follow("interest", w.id, w.title)}>追踪</Button>,
+                          <Button key="f" type="link" size="small" icon={<StarOutlined />} onClick={() => follow("interest", w.id, w.title, { authors: w.authors, venue: w.venue, year: w.year, cited: w.cited_by_count })}>追踪</Button>,
                         ]}
                       >
                         <List.Item.Meta
@@ -206,14 +281,18 @@ export default function ResearchTrack() {
                       <Input value={scholarName} onChange={(e) => setScholarName(e.target.value)} onPressEnter={doSearchAuthors} placeholder="学者姓名（英文），如：Yoshua Bengio" />
                       <Button type="primary" icon={<SearchOutlined />} loading={searching} onClick={doSearchAuthors}>搜索</Button>
                     </Space.Compact>
+                    {exampleLoading && authors.length === 0 && (
+                      <div style={{ marginTop: 12, textAlign: "center" }}>
+                        <Spin /> <Text type="secondary" style={{ marginLeft: 8 }}>正在加载示例学者…</Text>
+                      </div>
+                    )}
                     <List
                       style={{ marginTop: 8 }}
                       dataSource={authors}
                       renderItem={(a: any) => (
                         <List.Item
                           actions={[
-                            <Button key="p" type="link" size="small" onClick={() => loadProfile(a.id)}>画像+分身</Button>,
-                            <Button key="f" type="link" size="small" icon={<StarOutlined />} onClick={() => follow("scholar", a.id, a.name)}>追踪</Button>,
+                            <Button key="f" type="link" size="small" icon={<StarOutlined />} onClick={() => follow("scholar", a.id, a.name, { affiliation: a.affiliation, works: a.works_count, cited: a.cited_by_count, topics: a.topics })}>追踪</Button>,
                           ]}
                         >
                           <List.Item.Meta
@@ -259,9 +338,23 @@ export default function ResearchTrack() {
                     <Input value={venue} onChange={(e) => setVenue(e.target.value)} onPressEnter={loadDigest} placeholder="期刊名，如：Nature" />
                     <Button type="primary" loading={digestLoading} onClick={loadDigest}>提炼分析</Button>
                     {digest && (
-                      <Button icon={<StarOutlined />} onClick={() => follow("venue", digest.venue.id, digest.venue.name)}>追踪该刊</Button>
+                      <Button icon={<StarOutlined />} onClick={() => follow("venue", digest.venue.id, digest.venue.name, { works: digest.venue.works_count })}>追踪该刊</Button>
                     )}
                   </Space.Compact>
+                  <Divider style={{ marginTop: 16 }}>示例期刊</Divider>
+                  <List
+                    size="small"
+                    dataSource={EXAMPLE_VENUES}
+                    renderItem={(v) => (
+                      <List.Item
+                        actions={[
+                          <Button key="a" size="small" type="link" icon={<SearchOutlined />} onClick={() => { setVenue(v); loadDigest(); }}>分析</Button>,
+                        ]}
+                      >
+                        <Text>{v}</Text>
+                      </List.Item>
+                    )}
+                  />
                   {digest && (
                     <div style={{ marginTop: 12 }}>
                       <Title level={5}>{digest.venue.name}（收录 {digest.venue.works_count} 篇）</Title>
@@ -286,24 +379,36 @@ export default function ResearchTrack() {
               label: `我的追踪（${(follows || []).length}）`,
               children: (
                 <Card>
-                  <List
-                    dataSource={follows || []}
-                    renderItem={(f: any) => (
-                      <List.Item
-                        actions={[
-                          <Button key="u" type="link" size="small" danger onClick={async () => {
-                            await unfollowResearch({ tenant, primaryKey: f.id, headers });
-                            refetchFollows();
-                          }}>取消</Button>,
-                        ]}
-                      >
-                        <Tag color={f.kind === "scholar" ? "gold" : f.kind === "venue" ? "green" : "purple"}>
-                          {f.kind === "scholar" ? "学者" : f.kind === "venue" ? "期刊" : "兴趣"}
-                        </Tag>
-                        <Text>{f.label}</Text>
-                      </List.Item>
-                    )}
-                  />
+                  {(follows || []).length === 0 ? (
+                    <Text type="secondary">暂无追踪记录。在各栏目点「追踪」后，这里会展示研究方向 / 学者 / 期刊的历史记录。</Text>
+                  ) : (
+                    <Table
+                      size="middle"
+                      rowKey={(f: any) => f.id}
+                      pagination={false}
+                      columns={[
+                        {
+                          title: "类型",
+                          dataIndex: "kind",
+                          width: 110,
+                          render: (k: string) => <Tag color={followTypeColor(k)}>{followTypeLabel(k)}</Tag>,
+                        },
+                        { title: "名称", dataIndex: "label", render: (v: string) => <Text strong>{v}</Text> },
+                        { title: "详情", render: (_: any, f: any) => <Text type="secondary">{followDetail(f)}</Text> },
+                        {
+                          title: "操作",
+                          width: 90,
+                          render: (_: any, f: any) => (
+                            <Button type="link" size="small" danger onClick={async () => {
+                              await unfollowResearch({ tenant, primaryKey: f.id, headers });
+                              refetchFollows();
+                            }}>取消追踪</Button>
+                          ),
+                        },
+                      ]}
+                      dataSource={follows || []}
+                    />
+                  )}
                 </Card>
               ),
             },

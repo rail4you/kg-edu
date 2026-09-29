@@ -30,8 +30,10 @@ import {
   UpOutlined,
   CameraOutlined,
   CloseOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
+import { useNavigate } from "react-router-dom";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
 import { myCourses, changePassword, updateUser } from "@/lib/ash_rpc";
@@ -69,6 +71,7 @@ const getRoleColor = (role?: string) => {
 
 export function UserMenu({ role, variant = "default", compact }: UserMenuProps) {
   const { user, logout, updateAvatarUrl } = useAuth();
+  const navigate = useNavigate();
   const currentTenant = getCurrentTenant();
   const tenantId = currentTenant?.schemaName || currentTenant?.id;
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -437,6 +440,19 @@ export function UserMenu({ role, variant = "default", compact }: UserMenuProps) 
 
         <div style={{ padding: "12px 20px" }}>
           <Space direction="vertical" style={{ width: "100%" }} size={8}>
+            {role === "student" && (
+              <Button
+                block
+                icon={<FileTextOutlined />}
+                onClick={() => {
+                  setDrawerOpen(false);
+                  navigate("/dashboard/data-forms");
+                }}
+                style={{ height: 44, textAlign: "left" }}
+              >
+                数据表单
+              </Button>
+            )}
             <Button
               block
               icon={<LockOutlined />}

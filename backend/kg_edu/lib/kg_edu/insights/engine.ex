@@ -11,7 +11,7 @@ defmodule KgEdu.Insights.Engine do
   require Logger
   require Ash.Query
 
-  @datasets ["signin", "upload", "activity"]
+  @datasets ["signin", "upload", "activity", "course", "knowledge", "homework", "exam", "user"]
 
   def datasets, do: @datasets
 
@@ -22,6 +22,65 @@ defmodule KgEdu.Insights.Engine do
     q = question || ""
 
     cond do
+      contains_any?(q, ["概览", "总览", "整体", "统计", "KPI", "kpi"]) ->
+        {:ok, overview_answer(kpi(tenant))}
+
+      contains_any?(q, ["知识点", "知识"]) ->
+        data = knowledge_stats(tenant)
+
+        {:ok,
+         %{
+           intent: "knowledge",
+           question: question,
+           summary: "共 #{data.stats.total} 个知识点，覆盖 #{data.stats.categories} 个分类",
+           columns: ["分类", "知识点数"],
+           rows: Enum.map(data.rows, &[&1.category, &1.count]),
+           stats: data.stats,
+           ai_insight: ai_insight("知识点分布", data.stats)
+         }}
+
+      contains_any?(q, ["作业", "任务"]) ->
+        data = homework_stats(tenant)
+
+        {:ok,
+         %{
+           intent: "homework",
+           question: question,
+           summary: "共 #{data.stats.total} 份作业",
+           columns: ["课程", "作业数"],
+           rows: Enum.map(data.rows, &[&1.course, &1.count]),
+           stats: data.stats,
+           ai_insight: ai_insight("作业分布", data.stats)
+         }}
+
+      contains_any?(q, ["考试", "试卷"]) ->
+        data = exam_stats(tenant)
+
+        {:ok,
+         %{
+           intent: "exam",
+           question: question,
+           summary: "共 #{data.stats.total} 场考试/试卷",
+           columns: ["课程", "考试数"],
+           rows: Enum.map(data.rows, &[&1.course, &1.count]),
+           stats: data.stats,
+           ai_insight: ai_insight("考试分布", data.stats)
+         }}
+
+      contains_any?(q, ["课程", "教学"]) ->
+        data = course_stats(tenant)
+
+        {:ok,
+         %{
+           intent: "course",
+           question: question,
+           summary: "共 #{data.stats.courses} 门课程，关联 #{data.stats.knowledge} 个知识点",
+           columns: ["课程", "知识点数"],
+           rows: Enum.map(data.rows, &[&1.course, &1.count]),
+           stats: data.stats,
+           ai_insight: ai_insight("课程知识点分布", data.stats)
+         }}
+
       contains_any?(q, ["签到", "考勤", "出勤"]) ->
         department = extract_department(q)
         data = signin_rate(tenant, department: department, days: days)
@@ -232,24 +291,24 @@ defmodule KgEdu.Insights.Engine do
   # ── 报告组装 ───────────────────────────────────────────────────────
 
   defp default_outline(theme) do
-    if contains_any?(theme, ["活动", "课堂"]) do
+    if contains_any?(theme, ["课程"]) do
       [
-        %{title: "签到与出勤概况", dataset: "signin", description: "近1个月签到率"},
-        %{title: "活动类型分布", dataset: "activity", description: "各类课堂活动次数"},
-        %{title: "结论与建议", dataset: "activity", description: "基于数据的教学建议"}
+        %{title: "课程与知识点概览", dataset: "course", description: "各课程关联知识点数"},
+        %{title: "知识点分类分布", dataset: "knowledge", description: "知识点按分类分布"},
+        %{title: "结论与建议", dataset: "course", description: "基于数据的教学建议"}
       ]
     else
       [
-        %{title: "数据概览", dataset: "upload", description: "资源上传总体情况"},
-        %{title: "院系对比", dataset: "upload", description: "各院系上传量对比"},
-        %{title: "结论与建议", dataset: "upload", description: "基于数据的建议"}
+        %{title: "课堂活动类型分布", dataset: "activity", description: "各类课堂活动次数"},
+        %{title: "课程与知识点概览", dataset: "course", description: "各课程关联知识点数"},
+        %{title: "结论与建议", dataset: "activity", description: "基于数据的建议"}
       ]
     end
   end
 
   defp section_data(dataset, tenant, days) do
     %{columns: columns, rows: rows} = dataset_table(dataset, tenant, days)
-    table = %{columns: columns, rows: Enum.map(rows, &Map.values/1)}
+    table = %{columns: columns, rows: rows}
     chart = bar_chart(columns, rows)
     {table, chart}
   end
@@ -262,6 +321,26 @@ defmodule KgEdu.Insights.Engine do
   defp dataset_table("upload", tenant, days) do
     data = upload_stats(tenant, days: days)
     %{columns: ["院系", "上传量"], rows: Enum.map(data.rows, &%{"院系" => &1.department, "上传量" => &1.count})}
+  end
+
+  defp dataset_table("course", tenant, _days) do
+    data = course_stats(tenant)
+    %{columns: ["课程", "知识点数"], rows: Enum.map(data.rows, &%{"课程" => &1.course, "知识点数" => &1.count})}
+  end
+
+  defp dataset_table("knowledge", tenant, _days) do
+    data = knowledge_stats(tenant)
+    %{columns: ["分类", "知识点数"], rows: Enum.map(data.rows, &%{"分类" => &1.category, "知识点数" => &1.count})}
+  end
+
+  defp dataset_table("homework", tenant, _days) do
+    data = homework_stats(tenant)
+    %{columns: ["课程", "作业数"], rows: Enum.map(data.rows, &%{"课程" => &1.course, "作业数" => &1.count})}
+  end
+
+  defp dataset_table("exam", tenant, _days) do
+    data = exam_stats(tenant)
+    %{columns: ["课程", "考试数"], rows: Enum.map(data.rows, &%{"课程" => &1.course, "考试数" => &1.count})}
   end
 
   defp dataset_table(_, tenant, days) do
@@ -288,6 +367,154 @@ defmodule KgEdu.Insights.Engine do
     else
       nil
     end
+  end
+
+  # ── 数据总览 (KPI) ────────────────────────────────────────────────
+
+  def kpi(tenant) do
+    base = [tenant: tenant, authorize?: false]
+
+    %{
+      courses: length(all_courses(tenant)),
+      knowledge: count_of(KgEdu.Knowledge.Resource, tenant),
+      homeworks: count_of(KgEdu.Knowledge.Homework, tenant),
+      exams: count_of(KgEdu.Knowledge.Exam, tenant),
+      files: count_of(KgEdu.Courses.File, tenant),
+      classes: count_of(KgEdu.Accounts.Class, tenant),
+      activity_logs: count_of(KgEdu.Activity.ActivityLog, tenant),
+      users: user_role_counts(tenant)
+    }
+  end
+
+  defp all_courses(tenant) do
+    base = [tenant: tenant, authorize?: false]
+
+    case KgEdu.Courses.Course.get_all_courses(base) do
+      {:ok, list} -> list
+      _ -> []
+    end
+  end
+
+  defp overview_answer(k) do
+    %{
+      intent: "overview",
+      question: "数据总览",
+      summary:
+        "系统当前共 #{k.courses} 门课程、#{k.knowledge} 个知识点、#{k.homeworks} 份作业、#{k.exams} 场考试、#{k.files} 个资源文件、#{k.activity_logs} 条课堂活动记录；用户 #{k.users.total} 人（学生 #{k.users.students}、教师/管理员 #{k.users.staff}），共 #{k.classes} 个班级。",
+      kpis: [
+        %{label: "课程", value: k.courses, suffix: "门"},
+        %{label: "知识点", value: k.knowledge, suffix: "个"},
+        %{label: "作业", value: k.homeworks, suffix: "份"},
+        %{label: "考试", value: k.exams, suffix: "场"},
+        %{label: "资源文件", value: k.files, suffix: "个"},
+        %{label: "学生", value: k.users.students, suffix: "人"},
+        %{label: "教师/管理员", value: k.users.staff, suffix: "人"},
+        %{label: "班级", value: k.classes, suffix: "个"},
+        %{label: "课堂活动", value: k.activity_logs, suffix: "条"}
+      ],
+      columns: ["指标", "数值"],
+      rows: [
+        ["课程", k.courses],
+        ["知识点", k.knowledge],
+        ["作业", k.homeworks],
+        ["考试", k.exams],
+        ["资源文件", k.files],
+        ["学生", k.users.students],
+        ["教师/管理员", k.users.staff],
+        ["班级", k.classes],
+        ["课堂活动", k.activity_logs]
+      ],
+      stats: %{},
+      ai_insight: ai_insight("整体教学运行", k)
+    }
+  end
+
+  defp count_of(resource, tenant) do
+    base = [tenant: tenant, authorize?: false]
+
+    case resource |> Ash.Query.new() |> Ash.count(base) do
+      {:ok, n} -> n
+      _ -> 0
+    end
+  end
+
+  defp user_role_counts(tenant) do
+    base = [tenant: tenant, authorize?: false]
+
+    case KgEdu.Accounts.User.get_users(base) do
+      {:ok, list} ->
+        %{
+          students: Enum.count(list, &(&1.role in [:user, "user"])),
+          staff: Enum.count(list, &(&1.role in [:teacher, "teacher", :admin, "admin"])),
+          total: length(list)
+        }
+
+      _ ->
+        %{students: 0, staff: 0, total: 0}
+    end
+  end
+
+  defp read_all(resource, base) do
+    case resource |> Ash.Query.new() |> Ash.read(base) do
+      {:ok, list} -> list
+      _ -> []
+    end
+  end
+
+  defp course_stats(tenant) do
+    base = [tenant: tenant, authorize?: false]
+    courses = all_courses(tenant)
+    knowledge = read_all(KgEdu.Knowledge.Resource, base)
+    by_course = Enum.group_by(knowledge, & &1.course_id)
+
+    rows =
+      Enum.map(courses, fn c ->
+        %{course: c.title || "未命名课程", count: length(Map.get(by_course, c.id, []))}
+      end)
+      |> Enum.sort_by(& &1.count, :desc)
+
+    %{rows: rows, stats: %{courses: length(courses), knowledge: length(knowledge)}}
+  end
+
+  defp knowledge_stats(tenant) do
+    base = [tenant: tenant, authorize?: false]
+    ks = read_all(KgEdu.Knowledge.Resource, base)
+
+    rows =
+      ks
+      |> Enum.group_by(&(&1.category || "未分类"))
+      |> Enum.map(fn {cat, list} -> %{category: cat, count: length(list)} end)
+      |> Enum.sort_by(& &1.count, :desc)
+
+    %{rows: rows, stats: %{total: length(ks), categories: length(rows)}}
+  end
+
+  defp homework_stats(tenant) do
+    base = [tenant: tenant, authorize?: false]
+    hs = read_all(KgEdu.Knowledge.Homework, base)
+    courses = Map.new(all_courses(tenant), &{&1.id, &1.title || &1.name})
+
+    rows =
+      hs
+      |> Enum.group_by(&Map.get(courses, &1.course_id, "未归属课程"))
+      |> Enum.map(fn {c, list} -> %{course: c, count: length(list)} end)
+      |> Enum.sort_by(& &1.count, :desc)
+
+    %{rows: rows, stats: %{total: length(hs)}}
+  end
+
+  defp exam_stats(tenant) do
+    base = [tenant: tenant, authorize?: false]
+    es = read_all(KgEdu.Knowledge.Exam, base)
+    courses = Map.new(all_courses(tenant), &{&1.id, &1.title || &1.name})
+
+    rows =
+      es
+      |> Enum.group_by(&Map.get(courses, &1.course_id, "未归属课程"))
+      |> Enum.map(fn {c, list} -> %{course: c, count: length(list)} end)
+      |> Enum.sort_by(& &1.count, :desc)
+
+    %{rows: rows, stats: %{total: length(es)}}
   end
 
   # ── 小工具 ─────────────────────────────────────────────────────────
@@ -332,6 +559,10 @@ defmodule KgEdu.Insights.Engine do
 
   defp default_sort("signin"), do: "签到次数"
   defp default_sort("upload"), do: "上传量"
+  defp default_sort("course"), do: "知识点数"
+  defp default_sort("knowledge"), do: "知识点数"
+  defp default_sort("homework"), do: "作业数"
+  defp default_sort("exam"), do: "考试数"
   defp default_sort(_), do: "次数"
 
   defp sort_rows(rows, nil, _), do: rows
