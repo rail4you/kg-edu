@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Card, Button, Typography, Spin, Input, Tabs, Tag, message, Space, List, Select,
 } from "antd";
-import { ArrowLeftOutlined, SendOutlined, BarChartOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SendOutlined, BarChartOutlined, FileTextOutlined } from "@ant-design/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -222,7 +222,13 @@ export default function AiPractice() {
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div style={{ marginTop: 8 }}>
+            <Button size="small" icon={<FileTextOutlined />} onClick={() => { setInput(sc.template); setMsgs((m) => ({ ...m, [scenario]: [] })); setReport(null); }}>
+              填入示例文本
+            </Button>
+            <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>点击后将示例内容填入下方输入框，便于快速演示</Text>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             {sc.inputKind === "code" ? (
               <TextArea rows={3} value={input} onChange={(e) => setInput(e.target.value)} placeholder={sc.placeholder} style={{ fontFamily: "monospace" }} />
             ) : (

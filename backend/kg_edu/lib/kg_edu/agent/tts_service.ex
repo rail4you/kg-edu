@@ -17,14 +17,22 @@ defmodule KgEdu.Agent.TtsService do
   @doc """
   curated 音色表（前端下拉用；`synthesize/1` 实际透传 voice 字符串，
   也支持直接填 DashScope 官方 voice 名/复刻音色）。
+
+  注意：这些为 `cosyvoice-v3-flash` / `cosyvoice-v3-plus` 的 v3 系统音色。
+  v1/v2 音色（如 longxiaochun、longxiaoxia、longyuanyuan、longtaotao）与
+  v3 模型不匹配，会返回引擎 418 错误，故不可混用。
   """
   def voices do
     [
-      %{voice: "longanyang", label: "男声-安阳（中文）", gender: "male", language: "zh"},
-      %{voice: "longxiaochun", label: "女声-晓春（中文）", gender: "female", language: "zh"},
-      %{voice: "longxiaoxia", label: "女声-晓晓（中文/英文）", gender: "female", language: "zh,en"},
-      %{voice: "longyuanyuan", label: "女声-媛媛（多语言）", gender: "female", language: "zh,en,ja,es"},
-      %{voice: "longtaotao", label: "男声-涛涛（多语言）", gender: "male", language: "zh,en,ja,es"}
+      %{voice: "longanyang", label: "男声-龙安洋（男·标杆）", gender: "male", language: "zh,en"},
+      %{voice: "longshuo_v3", label: "男声-龙硕（男·干练）", gender: "male", language: "zh,en"},
+      %{voice: "longtian_v3", label: "男声-龙天（男·磁性）", gender: "male", language: "zh,en"},
+      %{voice: "longcheng_v3", label: "男声-龙橙（男·智慧）", gender: "male", language: "zh,en"},
+      %{voice: "longanhuan_v3", label: "女声-龙安欢（女·欢脱）", gender: "female", language: "zh,en"},
+      %{voice: "longxiaoxia_v3", label: "女声-龙小夏（女·沉稳）", gender: "female", language: "zh,en"},
+      %{voice: "longhua_v3", label: "女声-龙华（女·元气）", gender: "female", language: "zh,en"},
+      %{voice: "longwan_v3", label: "女声-龙婉（女·柔声）", gender: "female", language: "zh,en"},
+      %{voice: "longyan_v3", label: "女声-龙颜（女·温暖）", gender: "female", language: "zh,en"}
     ]
   end
 
@@ -63,31 +71,41 @@ defmodule KgEdu.Agent.TtsService do
 
   defp do_synthesize(text, opts) do
     with {:ok, api_key} <- fetch_key() do
+      voice = opts[:voice] || opts["voice"] || "longanyang"
+
+      # DashScope HTTP NRT：voice / format / volume / rate / pitch 均放在 input 内，
+      # 用 rate（非 speech_rate）。若按顶层 voice + parameters.speech_rate 传，
+      # 引擎会返回 418。参考数字人项目的 TTS 客户端。
+      input =
+        %{
+          "text" => text,
+          "voice" => voice,
+          "format" => "mp3",
+          "sample_rate" => 24000,
+          "volume" => opts[:volume] || opts["volume"] || 50,
+          "rate" => opts[:speech_rate] || opts["speech_rate"] || 1.0,
+          "pitch" => 1.0
+        }
+
+      input =
+        case opts[:instruction] || opts["instruction"] do
+          nil -> input
+          instruction -> Map.put(input, "instruction", instruction)
+        end
+
       body = %{
         "model" => opts[:model] || opts["model"] || @default_model,
-        "input" => %{"text" => text},
-        "voice" => opts[:voice] || opts["voice"] || "longxiaochun",
-        "parameters" => %{
-          "speech_rate" => opts[:speech_rate] || opts["speech_rate"] || 1.0,
-          "volume" => opts[:volume] || opts["volume"] || 50
-        }
+        "input" => input
       }
-
-      body =
-        case opts[:instruction] || opts["instruction"] do
-          nil -> body
-          instruction -> put_in(body, ["parameters", "instruction"], instruction)
-        end
 
       headers = %{
         "authorization" => "Bearer #{api_key}",
         "content-type" => "application/json"
       }
 
-      case Req.post(@endpoint, json: body, headers: headers, decode_body: false) do
-        {:ok, %{status: status, headers: resp_headers, body: resp_body}}
-        when status in 200..299 ->
-          handle_audio_response(resp_headers, resp_body, opts)
+      case Req.post(@endpoint, json: body, headers: headers, receive_timeout: 60_000) do
+        {:ok, %{status: status, body: resp_body}} when status in 200..299 ->
+          handle_json_response(resp_body, opts)
 
         {:ok, %{status: status, body: resp_body}} ->
           {:error, "TTS 合成失败 (#{status}): #{truncate_resp(resp_body)}"}
@@ -105,29 +123,32 @@ defmodule KgEdu.Agent.TtsService do
     end
   end
 
-  defp handle_audio_response(headers, body, opts) do
-    content_type =
-      headers
-      |> Map.new(fn {k, v} -> {String.downcase(k), List.first(List.wrap(v))} end)
-      |> Map.get("content-type", "")
-
-    cond do
-      String.contains?(content_type, "audio") or audio_binary?(body) ->
-        save_and_upload(body, opts)
-
-      true ->
-        {:error, "TTS 合成失败: #{truncate_resp(body)}"}
+  # 解析 DashScope JSON 响应，取出 output.audio.url 后下载音频并落盘。
+  defp handle_json_response(resp_body, opts) when is_map(resp_body) do
+    with url when is_binary(url) and url != "" <- get_in(resp_body, ["output", "audio", "url"]),
+         {:ok, audio} <- download_audio(url) do
+      save_and_upload(audio, opts)
+    else
+      _ -> {:error, "TTS 合成失败: #{truncate_resp(resp_body)}"}
     end
   end
 
-  defp audio_binary?(body) when is_binary(body) do
-    # MP3 以 ID3 或 0xFFFB 同步字开头；WAV 以 RIFF 开头
-    String.starts_with?(body, "ID3") or
-      :binary.match(body, <<0xFF, 0xFB>>) == {0, 2} or
-      String.starts_with?(body, "RIFF")
+  defp handle_json_response(resp_body, opts) do
+    {:error, "TTS 响应解析失败: #{truncate_resp(resp_body)}"}
   end
 
-  defp audio_binary?(_), do: false
+  defp download_audio(url) do
+    case Req.get(url, connect_options: [timeout: 10_000], receive_timeout: 60_000, redirect: true) do
+      {:ok, %Req.Response{status: 200, body: body}} when is_binary(body) ->
+        {:ok, body}
+
+      {:ok, %Req.Response{status: status}} ->
+        {:error, "音频下载失败 (#{status})"}
+
+      {:error, reason} ->
+        {:error, "音频下载失败: #{inspect(reason)}"}
+    end
+  end
 
   defp save_and_upload(audio_binary, opts) do
     tmp = Path.join(System.tmp_dir!(), "tts_#{System.unique_integer([:positive])}.mp3")

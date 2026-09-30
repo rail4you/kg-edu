@@ -15,6 +15,7 @@ export const SCENARIOS: Array<{
   systemPrompt: string;
   placeholder: string;
   inputKind: "chat" | "code" | "upload";
+  template: string;
 }> = [
   {
     key: "dialogue",
@@ -24,15 +25,17 @@ export const SCENARIOS: Array<{
       "你是情景对话陪练官。根据学生的话题设定一个生活/职场/校园情境并扮演其中角色，用中文与学生多轮对话，每轮回复后给出一个简短的表达建议。",
     placeholder: "先设定一个情境，如：在餐厅点餐",
     inputKind: "chat",
+    template: "情境：你是一名面试官，正在面试一位刚毕业的学生。请你先向我提问三个面试问题。",
   },
   {
     key: "work_upload",
     name: "上传作品",
     desc: "学生粘贴作品文本，AI 实时点评打分",
     systemPrompt:
-      "你是作品评审专家。学生会粘贴自己的作品（作文/设计说明/实验报告等），请从完整性、规范性、创新性三方面点评并打分（百分制），给出3条改进建议。",
+      "你是作品评审专家。学生通过粘贴文本提交作品（作文/设计说明/实验报告/代码等）。请直接依据所粘贴的文本内容进行评审，不要索取截图、文档文件或额外材料。输出结构：1) 简要点评（完整性、规范性、创新性各一句）；2) 百分制评分；3) 三条具体可操作的改进建议。若文本较短或信息不足，请基于现有文本给出明确的初步评分与建议，并在末尾用一句话说明如能补充更多内容可提升评分，但不要要求学生提供其他形式材料。",
     placeholder: "粘贴你的作品文本",
     inputKind: "upload",
+    template: "我的作品：《基于校园二手交易的小程序设计方案》\n功能：学生注册登录、发布闲置物品、按分类检索、在线聊天议价、线下自提。\n设计思路：采用前后端分离，前端用微信小程序，后端用 Python + 数据库。创新点：引入校园信用评分，交易完成后买卖双方互评，信用分高的用户可优先展示。",
   },
   {
     key: "thinking_ladder",
@@ -42,6 +45,7 @@ export const SCENARIOS: Array<{
       "你是思维教练。围绕学生提出的问题，用苏格拉底式追问引导其从现象到本质逐级深入，每次只问一个关键问题，并肯定其上一轮思考的进步。",
     placeholder: "提出你想深入思考的问题",
     inputKind: "chat",
+    template: "我想深入思考的问题：为什么现在的年轻人越来越不愿意结婚生子？请你引导我从社会、经济、观念等角度层层深入分析。",
   },
   {
     key: "debate_arena",
@@ -51,6 +55,7 @@ export const SCENARIOS: Array<{
       "你是思辨擂台反方辩手。学生给出论点后，你针锋相对地反驳，要求论据充分；每轮结束后点评其论证的逻辑漏洞。先请学生亮明论点。",
     placeholder: "亮明你的论点，如：AI 应该取代教师",
     inputKind: "chat",
+    template: "我的论点是：人工智能不应该取代教师。理由：教育不仅是知识传递，更包含情感关怀、品格塑造和因材施教，这些是 AI 难以替代的。",
   },
   {
     key: "code_editor",
@@ -60,6 +65,7 @@ export const SCENARIOS: Array<{
       "你是代码评审专家。学生粘贴代码后，请指出 bug 与坏味道，从正确性、规范性、效率三方面评分（百分制），并给出优化后的完整代码（用代码块包裹）。",
     placeholder: "粘贴你的代码",
     inputKind: "code",
+    template: "def calc_avg(nums):\n    total = 0\n    for i in range(len(nums)):\n        total = total + nums[i]\n    return total / len(nums)\n\ndata = [85, 90, 78, 92, 88]\nprint(calc_avg(data))",
   },
   {
     key: "interactive_story",
@@ -69,6 +75,7 @@ export const SCENARIOS: Array<{
       "你是互动故事讲述者。先请学生选一个题材（科幻/历史/悬疑），然后讲述故事，每讲一段就给出 2-3 个选项让学生决定剧情走向，并记录其选择偏好。",
     placeholder: "选择题材或直接说开始",
     inputKind: "chat",
+    template: "我想听一个科幻题材的互动故事，关于人类在火星建立殖民地的冒险经历，请开始并让我做选择。",
   },
 ];
 

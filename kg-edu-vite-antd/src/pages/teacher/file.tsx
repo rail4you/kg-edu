@@ -739,32 +739,12 @@ export default function FileManagement() {
   const naturalCompare = (a?: string, b?: string): number => {
     const sa = String(a || "");
     const sb = String(b || "");
-    // 按数字/非数字交替拆分为片段
-    const re = /(\d+)|(\D+)/g;
-    const chunksA = sa.match(re) || [];
-    const chunksB = sb.match(re) || [];
-    const len = Math.max(chunksA.length, chunksB.length);
-    for (let i = 0; i < len; i++) {
-      const ca = chunksA[i];
-      const cb = chunksB[i];
-      if (ca === undefined) return -1;
-      if (cb === undefined) return 1;
-      const na = /^\d+$/.test(ca);
-      const nb = /^\d+$/.test(cb);
-      if (na && nb) {
-        const diff = parseInt(ca, 10) - parseInt(cb, 10);
-        if (diff !== 0) return diff;
-        // 数值相同（如 007 与 7）：位数少的在前
-        if (ca.length !== cb.length) return ca.length - cb.length;
-      } else if (na !== nb) {
-        // 一边是数字一边是文本：文本在前，数字在后
-        return na ? 1 : -1;
-      } else {
-        const c = ca.localeCompare(cb, "zh-Hans-CN");
-        if (c !== 0) return c;
-      }
-    }
-    return 0;
+    // localeCompare 的 numeric 选项按数字自然序比较（"第1章" < "第10章"），
+    // 且能正确处理不一致的空格/分隔符（"第一章10节" 与 "第一章 1 节"）。
+    const r = sa.localeCompare(sb, "zh-Hans-CN", { numeric: true });
+    if (r !== 0) return r;
+    // 完全相同时按字符串长度兜底（避免 localeCompare 对空串返回 0 的歧义）
+    return sa.length - sb.length;
   };
 
   const getFileTypeColor = (fileType: string): string => {

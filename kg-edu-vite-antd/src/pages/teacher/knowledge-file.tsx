@@ -43,6 +43,8 @@ import {
   FileImageOutlined,
   ClockCircleOutlined,
   SyncOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from "@ant-design/icons";
 import {
   listFiles,
@@ -61,6 +63,7 @@ import {
   unlinkHomeworkFromKnowledge,
   unlinkVideoFromKnowledge,
   unlinkFromKnowledge,
+  reorderFiles,
   type ResourceResourceSchema,
 } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
@@ -74,6 +77,7 @@ type FileData = {
   path?: string;
   purpose?: string;
   source?: string | null;
+  sortOrder?: number | null;
 };
 type ExerciseData = {
   id: string;
@@ -143,6 +147,15 @@ const getFileIcon = (fileType: string) => {
 };
 
 // 简化文件类型显示
+// 文件名自然序排序（与资源页一致）：按数字自然序，忽略空格/分隔符差异
+function naturalCompare(a?: string, b?: string): number {
+  const sa = String(a || "");
+  const sb = String(b || "");
+  const r = sa.localeCompare(sb, "zh-Hans-CN", { numeric: true });
+  if (r !== 0) return r;
+  return sa.length - sb.length;
+}
+
 const simplifyFileType = (filename: string, fileType?: string): string => {
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   if (ext === "pptx" || ext === "ppt") return "PPT";
@@ -226,12 +239,16 @@ function FilesTable({
   onUnlink,
   searchText = "",
   onSearchChange,
+  onMove,
+  reordering = false,
 }: {
   files?: FileData[];
   loading: boolean;
   onUnlink: (fileId: string, fileName: string) => void;
   searchText?: string;
   onSearchChange?: (text: string) => void;
+  onMove?: (file: FileData, direction: "up" | "down") => void;
+  reordering?: boolean;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchText, setInternalSearchText] = useState("");
@@ -241,8 +258,11 @@ function FilesTable({
 
   const filteredFiles = useMemo(() => {
     if (!files) return [];
-    if (!actualSearchText) return files;
-    return files.filter(f => f.filename?.toLowerCase().includes(actualSearchText.toLowerCase()));
+    let list = files;
+    if (actualSearchText) {
+      list = list.filter(f => f.filename?.toLowerCase().includes(actualSearchText.toLowerCase()));
+    }
+    return list;
   }, [files, actualSearchText]);
 
   const paginatedFiles = useMemo(() => {
@@ -337,6 +357,28 @@ function FilesTable({
                   style={{ marginLeft: 8 }}
                 />
                 </Tooltip>
+                {onMove && (
+                  <Space size={2} style={{ marginLeft: 4 }}>
+                    <Tooltip title="上移">
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<ArrowUpOutlined />}
+                        disabled={reordering}
+                        onClick={() => onMove(file, "up")}
+                      />
+                    </Tooltip>
+                    <Tooltip title="下移">
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<ArrowDownOutlined />}
+                        disabled={reordering}
+                        onClick={() => onMove(file, "down")}
+                      />
+                    </Tooltip>
+                  </Space>
+                )}
               </Card>
             </Col>
           ))}
@@ -1451,7 +1493,7 @@ function LinkItemDialog({
         case "0": {
           const filesResult = await listFiles({
             tenant,
-            fields: ["id", "filename", "fileType", "size", "path", "source"],
+            fields: ["id", "filename", "fileType", "size", "path", "source", "sortOrder"],
             filter: { courseId: { eq: courseId } },
             headers,
           });
@@ -2226,6 +2268,45 @@ export default function KnowledgeFilePage() {
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [links, setLinks] = useState<LinkData[]>([]);
 
+  // 文件展示顺序：默认按文件名自然序；一旦手动调整过（存在有效 sortOrder），则保持手动顺序
+  const displayFiles = useMemo(() => {
+    if (!files || files.length === 0) return files;
+    const hasManual = files.some(
+      (f) => (f.sortOrder ?? 0) > 0 && (f.sortOrder ?? 0) < 2_000_000_000
+    );
+    if (hasManual) {
+      return [...files].sort(
+        (a, b) => (a.sortOrder ?? 2_000_000_000) - (b.sortOrder ?? 2_000_000_000)
+      );
+    }
+    return [...files].sort((a, b) => naturalCompare(a.filename, b.filename));
+  }, [files]);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const moveFile = async (record: FileData, direction: "up" | "down") => {
+    const idx = displayFiles.findIndex((f) => f.id === record.id);
+    if (idx === -1) return;
+    const target = direction === "up" ? idx - 1 : idx + 1;
+    if (target < 0 || target >= displayFiles.length) return;
+    const next = [...displayFiles];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    // 应用新顺序（写入 sortOrder，使展示进入手动模式并持久化到后端）
+    setFiles(next.map((f, i) => ({ ...f, sortOrder: i + 1 })));
+    setIsReordering(true);
+    try {
+      const result = await reorderFiles({
+        tenant,
+        input: { items: next.map((f, i) => ({ id: f.id, order: i + 1 })) },
+        headers: getAuthHeaders(user) as Record<string, string>,
+      });
+      if (!result.success) message.error("排序保存失败，请重试");
+    } catch (e: any) {
+      message.error(e?.message || "排序保存失败，请重试");
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
   const [error, setError] = useState<string | null>(null);
 
   // 当课程加载完成后，自动选择第一个课程
@@ -2387,7 +2468,7 @@ export default function KnowledgeFilePage() {
       try {
         const filesResult = await listFiles({
           tenant,
-          fields: ["id", "filename", "fileType", "size", "purpose", "source"],
+          fields: ["id", "filename", "fileType", "size", "purpose", "source", "sortOrder"],
           filter: { knowledgeResourceId: { eq: knowledgeId } },
         });
         if (filesResult.success) {
@@ -2649,11 +2730,13 @@ export default function KnowledgeFilePage() {
             </Col>
           </Row>
           <FilesTable
-            files={files}
+            files={displayFiles}
             loading={filesLoading}
             onUnlink={handleUnlinkFile}
             searchText={tabSearchText["0"]}
             onSearchChange={(text) => setTabSearchText(prev => ({ ...prev, "0": text }))}
+            onMove={moveFile}
+            reordering={isReordering}
           />
         </>
       ),

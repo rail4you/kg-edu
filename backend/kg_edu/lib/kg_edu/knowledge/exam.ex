@@ -486,8 +486,12 @@ defmodule KgEdu.Knowledge.Exam do
         allow_nil? false
       end
 
-      prepare fn query, _context ->
-        Ash.Query.load(query, exam_exercises: [:exercise])
+      prepare fn query, context ->
+        id = Ash.Query.get_argument(query, :id)
+
+        query
+        |> Ash.Query.filter(id == ^id)
+        |> Ash.Query.load(exam_exercises: [:exercise])
       end
     end
 

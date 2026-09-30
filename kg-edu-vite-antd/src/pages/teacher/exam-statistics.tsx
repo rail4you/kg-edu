@@ -249,16 +249,24 @@ export default function ExamStatistics() {
       term_definition: "名词解释",
       case_study: "案例题",
     } as Record<string, string>)[t] || t;
-  const diffName = (d: number) =>
-    ({ 1: "容易", 2: "较易", 3: "中等", 4: "较难", 5: "困难" } as Record<number, string>)[d] ||
-    `L${d}`;
+  const diffName = (d: number | null | undefined) =>
+    d == null
+      ? "未设置"
+      : ({ 1: "容易", 2: "较易", 3: "中等", 4: "较难", 5: "困难" } as Record<number, string>)[d] ||
+        `L${d}`;
 
   const renderAnalysis = () => {
     if (analysisLoading) return <Card style={{ marginTop: 24 }}><Spin /></Card>;
     if (!paperAnalysis) return null;
-    const byType = pick(paperAnalysis, "byType", "by_type") || [];
-    const byDiff = pick(paperAnalysis, "byDifficulty", "by_difficulty") || [];
-    const items = pick(paperAnalysis, "items", "items") || [];
+    const byType = Array.isArray(pick(paperAnalysis, "byType", "by_type"))
+      ? pick(paperAnalysis, "byType", "by_type")
+      : [];
+    const byDiff = Array.isArray(pick(paperAnalysis, "byDifficulty", "by_difficulty"))
+      ? pick(paperAnalysis, "byDifficulty", "by_difficulty")
+      : [];
+    const items = Array.isArray(pick(paperAnalysis, "items", "items"))
+      ? pick(paperAnalysis, "items", "items")
+      : [];
     const totalScore = pick(paperAnalysis, "totalScore", "total_score") || 0;
     const totalQ = pick(paperAnalysis, "totalQuestions", "total_questions") || items.length;
     return (
@@ -377,6 +385,9 @@ export default function ExamStatistics() {
           考试统计分析
         </Title>
         <div style={{ flex: 1 }} />
+        <Button onClick={() => navigate("/teacher/dashboard/exam-management")}>
+          回到考试
+        </Button>
         <Button type="primary" onClick={() => navigate(`/teacher/dashboard/exam-print/${examId}`)}>
           打印试卷
         </Button>

@@ -34,6 +34,8 @@ import {
   SearchOutlined,
   SafetyCertificateOutlined,
   EnterOutlined,
+  AudioOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { UserMenu } from "@/components/layout/user-menu";
 import { UserManualModal } from "@/components/layout/user-manual-modal";
@@ -425,6 +427,16 @@ const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
         name: "学术追踪 ★",
         icon: <SearchOutlined />,
       },
+      {
+        path: "/teacher/dashboard/tts",
+        name: "AI 语音合成 ★",
+        icon: <AudioOutlined />,
+      },
+      {
+        path: "/teacher/dashboard/portal",
+        name: "智慧门户 ★",
+        icon: <AppstoreOutlined />,
+      },
     ],
   },
   {
@@ -493,6 +505,8 @@ const PATH_TO_KEY: Record<string, string> = {
   "/teacher/dashboard/data-insight": "数据智能 ★",
   "/teacher/dashboard/assistant-plugins": "助教插件 ★",
   "/teacher/dashboard/research-track": "学术追踪 ★",
+  "/teacher/dashboard/tts": "AI 语音合成 ★",
+  "/teacher/dashboard/portal": "智慧门户 ★",
 };
 
 export default function TeacherLayout() {
