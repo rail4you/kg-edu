@@ -92,6 +92,127 @@ type FileType = {
   insertedAt?: string | null;
 };
 
+// ─── 文件名排序工具（模块级，避免随组件重渲染重建） ─────────────────────
+
+/**
+ * 中文数字 → 阿拉伯数字（0~999 范围足够覆盖教材章节数）。
+ * 支持简繁大写（如 一/壹/兩、十/拾、百/佰、千/仟）。
+ *   一 → 1, 十 → 10, 十一 → 11, 二十 → 20, 九十九 → 99,
+ *   一百二十三 → 123
+ * 无法识别时返回 NaN。
+ */
+function chineseNumeralToInt(s: string): number {
+  if (!s) return NaN;
+  const digit: Record<string, number> = {
+    零: 0, 〇: 0,
+    一: 1, 壹: 1, 幺: 1,
+    二: 2, 贰: 2, 貳: 2, 两: 2,
+    三: 3, 叁: 3, 參: 3,
+    四: 4, 肆: 4,
+    五: 5, 伍: 5,
+    六: 6, 陆: 6, 陸: 6,
+    七: 7, 柒: 7,
+    八: 8, 捌: 8,
+    九: 9, 玖: 9,
+  };
+  const valid = new Set([
+    ...Object.keys(digit),
+    "十", "拾", "百", "佰", "千", "仟",
+  ]);
+  for (const ch of s) {
+    if (!valid.has(ch)) return NaN;
+  }
+
+  let result = 0;
+  let pending = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    const d = digit[ch];
+    if (d !== undefined) {
+      pending = d;
+      continue;
+    }
+    let unit = 0;
+    if (ch === "十" || ch === "拾") unit = 10;
+    else if (ch === "百" || ch === "佰") unit = 100;
+    else if (ch === "千" || ch === "仟") unit = 1000;
+    else return NaN;
+
+    // "十" 开头默认 1（十/十五/十六）
+    const multiplier = i === 0 && unit === 10 ? 1 : pending || 1;
+    result += multiplier * unit;
+    pending = 0;
+  }
+  return result + pending;
+}
+
+/** 解析章节号（兼容阿拉伯与中文数字），失败返回 NaN。 */
+function parseChapterOrSectionNumber(s: string): number {
+  if (!s) return NaN;
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  return chineseNumeralToInt(s);
+}
+
+// 匹配「第X章第Y节」：X、Y 都允许阿拉伯或中文数字。
+// 不强制要求文件名首尾匹配，允许前后有课程名、章节标题、扩展名等。
+const CHAPTER_SECTION_RE =
+  /第([\u4e00-\u9fff〇零一二三四五六七八九十百千壹贰叁肆伍陆柒捌玖拾佰仟\d]+)章(?:第([\d\u4e00-\u9fff〇零一二三四五六七八九十百千壹贰叁肆伍陆柒捌玖拾佰仟]+)节)?/;
+
+/**
+ * 文件名自然序比较：
+ * 1) 优先识别「第 X 章[第 Y 节]」模式：先按章号（章号中文 → 数值），
+ *    再按节号（节号阿拉伯 → 数值）。
+ * 2) 解析失败时降级为文本片段与数字片段交替比较（处理 "第7节" vs "第12节"）。
+ *    数字片段按数值、文本片段按 Unicode 码点比较（避免 zh locale 按拼音排序
+ *    导致 "第一章" 排在 "第二章" 之后）。
+ * 3) 完全相同则按字符串长度兜底。
+ */
+function naturalCompare(a?: string, b?: string): number {
+  const sa = String(a || "");
+  const sb = String(b || "");
+  const ma = sa.match(CHAPTER_SECTION_RE);
+  const mb = sb.match(CHAPTER_SECTION_RE);
+  if (ma && mb) {
+    const ca = parseChapterOrSectionNumber(ma[1]);
+    const cb = parseChapterOrSectionNumber(mb[1]);
+    const sa2 = ma[2] !== undefined ? parseChapterOrSectionNumber(ma[2]) : NaN;
+    const sb2 = mb[2] !== undefined ? parseChapterOrSectionNumber(mb[2]) : NaN;
+    if (!isNaN(ca) && !isNaN(cb) && ca !== cb) return ca - cb;
+    if (
+      !isNaN(sa2) && !isNaN(sb2) && sa2 !== sb2
+    ) return sa2 - sb2;
+    // 一方带节号、一方不带：带节号视为比不带更靠后（更具体）
+    if (!isNaN(sa2) !== !isNaN(sb2)) return !isNaN(sa2) ? 1 : -1;
+    if (!isNaN(ca) && !isNaN(cb)) return 0;
+  }
+  // 降级：阿拉伯数字按数值、文本按 Unicode 码点比较
+  const re = /(\d+)|(\D+)/g;
+  const ca = sa.match(re) || [];
+  const cb = sb.match(re) || [];
+  const len = Math.max(ca.length, cb.length);
+  for (let i = 0; i < len; i++) {
+    const xa = ca[i];
+    const xb = cb[i];
+    if (xa === undefined) return -1;
+    if (xb === undefined) return 1;
+    const na = /^\d+$/.test(xa);
+    const nb = /^\d+$/.test(xb);
+    if (na && nb) {
+      const d = parseInt(xa, 10) - parseInt(xb, 10);
+      if (d !== 0) return d;
+      if (xa.length !== xb.length) return xa.length - xb.length;
+    } else if (na !== nb) {
+      // 文本在前、数字在后
+      return na ? 1 : -1;
+    } else {
+      // 使用纯 Unicode 码点比较避免中文 locale 按拼音排序
+      const c = xa < xb ? -1 : xa > xb ? 1 : 0;
+      if (c !== 0) return c;
+    }
+  }
+  return sa.length - sb.length;
+}
+
 export default function FileManagement() {
   const navigate = useNavigate();
   const { canEdit } = useEditPermission();
@@ -248,25 +369,27 @@ export default function FileManagement() {
 
   // 表格实际展示顺序：手动模式 = orderedFiles；列排序时镜像 AntD 的排序结果。
   // 用于上移/下移按钮的边界判断与移动（与当前看到的位置一致）。
+  // 注意：AntD 会对 sorter 返回值再应用方向（升降序），因此这里的比较器
+  // 必须只返回升序结果，不能再乘 dir，否则降序时与表格实际顺序相反。
   const displayList = useMemo(() => {
     if (!sortedInfo.order || !sortedInfo.columnKey) return orderedFiles;
-    const dir = sortedInfo.order === "ascend" ? 1 : -1;
     const list = [...orderedFiles];
     list.sort((a, b) => {
       switch (sortedInfo.columnKey) {
         case "filename":
-          return naturalCompare(a.filename, b.filename) * dir;
+          return naturalCompare(a.filename, b.filename);
         case "fileType":
-          return (
-            getFileExtension(a.filename).localeCompare(getFileExtension(b.filename)) * dir
+          return getFileExtension(a.filename).localeCompare(
+            getFileExtension(b.filename),
+            "zh-Hans-CN",
           );
         case "size":
-          return ((a.size || 0) - (b.size || 0)) * dir;
+          return (a.size || 0) - (b.size || 0);
         case "insertedAt":
           return (
             (new Date(a.insertedAt || 0).getTime() || 0) -
-              (new Date(b.insertedAt || 0).getTime() || 0)
-          ) * dir;
+            (new Date(b.insertedAt || 0).getTime() || 0)
+          );
         default:
           return 0;
       }
@@ -734,19 +857,6 @@ export default function FileManagement() {
     return ext.toUpperCase();
   };
 
-  // 文件名自然序比较：先按文本片段比较，数字片段按数值大小比较。
-  // 例："第一章第7节" < "第一章第12节"（同一前缀下 7 < 12）
-  const naturalCompare = (a?: string, b?: string): number => {
-    const sa = String(a || "");
-    const sb = String(b || "");
-    // localeCompare 的 numeric 选项按数字自然序比较（"第1章" < "第10章"），
-    // 且能正确处理不一致的空格/分隔符（"第一章10节" 与 "第一章 1 节"）。
-    const r = sa.localeCompare(sb, "zh-Hans-CN", { numeric: true });
-    if (r !== 0) return r;
-    // 完全相同时按字符串长度兜底（避免 localeCompare 对空串返回 0 的歧义）
-    return sa.length - sb.length;
-  };
-
   const getFileTypeColor = (fileType: string): string => {
     const type = fileType.toLowerCase();
     if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(type)) return "blue";
@@ -777,7 +887,10 @@ export default function FileManagement() {
       width: 100,
       align: "center",
       sorter: (a: FileType, b: FileType) =>
-        getFileExtension(a.filename).localeCompare(getFileExtension(b.filename)),
+        getFileExtension(a.filename).localeCompare(
+          getFileExtension(b.filename),
+          "zh-Hans-CN",
+        ),
       sortOrder:
         sortedInfo.columnKey === "fileType" ? sortedInfo.order : undefined,
       render: (_: unknown, record: FileType) => {
