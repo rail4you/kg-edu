@@ -54,6 +54,11 @@ defmodule KgEdu.SystemConfig do
       rpc_action(:get_branding_config, :read_default)
       rpc_action(:save_branding_config, :upsert)
     end
+
+    resource KgEdu.SystemConfig.SmartPortalLayout do
+      rpc_action(:get_smart_portal_layout, :read_default)
+      rpc_action(:save_smart_portal_layout, :upsert)
+    end
   end
 
   resources do
@@ -64,5 +69,6 @@ defmodule KgEdu.SystemConfig do
     resource(KgEdu.SystemConfig.CourseCategory)
     resource(KgEdu.SystemConfig.CourseCategoryItem)
     resource(KgEdu.SystemConfig.BrandingConfig)
+    resource(KgEdu.SystemConfig.SmartPortalLayout)
   end
 end

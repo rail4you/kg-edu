@@ -31,6 +31,7 @@ import {
   CameraOutlined,
   CloseOutlined,
   FileTextOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useNavigate } from "react-router-dom";
@@ -440,6 +441,19 @@ export function UserMenu({ role, variant = "default", compact }: UserMenuProps) 
 
         <div style={{ padding: "12px 20px" }}>
           <Space direction="vertical" style={{ width: "100%" }} size={8}>
+            {role === "student" && (
+              <Button
+                block
+                icon={<AppstoreOutlined />}
+                onClick={() => {
+                  setDrawerOpen(false);
+                  navigate("/dashboard/smart-portal");
+                }}
+                style={{ height: 44, textAlign: "left" }}
+              >
+                智能门户
+              </Button>
+            )}
             {role === "student" && (
               <Button
                 block

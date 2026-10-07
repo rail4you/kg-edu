@@ -148,6 +148,8 @@ import StudentMicroMajors from "./pages/student/micro-majors";
 import StudentMMCoursePage from "./pages/student/mm-course-page";
 import StudentMMTimeline from "./pages/student/mm-timeline";
 import StudentCurriculum from "./pages/student/curriculum";
+import StudentSmartPortal from "./pages/student/smart-portal";
+import StudentAiQa from "./pages/student/ai-qa";
 import StudentDataForms from "./pages/student/data-forms";
 import MicroMajorsPage from "./pages/micro-majors";
 import MicroMajorDetailPage from "./pages/micro-major-detail";
@@ -167,6 +169,7 @@ import AdminPortalConfig from "./pages/admin/portal-config";
 import AdminCourseCategories from "./pages/admin/course-categories";
 import AdminBranding from "./pages/admin/branding";
 import AdminManual from "./pages/admin/manual";
+import AdminSmartPortal from "./pages/admin/smart-portal";
 
 // 旧路由重定向到新的学生管理页面
 function RedirectToStudentMgmt() {
@@ -408,6 +411,8 @@ export default function App() {
       <Route path="/dashboard" element={<StudentLayout />}>
         <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<StudentOverview />} />
+        <Route path="smart-portal" element={<StudentSmartPortal />} />
+        <Route path="ai-qa" element={<StudentAiQa />} />
         
         {/* 核心学习功能 */}
         <Route path="experiment-courses" element={<StudentExperimentCourses />} />
@@ -467,6 +472,7 @@ export default function App() {
         <Route path="portal-config" element={<AdminPortalConfig />} />
         <Route path="course-categories" element={<AdminCourseCategories />} />
         <Route path="branding" element={<AdminBranding />} />
+        <Route path="smart-portal" element={<AdminSmartPortal />} />
         <Route path="manual" element={<AdminManual />} />
       </Route>
 

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -15,8 +15,9 @@ import {
   Divider,
   Row,
   Col,
+  message,
 } from "antd";
-import { ArrowLeftOutlined, PrinterOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, PrinterOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useParams, useNavigate } from "react-router-dom";
 import { getExamContent } from "@/lib/ash_rpc";
@@ -60,6 +61,8 @@ export default function ExamPrint() {
   const [showStudentInfo, setShowStudentInfo] = useState(true);
   const [courseName, setCourseName] = useState("");
   const [examTitle, setExamTitle] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const paperRef = useRef<HTMLDivElement>(null);
 
   const { data: examData, isLoading } = useQuery({
     queryKey: ["exam-print", examId],
@@ -102,6 +105,50 @@ export default function ExamPrint() {
   );
   const totalScore = exercises.reduce((s: number, e: any) => s + (e.points ?? 0), 0);
 
+  const exportPdf = async () => {
+    const el = paperRef.current;
+    if (!el) return;
+    setExporting(true);
+    const hide = message.loading("正在生成 PDF…", 0);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: el.scrollWidth,
+      });
+      const pdf = new jsPDF({ unit: "mm", format: pageSize.toLowerCase(), orientation: "portrait" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+      let heightLeft = imgH;
+      let position = 0;
+      pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        position -= pageH;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
+        heightLeft -= pageH;
+      }
+
+      const name = (examTitle || examData.title || "试卷").replace(/[\\/:*?"<>|]/g, "_");
+      pdf.save(`${name}.pdf`);
+    } catch (e: any) {
+      message.error(e?.message || "导出失败");
+    } finally {
+      hide();
+      setExporting(false);
+    }
+  };
+
   const renderOptions = (ex: any) => {
     const opts = ex.exercise?.options;
     if (!opts) return null;
@@ -128,8 +175,26 @@ export default function ExamPrint() {
     <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
       <style>{`
         @media print {
-          .exam-print-config, .exam-print-header { display: none !important; }
-          .exam-print-paper { box-shadow: none !important; margin: 0 !important; max-width: none !important; width: 100% !important; }
+          html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+          body * { visibility: hidden !important; }
+          .exam-print-paper, .exam-print-paper * { visibility: visible !important; }
+          .exam-print-paper {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            background: #fff !important;
+          }
+          .ant-layout, .ant-layout-content, .ant-pro-layout, .ant-pro-layout-content,
+          [data-scroll-container], [data-outlet-scroll] {
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
           @page { size: ${pageSize}; margin: 12mm; }
         }
       `}</style>
@@ -138,8 +203,11 @@ export default function ExamPrint() {
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
         <Title level={4} style={{ margin: 0 }}>试卷自定义导出</Title>
         <div style={{ flex: 1 }} />
-        <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
-          导出 / 打印
+        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
+          打印
+        </Button>
+        <Button type="primary" icon={<FilePdfOutlined />} loading={exporting} onClick={exportPdf}>
+          导出 PDF
         </Button>
       </div>
 
@@ -195,6 +263,7 @@ export default function ExamPrint() {
         {/* —— 纸张预览（所见即所得，打印时即此效果） —— */}
         <div
           className="exam-print-paper"
+          ref={paperRef}
           style={{
             background: "white",
             maxWidth: PAGE_WIDTH[pageSize],

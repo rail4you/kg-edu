@@ -99,6 +99,7 @@ defmodule KgEduWeb.Router do
   scope "/api", KgEduWeb do
     pipe_through :api
     get "/health", PageController, :health
+    get "/client-ip", PageController, :client_ip
     get "/branding", PageController, :branding
     put "/branding", PageController, :update_branding
     get "/site-content", PageController, :get_site_content
@@ -107,6 +108,8 @@ defmodule KgEduWeb.Router do
     get "/portal-config/admin", PageController, :get_portal_config_admin
     put "/portal-config/levels", PageController, :update_portal_levels
     put "/portal-config/pages", PageController, :save_portal_pages
+    get "/smart-portal/layout", PageController, :get_smart_portal_layout
+    put "/smart-portal/layout", PageController, :update_smart_portal_layout
     get "/course-categories", PageController, :get_course_categories
     get "/course-categories/admin", PageController, :get_course_categories_admin
     put "/course-categories", PageController, :save_course_categories
@@ -126,6 +129,15 @@ defmodule KgEduWeb.Router do
     post "/forms/ai-fill", FormsAiController, :ai_fill
     post "/forms/ai-formula", FormsAiController, :ai_formula
     post "/practice/evaluate", PracticeController, :evaluate
+    get "/practice-session/mine", PracticeSessionController, :mine
+    get "/practice-session/tenant", PracticeSessionController, :list_tenant
+    post "/practice-session", PracticeSessionController, :create
+    get "/practice-session/:token", PracticeSessionController, :show
+    post "/practice-session/:token/join", PracticeSessionController, :join
+    post "/practice-session/:token/messages", PracticeSessionController, :messages
+    post "/practice-session/:token/start", PracticeSessionController, :start
+    post "/practice-session/:token/evaluate", PracticeSessionController, :evaluate
+    post "/practice-session/:token/grade", PracticeSessionController, :grade
   end
 
   # Legacy /agent prefix — frontend still calls with /agent/* URLs

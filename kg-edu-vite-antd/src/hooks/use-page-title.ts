@@ -121,6 +121,9 @@ const TITLE_MAP: Record<string, string> = {
   "/admin/dashboard/system": "系统状态",
   "/admin/dashboard/logs": "系统日志",
   "/admin/dashboard/site-content": "站点内容",
+  "/admin/dashboard/smart-portal": "智慧门户",
+  "/dashboard/smart-portal": "智能门户",
+  "/dashboard/ai-qa": "互动故事",
 };
 
 /**

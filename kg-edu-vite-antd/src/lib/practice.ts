@@ -79,6 +79,28 @@ export const SCENARIOS: Array<{
   },
 ];
 
+/** 场景作答类型：问答型（首轮用户消息是开场设定，AI 提问后才算作答）/ 提交型（用户消息即提交内容） */
+export function getScenarioAnswerMode(key: ScenarioKey): "qa" | "submission" {
+  return key === "work_upload" || key === "code_editor" ? "submission" : "qa";
+}
+
+/** 提取学生的真实作答内容（用于评估前校验，与后端 extract_answers 规则一致） */
+export function extractAnswers(
+  msgs: Array<{ role: string; content: string }>,
+  key: ScenarioKey
+): string[] {
+  const entries = msgs.map((m) => ({ role: m.role, content: (m.content || "").trim() }));
+  if (getScenarioAnswerMode(key) === "qa") {
+    const idx = entries.findIndex((e) => e.role === "ai");
+    if (idx < 0) return [];
+    return entries
+      .slice(idx + 1)
+      .filter((e) => e.role === "user" && e.content)
+      .map((e) => e.content);
+  }
+  return entries.filter((e) => e.role === "user" && e.content).map((e) => e.content);
+}
+
 /** 最小 SSE 解析：读取 data 行 JSON 中的 type/delta 拼接。
  * 后端 ChatController.sse_write 只写 `data: {"type":"TEXT_MESSAGE_CONTENT","delta":"..."}`，
  * 不带 `event:` 行（event: 分支仅为兼容旧格式保留）。 */

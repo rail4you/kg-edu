@@ -6,6 +6,29 @@ defmodule KgEduWeb.PageController do
     json(conn, %{status: "ok", service: "kg-edu-phoenix"})
   end
 
+  # 客户端 IP — 供智慧门户 IP 组件展示（优先 X-Forwarded-For，回退 remote_ip）
+  def client_ip(conn, _params) do
+    forwarded =
+      conn
+      |> get_req_header("x-forwarded-for")
+      |> List.first()
+
+    ip =
+      case forwarded do
+        nil -> conn.remote_ip
+        value -> value |> String.split(",") |> List.first() |> String.trim()
+      end
+
+    ip_str =
+      case ip do
+        tuple when is_tuple(tuple) -> tuple |> :inet.ntoa() |> to_string()
+        str when is_binary(str) -> str
+        _ -> "未知"
+      end
+
+    json(conn, %{success: true, data: %{ip: ip_str}})
+  end
+
   # 品牌配置端点 — DB 优先，环境变量兜底，超级管理员可通过 PUT /api/branding 动态修改
   def branding(conn, _params) do
     db = fetch_branding_from_db()
@@ -348,7 +371,206 @@ defmodule KgEduWeb.PageController do
     end
   end
 
+  # -------------------------------------------------------------------------
+  # 智慧门户布局（组件化 / 参数化 JSON）
+  # GET /api/smart-portal/layout   公开读取（首次自动写入默认布局）
+  # PUT /api/smart-portal/layout   仅超级管理员，全量保存布局
+  # -------------------------------------------------------------------------
+
+  # 默认布局：搜索 + 日期/IP/插件 + 地图 + 图标导航 + 知识点 + 文本 + 统计 + 图表 + 课程
+  @default_smart_portal_layout %{
+    "version" => 1,
+    "blocks" => [
+      %{
+        "id" => "b_search",
+        "type" => "search",
+        "title" => "搜索",
+        "span" => 24,
+        "config" => %{"placeholder" => "搜索课程、知识点…"}
+      },
+      %{
+        "id" => "b_date",
+        "type" => "date",
+        "title" => "",
+        "span" => 12,
+        "config" => %{"mode" => "date", "showWeekday" => true, "showTime" => false}
+      },
+      %{
+        "id" => "b_ip",
+        "type" => "ip",
+        "title" => "",
+        "span" => 12,
+        "config" => %{"label" => "出口 IP"}
+      },
+      %{
+        "id" => "b_map",
+        "type" => "map",
+        "title" => "地图",
+        "span" => 24,
+        "config" => %{"bbox" => "116.30,39.95,116.45,40.05", "height" => 220}
+      },
+      %{
+        "id" => "b_iconnav",
+        "type" => "icon-nav",
+        "title" => "快捷入口",
+        "span" => 12,
+        "config" => %{
+          "items" => [
+            %{"label" => "课程概述", "to" => "/dashboard/overview"},
+            %{"label" => "考试系统", "to" => "/dashboard/exam-courses"},
+            %{"label" => "互动课堂", "to" => "/dashboard/interaction"}
+          ]
+        }
+      },
+      %{
+        "id" => "b_knowledge",
+        "type" => "knowledge-points",
+        "title" => "知识点",
+        "span" => 12,
+        "config" => %{"limit" => 12, "layout" => "tags"}
+      },
+      %{
+        "id" => "b_welcome",
+        "type" => "text",
+        "title" => "欢迎来到智慧门户",
+        "span" => 24,
+        "config" => %{
+          "content" => "在这里浏览你的课程、学习资源与学情数据。",
+          "align" => "left"
+        }
+      },
+      %{
+        "id" => "b_stats",
+        "type" => "stats",
+        "title" => "数据概览",
+        "span" => 24,
+        "config" => %{"metrics" => ["courses", "students", "videos", "exercises"]}
+      },
+      %{
+        "id" => "b_chart",
+        "type" => "chart",
+        "title" => "资源分布",
+        "span" => 12,
+        "config" => %{
+          "chartType" => "bar",
+          "metrics" => ["courses", "students", "videos", "exercises"]
+        }
+      },
+      %{
+        "id" => "b_courses",
+        "type" => "course-list",
+        "title" => "课程推荐",
+        "span" => 12,
+        "config" => %{"limit" => 6, "layout" => "card"}
+      }
+    ]
+  }
+
+  # GET /api/smart-portal/layout — 公开读取；无记录时写入默认布局
+  def get_smart_portal_layout(conn, _params) do
+    case KgEdu.SystemConfig.SmartPortalLayout.get_default() do
+      {:ok, [record | _]} ->
+        json(conn, %{success: true, data: smart_portal_layout_map(record)})
+
+      _ ->
+        case KgEdu.SystemConfig.SmartPortalLayout.save(%{
+               name: "智慧门户",
+               layout: @default_smart_portal_layout,
+               enabled: true
+             }) do
+          {:ok, record} ->
+            json(conn, %{success: true, data: smart_portal_layout_map(record)})
+
+          {:error, _} ->
+            json(conn, %{
+              success: true,
+              data: %{
+                name: "智慧门户",
+                enabled: true,
+                layout: @default_smart_portal_layout
+              }
+            })
+        end
+    end
+  end
+
+  # PUT /api/smart-portal/layout — 仅超级管理员
+  def update_smart_portal_layout(conn, params) do
+    actor = conn.assigns[:actor]
+
+    if is_nil(actor) or actor.role != :super_admin do
+      json(conn, %{success: false, error: "仅超级管理员可修改智慧门户布局"})
+    else
+      data = params["data"] || params
+
+      attrs = %{
+        name: data["name"] || "智慧门户",
+        layout: normalize_smart_portal_layout(data["layout"]),
+        enabled: data["enabled"] != false
+      }
+
+      case KgEdu.SystemConfig.SmartPortalLayout.save(attrs) do
+        {:ok, record} ->
+          json(conn, %{success: true, data: smart_portal_layout_map(record)})
+
+        {:error, _} ->
+          json(conn, %{success: false, error: "保存失败"})
+      end
+    end
+  end
+
+  defp smart_portal_layout_map(record) do
+    %{
+      name: record.name || "智慧门户",
+      enabled: record.enabled,
+      layout: record.layout || %{},
+      updated_at: record.updated_at
+    }
+  end
+
+  defp normalize_smart_portal_layout(layout) when is_map(layout) do
+    blocks = layout["blocks"] || layout[:blocks] || []
+    version = layout["version"] || layout[:version] || 1
+
+    blocks =
+      blocks
+      |> Enum.map(&normalize_smart_portal_block/1)
+      |> Enum.reject(&is_nil/1)
+
+    %{"version" => version, "blocks" => blocks}
+  end
+
+  defp normalize_smart_portal_layout(_), do: %{"version" => 1, "blocks" => []}
+
+  defp normalize_smart_portal_block(block) when is_map(block) do
+    %{
+      "id" => block["id"] || block[:id] || to_string(System.unique_integer([:positive])),
+      "type" => block["type"] || block[:type] || "text",
+      "title" => block["title"] || block[:title] || "",
+      "span" => clamp_span(block["span"] || block[:span]),
+      "config" => block["config"] || block[:config] || %{}
+    }
+  end
+
+  defp normalize_smart_portal_block(_), do: nil
+
+  defp clamp_span(value) do
+    case value do
+      v when is_integer(v) and v >= 1 and v <= 24 -> v
+      v when is_binary(v) ->
+        case Integer.parse(v) do
+          {n, _} when n >= 1 and n <= 24 -> n
+          _ -> 24
+        end
+
+      _ ->
+        24
+    end
+  end
+
   # --- 种子与工具函数 ---
+
+
 
   defp ensure_levels_seeded do
     levels = unwrap_list(KgEdu.SystemConfig.PortalLevel.get_all())

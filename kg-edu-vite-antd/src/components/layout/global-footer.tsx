@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Modal } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/styles/theme-context";
 import { useBranding } from "@/hooks/use-branding";
 import { fetchSiteContent } from "@/lib/site-content";
@@ -53,9 +53,12 @@ const GlobalFooter: React.FC = () => {
     privacyPolicy: string;
   } | null>(null);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { mode, colors } = useTheme();
   const branding = useBranding();
   const isPortal = mode === "portal";
+  // 登录后的应用端（教师 / 微专业 / 学生 / 管理后台）不展示门户导航链接
+  const isAppRoute = /^\/(teacher|micro-major|dashboard|admin)(\/|$)/.test(pathname);
 
   // 联系我们 / 隐私条款 — 超级管理员可在后台配置
   useEffect(() => {
@@ -101,20 +104,22 @@ const GlobalFooter: React.FC = () => {
             textAlign: "center",
           }}
         >
-          <nav style={{ display: "flex", gap: 22 }} aria-label="页脚导航">
-            {portalLinks.map((l) => (
-              <a
-                key={l.label}
-                onClick={() => navigate(l.to)}
-                style={{ color: "#42546e", fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#2859df")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#42546e")}
-              >
-                {l.label}
-              </a>
-            ))}
-          </nav>
-          <span style={{ color: "#c6d3e5" }}>|</span>
+          {!isAppRoute && (
+            <nav style={{ display: "flex", gap: 22 }} aria-label="页脚导航">
+              {portalLinks.map((l) => (
+                <a
+                  key={l.label}
+                  onClick={() => navigate(l.to)}
+                  style={{ color: "#42546e", fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#2859df")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#42546e")}
+                >
+                  {l.label}
+                </a>
+              ))}
+            </nav>
+          )}
+          {!isAppRoute && <span style={{ color: "#c6d3e5" }}>|</span>}
           <span style={{ fontSize: 12, color: "#9aa8ba" }}>
             © 2026 {branding.app_name} · {branding.app_title}
           </span>

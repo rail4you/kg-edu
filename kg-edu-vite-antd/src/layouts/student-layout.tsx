@@ -20,8 +20,11 @@ import {
   DeploymentUnitOutlined,
   InteractionOutlined,
   EnterOutlined,
+  AppstoreOutlined,
+  RobotOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
-import { Input, Spin, Modal, Drawer, Button, Grid } from "antd";
+import { Input, Spin, Modal, Drawer, Button, Grid, Dropdown } from "antd";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { UserMenu } from "@/components/layout/user-menu";
 import { UserManualModal } from "@/components/layout/user-manual-modal";
@@ -44,11 +47,21 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
+  /** 桌面端以父菜单（下拉）形式呈现 */
+  dropdown?: boolean;
   items: NavItem[];
 }
 
-// 按「内容 → 学习 → 评测 → 工具」四类分组
+// 按「智慧功能 → 内容 → 学习 → 评测 → 工具」分组
 const navGroups: NavGroup[] = [
+  {
+    label: "智慧功能",
+    dropdown: true,
+    items: [
+      { key: "/dashboard/smart-portal", label: "智能门户", icon: <AppstoreOutlined /> },
+      { key: "/dashboard/ai-qa", label: "互动故事", icon: <RobotOutlined /> },
+    ],
+  },
   {
     label: "内容",
     items: [
@@ -450,6 +463,7 @@ export default function StudentLayout() {
             >
               {navGroups.map((group, gi) => {
                 const items = group.items;
+                const groupActive = items.some((it) => isActive(it.key));
                 return (
                   <React.Fragment key={group.label}>
                     {/* Group separator */}
@@ -464,12 +478,23 @@ export default function StudentLayout() {
                         }}
                       />
                     )}
-                    {items.map((item) => {
-                      const active = isActive(item.key);
-                      return (
+                    {group.dropdown ? (
+                      <Dropdown
+                        menu={{
+                          items: items.map((it) => ({
+                            key: it.key,
+                            label: (
+                              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                {it.icon}
+                                {it.label}
+                              </span>
+                            ),
+                          })),
+                          onClick: ({ key }) => handleNavClick(key),
+                        }}
+                        trigger={["hover", "click"]}
+                      >
                         <div
-                          key={item.key}
-                          onClick={() => handleNavClick(item.key)}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -477,36 +502,78 @@ export default function StudentLayout() {
                             padding: "8px 16px",
                             cursor: "pointer",
                             fontSize: 15,
-                            fontWeight: active ? 600 : 400,
+                            fontWeight: groupActive ? 600 : 400,
                             fontFamily: "'Manrope', sans-serif",
-                            color: active ? "#FFFFFF" : "#424754",
+                            color: groupActive ? "#FFFFFF" : "#424754",
                             whiteSpace: "nowrap",
                             borderRadius: 9999,
-                            background: active ? colors.primary : "transparent",
+                            background: groupActive ? colors.primary : "transparent",
                             transition: "all 0.2s ease",
                             flexShrink: 0,
                             letterSpacing: "0.01em",
                           }}
                           onMouseEnter={(e) => {
-                            if (!active) {
+                            if (!groupActive) {
                               (e.currentTarget as HTMLDivElement).style.background = "rgba(255, 255, 255, 0.5)";
                               (e.currentTarget as HTMLDivElement).style.color = colors.textPrimary;
                             }
                           }}
                           onMouseLeave={(e) => {
-                            if (!active) {
+                            if (!groupActive) {
                               (e.currentTarget as HTMLDivElement).style.background = "transparent";
                               (e.currentTarget as HTMLDivElement).style.color = "#424754";
                             }
                           }}
                         >
-                          {item.icon && (
-                            <span style={{ fontSize: 15, opacity: active ? 1 : 0.7 }}>{item.icon}</span>
-                          )}
-                          {item.label}
+                          {group.label}
+                          <DownOutlined style={{ fontSize: 11 }} />
                         </div>
-                      );
-                    })}
+                      </Dropdown>
+                    ) : (
+                      items.map((item) => {
+                        const active = isActive(item.key);
+                        return (
+                          <div
+                            key={item.key}
+                            onClick={() => handleNavClick(item.key)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              padding: "8px 16px",
+                              cursor: "pointer",
+                              fontSize: 15,
+                              fontWeight: active ? 600 : 400,
+                              fontFamily: "'Manrope', sans-serif",
+                              color: active ? "#FFFFFF" : "#424754",
+                              whiteSpace: "nowrap",
+                              borderRadius: 9999,
+                              background: active ? colors.primary : "transparent",
+                              transition: "all 0.2s ease",
+                              flexShrink: 0,
+                              letterSpacing: "0.01em",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!active) {
+                                (e.currentTarget as HTMLDivElement).style.background = "rgba(255, 255, 255, 0.5)";
+                                (e.currentTarget as HTMLDivElement).style.color = colors.textPrimary;
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!active) {
+                                (e.currentTarget as HTMLDivElement).style.background = "transparent";
+                                (e.currentTarget as HTMLDivElement).style.color = "#424754";
+                              }
+                            }}
+                          >
+                            {item.icon && (
+                              <span style={{ fontSize: 15, opacity: active ? 1 : 0.7 }}>{item.icon}</span>
+                            )}
+                            {item.label}
+                          </div>
+                        );
+                      })
+                    )}
                   </React.Fragment>
                 );
               })}
