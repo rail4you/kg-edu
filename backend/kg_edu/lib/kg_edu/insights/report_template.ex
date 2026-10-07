@@ -119,7 +119,7 @@ defmodule KgEdu.Insights.ReportTemplate do
       allow_nil? false
       public? true
       default :report
-      constraints one_of: [:report, :table]
+      constraints one_of: [:report, :table, :outline]
     end
 
     attribute :config, :map do

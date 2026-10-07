@@ -161,7 +161,15 @@ export default function AdminLayout() {
         m.path.includes("/logs")
     );
     const configItems = menuData.filter(
-      (m) => m.path.includes("/organizations") || m.path.includes("/api-key")
+      (m) =>
+        m.path.includes("/organizations") ||
+        m.path.includes("/api-key") ||
+        m.path.includes("/site-content") ||
+        m.path.includes("/portal-config") ||
+        m.path.includes("/course-categories") ||
+        m.path.includes("/branding") ||
+        m.path.includes("/smart-portal") ||
+        m.path.includes("/data-insight")
     );
 
     if (overviewItems.length > 0) {

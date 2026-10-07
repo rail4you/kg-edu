@@ -167,7 +167,7 @@ export default function TtsSynthesis() {
         <Text type="secondary" style={{ marginLeft: 8 }}>文字 → 多音色多语言语音</Text>
       </div>
 
-      <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ padding: 24 }}>
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
             <Card title="1. 输入合成文本">

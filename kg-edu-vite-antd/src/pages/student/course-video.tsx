@@ -55,6 +55,7 @@ import type { DiscussionResourceSchema } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
 import FilePreview from "@/components/FilePreview";
+import VideoAnalysisPanel from "@/components/video/VideoAnalysisPanel";
 import { themeColors as colors } from "@/styles/theme";
 
 const { Title, Text, Paragraph } = Typography;
@@ -1081,6 +1082,21 @@ export default function CourseVideoPage() {
                         时长 {formatDuration(currentVideo.duration)}
                       </Text>
                     )}
+                  </div>
+                )}
+                {currentVideo && (
+                  <div style={{ width: "100%", maxWidth: 1000 }}>
+                    <VideoAnalysisPanel
+                      videoId={currentVideo.id}
+                      tenant={currentTenant?.schemaName || ""}
+                      headers={getAuthHeaders(user) as Record<string, string>}
+                      onSeek={(sec) => {
+                        if (mainVideoRef.current) {
+                          mainVideoRef.current.currentTime = sec;
+                          mainVideoRef.current.play().catch(() => {});
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </div>

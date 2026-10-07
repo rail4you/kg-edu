@@ -9,6 +9,7 @@ import {
   ArrowLeftOutlined, PlusOutlined, DeleteOutlined, FunctionOutlined,
   CheckCircleOutlined, CloseCircleOutlined, UserAddOutlined,
   UndoOutlined, EditOutlined, FileTextOutlined, TeamOutlined, AuditOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +17,7 @@ import {
   createFormDef, updateFormDef, deleteFormDef, listFormDefs,
   listFormAssignments, revokeFormAssignment,
   listFormSubmissions, reviewSubmission, getFormDef,
-  getUsersFromTenant, assignFormToStudents, getUser,
+  getUsersFromTenant, assignFormToStudents, getUser, listClasses,
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -128,6 +129,7 @@ export default function CustomForm() {
   const [assignDueAt, setAssignDueAt] = useState<Dayjs | null>(null);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
+  const [classFilter, setClassFilter] = useState<string[]>([]);
 
   const formsQuery = useQuery({
     queryKey: ["form-defs", tenant],
@@ -224,6 +226,54 @@ export default function CustomForm() {
     },
     enabled: !!user,
   });
+  const classesQuery = useQuery({
+    queryKey: ["tenant-classes-for-assign", tenant],
+    queryFn: async () => {
+      const r = await listClasses({
+        tenant,
+        fields: ["id", "name", "major"],
+        sort: "+name",
+        page: { limit: 500, offset: 0 },
+        headers,
+      });
+      if (!r.success) return [];
+      const data = r.data as any;
+      return (Array.isArray(data) ? data : data?.results || []) as any[];
+    },
+    enabled: !!user && assignModalOpen,
+  });
+
+  const classMap: Record<string, string> = React.useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of classesQuery.data || []) {
+      if (c?.id) m[c.id] = c.name || c.major || c.id.slice(0, 6);
+    }
+    return m;
+  }, [classesQuery.data]);
+
+  const classOptions = React.useMemo(
+    () =>
+      (classesQuery.data || []).map((c: any) => ({
+        value: c.id,
+        label: c.name || c.major || String(c.id).slice(0, 6),
+      })),
+    [classesQuery.data],
+  );
+
+  const assignStudents: any[] = studentsQuery.data || [];
+
+  const filteredStudents = React.useMemo(() => {
+    const list = classFilter.length
+      ? assignStudents.filter((s) => classFilter.includes(s.classId))
+      : assignStudents;
+    return [...list].sort((a, b) => {
+      const ca = classMap[a.classId] || "";
+      const cb = classMap[b.classId] || "";
+      if (ca !== cb) return ca.localeCompare(cb, "zh");
+      return (a.name || "").localeCompare(b.name || "", "zh");
+    });
+  }, [assignStudents, classFilter, classMap]);
+
   const studentsMap: Record<string, { name: string; memberId?: string }> =
     React.useMemo(() => {
       const list = allStudentsQuery.data || [];
@@ -447,7 +497,7 @@ export default function CustomForm() {
         <Title level={4} style={{ margin: 0 }}>自定义表单</Title>
       </div>
 
-      <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: 24 }}>
         <Tabs
           defaultActiveKey="templates"
           items={[
@@ -701,30 +751,68 @@ export default function CustomForm() {
               </span>
             }
           >
-            <Input
-              placeholder="按姓名 / 学号搜索"
-              value={studentSearch}
-              onChange={(e) => setStudentSearch(e.target.value)}
-              allowClear
-              style={{ marginBottom: 8 }}
-            />
-            <Select
-              mode="multiple"
-              style={{ width: "100%" }}
-              placeholder="选择学生"
-              value={assignStudentIds}
-              onChange={setAssignStudentIds}
+            <Space style={{ width: "100%", marginBottom: 8 }} wrap>
+              <Input
+                placeholder="按姓名 / 学号搜索"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                allowClear
+                style={{ width: 220 }}
+                prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              />
+              <Select
+                mode="multiple"
+                allowClear
+                placeholder="按班级筛选 / 分组"
+                value={classFilter}
+                onChange={setClassFilter}
+                loading={classesQuery.isLoading}
+                options={classOptions}
+                style={{ minWidth: 220, maxWidth: 360 }}
+                maxTagCount={2}
+                optionFilterProp="label"
+              />
+              <Button
+                size="small"
+                onClick={() =>
+                  setAssignStudentIds((prev) =>
+                    Array.from(new Set([...prev, ...filteredStudents.map((s: any) => s.id)])),
+                  )
+                }
+              >
+                全选当前结果（{filteredStudents.length}）
+              </Button>
+              <Button size="small" onClick={() => setAssignStudentIds([])}>
+                清空
+              </Button>
+            </Space>
+            <Table
+              size="small"
+              rowKey="id"
+              dataSource={filteredStudents}
               loading={studentsQuery.isLoading}
-              showSearch
-              filterOption={false}
-              onSearch={setStudentSearch}
-              options={(studentsQuery.data || []).map((u: any) => ({
-                value: u.id,
-                label: `${u.name || "(无名)"}（${u.memberId || u.id.slice(0, 6)}）`,
-              }))}
-              maxTagCount={3}
+              pagination={{ pageSize: 8, showTotal: (t) => `共 ${t} 人` }}
+              scroll={{ y: 320 }}
+              rowSelection={{
+                selectedRowKeys: assignStudentIds,
+                preserveSelectedRowKeys: true,
+                onChange: (keys) => setAssignStudentIds(keys as string[]),
+              }}
+              columns={[
+                { title: "姓名", dataIndex: "name", render: (v: string) => v || "(无名)" },
+                {
+                  title: "学号",
+                  dataIndex: "memberId",
+                  render: (v: string, r: any) => v || String(r.id).slice(0, 8),
+                },
+                {
+                  title: "班级",
+                  dataIndex: "classId",
+                  render: (v: string) => (v ? classMap[v] || String(v).slice(0, 8) : "—"),
+                },
+              ]}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 8 }}>
               {tenant ? (
                 <>
                   已选 {assignStudentIds.length} 人 ｜ 租户 <Text code>{tenantLabel}</Text>

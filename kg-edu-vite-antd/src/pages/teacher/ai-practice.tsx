@@ -26,7 +26,7 @@ export default function AiPractice() {
         <Title level={4} style={{ margin: 0 }}>AI 实践（6 场景实时评估）</Title>
       </div>
 
-      <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ padding: 24 }}>
         <PracticeScenarioPanel interactiveStory={<TeacherSessionManager />} />
       </div>
     </div>

@@ -15,6 +15,7 @@ import {
   TeamOutlined,
   UserOutlined,
   AppstoreOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 
 export interface AdminNavigationItem {
@@ -75,6 +76,13 @@ const superAdminItems: AdminNavigationItem[] = [
     description: "拖放组合组件，配置学生端「智能门户」页面并实时预览",
     icon: <AppstoreOutlined />,
     color: "#1766d8",
+  },
+  {
+    path: "/admin/dashboard/data-insight",
+    name: "数据智能",
+    description: "按所有租户（院系）统计教学运行数据并导出",
+    icon: <BarChartOutlined />,
+    color: "#13c2c2",
   },
   {
     path: "/admin/dashboard/branding",

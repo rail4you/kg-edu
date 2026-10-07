@@ -122,6 +122,86 @@ defmodule KgEduWeb.VideoAnalysisController do
     end
   end
 
+  @doc """
+  GET /api/video-analysis — 解析任务列表（可按 courseId 过滤），用于「AI 解析」Tab 展示进度。
+  """
+  def index(conn, params) do
+    tenant = extract_tenant(conn, params)
+    input = params["input"] || params
+    course_id = input["courseId"] || input["course_id"] || params["courseId"]
+
+    cond do
+      is_nil(tenant) ->
+        json(conn, %{success: false, error: "未设置租户上下文"})
+
+      true ->
+        opts = [tenant: tenant, authorize?: false]
+
+        result =
+          if course_id,
+            do: KgEdu.Courses.VideoAnalysis.list_analyses_by_course(%{course_id: course_id}, opts),
+            else: KgEdu.Courses.VideoAnalysis.list_video_analyses(opts)
+
+        case result do
+          {:ok, list} ->
+            sorted = Enum.sort_by(list, & &1.inserted_at, {:desc, DateTime})
+            json(conn, %{success: true, data: Enum.map(sorted, &analysis_map/1)})
+
+          {:error, reason} ->
+            json(conn, %{success: false, error: inspect(reason) |> String.slice(0, 300)})
+        end
+    end
+  end
+
+  @doc """
+  GET /api/video-analysis/by-video?videoType=&videoId= — 某视频的最新解析任务（供抽屉恢复状态）。
+  """
+  def by_video(conn, params) do
+    tenant = extract_tenant(conn, params)
+    input = params["input"] || params
+    video_type = input["videoType"] || input["video_type"] || params["videoType"] || "video"
+    video_id = input["videoId"] || input["video_id"] || params["videoId"]
+
+    cond do
+      is_nil(tenant) ->
+        json(conn, %{success: false, error: "未设置租户上下文"})
+
+      is_nil(video_id) ->
+        json(conn, %{success: false, error: "缺少 videoId"})
+
+      true ->
+        case KgEdu.Courses.VideoAnalysis.get_analysis_by_video(
+               %{video_type: video_type, video_id: video_id},
+               tenant: tenant,
+               authorize?: false
+             ) do
+          {:ok, list} ->
+            latest =
+              list
+              |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+              |> List.first()
+
+            json(conn, %{success: true, data: latest && analysis_map(latest)})
+
+          {:error, reason} ->
+            json(conn, %{success: false, error: inspect(reason) |> String.slice(0, 300)})
+        end
+    end
+  end
+
+  defp analysis_map(a) do
+    %{
+      id: a.id,
+      video_type: a.video_type,
+      video_id: a.video_id,
+      status: to_string(a.status),
+      summary: a.summary,
+      error_message: a.error_message,
+      inserted_at: a.inserted_at,
+      updated_at: a.updated_at
+    }
+  end
+
   defp extract_tenant(conn, params) do
     params["orgSchema"] ||
       params["tenant"] ||

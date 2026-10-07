@@ -123,6 +123,8 @@ defmodule KgEduWeb.Router do
     post "/tts/synthesize", TtsController, :synthesize
     # P2: 视频 AI 解析
     post "/video-analysis/analyze", VideoAnalysisController, :analyze
+    get "/video-analysis", VideoAnalysisController, :index
+    get "/video-analysis/by-video", VideoAnalysisController, :by_video
     get "/video-analysis/:id", VideoAnalysisController, :show
     get "/video-analysis/:id/marks", VideoAnalysisController, :marks
     # P3: 表单 AI（填表/公式）与实践评估

@@ -16,14 +16,14 @@ const { Title, Text, Paragraph } = Typography;
 
 /** 各栏目的示例数据（真实可检索/可追踪的学术条目） */
 const EXAMPLE_INTERESTS = [
-  "graph neural networks",
-  "large language models",
-  "computer vision",
-  "reinforcement learning",
-  "federated learning",
+  "知识图谱",
+  "大语言模型",
+  "计算机视觉",
+  "强化学习",
+  "联邦学习",
 ];
-const EXAMPLE_SCHOLARS = ["Yoshua Bengio", "Geoffrey Hinton", "Andrew Ng", "Fei-Fei Li"];
-const EXAMPLE_VENUES = ["Nature", "Science", "NeurIPS", "ICML", "Cell"];
+const EXAMPLE_SCHOLARS = ["周志华", "张钹", "姚期智", "李飞飞"];
+const EXAMPLE_VENUES = ["中国科学", "计算机学报", "软件学报", "自动化学报", "清华大学学报"];
 
 function followTypeLabel(kind: string) {
   return kind === "scholar" ? "学者" : kind === "venue" ? "期刊" : "研究兴趣";
@@ -60,7 +60,7 @@ export default function ResearchTrack() {
   const headers = getAuthHeaders(user) as Record<string, string>;
 
   // —— 兴趣 ——
-  const [interest, setInterest] = useState("graph neural networks");
+  const [interest, setInterest] = useState("知识图谱");
   const [works, setWorks] = useState<any[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
@@ -75,7 +75,7 @@ export default function ResearchTrack() {
   const [twinLoading, setTwinLoading] = useState(false);
 
   // —— 期刊 ——
-  const [venue, setVenue] = useState("Nature");
+  const [venue, setVenue] = useState("中国科学");
   const [digest, setDigest] = useState<any>(null);
   const [digestLoading, setDigestLoading] = useState(false);
 
@@ -225,7 +225,7 @@ export default function ResearchTrack() {
         <Title level={4} style={{ margin: 0 }}>AI 追踪（研究兴趣 / 学者 / 期刊）</Title>
       </div>
 
-      <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ padding: 24 }}>
         <Tabs
           defaultActiveKey="interest"
           items={[
@@ -235,7 +235,7 @@ export default function ResearchTrack() {
               children: (
                 <Card>
                   <Space.Compact style={{ width: "100%" }}>
-                    <Input value={interest} onChange={(e) => setInterest(e.target.value)} onPressEnter={() => doSearchWorks()} placeholder="输入研究兴趣，如：graph neural networks" />
+                    <Input value={interest} onChange={(e) => setInterest(e.target.value)} onPressEnter={() => doSearchWorks()} placeholder="输入研究兴趣，如：知识图谱" />
                     <Button type="primary" icon={<SearchOutlined />} loading={searching} onClick={() => doSearchWorks()}>搜索</Button>
                   </Space.Compact>
                   <div style={{ marginTop: 8 }}>
@@ -278,7 +278,7 @@ export default function ResearchTrack() {
                 <>
                   <Card>
                     <Space.Compact style={{ width: "100%" }}>
-                      <Input value={scholarName} onChange={(e) => setScholarName(e.target.value)} onPressEnter={doSearchAuthors} placeholder="学者姓名（英文），如：Yoshua Bengio" />
+                      <Input value={scholarName} onChange={(e) => setScholarName(e.target.value)} onPressEnter={doSearchAuthors} placeholder="学者姓名，如：周志华" />
                       <Button type="primary" icon={<SearchOutlined />} loading={searching} onClick={doSearchAuthors}>搜索</Button>
                     </Space.Compact>
                     {exampleLoading && authors.length === 0 && (
@@ -335,7 +335,7 @@ export default function ResearchTrack() {
               children: (
                 <Card>
                   <Space.Compact style={{ width: "100%" }}>
-                    <Input value={venue} onChange={(e) => setVenue(e.target.value)} onPressEnter={loadDigest} placeholder="期刊名，如：Nature" />
+                    <Input value={venue} onChange={(e) => setVenue(e.target.value)} onPressEnter={loadDigest} placeholder="期刊名，如：计算机学报" />
                     <Button type="primary" loading={digestLoading} onClick={loadDigest}>提炼分析</Button>
                     {digest && (
                       <Button icon={<StarOutlined />} onClick={() => follow("venue", digest.venue.id, digest.venue.name, { works: digest.venue.works_count })}>追踪该刊</Button>
@@ -386,18 +386,32 @@ export default function ResearchTrack() {
                       size="middle"
                       rowKey={(f: any) => f.id}
                       pagination={false}
+                      tableLayout="fixed"
                       columns={[
                         {
                           title: "类型",
                           dataIndex: "kind",
-                          width: 110,
+                          width: 100,
                           render: (k: string) => <Tag color={followTypeColor(k)}>{followTypeLabel(k)}</Tag>,
                         },
-                        { title: "名称", dataIndex: "label", render: (v: string) => <Text strong>{v}</Text> },
-                        { title: "详情", render: (_: any, f: any) => <Text type="secondary">{followDetail(f)}</Text> },
+                        {
+                          title: "名称",
+                          dataIndex: "label",
+                          width: 240,
+                          ellipsis: true,
+                          render: (v: string) => <Text strong>{v}</Text>,
+                        },
+                        {
+                          title: "详情",
+                          render: (_: any, f: any) => (
+                            <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                              <Text type="secondary">{followDetail(f)}</Text>
+                            </div>
+                          ),
+                        },
                         {
                           title: "操作",
-                          width: 90,
+                          width: 100,
                           render: (_: any, f: any) => (
                             <Button type="link" size="small" danger onClick={async () => {
                               await unfollowResearch({ tenant, primaryKey: f.id, headers });

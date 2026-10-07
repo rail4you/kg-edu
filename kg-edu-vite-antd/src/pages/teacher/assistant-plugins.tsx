@@ -171,7 +171,7 @@ export default function AssistantPlugins() {
         <Title level={4} style={{ margin: 0 }}>AI 助教插件</Title>
       </div>
 
-      <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: 24 }}>
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
             <Card title="大模型能力开关">

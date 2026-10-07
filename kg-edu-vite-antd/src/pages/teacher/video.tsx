@@ -32,6 +32,8 @@ import {
   CheckOutlined,
   ArrowLeftOutlined,
   FundOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -57,6 +59,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import VideoAnalysisDrawer from "./components/video-analysis-drawer";
+import VideoAnalysisTasks from "./components/video-analysis-tasks";
 import { getChapter } from "@/lib/ash_rpc";
 import type {
   VideoResourceSchema,
@@ -96,7 +99,8 @@ export default function VideoManagementPage() {
   const [selectedVideo, setSelectedVideo] =
     useState<VideoResourceSchema | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState("0");
+  const [currentTab, setCurrentTab] = useState("list");
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1290,8 +1294,8 @@ export default function VideoManagementPage() {
   );
 
   const tabItems = [
-    { key: "0", label: "卡片视图" },
-    { key: "1", label: "表格视图" },
+    { key: "list", label: "视频列表" },
+    { key: "analysis", label: "AI 解析" },
   ];
 
   return (
@@ -1354,7 +1358,7 @@ export default function VideoManagementPage() {
           </div>
         )}
 
-        {!isLoading && !error && videos.length === 0 && (
+        {currentTab === "list" && !isLoading && !error && videos.length === 0 && (
           <Card style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <Space>
@@ -1376,29 +1380,52 @@ export default function VideoManagementPage() {
           </Card>
         )}
 
-        {!isLoading && !error && videos.length > 0 && (
-          <>
-            {currentTab === "0" && (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <Space>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => handleOpenCreateDialog()}
-                      style={canEdit ? undefined : { display: "none" }}
-                    >
-                      新建视频
-                    </Button>
-                  </Space>
-                </div>
-                <Row gutter={[12, 12]}>
-                  {videos.map(renderVideoCard)}
-                </Row>
-              </div>
-            )}
+        {currentTab === "analysis" && (
+          <VideoAnalysisTasks
+            videos={videos as any}
+            courseId={selectedCourseId}
+            tenant={currentTenant?.schemaName || ""}
+            headers={getAuthHeaders(user) as Record<string, string>}
+            onOpenAnalysis={(v) => openAnalysis(v as VideoResourceSchema)}
+          />
+        )}
 
-            {currentTab === "1" && (
+        {currentTab === "list" && !isLoading && !error && videos.length > 0 && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => handleOpenCreateDialog()}
+                  style={canEdit ? undefined : { display: "none" }}
+                >
+                  新建视频
+                </Button>
+              </Space>
+              <Space>
+                <Tooltip title="卡片视图">
+                  <Button
+                    type={viewMode === "card" ? "primary" : "default"}
+                    icon={<AppstoreOutlined />}
+                    onClick={() => setViewMode("card")}
+                  />
+                </Tooltip>
+                <Tooltip title="表格视图">
+                  <Button
+                    type={viewMode === "table" ? "primary" : "default"}
+                    icon={<UnorderedListOutlined />}
+                    onClick={() => setViewMode("table")}
+                  />
+                </Tooltip>
+              </Space>
+            </div>
+
+            {viewMode === "card" ? (
+              <Row gutter={[12, 12]}>
+                {videos.map(renderVideoCard)}
+              </Row>
+            ) : (
               <Card
                 bordered={false}
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
@@ -1408,19 +1435,6 @@ export default function VideoManagementPage() {
                   columns={tableColumns}
                   dataSource={videos}
                   rowKey="id"
-                  title={() => (
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Space>
-                        <Button
-                          type="primary"
-                          icon={<PlusOutlined />}
-                          onClick={() => handleOpenCreateDialog()}
-                        >
-                          新建视频
-                        </Button>
-                      </Space>
-                    </div>
-                  )}
                   pagination={{
                     showSizeChanger: true,
                     showTotal: (total) => `共 ${total} 条`,

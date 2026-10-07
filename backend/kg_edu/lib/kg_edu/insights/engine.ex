@@ -13,6 +13,21 @@ defmodule KgEdu.Insights.Engine do
 
   @datasets ["signin", "upload", "activity", "course", "knowledge", "homework", "exam", "user"]
 
+  @activity_labels %{
+    "file_view" => "文件查看",
+    "video_view" => "视频观看",
+    "exercise_submit" => "习题提交",
+    "homework_submit" => "作业提交",
+    "mm_video_view" => "微专业视频观看",
+    "mm_exercise_submit" => "微专业习题提交",
+    "mm_resource_download" => "微专业资源下载",
+    "notice" => "通知",
+    "view" => "浏览",
+    "download" => "下载"
+  }
+
+  defp action_label(type), do: Map.get(@activity_labels, to_string(type), to_string(type))
+
   def datasets, do: @datasets
 
   # ── 问答 ───────────────────────────────────────────────────────────
@@ -119,7 +134,7 @@ defmodule KgEdu.Insights.Engine do
            question: question,
            summary: activity_summary(data),
            columns: ["活动类型", "次数"],
-           rows: Enum.map(data.rows, &[&1.type, &1.count]),
+           rows: Enum.map(data.rows, &[action_label(&1.type), &1.count]),
            stats: data.stats,
            ai_insight: ai_insight("课堂活动", data.stats)
          }}
@@ -313,9 +328,26 @@ defmodule KgEdu.Insights.Engine do
     {table, chart}
   end
 
-  defp dataset_table("signin", tenant, days) do
-    data = signin_rate(tenant, days: days)
-    %{columns: ["姓名", "院系", "签到次数"], rows: Enum.map(data.rows, &%{"姓名" => &1.name, "院系" => &1.department, "签到次数" => &1.checkins})}
+  defp dataset_table("signin", tenant, _days) do
+    base = [tenant: tenant, authorize?: false]
+    courses = all_courses(tenant)
+
+    enrollments =
+      case KgEdu.Courses.CourseEnrollment.list_enrollments(base) do
+        {:ok, list} -> list
+        _ -> []
+      end
+
+    by_course = Enum.group_by(enrollments, & &1.course_id)
+
+    rows =
+      courses
+      |> Enum.map(fn c ->
+        %{"课程" => c.title || "未命名课程", "签到次数" => length(Map.get(by_course, c.id, []))}
+      end)
+      |> Enum.sort_by(& &1["签到次数"], :desc)
+
+    %{columns: ["课程", "签到次数"], rows: rows}
   end
 
   defp dataset_table("upload", tenant, days) do
@@ -345,13 +377,26 @@ defmodule KgEdu.Insights.Engine do
 
   defp dataset_table(_, tenant, days) do
     data = activity_stats(tenant, days: days)
-    %{columns: ["活动类型", "次数"], rows: Enum.map(data.rows, &%{"活动类型" => &1.type, "次数" => &1.count})}
+    %{columns: ["活动类型", "次数"], rows: Enum.map(data.rows, &%{"活动类型" => action_label(&1.type), "次数" => &1.count})}
   end
 
   defp section_text(theme, dataset, table) do
-    "本节围绕「#{theme}」分析#{dataset}数据，共 #{length(table.rows)} 条记录。" <>
+    "本节围绕「#{theme}」分析#{dataset_label(dataset)}数据，共 #{length(table.rows)} 条记录。" <>
       "详见下方统计图与数据表。"
   end
+
+  @dataset_labels %{
+    "signin" => "课程签到",
+    "upload" => "资源上传",
+    "activity" => "课堂活动",
+    "course" => "课程知识点",
+    "knowledge" => "知识点分类",
+    "homework" => "作业",
+    "exam" => "考试",
+    "user" => "用户"
+  }
+
+  defp dataset_label(dataset), do: Map.get(@dataset_labels, to_string(dataset), to_string(dataset))
 
   defp bar_chart(columns, rows) do
     if length(columns) >= 2 do

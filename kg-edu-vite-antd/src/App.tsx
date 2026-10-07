@@ -31,7 +31,6 @@ import TeacherAssistantPlugins from "./pages/teacher/assistant-plugins";
 import TeacherResearchTrack from "./pages/teacher/research-track";
 import TeacherTts from "./pages/teacher/tts";
 import StudentMyForms from "./pages/student/my-forms";
-import PortalShowcase from "./pages/portal-showcase";
 import TeacherVideo from "./pages/teacher/video";
 import TeacherSettings from "./pages/teacher/settings";
 import TeacherAiExercise from "./pages/teacher/ai-exercise";
@@ -44,7 +43,6 @@ import TeacherDiscussionSession from "./pages/teacher/discussion-session";
 import TeacherExamExercises from "./pages/teacher/exam-exercises";
 import TeacherExamGradeDetail from "./pages/teacher/exam-grade-detail";
 import TeacherActivitySummary from "./pages/teacher/activity-summary";
-import TeacherDataInsight from "./pages/teacher/data-insight";
 import TeacherBookInfo from "./pages/teacher/book-info";
 import TeacherCourseDetail from "./pages/teacher/course-detail";
 import TeacherCourseCategory from "./pages/teacher/course-category";
@@ -170,6 +168,7 @@ import AdminCourseCategories from "./pages/admin/course-categories";
 import AdminBranding from "./pages/admin/branding";
 import AdminManual from "./pages/admin/manual";
 import AdminSmartPortal from "./pages/admin/smart-portal";
+import AdminDataInsight from "./pages/admin/data-insight";
 
 // 旧路由重定向到新的学生管理页面
 function RedirectToStudentMgmt() {
@@ -233,7 +232,6 @@ export default function App() {
       <Route path="/about" element={<TemplatePage slug="about" />} />
       <Route path="/resources" element={<TemplatePage slug="resources" />} />
       <Route path="/demo" element={<TemplatePage slug="demo" />} />
-      <Route path="/portal-showcase" element={<PortalShowcase />} />
       <Route path="/textbook" element={<TemplatePage slug="textbook" />} />
       <Route path="/partners" element={<TemplatePage slug="partners" />} />
       {/* 动态模板页（超级管理员新增的页面，访问 /page/<slug>） */}
@@ -315,14 +313,12 @@ export default function App() {
         <Route path="assistant-plugins" element={<TeacherAssistantPlugins />} />
         <Route path="research-track" element={<TeacherResearchTrack />} />
         <Route path="tts" element={<TeacherTts />} />
-        <Route path="portal" element={<PortalShowcase embedded />} />
         <Route path="course-evaluation" element={<TeacherCourseEvaluation />} />
         <Route path="discussion-session" element={<TeacherDiscussionSession />} />
         <Route path="exam-exercises" element={<TeacherExamExercises />} />
         <Route path="exam-exercises/:examId" element={<TeacherExamExercises />} />
         <Route path="exam-grade-detail/:studentExamId" element={<TeacherExamGradeDetail />} />
         <Route path="activity-summary" element={<TeacherActivitySummary />} />
-        <Route path="data-insight" element={<TeacherDataInsight />} />
         <Route path="book-info" element={<TeacherBookInfo />} />
         <Route path="course/:courseId" element={<TeacherCourseDetail />} />
         <Route path="course-category" element={<TeacherCourseCategory />} />
@@ -473,6 +469,7 @@ export default function App() {
         <Route path="course-categories" element={<AdminCourseCategories />} />
         <Route path="branding" element={<AdminBranding />} />
         <Route path="smart-portal" element={<AdminSmartPortal />} />
+        <Route path="data-insight" element={<AdminDataInsight />} />
         <Route path="manual" element={<AdminManual />} />
       </Route>
 
