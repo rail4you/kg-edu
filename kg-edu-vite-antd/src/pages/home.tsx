@@ -34,10 +34,10 @@ const { Text, Title } = Typography;
 
 /** 学历层级入口（key 与课程页 level 参数一致） */
 const LEVELS = [
-  { key: "graduate", icon: "◈", sub: "深入研究 · 拓展前沿" },
-  { key: "undergraduate", icon: "❖", sub: "夯实基础 · 探索专业" },
-  { key: "higher_vocational", icon: "⬢", sub: "技能进阶 · 实践应用" },
-  { key: "secondary_vocational", icon: "⬣", sub: "兴趣启蒙 · 职业起步" },
+  { key: "graduate", sub: "深入研究 · 拓展前沿" },
+  { key: "undergraduate", sub: "夯实基础 · 探索专业" },
+  { key: "higher_vocational", sub: "技能进阶 · 实践应用" },
+  { key: "secondary_vocational", sub: "兴趣启蒙 · 职业起步" },
 ];
 
 /** 品牌 Logo + 标题（使用动态配置） */
@@ -417,7 +417,6 @@ export default function HomePage() {
                   return (
                     <div key={l.key} className="ed-level-item">
                       <a onClick={() => navigate(`/courses?level=${l.key}`)}>
-                        <span className="ed-level-icon">{l.icon}</span>
                         <span className="ed-level-top">{levelTitleMap[l.key]?.title || panel?.config.title || l.key} ↗</span>
                         <small>{l.sub}</small>
                       </a>
@@ -479,7 +478,7 @@ export default function HomePage() {
                       <div className="ed-course__meta"><span>{c.standardSubject.name}</span><small>智慧课程</small></div>
                       <h3><a onClick={() => handleCourseClick(c)}>{c.title}</a></h3>
                       <p title={c.description || c.title}>{c.description && c.description !== c.title ? c.description : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}</p>
-                      <div className="ed-course__footer"><span>{c.teacherName || "教学团队"}</span><span>了解课程 →</span></div>
+                      <div className="ed-course__footer"><span>{c.teacherName || "教学团队"}</span><a onClick={() => handleCourseClick(c)}>了解课程 →</a></div>
                     </div>
                   </article>
                 ))}

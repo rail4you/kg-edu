@@ -44,6 +44,7 @@ import {
   listLinks,
   listDiscussionSessions,
   listQuestions,
+  myCourses,
 } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -1014,6 +1015,29 @@ export default function StudentFront() {
     enabled: !!urlCourseId,
   });
 
+  // 选课由教师端控制，学生不能自主选课；这里只判断当前学生是否已选该课程
+  const { data: enrollmentResult, isLoading: enrollmentLoading } = useQuery({
+    queryKey: ["front-course-enrollment", tenantToUse, urlCourseId, user?.id],
+    queryFn: async () => {
+      if (!urlCourseId || !user) return { enrolled: false };
+      const result = await myCourses({
+        tenant: tenantToUse,
+        fields: ["id"],
+        headers: getHeaders(user),
+      });
+      if (result.success) {
+        const courses = extractArrayData(result) as { id?: string }[];
+        return { enrolled: courses.some((c) => c?.id === urlCourseId) };
+      }
+      return { enrolled: false };
+    },
+    enabled: !!tenantToUse && !!urlCourseId && !!user,
+  });
+
+  const isEnrolled = enrollmentResult?.enrolled === true;
+  // 判断过程中（含未登录）先不渲染按钮，避免未选课时闪现「学习课程」
+  const enrollmentChecking = !!user && enrollmentLoading;
+
   const { data: courseInfoData } = useQuery({
     queryKey: ["course-info", urlCourseId, tenantToUse],
     queryFn: async () => {
@@ -1911,23 +1935,29 @@ export default function StudentFront() {
                       {introExpanded ? "收起" : "展开全部"}
                     </Button>
                   )}
-                  <div className="front-dashboard-intro-card__actions">
-                    <Button
-                      type={user ? "primary" : "default"}
-                      icon={<RightOutlined />}
-                      onClick={requireAuth(() => navigate(linkedDashboardRoute("/dashboard/overview")))}
-                      className="front-dashboard-primary-button"
-                    >
-                      {user ? "学习课程" : "登录后选课"}
-                    </Button>
-                    <Button
-                      icon={<ApartmentOutlined />}
-                      onClick={requireAuth(() => navigate(linkedDashboardRoute("/dashboard/graph")))}
-                      className="front-dashboard-secondary-button"
-                    >
-                      查看知识图谱
-                    </Button>
-                  </div>
+                  {enrollmentChecking ? (
+                    <div className="front-dashboard-intro-card__actions">
+                      <Spin size="small" />
+                    </div>
+                  ) : isEnrolled ? (
+                    <div className="front-dashboard-intro-card__actions">
+                      <Button
+                        type="primary"
+                        icon={<RightOutlined />}
+                        onClick={() => navigate(linkedDashboardRoute("/dashboard/overview"))}
+                        className="front-dashboard-primary-button"
+                      >
+                        学习课程
+                      </Button>
+                      <Button
+                        icon={<ApartmentOutlined />}
+                        onClick={() => navigate(linkedDashboardRoute("/dashboard/graph"))}
+                        className="front-dashboard-secondary-button"
+                      >
+                        查看知识图谱
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="front-dashboard-blocks-grid">

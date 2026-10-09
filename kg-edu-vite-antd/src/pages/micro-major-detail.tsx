@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Avatar,
@@ -9,7 +9,6 @@ import {
   Empty,
   Grid,
   Layout,
-  message,
   Row,
   Skeleton,
   Space,
@@ -43,7 +42,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileFullMenu } from "@/components/layout/mobile-full-menu";
-import { listMicroMajorEnrollments, applyToMicroMajor, myCertificates } from "@/lib/ash_rpc";
+import { listMicroMajorEnrollments, myCertificates } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useBranding } from "@/hooks/use-branding";
@@ -56,6 +55,7 @@ import {
 } from "@/hooks/use-micro-major-catalog";
 import "@/styles/home-portal-theme.css";
 import "@/styles/portal-editorial.css";
+import "./micro-major-detail.css";
 
 const { Header, Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -108,7 +108,6 @@ export default function MicroMajorDetailPage() {
   const navItems = usePortalNavItems();
 
   usePageTitle();
-  const queryClient = useQueryClient();
   const effectiveTenant = tenant || currentTenant || "";
 
   const { major, courses, isLoading: majorLoading } = useMicroMajorDetail(effectiveTenant, id || "");
@@ -172,50 +171,7 @@ export default function MicroMajorDetailPage() {
     );
   }, [courses]);
 
-  // ── 报名 / 重新报名 ──
-  const applyMutation = useMutation({
-    mutationFn: async () => {
-      if (!user || !effectiveTenant || !id) throw new Error("unauth");
-      const result = await applyToMicroMajor({
-        tenant: effectiveTenant,
-        input: { microMajorId: id },
-        fields: ["id", "status"],
-        headers: studentHeaders,
-      });
-      if (!result.success) throw new Error((result as any).errors?.[0]?.message || "报名失败");
-      return result.data as { id: string; status: string };
-    },
-    // 在 API 调用前，先乐观更新缓存
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ["detail-check-enrolled"] });
-      const previous = queryClient.getQueryData(["detail-check-enrolled", effectiveTenant, user?.id, id]);
-      // 乐观写入 pending 状态
-      queryClient.setQueryData(
-        ["detail-check-enrolled", effectiveTenant, user?.id, id],
-        [{ id: "optimistic", microMajorId: id!, status: "pending", rejectedReason: null }]
-      );
-      return { previous };
-    },
-    onError: (_err, _vars, context) => {
-      // 失败时回滚
-      if (context?.previous !== undefined) {
-        queryClient.setQueryData(["detail-check-enrolled", effectiveTenant, user?.id, id], context.previous);
-      }
-      message.error("报名失败，请稍后重试");
-    },
-    onSuccess: () => {
-      message.success("报名成功，等待教师审核");
-    },
-    onSettled: () => {
-      // 后台同步最新数据
-      queryClient.invalidateQueries({ queryKey: ["detail-check-enrolled"] });
-    },
-  });
-
-  const handleApply = () => {
-    if (!user || !effectiveTenant) { navigate("/login"); return; }
-    applyMutation.mutate();
-  };
+  // 报名由教师端分配，学生端不提供报名入口
 
   // Navigate to micro major course learning page (for enrolled students)
   const handleMMCourseClick = (course: MicroMajorCourse) => {
@@ -291,20 +247,8 @@ export default function MicroMajorDetailPage() {
             <Tag color="warning">审核中</Tag>
           ) : isRejected ? (
             <Tag color="error">已拒绝</Tag>
-          ) : !user ? (
-            <Button type="primary" size="small" onClick={() => navigate("/login")}>
-              登录后报名
-            </Button>
           ) : (
-            <Button
-              type="primary"
-              size="small"
-              icon={<CheckCircleFilled />}
-              onClick={handleApply}
-              loading={applyMutation.isPending}
-            >
-              报名申请
-            </Button>
+            <Text type="secondary">—</Text>
           )}
         </Space>
       ),
@@ -479,84 +423,47 @@ export default function MicroMajorDetailPage() {
       />
 
       <Content>
-        <div className="ed-container" style={{ paddingTop: 32 }}>
-        {/* 原型风格 Hero：深色介绍 + 白色行动卡，数据为真实接口 */}
-        <section className="major-detail-hero theme-blue">
-          <div>
-            <div className="major-code">{major.learningCycle || "MICRO MAJOR"}</div>
-            <h1>{major.name}<br /><span style={{ fontWeight: 400 }}>微专业</span></h1>
-            <p>{major.intro || major.projectBackground || "围绕产业需求与岗位能力构建课程组合，帮助学习者系统完成专业能力提升。"}</p>
-            <div className="major-detail-tags"><span>{major.learningCycle || "-"}</span><span>{courses.length} 门课程</span><span>{totals.credit || "-"} 学分</span></div>
-          </div>
-          <div className="major-enrollment">
-            <small>循序渐进 · 从理解到应用</small>
-            <h2>找到你的下一步</h2>
-            <p style={{ color: "#62738a", fontSize: 13 }}>了解课程安排与适合人群，再开始这一段学习。</p>
-            {!user ? (
-              <button className="primary" onClick={() => navigate("/login")}>登录后报名 →</button>
-            ) : isEnrolled ? (
-              <button className="primary" onClick={() => courses[0] && handleMMCourseClick(courses[0])}>进入学习空间 →</button>
-            ) : (
-              <button className="primary" onClick={handleApply}>报名申请 →</button>
-            )}
-            <a href="#courses" style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 12 }}>先看看具体课程 ↓</a>
-          </div>
+        <div className="ed-container mm-detail-top">
+        <button type="button" className="mm-back" onClick={() => navigate("/micro-majors")}>
+          <ArrowLeftOutlined /> 返回微专业
+        </button>
+        {/* 首页编辑风 Hero（去掉右侧报名卡） */}
+        <section className="mm-hero theme-blue">
+          <div className="mm-hero__code">{major.learningCycle || "MICRO MAJOR"}</div>
+          <h1>{major.name}<span>微专业</span></h1>
+          <p>{major.intro || major.projectBackground || "围绕产业需求与岗位能力构建课程组合，帮助学习者系统完成专业能力提升。"}</p>
+          <div className="mm-hero__tags"><span>{major.learningCycle || "-"}</span><span>{courses.length} 门课程</span><span>{totals.credit || "-"} 学分</span></div>
         </section>
-        <nav className="major-anchor-nav"><a href="#overview">专业介绍</a><a href="#courses">课程体系 <span>{courses.length}</span></a><a href="#teachers">教师团队</a></nav>
 
-        {/* Info Strip */}
-        <section className="mm-detail-info-strip">
-          <div className="mm-detail-info-strip__inner">
-            <div className="mm-detail-info-item">
-              <div className="mm-detail-info-item__icon"><ScheduleOutlined /></div>
-              <div>
-                <span className="mm-detail-info-item__label">学习周期</span>
-                <span className="mm-detail-info-item__value">{major.learningCycle || "-"}</span>
-              </div>
-            </div>
-            <div className="mm-detail-info-item">
-              <div className="mm-detail-info-item__icon"><TrophyOutlined /></div>
-              <div>
-                <span className="mm-detail-info-item__label">考核方式</span>
-                <span className="mm-detail-info-item__value">{major.assessmentMethod || "-"}</span>
-              </div>
-            </div>
-            <div className="mm-detail-info-item">
-              <div className="mm-detail-info-item__icon"><StarOutlined /></div>
-              <div>
-                <span className="mm-detail-info-item__label">学费标准</span>
-                <span className="mm-detail-info-item__value">{major.tuitionFee || "-"}</span>
-              </div>
-            </div>
-
-            {/* 报名/状态按钮 */}
-            <div className="mm-detail-info-item" style={{ justifyContent: "center" }}>
-              {!user ? (
-                <Button type="primary" size="middle" onClick={() => navigate("/login")}>
-                  登录后报名
-                </Button>
-              ) : isEnrolled ? (
-                <Tag icon={<CheckCircleFilled />} color="success" style={{ padding: "6px 16px", borderRadius: 6, fontSize: 14 }}>
-                  学习中
-                </Tag>
-              ) : isCompleted ? (
-                <Tag icon={<TrophyOutlined />} color="blue" style={{ padding: "6px 16px", borderRadius: 6, fontSize: 14 }}>
-                  已结业
-                </Tag>
-              ) : isPending ? (
-                <Tag icon={<ClockCircleFilled />} color="warning" style={{ padding: "6px 16px", borderRadius: 6, fontSize: 14 }}>
-                  审核中
-                </Tag>
-              ) : isRejected ? (
-                <Tag icon={<CloseCircleFilled />} color="error" style={{ padding: "6px 16px", borderRadius: 6, fontSize: 14 }}>
-                  已拒绝{myEnrollment?.rejectedReason ? `：${myEnrollment.rejectedReason}` : ""}
-                </Tag>
-              ) : (
-                <Button type="primary" size="middle" icon={<CheckCircleFilled />} onClick={handleApply}>
-                  报名申请
-                </Button>
-              )}
-            </div>
+        {/* 关键信息 + 报名/状态 */}
+        <section className="mm-facts">
+          <div className="mm-fact">
+            <span className="mm-fact__label">学习周期</span>
+            <span className="mm-fact__value">{major.learningCycle || "-"}</span>
+          </div>
+          <div className="mm-fact">
+            <span className="mm-fact__label">考核方式</span>
+            <span className="mm-fact__value">{major.assessmentMethod || "-"}</span>
+          </div>
+          <div className="mm-fact">
+            <span className="mm-fact__label">学费标准</span>
+            <span className="mm-fact__value">{major.tuitionFee || "-"}</span>
+          </div>
+          <div className="mm-fact mm-fact--action">
+            <span className="mm-fact__label">报名状态</span>
+            {isEnrolled ? (
+              <Tag icon={<CheckCircleFilled />} color="success" className="mm-status-tag">学习中</Tag>
+            ) : isCompleted ? (
+              <Tag icon={<TrophyOutlined />} color="blue" className="mm-status-tag">已结业</Tag>
+            ) : isPending ? (
+              <Tag icon={<ClockCircleFilled />} color="warning" className="mm-status-tag">审核中</Tag>
+            ) : isRejected ? (
+              <Tag icon={<CloseCircleFilled />} color="error" className="mm-status-tag">
+                已拒绝{myEnrollment?.rejectedReason ? `：${myEnrollment.rejectedReason}` : ""}
+              </Tag>
+            ) : (
+              <span className="mm-fact__value mm-fact__value--muted">由教师分配</span>
+            )}
           </div>
         </section>
 
