@@ -30,8 +30,6 @@ import {
   UpOutlined,
   CameraOutlined,
   CloseOutlined,
-  FileTextOutlined,
-  AppstoreOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useNavigate } from "react-router-dom";
@@ -240,7 +238,7 @@ export function UserMenu({ role, variant = "default", compact }: UserMenuProps) 
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            background: `linear-gradient(135deg, ${themeColors.navBg} 0%, #1E3A8A 100%)`,
+            background: themeColors.primary,
             position: "relative",
           }}
         >
@@ -441,32 +439,6 @@ export function UserMenu({ role, variant = "default", compact }: UserMenuProps) 
 
         <div style={{ padding: "12px 20px" }}>
           <Space direction="vertical" style={{ width: "100%" }} size={8}>
-            {role === "student" && (
-              <Button
-                block
-                icon={<AppstoreOutlined />}
-                onClick={() => {
-                  setDrawerOpen(false);
-                  navigate("/dashboard/smart-portal");
-                }}
-                style={{ height: 44, textAlign: "left" }}
-              >
-                智能门户
-              </Button>
-            )}
-            {role === "student" && (
-              <Button
-                block
-                icon={<FileTextOutlined />}
-                onClick={() => {
-                  setDrawerOpen(false);
-                  navigate("/dashboard/data-forms");
-                }}
-                style={{ height: 44, textAlign: "left" }}
-              >
-                数据表单
-              </Button>
-            )}
             <Button
               block
               icon={<LockOutlined />}
