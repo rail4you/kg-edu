@@ -37,6 +37,7 @@ import {
   listCourseAssignments,
 } from "@/lib/ash_rpc";
 import { themeColors as colors } from "@/styles/theme";
+import { PageHead, ProtoTag } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -569,25 +570,21 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
   const renderListView = () => (
     <div>
       {/* 当前课程(只读,基于当前课程上下文) */}
-      <div style={{
-        background: "#fff",
-        borderRadius: isMobile ? 10 : 12,
-        padding: isMobile ? "10px 12px" : "14px 18px",
-        marginBottom: isMobile ? 10 : 16,
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        alignItems: isMobile ? "stretch" : "center",
-        gap: 8,
-        border: "1px solid rgba(37,115,230,0.12)",
+      <div className="pu-tags" style={{
+        background: "#eef3fb",
+        border: "1px solid #e4ebf4",
+        borderRadius: 14,
+        padding: isMobile ? "12px 14px" : "14px 18px",
+        marginBottom: isMobile ? 14 : 20,
+        alignItems: "center",
+        gap: 10,
       }}>
         <Text style={{ fontSize: 13, color: colors.textSecondary, whiteSpace: "nowrap" }}>
           <TeamOutlined style={{ marginRight: 6, color: colors.primary }} />
           当前课程
         </Text>
         {activeCourseId && currentCourseTitle ? (
-          <Tag color="processing" style={{ marginLeft: isMobile ? 0 : 8, alignSelf: isMobile ? "flex-start" : "center" }}>
-            {currentCourseTitle}
-          </Tag>
+          <ProtoTag tone="blue">{currentCourseTitle}</ProtoTag>
         ) : (
           <Text type="secondary" style={{ fontStyle: "italic" }}>
             未处于课程上下文，请在课程页面中发起邮件问答
@@ -596,45 +593,28 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
       </div>
 
       {/* 紧凑统计卡片 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 6 : 12, marginBottom: isMobile ? 12 : 32 }}>
+      <div className="pu-grid pu-grid--stats" style={{ gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, minmax(0,1fr))" }}>
         {[
-          { label: '已发送', val: sentMessagesResult?.length || 0, icon: <SendOutlined />, color: colors.primary },
-          { label: '可用教师', val: emailConfigsResult?.length || 0, icon: <TeamOutlined />, color: '#10B981' },
-          { label: '发送成功', val: successCount, icon: <CheckCircleOutlined />, color: colors.primary },
-          { label: '待回复', val: pendingCount, icon: <ClockCircleOutlined />, color: '#D16900' },
+          { label: '已发送', val: sentMessagesResult?.length || 0, icon: <SendOutlined />, color: colors.primary, desc: '我发出的问题' },
+          { label: '可用教师', val: emailConfigsResult?.length || 0, icon: <TeamOutlined />, color: '#10B981', desc: '可提问的教师' },
+          { label: '发送成功', val: successCount, icon: <CheckCircleOutlined />, color: colors.primary, desc: '已成功送达' },
+          { label: '待回复', val: pendingCount, icon: <ClockCircleOutlined />, color: '#D16900', desc: '等待教师回复' },
         ].map((item, i) => (
-          <div key={i} style={{
-            background: '#fff',
-            borderRadius: isMobile ? 10 : 12, padding: isMobile ? '8px 10px' : 20,
-            display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            border: `1px solid ${['rgba(37,115,230,0.1)', 'rgba(16,185,129,0.1)', 'rgba(37,115,230,0.1)', 'rgba(209,105,0,0.1)'][i]}`,
-          }}>
-            <div style={{
-              width: isMobile ? 32 : 40, height: isMobile ? 32 : 40, borderRadius: isMobile ? 8 : 10,
-              background: '#f5f5f5',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: isMobile ? 14 : 18, color: item.color } })}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: isMobile ? 20 : 32, fontWeight: 700, lineHeight: 1.15, color: colors.textPrimary }}>
-                {item.val}
-              </div>
-              <div style={{ fontSize: isMobile ? 10 : 12, color: colors.textSecondary }}>
-                {item.label}
-              </div>
-            </div>
+          <div key={i} className="pu-stat" style={{ padding: isMobile ? '14px 16px' : undefined }}>
+            <span className="pu-stat__icon" style={{ color: item.color, background: `${item.color}12` }}>
+              {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 15 } })}
+            </span>
+            <div className="pu-stat__label">{item.label}</div>
+            <div className="pu-stat__num">{item.val}</div>
+            <div className="pu-stat__desc">{item.desc}</div>
           </div>
         ))}
       </div>
 
       {/* 操作栏 */}
-      <div style={{
-        display: 'flex', flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center',
-        gap: isMobile ? 8 : 12, marginBottom: isMobile ? 12 : 20,
+      <div className="pu-filters" style={{
+        justifyContent: "space-between",
+        alignItems: isMobile ? "stretch" : "center",
       }}>
         <Button
           type="primary"
@@ -645,7 +625,7 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
         >
           发送新问题
         </Button>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: "auto" }}>
           <Select
             placeholder="筛选状态"
             style={{ width: isMobile ? '100%' : 120 }}
@@ -679,10 +659,7 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
           <Spin />
         </div>
       ) : !sentMessagesResult || sentMessagesResult.length === 0 ? (
-        <div style={{
-          background: "#FFFFFF", borderRadius: isMobile ? 10 : 16, padding: isMobile ? 24 : 64,
-          textAlign: "center", border: "1px solid #E1E3E4",
-        }}>
+        <div className="pu-card" style={{ padding: isMobile ? 24 : 64, textAlign: "center" }}>
           <MailOutlined style={{ fontSize: isMobile ? 32 : 48, color: colors.textSecondary, marginBottom: isMobile ? 10 : 16 }} />
           <p style={{ fontSize: isMobile ? 13 : 15, color: colors.textSecondary, marginBottom: isMobile ? 10 : 16 }}>暂无已发送的问题</p>
           <Button
@@ -696,10 +673,7 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
           </Button>
         </div>
       ) : filteredMessages.length === 0 ? (
-        <div style={{
-          background: "#FFFFFF", borderRadius: 16, padding: 48,
-          textAlign: "center", border: "1px solid #E1E3E4",
-        }}>
+        <div className="pu-card" style={{ padding: 48, textAlign: "center" }}>
           <p style={{ color: colors.textSecondary }}>没有符合筛选条件的数据</p>
           <Button type="link" onClick={() => { setStatusFilter(null); setDateRange([null, null]); }}>
             清除筛选
@@ -723,10 +697,10 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
                 key={msg.id}
                 style={{
                   background: "#FFFFFF",
-                  padding: isMobile ? 12 : 20,
-                  borderRadius: isMobile ? 10 : 16,
-                  border: isReply ? `2px solid ${colors.primary}` : "1px solid #E1E3E4",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  padding: isMobile ? 16 : 20,
+                  borderRadius: 14,
+                  border: isReply ? `1px solid ${colors.primary}55` : "1px solid var(--pu-line)",
+                  borderLeft: isReply ? `3px solid ${colors.primary}` : undefined,
                   transition: "box-shadow 0.2s",
                   marginLeft: isReply ? (isMobile ? 8 : 32) : 0,
                 }}
@@ -817,27 +791,18 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
         >
           返回问题列表
         </Button>
-        <h1 style={{
-          fontSize: 28, fontWeight: 800,
-          fontFamily: "'Manrope', sans-serif",
-          color: colors.textPrimary, margin: 0, marginBottom: 4,
-        }}>
-          发送新问题
-        </h1>
-        <p style={{ fontSize: 14, color: colors.textSecondary, margin: 0 }}>
-          填写以下信息向教师发送问题
-        </p>
-        {activeCourseId && currentCourseTitle && (
-          <div style={{ marginTop: 10 }}>
-            <Tag color="processing">所属课程：{currentCourseTitle}</Tag>
-          </div>
-        )}
+        <PageHead
+          title="发送新问题"
+          description="填写以下信息向教师发送问题"
+          actions={
+            activeCourseId && currentCourseTitle ? (
+              <ProtoTag tone="blue">所属课程 · {currentCourseTitle}</ProtoTag>
+            ) : undefined
+          }
+        />
       </div>
 
-      <div style={{
-        background: "#FFFFFF", borderRadius: 16,
-        padding: 28, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-      }}>
+      <div className="pu-card" style={{ padding: isMobile ? 18 : 28 }}>
         <Form
           form={form}
           layout="vertical"
@@ -914,8 +879,8 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
   );
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: colors.background }}>
-      <div style={{ flex: 1, padding: isMobile ? "12px" : "24px 32px", overflow: "auto" }}>
+    <div className="pu-page" style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, overflow: "auto" }}>
         {viewMode === "list" ? renderListView() : renderComposeView()}
       </div>
     </div>

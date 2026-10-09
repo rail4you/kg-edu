@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { App, Button, Card, Empty, List, Space, Tag, Typography } from "antd";
+import { App, Button, Empty, List, Space, Tag, Typography } from "antd";
 import { ReloadOutlined, LoginOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
@@ -10,8 +10,9 @@ import {
   type PracticeSession,
 } from "@/lib/practice-session";
 import PracticeSessionRoom from "@/components/practice/PracticeSessionRoom";
+import { PageHead, ProtoCard, ProtoTag } from "@/components/proto";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 export default function StudentAiQa() {
   const { message } = App.useApp();
@@ -56,17 +57,18 @@ export default function StudentAiQa() {
   };
 
   return (
-    <div style={{ padding: "16px 0" }}>
-      <div style={{ marginBottom: 12 }}>
-        <Title level={4} style={{ margin: 0 }}>
-          互动故事
-        </Title>
-        <Text type="secondary" style={{ fontSize: 13 }}>
-          加入老师发起的互动故事，与老师一起推进剧情；评分后可查看分数与报告
-        </Text>
-      </div>
+    <div className="pu-page">
+      <PageHead
+        title="互动故事"
+        description="加入老师发起的互动故事，与老师一起推进剧情；评分后可查看分数与报告。"
+        actions={
+          <Button size="small" icon={<ReloadOutlined />} onClick={load} loading={loading}>
+            刷新
+          </Button>
+        }
+      />
 
-      <Card>
+      <ProtoCard>
         {activeToken ? (
           <PracticeSessionRoom
             token={activeToken}
@@ -81,11 +83,9 @@ export default function StudentAiQa() {
           />
         ) : (
           <>
-            <Space style={{ marginBottom: 12 }}>
+            <Space style={{ marginBottom: 14 }}>
               <Text strong>可加入的互动故事</Text>
-              <Button size="small" icon={<ReloadOutlined />} onClick={load} loading={loading}>
-                刷新
-              </Button>
+              <ProtoTag tone="gray">{sessions.length} 个</ProtoTag>
             </Space>
             {sessions.length === 0 ? (
               <Empty description="当前租户暂无进行中的互动故事" />
@@ -126,7 +126,7 @@ export default function StudentAiQa() {
             )}
           </>
         )}
-      </Card>
+      </ProtoCard>
     </div>
   );
 }

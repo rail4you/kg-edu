@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Col, Empty, Modal, Progress, Row, Spin, Space, Tag, Typography } from "antd";
+import { Button, Card, Col, Empty, Modal, Progress, Row, Spin, Tag, Typography } from "antd";
 import {
-  ApartmentOutlined,
   ClockCircleOutlined,
   RightOutlined,
   CheckCircleFilled,
@@ -20,6 +19,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { myMicroMajorEnrollments, myApplications, myCertificates, getTemplateByMicroMajor } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
+import { PageHead } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -76,6 +76,10 @@ export default function StudentMicroMajors() {
   const navigate = useNavigate();
   const { user, tenant } = useAuth();
   const headers = getAuthHeaders(user) as Record<string, string>;
+
+  // 证书预览
+  const [certPreviewOpen, setCertPreviewOpen] = useState(false);
+  const [previewCert, setPreviewCert] = useState<StudentCertificate | null>(null);
 
   // 已分配/已批准的微专业
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery({
@@ -310,25 +314,22 @@ export default function StudentMicroMajors() {
   }
 
   return (
-    <div style={{ padding: "24px 0" }}>
+    <div className="pu-page">
       {/* Header */}
-      <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <Title level={3} style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <ApartmentOutlined style={{ color: "#722ed1" }} />
-            我的微专业
-          </Title>
-          <Text type="secondary">共 {mergedEnrollments.length} 个微专业</Text>
-        </div>
-        <Space>
-          <Button icon={<PlusOutlined />} onClick={() => navigate("/micro-majors")}>
-            报名微专业
-          </Button>
-          <Button icon={<HistoryOutlined />} onClick={() => navigate("/student/mm-timeline")}>
-            学习动态
-          </Button>
-        </Space>
-      </div>
+      <PageHead
+        title="我的微专业"
+        description="查看已报名的微专业学习进度与结业证书。"
+        actions={
+          <>
+            <Button icon={<HistoryOutlined />} onClick={() => navigate("/student/mm-timeline")}>
+              学习动态
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/micro-majors")}>
+              报名微专业
+            </Button>
+          </>
+        }
+      />
 
       {/* Card Grid */}
       <Row gutter={[24, 24]}>
@@ -345,17 +346,11 @@ export default function StudentMicroMajors() {
                   navigate(`/micro-majors/${tenant}/${mm?.id || enr.microMajorId}`);
                 }}
                 style={{
-                  borderRadius: 12,
+                  borderRadius: 14,
                   overflow: "hidden",
                   height: "100%",
-                  border: "1px solid #f0f0f0",
+                  border: "1px solid var(--pu-line)",
                   opacity: enr.status === "rejected" ? 0.75 : 1,
-                }}
-                style={{
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  height: "100%",
-                  border: "1px solid #f0f0f0",
                 }}
                 cover={
                   <div

@@ -9,6 +9,7 @@ import { getAuthHeaders } from '@/lib/auth';
 import { getCurrentTenant } from '@/lib/tenant';
 import { myCourses, getExamsByCourse, listCourses, getStudentExamsByStudent } from '@/lib/ash_rpc';
 import { themeColors as colors } from "@/styles/theme";
+import { PageHead } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -357,51 +358,37 @@ export default function ExamCourses() {
     console.log('Student exams:', Array.from(studentExamMap.entries()));
 
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: colors.background }}>
-        <div style={{ flexGrow: 1, overflow: 'auto', padding: isMobile ? '12px' : '24px 32px' }}>
+      <div className="pu-page" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <PageHead
+          title="考试系统"
+          description={`${course.title} 的全部考试，可在此查看考试时间、时长与成绩。`}
+        />
+        <div style={{ flexGrow: 1, overflow: 'auto' }}>
           {/* 紧凑统计卡片 */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr', gap: isMobile ? 6 : 16, marginBottom: isMobile ? 8 : 20 }}>
+          <div className="pu-grid pu-grid--stats" style={{ gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0,1fr))' }}>
             {[
               { label: '考试系统', val: exams.length, icon: <ScheduleOutlined />, color: colors.primary, sub: `已完成 ${completedCount} · 进行中 ${exams.filter(e => getStudentExamStatus(e).status === 'in_progress').length}` },
-              { label: '可用考试', val: exams.length, icon: <CalendarOutlined />, color: colors.primary, sub: '' },
-              { label: '已完成', val: completedCount, icon: <CheckCircleOutlined />, color: '#10B981', sub: '' },
-              { label: '未完成', val: exams.length - completedCount, icon: <ClockCircleOutlined />, color: '#D16900', sub: '' },
+              { label: '可用考试', val: exams.length, icon: <CalendarOutlined />, color: colors.primary, sub: '当前课程发布的考试' },
+              { label: '已完成', val: completedCount, icon: <CheckCircleOutlined />, color: '#10B981', sub: '已提交或已批改' },
+              { label: '未完成', val: exams.length - completedCount, icon: <ClockCircleOutlined />, color: '#D16900', sub: '待参加的考试' },
             ].map((item, i) => (
-              <div key={i} style={{
-                background: i === 0 ? 'rgba(37,115,230,0.04)' : '#fff',
-                borderRadius: isMobile ? 10 : 12,
-                padding: isMobile ? '8px 10px' : 20,
-                display: 'flex',
-                alignItems: 'center',
-                gap: isMobile ? 8 : 14,
-                boxShadow: i === 0 ? '0 1px 4px rgba(37,115,230,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
-                border: i === 0 ? '1px solid rgba(37,115,230,0.08)' : 'none',
-              }}>
-                <div style={{
-                  width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? 10 : 14,
-                  background: i === 0 ? `linear-gradient(135deg, ${colors.primary}18 0%, ${colors.primary}08 100%)` : '#f5f5f5',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: isMobile ? 16 : 22, color: item.color } })}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: isMobile ? 20 : 32, fontWeight: 700, lineHeight: 1.15, color: colors.textPrimary }}>
-                    {item.val}
-                  </div>
-                  <div style={{ fontSize: isMobile ? 10 : 12, color: colors.textSecondary }}>
-                    {item.label}
-                  </div>
-                </div>
+              <div
+                key={i}
+                className="pu-stat"
+                style={{ padding: isMobile ? '14px 16px' : undefined }}
+              >
+                <span className="pu-stat__icon" style={{ color: item.color, background: `${item.color}12` }}>
+                  {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 15 } })}
+                </span>
+                <div className="pu-stat__label">{item.label}</div>
+                <div className="pu-stat__num">{item.val}</div>
+                {item.sub ? <div className="pu-stat__desc">{item.sub}</div> : null}
               </div>
             ))}
           </div>
 
           {/* 考试列表 */}
-          <div style={{
-            background: '#FFFFFF', borderRadius: 12,
-            padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          }}>
+          <div className="pu-card" style={{ padding: isMobile ? 14 : '20px 24px' }}>
             {/* 标题 + 过滤器 */}
             <div style={{
               display: 'flex', flexDirection: isMobile ? 'column' : 'row',
@@ -410,8 +397,7 @@ export default function ExamCourses() {
             }}>
               <div>
                 <h2 style={{
-                  fontSize: isMobile ? 16 : 18, fontWeight: 700,
-                  fontFamily: "'Manrope', sans-serif",
+                  fontSize: 18, fontWeight: 650,
                   color: colors.textPrimary, margin: 0,
                 }}>
                   考试列表
@@ -472,9 +458,8 @@ export default function ExamCourses() {
                       hoverable
                       style={{ 
                         height: '100%', 
-                        borderRadius: 8,
-                        border: '1px solid #e8e8e8',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                        borderRadius: 14,
+                        border: '1px solid var(--pu-line)',
                       }}
                       styles={{ body: { padding: 0 } }}
                     >

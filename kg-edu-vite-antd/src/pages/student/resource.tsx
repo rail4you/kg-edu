@@ -46,6 +46,7 @@ import {
   listKnowledges,
 } from "@/lib/ash_rpc";
 import FilePreview from "@/components/FilePreview";
+import { PageHead } from "@/components/proto";
 import { useAuth } from "@/auth/auth-context";
 import { useSearchParams } from "react-router-dom";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -869,16 +870,14 @@ export default function ResourcePage() {
   const totalCount = allResources.length;
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: colors.background }}>
-      <div style={{ flexGrow: 1, overflow: "auto", padding: isMobile ? "12px" : "24px 32px" }}>
+    <div className="pu-page" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <PageHead
+        title="教学资源"
+        description="当前课程的全部学习资源，按类型筛选后可直接预览或下载。"
+      />
+      <div style={{ flexGrow: 1, overflow: "auto" }}>
       {!selectedCourseId && (
-        <div style={{
-          background: "#FFFFFF",
-          borderRadius: 12,
-          padding: 64,
-          textAlign: "center",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
+        <div className="pu-card" style={{ padding: 64, textAlign: "center" }}>
           <Empty description="未选择课程，请先从其他页面选择一个课程以查看学习资源" />
         </div>
       )}
@@ -886,50 +885,34 @@ export default function ResourcePage() {
       {selectedCourseId && (
         <>
           {/* 紧凑统计卡片 - 移动端 2x2 网格 */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: isMobile ? 6 : 16, marginBottom: isMobile ? 8 : 20 }}>
+          <div className="pu-grid pu-grid--stats" style={{ gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, minmax(0,1fr))" }}>
             {[
-              { key: 0, label: "全部资源", val: totalCount, icon: <FolderOutlined />, bg: "rgba(37,115,230,0.04)", color: colors.primary, tabKey: 0 },
-              { key: 1, label: "文件资源", val: files.length, icon: <FileTextOutlined />, bg: "rgba(37,115,230,0.04)", color: colors.primary, tabKey: 1 },
-              { key: 2, label: "在线视频", val: videos.length, icon: <VideoCameraOutlined />, bg: "rgba(16,185,129,0.04)", color: "#10B981", tabKey: 2 },
-              { key: 3, label: "练习题", val: exercises.length + homeworks.length, icon: <ReadOutlined />, bg: "rgba(209,105,0,0.04)", color: "#D16900", tabKey: 3 },
+              { key: 0, label: "全部资源", val: totalCount, icon: <FolderOutlined />, color: colors.primary, tabKey: 0 },
+              { key: 1, label: "文件资源", val: files.length, icon: <FileTextOutlined />, color: colors.primary, tabKey: 1 },
+              { key: 2, label: "在线视频", val: videos.length, icon: <VideoCameraOutlined />, color: "#10B981", tabKey: 2 },
+              { key: 3, label: "练习题", val: exercises.length + homeworks.length, icon: <ReadOutlined />, color: "#D16900", tabKey: 3 },
             ].map((item) => (
-              <div key={item.key}
+              <div
+                key={item.key}
+                className="pu-stat"
                 onClick={() => { setTabValue(item.tabKey); setCurrentPage(1); }}
                 style={{
-                  background: item.bg,
-                  borderRadius: isMobile ? 10 : 12,
-                  padding: isMobile ? "10px 12px" : 20,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: isMobile ? 8 : 14,
                   cursor: "pointer",
-                  transition: "background 0.2s",
+                  padding: isMobile ? "14px 16px" : undefined,
+                  borderColor: String(tabValue) === String(item.tabKey) ? `${colors.primary}55` : undefined,
                 }}
               >
-                <div style={{
-                  width: isMobile ? 36 : 44, height: isMobile ? 36 : 44, borderRadius: isMobile ? 8 : 10,
-                  background: "#FFFFFF",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}>
-                  {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: isMobile ? 16 : 20, color: item.color } })}
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: isMobile ? 18 : 24, fontWeight: 700, lineHeight: 1.15, color: colors.textPrimary }}>{item.val}</div>
-                  <div style={{ fontSize: isMobile ? 11 : 12, color: colors.textSecondary }}>{item.label}</div>
-                </div>
+                <span className="pu-stat__icon" style={{ color: item.color, background: `${item.color}12` }}>
+                  {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 15 } })}
+                </span>
+                <div className="pu-stat__label">{item.label}</div>
+                <div className="pu-stat__num">{item.val}</div>
               </div>
             ))}
           </div>
 
           {/* 资源列表 - 搜索 + Tab + 表格 */}
-          <div style={{
-            background: "#FFFFFF",
-            borderRadius: 12,
-            padding: isMobile ? "12px" : "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-          }}>
+          <div className="pu-card" style={{ padding: isMobile ? 14 : "20px 24px" }}>
             {/* 标题行 + 搜索 */}
             <div style={{
               display: "flex",
@@ -937,19 +920,13 @@ export default function ResourcePage() {
               alignItems: isMobile ? "stretch" : "center",
               justifyContent: "space-between",
               marginBottom: 16,
-              gap: 8,
+              gap: 12,
             }}>
               <div>
-                <h2 style={{
-                  fontSize: isMobile ? 16 : 18,
-                  fontWeight: 700,
-                  fontFamily: "'Manrope', sans-serif",
-                  color: colors.textPrimary,
-                  margin: 0,
-                }}>
+                <h2 style={{ fontSize: 18, fontWeight: 650, color: "#202f47", margin: 0 }}>
                   资源列表
                 </h2>
-                <p style={{ fontSize: isMobile ? 12 : 13, color: colors.textSecondary, margin: "4px 0 0" }}>
+                <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>
                   当前课程的全部学习资源
                 </p>
               </div>
@@ -962,47 +939,17 @@ export default function ResourcePage() {
               />
             </div>
 
-            {/* Tab 切换 - 紧凑药丸风格 */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              padding: 3,
-              background: "#F3F4F5",
-              borderRadius: 9999,
-              width: isMobile ? "100%" : "fit-content",
-              overflowX: isMobile ? "auto" : "visible",
-              marginBottom: isMobile ? 8 : 16,
-              scrollbarWidth: "none",
-            }}>
+            {/* Tab 切换 - 下划线风格 */}
+            <div className="pu-tabs" style={{ marginBottom: isMobile ? 12 : 18 }}>
               {tabItems.map((tab) => (
-                <div
+                <button
                   key={tab.key}
+                  type="button"
                   onClick={() => { setTabValue(Number(tab.key)); setCurrentPage(1); }}
-                  style={{
-                    padding: isMobile ? "5px 12px" : "6px 16px",
-                    cursor: "pointer",
-                    fontSize: isMobile ? 12 : 13,
-                    fontWeight: String(tabValue) === tab.key ? 600 : 400,
-                    color: String(tabValue) === tab.key ? "#FFFFFF" : colors.textSecondary,
-                    borderRadius: 9999,
-                    background: String(tabValue) === tab.key ? colors.primary : "transparent",
-                    transition: "all 0.2s ease",
-                    whiteSpace: "nowrap",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (String(tabValue) !== tab.key) {
-                      (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.5)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (String(tabValue) !== tab.key) {
-                      (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                    }
-                  }}
+                  className={`pu-tabs__item${String(tabValue) === tab.key ? " is-active" : ""}`}
                 >
                   {tab.label}
-                </div>
+                </button>
               ))}
             </div>
 

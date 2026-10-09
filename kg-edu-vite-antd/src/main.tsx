@@ -17,6 +17,7 @@ import App from "./App";
 import "./index.css";
 import "./styles/coursera-theme.css";
 import "./styles/student-theme.css";
+import "./styles/proto-ui.css";
 import "./styles/assistant-ui.css";
 import "./styles/chrome95-compat.css";
 

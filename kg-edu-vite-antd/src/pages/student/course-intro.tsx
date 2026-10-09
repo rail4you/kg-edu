@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Typography,
-  Row,
-  Col,
   Button,
   Spin,
   Empty,
@@ -17,11 +15,11 @@ import {
   ReadOutlined,
   PaperClipOutlined,
   CaretRightOutlined,
-  CheckCircleOutlined,
   VideoCameraOutlined,
   ScheduleOutlined,
   TeamOutlined,
   PictureOutlined,
+  ApartmentOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -40,8 +38,8 @@ import {
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import FilePreview from "@/components/FilePreview";
+import { ProtoCard, ProtoTag, StatGrid } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
-import "@/styles/student-course-intro.css";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -478,28 +476,140 @@ export default function CourseIntroPage() {
   }
 
   return (
-    <div className="ci-page" style={{ minHeight: "100vh", background: ds.bg }}>
-      {/* ═══════════════════ Hero Section: 7+5 Grid ═══════════════════ */}
-      <section style={{ marginBottom: 24 }}>
-        <div
-          style={{
-            background: ds.surface,
-            borderRadius: ds.radiusXL,
-            boxShadow: ds.shadowSm,
-            padding: 24,
-          }}
-        >
+    <div className="pu-page">
+      {/* ═══════════════════ Hero ═══════════════════ */}
+      <section className="pu-hero">
+        <div style={{ minWidth: 0 }}>
+          <div className="pu-eyebrow">EXPLORE · LEARN · CREATE</div>
+          <h1>{selectedCourse.title}</h1>
+          <div
+            style={{
+              color: ds.onSurfaceVariant,
+              fontSize: 14,
+              lineHeight: 1.9,
+              display: descExpanded ? "block" : "-webkit-box",
+              WebkitLineClamp: descExpanded ? undefined : 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {selectedCourse.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}
+          </div>
+          <span
+            onClick={() => setDescExpanded((v) => !v)}
+            style={{ fontSize: 12, color: ds.primary, cursor: "pointer", fontWeight: 500 }}
+          >
+            {descExpanded ? "收起" : "...展开更多"}
+          </span>
+
+          <div className="pu-provider">
+            <span className="pu-provider__icon">
+              <TeamOutlined />
+            </span>
+            <div>
+              <small>授课教师</small>
+              <strong>
+                {teachers.length > 0 ? teachers.map((t: any) => t.name).join("、") : "教学团队"}
+                <span>本课程</span>
+              </strong>
+            </div>
+          </div>
+
+          <div className="pu-tags">
+            {selectedCourse.major && <ProtoTag tone="gray">{selectedCourse.major}</ProtoTag>}
+            <ProtoTag tone="green">已发布</ProtoTag>
+            <ProtoTag tone="gray">{selectedCourse.semesterHours || "--"} 学时</ProtoTag>
+            <ProtoTag tone="gray">{chapters.length} 个章节</ProtoTag>
+            <ProtoTag tone="gray">{selectedCourse.browseCount || 0} 次浏览</ProtoTag>
+          </div>
+        </div>
+
+        <div className="pu-hero__card">
+          <small>循序渐进，学以致用</small>
+          <h2>开启这门课程</h2>
+          <p>课程讲解 · 配套资料 · 实践练习</p>
+          <Button
+            block
+            type="primary"
+            size="large"
+            icon={<PlayCircleOutlined />}
+            onClick={handleStartLearning}
+            style={{ backgroundColor: colors.primary, borderColor: colors.primary, fontWeight: 700 }}
+          >
+            立即参加 →
+          </Button>
+          <span className="pu-hero__link" onClick={handleViewResources}>
+            先看课程资源 ↓
+          </span>
+        </div>
+      </section>
+
+      {/* ═══════════════════ 数据概览 ═══════════════════ */}
+      <StatGrid
+        columns={3}
+        items={[
+          { label: "知识资源", value: knowledgeData?.total || 0, unit: "个节点", desc: "课程知识体系规模", icon: <ApartmentOutlined /> },
+          { label: "课程章节", value: chapters.length, unit: "章", desc: "含子章节结构", icon: <BookOutlined /> },
+          { label: "课程教材", value: booksData?.length || 0, unit: "本", desc: "配套教材与讲义", icon: <ReadOutlined /> },
+          { label: "教学视频", value: videosData?.length || 0, unit: "个", desc: "课程视频资源", icon: <PlayCircleOutlined /> },
+          { label: "学习资源", value: (filesData?.length || 0) + (linksData?.length || 0), unit: "项", desc: "文件与链接资源", icon: <FolderOutlined /> },
+          { label: "浏览次数", value: selectedCourse?.browseCount || 0, unit: "次", desc: "本课程累计浏览", icon: <EyeOutlined /> },
+        ]}
+      />
+
+      {/* ═══════════════════ 媒体播放 ═══════════════════ */}
+      <ProtoCard
+        title="课程媒体"
+        extra={
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {albumVideos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("video-thumb-list");
+                  const imgEl = document.getElementById("image-thumb-list");
+                  if (el) el.style.display = el.style.display === "none" ? "flex" : "none";
+                  if (imgEl) imgEl.style.display = "none";
+                }}
+                className={`pu-tabs__item${mediaMode === "video" ? " is-active" : ""}`}
+                style={{ padding: "4px 8px", fontSize: 12, borderBottom: 0 }}
+              >
+                <VideoCameraOutlined style={{ marginRight: 4 }} />
+                {albumVideos.length} 个视频
+              </button>
+            )}
+            {albumImages.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("image-thumb-list");
+                  const vidEl = document.getElementById("video-thumb-list");
+                  if (el) el.style.display = el.style.display === "none" ? "flex" : "none";
+                  if (vidEl) vidEl.style.display = "none";
+                  setMediaMode("auto");
+                }}
+                className={`pu-tabs__item${mediaMode === "auto" && albumImages.length > 0 ? " is-active" : ""}`}
+                style={{ padding: "4px 8px", fontSize: 12, borderBottom: 0 }}
+              >
+                <PictureOutlined style={{ marginRight: 4 }} />
+                {albumImages.length} 张图片
+              </button>
+            )}
+          </div>
+        }
+        style={{ marginBottom: 20 }}
+      >
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "7fr 5fr",
-            gap: 24,
+            gap: 20,
           }}
         >
         {/* Left: Media Player (7 cols) - Video or Image Slideshow */}
         <div
           style={{
-            borderRadius: ds.radiusLG,
+            borderRadius: 12,
             overflow: "hidden",
             background: "#0d1117",
             position: "relative",
@@ -744,211 +854,67 @@ export default function CourseIntroPage() {
           })()}
         </div>
 
-        {/* Right: Course Info (5 cols) */}
-        <div style={{ display: "flex", flexDirection: "column", height: 320 }}>
-          {/* Top: Tags + Title + Description */}
-          <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-            {/* Tags */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-              {selectedCourse.major && (
-                <span
-                  style={{
-                    fontSize: 12, fontWeight: 600, padding: "4px 12px",
-                    borderRadius: 20, background: ds.primaryLight, color: ds.primary,
-                    border: `1px solid ${ds.primaryBorder}`,
-                  }}
-                >
-                  {selectedCourse.major}
-                </span>
-              )}
-              <span
-                style={{
-                  fontSize: 12, fontWeight: 600, padding: "4px 12px",
-                  borderRadius: 20, background: "rgba(82,196,26,0.06)", color: "#389e0d",
-                  border: "1px solid rgba(82,196,26,0.15)",
-                }}
-              >
-                <CheckCircleOutlined style={{ marginRight: 4, fontSize: 11 }} />
-                已发布
-              </span>
-            </div>
-
-            {/* Title */}
-            <h1
-              style={{
-                fontFamily: "'Manrope', 'PingFang SC', 'Microsoft YaHei', sans-serif",
-                fontSize: 26, fontWeight: 800, lineHeight: 1.3,
-                color: ds.onSurface, margin: "0 0 10px 0",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {selectedCourse.title}
-            </h1>
-
-            {/* Description */}
-            {selectedCourse.description && (
-              <div>
-                <div
-                  style={{
-                    color: ds.onSurfaceVariant,
-                    fontSize: 13,
-                    lineHeight: 1.6,
-                    display: descExpanded ? "block" : "-webkit-box",
-                    WebkitLineClamp: descExpanded ? undefined : 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {selectedCourse.description}
-                </div>
-                {!descExpanded && (
-                  <span
-                    onClick={() => setDescExpanded(true)}
-                    style={{
-                      fontSize: 12,
-                      color: ds.primary,
-                      cursor: "pointer",
-                      fontWeight: 500,
-                    }}
-                  >
-                    ...展开更多
-                  </span>
-                )}
-                {descExpanded && (
-                  <span
-                    onClick={() => setDescExpanded(false)}
-                    style={{
-                      fontSize: 12,
-                      color: ds.primary,
-                      cursor: "pointer",
-                      fontWeight: 500,
-                      marginLeft: 4,
-                    }}
-                  >
-                    收起
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Info cards */}
+        {/* Right: 媒体信息 (5 cols) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
           <div
             style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
-              background: ds.surfaceLow, borderRadius: ds.radiusLG, padding: 12,
+              padding: 18,
+              background: "#f6f8fb",
+              borderRadius: 12,
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <ScheduleOutlined style={{ fontSize: 15, color: ds.primary }} />
-              <div>
-                <div style={{ fontSize: 12, color: ds.muted, fontWeight: 500 }}>学时</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: ds.onSurface }}>
-                  {selectedCourse.semesterHours || "--"} 学时
-                </div>
-              </div>
+            <div className="pu-eyebrow" style={{ marginBottom: 6 }}>NOW PLAYING</div>
+            <div style={{ fontSize: 18, fontWeight: 650, color: ds.onSurface, lineHeight: 1.5 }}>
+              {mediaMode === "video"
+                ? activeVideo?.name || "课程视频"
+                : albumImages[imageSlideIndex]?.name || selectedCourse.title}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <BookOutlined style={{ fontSize: 15, color: "#722ed1" }} />
-              <div>
-                <div style={{ fontSize: 12, color: ds.muted, fontWeight: 500 }}>章节</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: ds.onSurface }}>
-                  {chapters.length} 个章节
-                </div>
-              </div>
+            <div style={{ fontSize: 13, color: ds.muted, marginTop: 8, lineHeight: 1.8 }}>
+              {albumVideos.length > 0 && `${albumVideos.length} 个视频`}
+              {albumVideos.length > 0 && albumImages.length > 0 && " · "}
+              {albumImages.length > 0 && `${albumImages.length} 张图片`}
+              {albumVideos.length === 0 && albumImages.length === 0 && "暂无课程媒体，可查看下方课程章节"}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <EyeOutlined style={{ fontSize: 15, color: "#c41d7f" }} />
-              <div>
-                <div style={{ fontSize: 12, color: ds.muted, fontWeight: 500 }}>浏览</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: ds.onSurface }}>
-                  {selectedCourse.browseCount || 0} 次
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <TeamOutlined style={{ fontSize: 15, color: "#08979c" }} />
-              <div>
-                <div style={{ fontSize: 12, color: ds.muted, fontWeight: 500 }}>教师</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: ds.onSurface }}>
-                  {teachers.length} 位教师
-                </div>
-              </div>
+            <div className="pu-tags" style={{ marginTop: 16 }}>
+              <ProtoTag tone="blue">{selectedCourse.major || "通用"}</ProtoTag>
+              {selectedCourse.semesterHours ? <ProtoTag tone="gray">{selectedCourse.semesterHours} 学时</ProtoTag> : null}
+              <ProtoTag tone="gray">{chapters.length} 章节</ProtoTag>
             </div>
           </div>
 
-          {/* Action button - full width */}
-          <Button
-            block
-            type="primary"
-            size="large"
-            icon={<PlayCircleOutlined />}
-            onClick={handleStartLearning}
-            style={{
-              backgroundColor: colors.primary, borderColor: colors.primary,
-              height: 44, fontWeight: 700, borderRadius: ds.radiusLG,
-              fontSize: 15,
-              boxShadow: `0 4px 14px rgba(37,115,230,0.25)`,
-            }}
-          >
-            立即参加
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {[
+              { label: "学时", value: selectedCourse.semesterHours || "--", icon: <ScheduleOutlined /> },
+              { label: "章节", value: chapters.length, icon: <BookOutlined /> },
+              { label: "浏览", value: selectedCourse.browseCount || 0, icon: <EyeOutlined /> },
+              { label: "教师", value: teachers.length, icon: <TeamOutlined /> },
+            ].map((item) => (
+              <div
+                key={item.label}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 12px", background: "#f6f8fb", borderRadius: 10,
+                }}
+              >
+                <span style={{ color: ds.primary, display: "grid", placeItems: "center", fontSize: 16 }}>{item.icon}</span>
+                <div>
+                  <div style={{ fontSize: 12, color: ds.muted }}>{item.label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 650, color: ds.onSurface }}>{item.value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Button block icon={<FolderOutlined />} onClick={handleViewResources} style={{ height: 42, borderRadius: 8 }}>
+            查看课程资源
           </Button>
         </div>
         </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════ Media Thumbnails (collapsible) ═══════════════════ */}
-      {(albumVideos.length > 0 || albumImages.length > 1) && (
-        <section style={{ marginBottom: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {albumVideos.length > 0 && (
-              <Button
-                type="text"
-                size="small"
-                onClick={() => {
-                  const el = document.getElementById("video-thumb-list");
-                  const imgEl = document.getElementById("image-thumb-list");
-                  if (el) el.style.display = el.style.display === "none" ? "flex" : "none";
-                  // close image list when opening video list
-                  if (imgEl) imgEl.style.display = "none";
-                }}
-                style={{
-                  color: mediaMode === "video" ? ds.primary : ds.muted,
-                  fontSize: 12, padding: "0 4px", height: 24,
-                  fontWeight: mediaMode === "video" ? 600 : 400,
-                }}
-              >
-                <VideoCameraOutlined style={{ marginRight: 4 }} />
-                {albumVideos.length} 个视频
-                <CaretRightOutlined style={{ fontSize: 10, marginLeft: 4, transition: "transform 0.2s" }} />
-              </Button>
-            )}
-            {albumImages.length > 1 && (
-              <Button
-                type="text"
-                size="small"
-                onClick={() => {
-                  const el = document.getElementById("image-thumb-list");
-                  const vidEl = document.getElementById("video-thumb-list");
-                  if (el) el.style.display = el.style.display === "none" ? "flex" : "none";
-                  // close video list when opening image list
-                  if (vidEl) vidEl.style.display = "none";
-                  // switch hero to image mode
-                  setMediaMode("auto");
-                }}
-                style={{
-                  color: mediaMode === "auto" && albumImages.length > 0 ? "#13c2c2" : ds.muted,
-                  fontSize: 12, padding: "0 4px", height: 24,
-                  fontWeight: mediaMode === "auto" && albumImages.length > 0 ? 600 : 400,
-                }}
-              >
-                <PictureOutlined style={{ marginRight: 4 }} />
-                {albumImages.length} 张图片
-                <CaretRightOutlined style={{ fontSize: 10, marginLeft: 4, transition: "transform 0.2s" }} />
-              </Button>
-            )}
-          </div>
 
           {/* Video thumbnails */}
           {albumVideos.length > 0 && (
@@ -1057,244 +1023,116 @@ export default function CourseIntroPage() {
               ))}
             </div>
           )}
-        </section>
-      )}
+      </ProtoCard>
 
-      {/* ═══════════════════ Content Area ═══════════════════ */}
-      <section>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Statistics Bento Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(12, 1fr)",
-              gap: 12,
-            }}
-          >
-            {/* Primary card - Knowledge Resources (4 cols) */}
-            <div
-              style={{
-                gridColumn: "span 4",
-                background: `linear-gradient(135deg, ${colors.primary}15 0%, ${colors.primary}08 100%)`,
-                borderRadius: ds.radiusXL,
-                padding: "20px 22px",
-                color: colors.textPrimary,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                position: "relative",
-                overflow: "hidden",
-                minHeight: 100,
-                border: `1px solid ${colors.primary}20`,
-              }}
-            >
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 1, opacity: 0.9, marginBottom: 8 }}>
-                  知识资源
-                </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                  <span style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, color: colors.primary }}>{knowledgeData?.total || 0}</span>
-                  <span style={{ fontSize: 12, opacity: 0.5 }}>个节点</span>
-                </div>
-              </div>
-              <div style={{ position: "absolute", right: -8, bottom: -8, opacity: 0.1 }}>
-                <CheckCircleOutlined style={{ fontSize: 72 }} />
-              </div>
+      {/* ═══════════════════ 课程内容 ═══════════════════ */}
+      <div className="pu-grid pu-grid--two">
+        <ProtoCard
+          title="课程模块"
+          extra={<span style={{ fontSize: 12, color: ds.muted }}>共 {chapters.length} 个章节</span>}
+        >
+          {chapterTree && chapterTree.length > 0 ? (
+            <div style={{ maxHeight: 660, overflowY: "auto", paddingRight: 6 }}>
+              {renderChapterCards(chapterTree)}
             </div>
+          ) : (
+            <Empty description="暂无章节信息" />
+          )}
+        </ProtoCard>
 
-            {/* Stats grid (8 cols, 3x2) */}
-            <div style={{ gridColumn: "span 8", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-              {[
-                { label: "课程章节", value: chapters.length, icon: <BookOutlined />, bg: "rgba(114, 46, 209, 0.06)", color: "#722ed1" },
-                { label: "课程教材", value: booksData?.length || 0, icon: <ReadOutlined />, bg: "rgba(82, 196, 26, 0.06)", color: "#389e0d" },
-                { label: "教学视频", value: videosData?.length || 0, icon: <PlayCircleOutlined />, bg: "rgba(250, 173, 20, 0.06)", color: "#d48806" },
-                { label: "浏览次数", value: selectedCourse?.browseCount || 0, icon: <EyeOutlined />, bg: "rgba(235, 47, 150, 0.06)", color: "#c41d7f" },
-                { label: "学习资源", value: (filesData?.length || 0) + (linksData?.length || 0), icon: <FolderOutlined />, bg: "rgba(37, 115, 230, 0.06)", color: colors.primary },
-                { label: "章节数", value: chapterTree.length, icon: <BookOutlined />, bg: "rgba(19, 194, 194, 0.06)", color: "#08979c" },
-              ].map((item) => (
+        <ProtoCard
+          title="课程教材"
+          extra={<span style={{ fontSize: 12, color: ds.muted }}>共 {booksData?.length || 0} 本</span>}
+        >
+          {booksData && booksData.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {booksData.map((book: any) => (
                 <div
-                  key={item.label}
+                  key={book.id}
                   style={{
-                    background: item.bg,
-                    borderRadius: ds.radiusLG,
-                    padding: "14px 16px",
+                    background: "#f6f8fb",
+                    borderRadius: 10,
+                    padding: 14,
                     display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
+                    gap: 14,
+                    transition: "background 0.2s",
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = ds.primaryLight; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#f6f8fb"; }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  {book.coverImage ? (
+                    <img
+                      src={book.coverImage}
+                      alt={book.title}
+                      style={{
+                        width: 64, height: 88, borderRadius: 6,
+                        objectFit: "cover", flexShrink: 0,
+                        border: `1px solid ${colors.border}`,
+                      }}
+                    />
+                  ) : (
                     <div
                       style={{
-                        width: 30, height: 30, borderRadius: 8,
-                        background: ds.surface,
+                        width: 64, height: 88, borderRadius: 6, flexShrink: 0,
+                        background: "#e7e8e9",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                       }}
                     >
-                      {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 15, color: item.color } })}
+                      <BookOutlined style={{ fontSize: 24, color: ds.muted }} />
                     </div>
-                  </div>
-                  <div style={{ marginTop: 6 }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.1, color: ds.onSurface }}>{item.value}</div>
-                    <div style={{ fontSize: 13, color: ds.muted, marginTop: 2, fontWeight: 500 }}>{item.label}</div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: ds.onSurface, marginBottom: 6, lineHeight: 1.4 }}>
+                      {book.title}
+                    </div>
+                    {book.author && (
+                      <Text style={{ fontSize: 12, color: ds.muted, display: "block", marginBottom: 3 }}>
+                        作者: {book.author}
+                      </Text>
+                    )}
+                    {book.publisher && (
+                      <Text style={{ fontSize: 12, color: ds.muted, display: "block" }}>
+                        出版社: {book.publisher}
+                      </Text>
+                    )}
+                    {book.attachment && (
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<PaperClipOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const fileName = book.attachment.split("/").pop() || "附件";
+                          const ext = fileName.split(".").pop()?.toLowerCase() || "";
+                          const isPdf = ext === "pdf";
+                          const typeMap: Record<string, string> = {
+                            pdf: "application/pdf",
+                            doc: "application/msword",
+                            docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            ppt: "application/vnd.ms-powerpoint",
+                            pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                          };
+                          setPreviewFile({
+                            url: book.attachment,
+                            name: fileName,
+                            type: typeMap[ext] || "application/octet-stream",
+                            isPdf,
+                          });
+                        }}
+                        style={{ padding: 0, marginTop: 8, fontSize: 12 }}
+                      >
+                        预览附件
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Course Books */}
-          {booksData && booksData.length > 0 && (
-            <div
-              style={{
-                borderRadius: ds.radiusXL,
-                background: ds.surface,
-                boxShadow: ds.shadowSm,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 32, height: 32, borderRadius: ds.radiusMD,
-                    background: "rgba(82, 196, 26, 0.08)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >
-                  <ReadOutlined style={{ fontSize: 16, color: "#389e0d" }} />
-                </div>
-                <span style={{ fontSize: 16, fontWeight: 700, color: ds.onSurface }}>
-                  课程教材
-                </span>
-                <span style={{ fontSize: 12, color: ds.muted, marginLeft: 4 }}>
-                  共 {booksData.length} 本
-                </span>
-              </div>
-              <div style={{ padding: 16 }}>
-                <Row gutter={[12, 12]}>
-                  {booksData.map((book: any) => (
-                    <Col xs={24} md={12} key={book.id}>
-                      <div
-                        style={{
-                          background: ds.surfaceLow,
-                          borderRadius: ds.radiusLG,
-                          padding: 16,
-                          display: "flex",
-                          gap: 14,
-                          transition: "background 0.2s",
-                          cursor: book.attachment ? "pointer" : "default",
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = ds.primaryLight; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = ds.surfaceLow; }}
-                      >
-                        {book.coverImage ? (
-                          <img
-                            src={book.coverImage}
-                            alt={book.title}
-                            style={{
-                              width: 72, height: 100, borderRadius: 6,
-                              objectFit: "cover", flexShrink: 0,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 72, height: 100, borderRadius: 6, flexShrink: 0,
-                              background: ds.surfaceHigh,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}
-                          >
-                            <BookOutlined style={{ fontSize: 28, color: ds.muted }} />
-                          </div>
-                        )}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: ds.onSurface, marginBottom: 6, lineHeight: 1.3 }}>
-                            {book.title}
-                          </div>
-                          {book.author && (
-                            <Text style={{ fontSize: 12, color: ds.muted, display: "block", marginBottom: 3 }}>
-                              作者: {book.author}
-                            </Text>
-                          )}
-                          {book.publisher && (
-                            <Text style={{ fontSize: 12, color: ds.muted, display: "block" }}>
-                              出版社: {book.publisher}
-                            </Text>
-                          )}
-                          {book.attachment && (
-                            <Button
-                              type="link"
-                              size="small"
-                              icon={<PaperClipOutlined />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const fileName = book.attachment.split("/").pop() || "附件";
-                                const ext = fileName.split(".").pop()?.toLowerCase() || "";
-                                const isPdf = ext === "pdf";
-                                const typeMap: Record<string, string> = {
-                                  pdf: "application/pdf",
-                                  doc: "application/msword",
-                                  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                  ppt: "application/vnd.ms-powerpoint",
-                                  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                                };
-                                setPreviewFile({
-                                  url: book.attachment,
-                                  name: fileName,
-                                  type: typeMap[ext] || "application/octet-stream",
-                                  isPdf,
-                                });
-                              }}
-                              style={{ padding: 0, marginTop: 8, fontSize: 12 }}
-                            >
-                              预览附件
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-            </div>
+          ) : (
+            <Empty description="暂无教材信息" />
           )}
-
-          {/* Course Modules */}
-          {chapterTree && chapterTree.length > 0 && (
-            <div
-              style={{
-                borderRadius: ds.radiusXL,
-                background: ds.surface,
-                boxShadow: ds.shadowSm,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 32, height: 32, borderRadius: ds.radiusMD,
-                    background: ds.primaryLight,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >
-                  <BookOutlined style={{ fontSize: 16, color: ds.primary }} />
-                </div>
-                <span style={{ fontSize: 16, fontWeight: 700, color: ds.onSurface }}>
-                  课程模块
-                </span>
-                <span style={{ fontSize: 12, color: ds.muted, marginLeft: 4 }}>
-                  共 {chapters.length} 个章节
-                </span>
-              </div>
-              <div style={{ padding: "8px 24px 20px" }}>
-                {renderChapterCards(chapterTree)}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+        </ProtoCard>
+      </div>
 
       {/* File Preview Modal */}
       {previewFile && (

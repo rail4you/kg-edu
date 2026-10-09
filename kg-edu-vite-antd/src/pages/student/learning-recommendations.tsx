@@ -3,7 +3,6 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Typography,
-  Tag,
   Spin,
   Alert,
   Button,
@@ -33,8 +32,9 @@ import {
   getCourseByGuest,
 } from "@/lib/ash_rpc";
 import { themeColors as colors } from "@/styles/theme";
+import { PageHead, ProtoTag, StatGrid } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 /** A knowledge point shown in the list */
 interface KnowledgeItem {
@@ -313,171 +313,103 @@ export default function LearningRecommendations() {
 
   // ── render ──
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: colors.background }}>
-      <div style={{ flexGrow: 1, overflow: "auto", padding: isMobile ? "12px" : "24px 32px" }}>
+    <div className="pu-page">
+      <PageHead
+        title="学习推荐"
+        description="根据当前知识掌握情况，为下一步学习找到方向。"
+      />
+
+      <div>
+        {/* ========== 本次学习建议 ========== */}
+        {knowledgeSection && knowledgeSection.items.length > 0 && (
+          <div className="pu-welcome">
+            <div style={{ minWidth: 0 }}>
+              <div className="pu-eyebrow">YOUR NEXT STEP</div>
+              <h2>从《{knowledgeSection.items[0].name}》开始下一步</h2>
+              <p>先回顾基础概念，再通过案例与练习检验理解。</p>
+              <Button
+                type="primary"
+                onClick={() => handleOpenDetail(knowledgeSection.items[0])}
+                style={{ height: 40, fontWeight: 600 }}
+              >
+                开始推荐学习 →
+              </Button>
+            </div>
+            <ProtoTag tone="blue">个性化学习路径</ProtoTag>
+          </div>
+        )}
 
         {/* ========== 顶部统计数据 ========== */}
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: isMobile ? 6 : 16, marginBottom: isMobile ? 10 : 24 }}>
-          {[
-            { label: "学习推荐", val: stats.totalRecs, icon: <BulbOutlined />, color: colors.primary, sub: courseMetaData?.title ? `课程 · ${courseMetaData.title}` : "" },
-            { label: "推荐知识点", val: stats.totalRecs, icon: <StarOutlined />, color: "#ff9800", sub: "" },
-            ...(!isMobile ? [{ label: "知识点总数", val: stats.totalKnowledge, icon: <BookOutlined />, color: colors.primary, sub: "" }] : []),
-          ].map((item: { label: string; val: number; icon: React.ReactElement; color: string; sub?: string }, i) => (
-            <div key={i} style={{
-              background: i === 0 ? "rgba(37,115,230,0.04)" : "#fff",
-              borderRadius: isMobile ? 10 : 12,
-              padding: isMobile ? "10px 12px" : "20px 24px",
-              display: "flex",
-              alignItems: "center",
-              gap: isMobile ? 8 : 14,
-              boxShadow: i === 0 ? "0 1px 4px rgba(37,115,230,0.08)" : "0 1px 3px rgba(0,0,0,0.04)",
-              border: i === 0 ? "1px solid rgba(37,115,230,0.08)" : "none",
-            }}>
-              <div style={{
-                width: isMobile ? 32 : 48, height: isMobile ? 32 : 48, borderRadius: isMobile ? 10 : 14,
-                background: i === 0 ? `linear-gradient(135deg, ${colors.primary}18 0%, ${colors.primary}08 100%)` : "#f5f5f5",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <span style={{ fontSize: isMobile ? 15 : 22, color: item.color, lineHeight: 1, display: "inline-flex" }}>{item.icon}</span>
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: isMobile ? 18 : 32, fontWeight: 700, lineHeight: 1.15, color: colors.textPrimary }}>
-                  {item.val}
-                </div>
-                <div style={{ fontSize: isMobile ? 10 : 12, color: colors.textSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {item.label}
-                </div>
-                {item.sub && (
-                  <div style={{ fontSize: isMobile ? 9 : 11, color: colors.textSecondary, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {item.sub}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          {/* 第三张卡片独占一行 */}
-          {isMobile && (
-            <div style={{
-              gridColumn: "1 / -1",
-              background: "#fff",
-              borderRadius: 10,
-              padding: "8px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-            }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 10,
-                background: "#f5f5f5",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <BookOutlined style={{ fontSize: 15, color: colors.primary }} />
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: colors.textPrimary }}>
-                  {stats.totalKnowledge}
-                </div>
-                <div style={{ fontSize: 10, color: colors.textSecondary }}>
-                  知识点总数
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <StatGrid
+          columns={isMobile ? 2 : 3}
+          items={[
+            { label: "学习推荐", value: stats.totalRecs, unit: "条", desc: courseMetaData?.title ? `课程 · ${courseMetaData.title}` : "当前课程推荐", icon: <BulbOutlined /> },
+            { label: "推荐知识点", value: stats.totalRecs, unit: "个", desc: "建议优先学习", icon: <StarOutlined /> },
+            { label: "知识点总数", value: stats.totalKnowledge, unit: "个", desc: "课程知识体系规模", icon: <BookOutlined /> },
+          ]}
+        />
 
         {/* ========== 当前课程推荐列表 ========== */}
-        <div style={{
-          background: "#fff", borderRadius: 12, padding: isMobile ? "10px" : "16px 20px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
-          <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div className="pu-card">
+          <div className="pu-card-title">
             <div>
-              <Title level={5} style={{ margin: 0, fontFamily: "'Manrope', sans-serif" }}>
-                {courseMetaData?.title || placeholderTitle}
-              </Title>
+              <h2 style={{ fontSize: 20 }}>{courseMetaData?.title || placeholderTitle}</h2>
               {knowledgeSection && (
-                <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
                   推荐 {knowledgeSection.items.length} / 共 {knowledgeSection.totalKnowledgeCount} 个知识点
                 </div>
               )}
             </div>
+            <span style={{ fontSize: 12, color: "#64748b" }}>按推荐优先级排序</span>
           </div>
 
           {!knowledgeSection || knowledgeSection.items.length === 0 ? (
             <Empty description={loadingKnowledge ? "正在加载…" : "该课程暂无学习推荐"} />
           ) : (
-            <Row gutter={isMobile ? [8, 8] : [12, 12]}>
-              {knowledgeSection.items.map((item) => (
+            <Row gutter={isMobile ? [12, 12] : [20, 20]}>
+              {knowledgeSection.items.map((item, idx) => (
                 <Col xs={24} sm={12} lg={8} key={item.id} style={{ width: isMobile ? "100%" : undefined }}>
                   <div
                     onClick={() => handleOpenDetail(item)}
                     style={{
-                      padding: isMobile ? "10px 12px" : "14px 16px",
-                      borderRadius: 10,
-                      background: "#f5f8ff",
+                      padding: isMobile ? "16px" : "20px 22px",
+                      borderRadius: 14,
+                      background: "#fff",
+                      border: "1px solid var(--pu-line)",
                       cursor: "pointer",
-                      transition: "all 0.25s ease",
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
                       height: "100%",
-                      position: "relative",
-                      overflow: "hidden",
-                      boxShadow: "0 1px 4px rgba(37,115,230,0.06)",
+                      display: "flex",
+                      flexDirection: "column",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.12)";
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.boxShadow = "0 12px 30px rgba(21,50,84,0.08)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    {/* 知识点名称 */}
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: 10,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        flexShrink: 0,
-                        background: "linear-gradient(135deg, #2573E6 0%, #64b5f6 100%)",
-                      }}>
-                        <BookOutlined style={{
-                          fontSize: 16,
-                          color: "#fff",
-                        }} />
-                      </div>
-                      <Text strong style={{ fontSize: 14, lineHeight: "28px" }}>
-                        {item.name}
-                      </Text>
+                    <div className="pu-eyebrow" style={{ marginBottom: 10 }}>
+                      STEP {String(idx + 1).padStart(2, "0")}
                     </div>
-
-                    {/* 描述 */}
-                    {item.description && (
-                      <Paragraph
-                        ellipsis={{ rows: 2 }}
-                        type="secondary"
-                        style={{ fontSize: 12, marginBottom: 10, lineHeight: "18px", color: "#555" }}
-                      >
-                        {item.description}
-                      </Paragraph>
-                    )}
-
-                    {/* 优先级标签 */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <Tag
-                        color={item.importanceLevel === "high" ? "#f44336" : "#2573E6"}
-                        style={{ borderRadius: 4, fontSize: 11, lineHeight: "20px", fontWeight: 500 }}
-                      >
+                    <h3 style={{ fontSize: 17, fontWeight: 650, lineHeight: 1.5, color: "#202f47", marginBottom: 8 }}>
+                      {item.name}
+                    </h3>
+                    <Paragraph
+                      ellipsis={{ rows: 2 }}
+                      style={{ fontSize: 13, marginBottom: 14, lineHeight: 1.8, color: "#64748b", minHeight: 46 }}
+                    >
+                      {item.description || "结合课程知识体系与该知识点的关联强度推荐。"}
+                    </Paragraph>
+                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                      <ProtoTag tone={item.importanceLevel === "high" ? "red" : "blue"}>
                         {item.importanceLevel === "high" ? "重要" : "中优先级"}
-                      </Tag>
-                    </div>
-
-                    {/* 查看详情 */}
-                    <div style={{ marginTop: 10, textAlign: "right" }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
+                      </ProtoTag>
+                      <span style={{ fontSize: 12, color: "#64748b" }}>
                         查看详情 <RightOutlined style={{ fontSize: 10 }} />
-                      </Text>
+                      </span>
                     </div>
                   </div>
                 </Col>

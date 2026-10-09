@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Typography,
-  Card,
   Spin,
   Tag,
   Drawer,
@@ -34,8 +33,9 @@ import {
   listExercises,
 } from "@/lib/ash_rpc";
 import { extractArrayData, getHeaders } from "@/utils/api-helpers";
+import { PageHead, ProtoTag } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
 interface Topic {
@@ -75,12 +75,11 @@ function SubjectSection({
   return (
     <div
       style={{
-        marginBottom: isMobile ? 12 : 16,
-        borderRadius: isMobile ? 16 : 8,
+        marginBottom: 16,
+        borderRadius: 14,
         overflow: "hidden",
         background: "#ffffff",
-        border: isExpanded ? "1px solid #1890FF" : "1px solid #E8E8E8",
-        boxShadow: isExpanded ? "0 2px 12px rgba(24, 144, 255, 0.15)" : "none",
+        border: isExpanded ? "1px solid #c6d3f7" : "1px solid var(--pu-line)",
       }}
     >
       <div
@@ -90,7 +89,7 @@ function SubjectSection({
           alignItems: "center",
           gap: isMobile ? 12 : 16,
           padding: isMobile ? "14px 16px" : "16px 20px",
-          background: isExpanded ? "#F0F9FF" : "#ffffff",
+          background: isExpanded ? "#eaf0ff" : "#ffffff",
           cursor: "pointer",
           transition: "all 0.2s ease",
         }}
@@ -99,7 +98,7 @@ function SubjectSection({
           style={{
             width: isMobile ? 40 : 44,
             height: isMobile ? 40 : 44,
-            background: isExpanded ? "#1890FF" : "#E8E8E8",
+            background: isExpanded ? "#2573e6" : "#eef1f6",
             borderRadius: 6,
             display: "flex",
             alignItems: "center",
@@ -108,28 +107,28 @@ function SubjectSection({
             transition: "all 0.2s ease",
           }}
         >
-          <BookOutlined style={{ color: isExpanded ? "#fff" : "#8c8c8c", fontSize: 20 }} />
+          <BookOutlined style={{ color: isExpanded ? "#fff" : "#98a6b8", fontSize: 20 }} />
         </div>
         <div style={{ flexGrow: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Text
               strong
-              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#1890FF" : "#1a1a1a", margin: 0 }}
+              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#2573e6" : "#202f47", margin: 0 }}
             >
               {section.number}
             </Text>
             <Text
               strong
-              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#1890FF" : "#1a1a1a", margin: 0 }}
+              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#2573e6" : "#202f47", margin: 0 }}
             >
               {section.title}
             </Text>
           </div>
-          <Text style={{ color: "#8c8c8c", fontSize: 13 }}>
+          <Text style={{ color: "#64748b", fontSize: 13 }}>
             {section.topics.length} 个单元 · 点击{isExpanded ? "收起" : "展开"}
           </Text>
         </div>
-        <div style={{ color: isExpanded ? "#1890FF" : "#8c8c8c" }}>
+        <div style={{ color: isExpanded ? "#2573e6" : "#98a6b8" }}>
           {isExpanded ? (
             <DownOutlined style={{ fontSize: 14, fontWeight: "bold" }} />
           ) : (
@@ -154,8 +153,8 @@ function SubjectSection({
                     gap: isMobile ? 12 : 14,
                     padding: isMobile ? 12 : 14,
                     borderRadius: 6,
-                    background: "#F0F5FF",
-                    border: "1px solid #E0E8FF",
+                    background: "#f6f8fb",
+                    border: "1px solid var(--pu-line)",
                     cursor: "pointer",
                     marginBottom: 12,
                     transition: "all 0.2s ease",
@@ -165,7 +164,7 @@ function SubjectSection({
                     style={{
                       width: 36,
                       height: 36,
-                      background: "#2F54EB",
+                      background: "#2573e6",
                       borderRadius: 4,
                       display: "flex",
                       alignItems: "center",
@@ -180,7 +179,7 @@ function SubjectSection({
                       strong
                       style={{
                         fontSize: 14,
-                        color: "#2F54EB",
+                        color: "#202f47",
                         display: "block",
                         marginBottom: 4,
                       }}
@@ -199,17 +198,17 @@ function SubjectSection({
                     </Text>
                     <div style={{ display: "flex", gap: 8 }}>
                       <Tag
-                        style={{ borderRadius: 3, margin: 0, background: "#F0F5FF", border: "1px solid #ADC6FF", color: "#2F54EB" }}
+                        style={{ borderRadius: 5, margin: 0, background: "#edf2ff", border: "1px solid #dce5ff", color: "#2573e6" }}
                       >
                         单元
                       </Tag>
                       {topic.cellCount !== undefined && topic.cellCount > 0 && (
                         <Tag
                           style={{
-                            borderRadius: 3,
-                            background: "#F0F5FF",
-                            color: "#2F54EB",
-                            border: "1px solid #ADC6FF",
+                            borderRadius: 5,
+                            background: "#edf2ff",
+                            color: "#2573e6",
+                            border: "1px solid #dce5ff",
                             margin: 0,
                           }}
                         >
@@ -546,145 +545,71 @@ export default function GraphCategoryPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100%",
-        background: "#F8F9FA",
-        padding: isMobile ? 16 : 24,
-        borderRadius: isMobile ? 16 : 8,
-      }}
-    >
-      <div style={{ marginBottom: isMobile ? 18 : 24 }}>
-        <Title level={isMobile ? 4 : 3} style={{ marginBottom: 8, color: "#333" }}>
-          <ReadOutlined style={{ marginRight: 8 }} />
-          课程知识体系
-        </Title>
-        <Text style={{ color: "#666", marginBottom: 16, display: "block" }}>
-          展示课程的知识点层级结构
-        </Text>
-
-        {selectedCourseId && Array.isArray(courses) && courses.length > 0 && (
-          <Tag
-            color="blue"
-            style={{ padding: "4px 12px", fontSize: 14 }}
-          >
-            {courses.find((c: any) => c.id === selectedCourseId)?.title}
-          </Tag>
-        )}
-      </div>
+    <div className="pu-page">
+      <PageHead
+        title="课程知识体系"
+        description="展示课程的知识点层级结构"
+        actions={
+          selectedCourseId && Array.isArray(courses) && courses.length > 0 ? (
+            <ProtoTag tone="blue">{courses.find((c: any) => c.id === selectedCourseId)?.title}</ProtoTag>
+          ) : undefined
+        }
+      />
 
       <Row gutter={isMobile ? [0, 16] : [24, 24]}>
         <Col xs={24} lg={4}>
-          <Card
-            style={{
-              borderRadius: isMobile ? 16 : 8,
-              background: "#ffffff",
-              border: '1px solid #E0E0E0',
-            }}
-            styles={{ body: { padding: 16 } }}
-          >
-            <Title level={5} style={{ color: "#333", marginBottom: 16 }}>
+          <section className="pu-card" style={{ padding: 20 }}>
+            <div className="pu-section-title" style={{ marginBottom: 16 }}>
               知识体系导航
-            </Title>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Text
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <span style={{ fontSize: 12, color: "#64748b" }}>知识层级</span>
+              <span
                 style={{
-                  color: "#666",
-                }}
-              >
-                知识层级
-              </Text>
-              <Text
-                strong
-                style={{
-                  color: "#333",
-                  background: "#e6f7ff",
+                  fontSize: 14,
+                  fontWeight: 650,
+                  color: "#2573e6",
+                  background: "#eaf0ff",
                   padding: "10px 14px",
                   borderRadius: 8,
-                  border: "1px solid #91d5ff",
+                  border: "1px solid #dce5ff",
                 }}
               >
                 知识体系结构
-              </Text>
+              </span>
             </div>
 
             <div style={{ marginTop: 24 }}>
-              <Text style={{ color: "#666", fontSize: 12 }}>
-                统计信息
-              </Text>
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  background: "#fafafa",
-                  borderRadius: 8,
-                }}
-              >
-                <div style={{ marginBottom: 8 }}>
-                  <Text style={{ color: "#666", fontSize: 12 }}>
-                    主题数量
-                  </Text>
-                  <Text
-                    strong
-                    style={{ color: "#333", fontSize: 20, display: "block" }}
-                  >
-                    {subjectCount}
-                  </Text>
-                </div>
-                <div style={{ marginBottom: 8 }}>
-                  <Text style={{ color: "#666", fontSize: 12 }}>
-                    单元数量
-                  </Text>
-                  <Text
-                    strong
-                    style={{ color: "#333", fontSize: 20, display: "block" }}
-                  >
-                    {unitCount}
-                  </Text>
+              <span style={{ fontSize: 12, color: "#64748b" }}>统计信息</span>
+              <div className="pu-metrics" style={{ gridTemplateColumns: "1fr", margin: "12px 0 0" }}>
+                <div>
+                  <small>主题数量</small>
+                  <strong>{subjectCount}</strong>
                 </div>
                 <div>
-                  <Text style={{ color: "#666", fontSize: 12 }}>
-                    知识点数量
-                  </Text>
-                  <Text
-                    strong
-                    style={{ color: "#333", fontSize: 20, display: "block" }}
-                  >
-                    {cellCount}
-                  </Text>
+                  <small>单元数量</small>
+                  <strong>{unitCount}</strong>
+                </div>
+                <div>
+                  <small>知识点数量</small>
+                  <strong>{cellCount}</strong>
                 </div>
               </div>
             </div>
-          </Card>
+          </section>
         </Col>
 
         <Col xs={24} lg={20}>
           {!selectedCourseId ? (
-            <Card
-              style={{
-                padding: 48,
-                textAlign: "center",
-                borderRadius: 8,
-                background: "#ffffff",
-                border: '1px solid #E0E0E0',
-              }}
-            >
+            <section className="pu-card" style={{ padding: 48, textAlign: "center" }}>
               <Empty
                 description={
                   <Text style={{ color: "#666" }}>请先选择一个课程</Text>
                 }
               />
-            </Card>
+            </section>
           ) : knowledgeLoading ? (
-            <Card
-              style={{
-                padding: 48,
-                textAlign: "center",
-                borderRadius: 8,
-                background: "#ffffff",
-                border: '1px solid #E0E0E0',
-              }}
-            >
+            <section className="pu-card" style={{ padding: 48, textAlign: "center" }}>
               <Spin size="large" />
               <Text
                 style={{
@@ -695,17 +620,9 @@ export default function GraphCategoryPage() {
               >
                 正在加载课程知识体系...
               </Text>
-            </Card>
+            </section>
           ) : courseData.length === 0 ? (
-            <Card
-              style={{
-                padding: 48,
-                textAlign: "center",
-                borderRadius: 8,
-                background: "#ffffff",
-                border: '1px solid #E0E0E0',
-              }}
-            >
+            <section className="pu-card" style={{ padding: 48, textAlign: "center" }}>
               <Empty
                 description={
                   <span style={{ color: "#666" }}>
@@ -713,7 +630,7 @@ export default function GraphCategoryPage() {
                   </span>
                 }
               />
-            </Card>
+            </section>
           ) : (
             <div>
               {courseData.map((section) => (

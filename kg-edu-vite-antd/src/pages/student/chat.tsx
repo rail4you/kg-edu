@@ -11,6 +11,8 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { listCommands } from "@/lib/ash_rpc";
 import AssistantChat from "@/components/assistant-ui/AssistantChat";
+import { PageHead, ProtoTag } from "@/components/proto";
+import { themeColors as colors } from "@/styles/theme";
 
 const { useToken } = theme;
 
@@ -198,19 +200,11 @@ export default function StudentAIChat() {
   };
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 100px)", width: "100%" }}>
-      {/* 左侧：会话列表 */}
-      <div
-        style={{
-          width: 260,
-          flexShrink: 0,
-          borderRight: `1px solid ${token.colorBorder}`,
-          backgroundColor: "#fafafa",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div style={{ padding: 12, borderBottom: `1px solid ${token.colorBorder}`, display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="pu-page-fill" style={{ height: "calc(100vh - 100px)", padding: "10px 16px 16px" }}>
+      <PageHead
+        title="AI 助手"
+        description="围绕课程内容，辅助答疑与知识梳理。"
+        actions={
           <Dropdown
             menu={{
               items: [
@@ -218,7 +212,7 @@ export default function StudentAIChat() {
                   key: "default",
                   label: (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <RobotOutlined style={{ color: "#1890ff" }} />
+                      <RobotOutlined style={{ color: colors.primary }} />
                       <div>
                         <div style={{ fontWeight: 500 }}>默认助手</div>
                         <div style={{ fontSize: 11, color: "#999" }}>通用学习助手</div>
@@ -243,40 +237,62 @@ export default function StudentAIChat() {
             }}
             trigger={["click"]}
           >
-            <Button type="primary" style={{ flex: 1 }}>
+            <Button type="primary">
               <PlusOutlined /> 新建会话 <DownOutlined />
             </Button>
           </Dropdown>
-          <Tooltip title="点击选择AI助手类型创建新会话，不同的助手有不同的专业能力">
+        }
+      />
+      <div style={{ display: "flex", flex: 1, minHeight: 0, gap: 20, alignItems: "stretch" }}>
+      {/* 左侧：会话列表 */}
+      <div
+        className="pu-card"
+        style={{
+          width: 260,
+          flexShrink: 0,
+          padding: 12,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+        }}
+      >
+        <div style={{ paddingBottom: 10, borderBottom: "1px solid var(--pu-line-soft)", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 15, fontWeight: 650, color: "#202f47", flex: 1 }}>会话列表</span>
+          <Tooltip title="点击右上角新建会话，不同助手有不同的专业能力">
             <InfoCircleOutlined style={{ color: "#999", fontSize: 14, cursor: "help" }} />
           </Tooltip>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
+        <div style={{ flex: 1, overflowY: "auto", paddingTop: 8 }}>
           {conversations.length === 0 ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无会话" style={{ marginTop: 40 }} />
           ) : (
             <List
               dataSource={conversations}
-              renderItem={(conv: Conversation) => (
+              renderItem={(conv: Conversation) => {
+                const active = conv.id === currentConversationId;
+                return (
                 <List.Item
                   onClick={() => switchConversation(conv.id)}
                   style={{
-                    padding: "12px",
+                    padding: "10px 12px",
                     marginBottom: 4,
                     borderRadius: 8,
                     cursor: "pointer",
-                    backgroundColor: conv.id === currentConversationId ? "#e6f7ff" : "transparent",
-                    border: conv.id === currentConversationId ? "2px solid #1890ff" : "1px solid transparent",
+                    backgroundColor: active ? "#eaf0ff" : "transparent",
+                    border: "1px solid transparent",
+                    transition: "background .16s",
                   }}
+                  onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f2f5fb"; }}
+                  onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 500, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontWeight: active ? 650 : 500, fontSize: 13, color: active ? colors.primary : "#202f47", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {conv.title}
                       </div>
-                      <div style={{ fontSize: 11, color: "#9ca3af", display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ fontSize: 11, color: "#9ca3af", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
                         {conv.aiCommand ? (
-                          <Tag color="blue" style={{ margin: 0, padding: "0 4px", fontSize: 10 }}>{conv.aiCommand.title}</Tag>
+                          <ProtoTag tone="blue">{conv.aiCommand.title}</ProtoTag>
                         ) : (
                           <span>{conv.threadId ? "有历史消息" : "新会话"}</span>
                         )}
@@ -285,14 +301,17 @@ export default function StudentAIChat() {
                     <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={(e) => deleteConversation(conv.id, e)} />
                   </div>
                 </List.Item>
-              )}
+                );
+              }}
             />
           )}
         </div>
       </div>
 
       {/* 右侧：聊天区域 */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+      <div
+        className="pu-card"
+        style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", padding: 0 }}>
         {currentConversationId ? (
           <AssistantChat
             threadId={threadId}
@@ -304,10 +323,11 @@ export default function StudentAIChat() {
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: token.colorTextSecondary, fontSize: 16 }}>
             <div style={{ textAlign: "center" }}>
               <RobotOutlined style={{ fontSize: 64, color: token.colorPrimary, marginBottom: 16 }} />
-              <div>点击左侧"新建会话"开始对话</div>
+              <div>点击上方"新建会话"开始对话</div>
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Typography, Button, Tag, Spin, Alert, Row, Col, Empty } from 'antd';
+import { Typography, Button, Spin, Alert, Row, Col, Empty } from 'antd';
 import { PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/auth/auth-context';
 import { getCurrentTenant } from '@/lib/tenant';
 import { getExamsByCourse } from '@/lib/ash_rpc';
 import { getHeaders, extractArrayData } from '@/utils/api-helpers';
-import { themeColors as colors } from "@/styles/theme";
+import { PageHead, ProtoTag } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Exam {
   id: string;
@@ -54,16 +54,6 @@ export default function ExamList() {
     return labels[examType];
   };
 
-  const getExamTypeColor = (examType: Exam['examType']) => {
-    const colors: Record<Exam['examType'], string> = {
-      midterm: 'blue',
-      final: 'purple',
-      quiz: 'cyan',
-      assignment: 'default'
-    };
-    return colors[examType];
-  };
-
   if (authLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -99,95 +89,81 @@ export default function ExamList() {
   const exams = examsResult || [];
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F8F9FA' }}>
-      <div style={{ padding: 24, background: 'white', borderBottom: '1px solid #e0e0e0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(-1)}
-            >
-              返回
-            </Button>
-            <Title level={2} style={{ margin: 0, fontWeight: 700, color: '#333' }}>
-              课程考试
-            </Title>
-          </div>
-        </div>
+    <div className="pu-page">
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
+        style={{ paddingLeft: 0, marginBottom: 6 }}
+      >
+        返回
+      </Button>
+      <PageHead
+        title="课程考试"
+        description={`共 ${exams.length} 场可用考试，选择一场开始作答。`}
+      />
 
-        <div style={{ display: 'flex', gap: 24, marginTop: 16 }}>
-          <div>
-            <Title level={1} style={{ margin: 0, color: colors.primary }}>{exams.length}</Title>
-            <Text type="secondary">可用考试</Text>
-          </div>
+      {exams.length === 0 ? (
+        <div className="pu-card" style={{ padding: 48, textAlign: 'center' }}>
+          <Empty description="该课程暂无考试" />
         </div>
-      </div>
+      ) : (
+        <Row gutter={[20, 20]}>
+          {exams.map((exam: Exam) => (
+            <Col xs={24} sm={12} lg={8} xl={6} key={exam.id}>
+              <section
+                className="pu-card"
+                style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 20 }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650, color: '#202f47', lineHeight: 1.5, flex: 1 }}>
+                    {exam.title}
+                  </h3>
+                  <ProtoTag tone={exam.examType === 'final' ? 'amber' : 'blue'}>
+                    {getExamTypeLabel(exam.examType)}
+                  </ProtoTag>
+                </div>
 
-      <div style={{ flexGrow: 1, padding: 24 }}>
-        {exams.length === 0 ? (
-          <Card style={{ padding: 32, textAlign: 'center' }}>
-            <Empty description="该课程暂无考试" />
-          </Card>
-        ) : (
-          <Row gutter={[24, 24]}>
-            {exams.map((exam: Exam) => (
-              <Col xs={24} sm={12} lg={8} xl={6} key={exam.id}>
-                <Card
-                  hoverable
-                  style={{ height: '100%' }}
-                  styles={{ body: { display: 'flex', flexDirection: 'column', flexGrow: 1 } }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                    <Title level={5} style={{ margin: 0, fontWeight: 600, flex: 1, marginRight: 8 }}>
-                      {exam.title}
-                    </Title>
-                    <Tag color={getExamTypeColor(exam.examType)}>
-                      {getExamTypeLabel(exam.examType)}
-                    </Tag>
+                {exam.description && (
+                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.8, marginBottom: 14 }}>
+                    {exam.description}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto', flexGrow: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span style={{ color: '#64748b' }}>考试时长</span>
+                    <Text strong>{exam.durationMinutes} 分钟</Text>
                   </div>
-
-                  {exam.description && (
-                    <Text type="secondary" style={{ marginBottom: 16, display: 'block' }}>
-                      {exam.description}
-                    </Text>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span style={{ color: '#64748b' }}>总分</span>
+                    <Text strong>{exam.totalScore || 0} 分</Text>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span style={{ color: '#64748b' }}>及格分</span>
+                    <Text strong>{exam.passingScore || 0} 分</Text>
+                  </div>
+                  {exam.examDate && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, gap: 12 }}>
+                      <span style={{ color: '#64748b', whiteSpace: 'nowrap' }}>考试时间</span>
+                      <Text strong style={{ textAlign: 'right' }}>{new Date(exam.examDate).toLocaleString('zh-CN')}</Text>
+                    </div>
                   )}
+                </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, flexGrow: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text type="secondary">考试时长:</Text>
-                      <Text strong>{exam.durationMinutes} 分钟</Text>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text type="secondary">总分:</Text>
-                      <Text strong>{exam.totalScore || 0} 分</Text>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text type="secondary">及格分:</Text>
-                      <Text strong>{exam.passingScore || 0} 分</Text>
-                    </div>
-                    {exam.examDate && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Text type="secondary">考试时间:</Text>
-                        <Text strong>{new Date(exam.examDate).toLocaleString('zh-CN')}</Text>
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
-                    style={{ marginTop: 16, width: '100%' }}
-                  >
-                    开始考试
-                  </Button>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        )}
-      </div>
+                <Button
+                  type="primary"
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
+                  style={{ marginTop: 18, width: '100%' }}
+                >
+                  开始考试
+                </Button>
+              </section>
+            </Col>
+          ))}
+        </Row>
+      )}
     </div>
   );
 }

@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import {
-  Card,
   Button,
   Typography,
   Tag,
@@ -30,8 +29,9 @@ import {
   listExperimentKnowledgeResources,
   listExperimentAbilities,
 } from '@/lib/ash_rpc';
+import { PageHead } from '@/components/proto';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
 interface Course {
@@ -258,31 +258,20 @@ export default function ExperimentDetail() {
       .filter(Boolean) || [];
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F8F9FA' }}>
-      <div style={{ padding: 24, background: 'white', borderBottom: '1px solid #e0e0e0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-            返回
-          </Button>
-          <div style={{ flexGrow: 1 }}>
-            <Title level={4} style={{ margin: 0, fontWeight: 700, color: '#333' }}>
-              {expData.title}
-            </Title>
-            {expData.description && (
-              <Text type="secondary" style={{ fontSize: 14 }}>
-                {expData.description}
-              </Text>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24, overflow: 'auto' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <Card>
-            <Title level={5} style={{ marginBottom: 16, fontWeight: 600 }}>
+    <div className="pu-page">
+      <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ marginBottom: 10 }}>
+        返回
+      </Button>
+      <PageHead
+        title={expData.title}
+        description={expData.description || '实验项目信息与关联知识、能力目标。'}
+      />
+      <div>
+        <div className="pu-stack">
+          <section className="pu-card">
+            <div className="pu-section-title" style={{ marginBottom: 16 }}>
               实验状态
-            </Title>
+            </div>
             <Space wrap size={[8, 8]}>
               <Tag icon={getExperimentTypeIcon(expData.experimentType)} color="blue" style={{ padding: '4px 8px' }}>
                 {getExperimentTypeLabel(expData.experimentType)}
@@ -300,13 +289,13 @@ export default function ExperimentDetail() {
                 <Tag style={{ padding: '4px 8px' }}>排序: {expData.sortOrder}</Tag>
               )}
             </Space>
-          </Card>
+          </section>
 
-          <Card>
-            <Title level={5} style={{ marginBottom: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <section className="pu-card">
+            <div className="pu-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <ReadOutlined />
               所属课程
-            </Title>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: screens.md ? 'repeat(2, 1fr)' : '1fr', gap: 16 }}>
               <div>
                 <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
@@ -321,14 +310,14 @@ export default function ExperimentDetail() {
                 <Text strong>{expData.chapter?.title || '未分配'}</Text>
               </div>
             </div>
-          </Card>
+          </section>
 
           {(expData.objectives || expData.requirements || expData.equipment) && (
-            <Card>
-              <Title level={5} style={{ marginBottom: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <section className="pu-card">
+              <div className="pu-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FileTextOutlined />
                 实验详情
-              </Title>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: screens.md ? 'repeat(2, 1fr)' : '1fr', gap: 24 }}>
                 {expData.objectives && (
                   <div>
@@ -355,24 +344,24 @@ export default function ExperimentDetail() {
                   </div>
                 )}
               </div>
-            </Card>
+            </section>
           )}
 
           {expData.guideUrl && (
-            <Card>
-              <Title level={5} style={{ marginBottom: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <section className="pu-card">
+              <div className="pu-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <BookOutlined />
                 实验指导书
-              </Title>
+              </div>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: 16,
-                  background: 'rgba(82, 196, 26, 0.1)',
-                  borderRadius: 8,
-                  border: '1px solid #52c41a',
+                  background: '#f0f8f4',
+                  borderRadius: 10,
+                  border: '1px solid #b7e0cd',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -396,14 +385,14 @@ export default function ExperimentDetail() {
                   下载
                 </Button>
               </div>
-            </Card>
+            </section>
           )}
 
-          <Card>
-            <Title level={5} style={{ marginBottom: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <section className="pu-card">
+            <div className="pu-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <BulbOutlined />
               关联知识点 ({knowledgeResources.length})
-            </Title>
+            </div>
             {knowledgeResources.length > 0 ? (
               <Space wrap size={[8, 8]}>
                 {knowledgeResources.map((kr) => (
@@ -415,13 +404,13 @@ export default function ExperimentDetail() {
             ) : (
               <Alert message="该实验暂无关联知识点" type="info" style={{ marginTop: 8 }} />
             )}
-          </Card>
+          </section>
 
-          <Card>
-            <Title level={5} style={{ marginBottom: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <section className="pu-card">
+            <div className="pu-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <BulbOutlined />
               关联能力目标 ({mainAbilities.length + subAbilities.length})
-            </Title>
+            </div>
 
             {mainAbilities.length > 0 ? (
               <div style={{ marginBottom: subAbilities.length > 0 ? 16 : 0 }}>
@@ -468,18 +457,10 @@ export default function ExperimentDetail() {
             {mainAbilities.length === 0 && subAbilities.length === 0 && (
               <Alert message="该实验暂无关联能力目标" type="info" style={{ marginTop: 8 }} />
             )}
-          </Card>
+          </section>
 
-          <div
-            style={{
-              padding: 16,
-              background: 'rgba(24, 144, 255, 0.1)',
-              borderRadius: 8,
-            }}
-          >
-            <Text type="secondary">
-              提示：本实验平台仅提供实验信息查看功能。实验提交、进度跟踪等功能将在后续版本中提供。
-            </Text>
+          <div className="pu-note">
+            提示：本实验平台仅提供实验信息查看功能。实验提交、进度跟踪等功能将在后续版本中提供。
           </div>
         </div>
       </div>

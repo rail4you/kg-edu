@@ -737,26 +737,33 @@ export default function GraphLayerPage() {
         flexDirection: "column",
         height: "100%",
         overflow: "hidden",
-        background: "#f0f2f5",
+        background: "var(--pu-bg, #f5f7fb)",
       }}
     >
       {/* 简洁顶部标题 */}
       <div
         style={{
           flexShrink: 0,
-          background: "#2573E6",
-          padding: isMobile ? "14px 16px" : "16px 32px",
+          background: "#fff",
+          borderBottom: "1px solid var(--pu-line)",
+          padding: isMobile ? "12px 16px" : "14px 24px",
           zIndex: 1000,
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
         }}
       >
-        <Title level={isMobile ? 5 : 4} style={{ margin: 0, color: "#fff", fontWeight: 500 }}>
-          课程图谱总览 - {course?.title || "加载中..."}
-        </Title>
+        <div>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 16 : 20, fontWeight: 650, color: "#202f47", lineHeight: 1.4 }}>
+            图谱总览
+          </h1>
+          {!isMobile && (
+            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#64748b" }}>
+              {course?.title || "加载中..."} · 拖拽平移、滚轮缩放、点击节点查看详情
+            </p>
+          )}
+        </div>
         {isMobile && (
           <Button onClick={() => setControlsOpen(true)}>
             视图控制
@@ -769,6 +776,8 @@ export default function GraphLayerPage() {
           display: "flex",
           flex: 1,
           overflow: "hidden",
+          padding: isMobile ? 0 : "0 16px 16px",
+          gap: 16,
         }}
       >
         <div
@@ -776,7 +785,9 @@ export default function GraphLayerPage() {
             flex: 1,
             position: "relative",
             overflow: "hidden",
-            background: "#f7f8fa",
+            background: "#fafcff",
+            borderRadius: isMobile ? 0 : 14,
+            border: isMobile ? "none" : "1px solid var(--pu-line)",
           }}
         >
           {isLoading && (
@@ -791,7 +802,7 @@ export default function GraphLayerPage() {
               }}
             >
               <Spin size="large" />
-              <div style={{ color: "#fff", marginTop: 16, fontSize: 16 }}>
+              <div style={{ color: "#64748b", marginTop: 16, fontSize: 14 }}>
                 加载图谱数据中...
               </div>
             </div>
@@ -815,8 +826,8 @@ export default function GraphLayerPage() {
                 right: 0,
                 width: 220,
                 height: "100%",
-                background: "rgba(255, 255, 255, 0.95)",
-                borderLeft: "1px solid #e0e0e0",
+                background: "rgba(255, 255, 255, 0.96)",
+                borderLeft: "1px solid var(--pu-line)",
                 zIndex: 100,
                 color: "#333",
                 display: "flex",

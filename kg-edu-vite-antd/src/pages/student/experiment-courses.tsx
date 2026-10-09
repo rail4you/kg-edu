@@ -22,6 +22,7 @@ import { useAuth } from "@/auth/auth-context";
 import { listCourses, getExperimentsByCourse } from "@/lib/ash_rpc";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { themeColors as colors } from "@/styles/theme";
+import { PageHead } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -173,55 +174,36 @@ export default function ExperimentCourses() {
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: colors.background }}>
-      <div style={{ flexGrow: 1, overflow: "auto", padding: isMobile ? "12px" : "24px 32px" }}>
+    <div className="pu-page" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <PageHead
+        title="实验系统"
+        description={`${course.title} 的全部实验项目，包含线上实验与线下实践安排。`}
+      />
+      <div style={{ flexGrow: 1, overflow: "auto" }}>
         {/* 紧凑统计卡片 */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr', gap: isMobile ? 6 : 16, marginBottom: isMobile ? 8 : 20 }}>
+        <div className="pu-grid pu-grid--stats" style={{ gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0,1fr))' }}>
           {[
             { label: '实验项目', val: experiments.length, icon: <ExperimentOutlined />, color: colors.primary, sub: `共 ${onlineCount} 线上 · ${offlineCount} 线下 · ${totalHours} 学时` },
-            { label: '线上实验', val: onlineCount, icon: <ExperimentOutlined />, color: '#10B981', sub: '' },
-            { label: '线下实验', val: offlineCount, icon: <ExperimentOutlined />, color: '#6177A5', sub: '' },
-            { label: '总学时', val: totalHours, icon: <ClockCircleOutlined />, color: '#D16900', sub: '' },
+            { label: '线上实验', val: onlineCount, icon: <ExperimentOutlined />, color: '#10B981', sub: '在线完成的实验' },
+            { label: '线下实验', val: offlineCount, icon: <ExperimentOutlined />, color: '#6177A5', sub: '需到实验场完成' },
+            { label: '总学时', val: totalHours, icon: <ClockCircleOutlined />, color: '#D16900', sub: '实验环节总时长' },
           ].map((item, i) => (
-            <div key={i} style={{
-              background: i === 0 ? 'rgba(37,115,230,0.04)' : '#fff',
-              borderRadius: isMobile ? 10 : 12,
-              padding: isMobile ? '8px 10px' : 20,
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? 8 : 14,
-              boxShadow: i === 0 ? '0 1px 4px rgba(37,115,230,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
-              border: i === 0 ? '1px solid rgba(37,115,230,0.08)' : 'none',
-            }}>
-              <div style={{
-                width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? 10 : 14,
-                background: i === 0 ? `linear-gradient(135deg, ${colors.primary}18 0%, ${colors.primary}08 100%)` : '#f5f5f5',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: isMobile ? 16 : 22, color: item.color } })}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: isMobile ? 20 : 32, fontWeight: 700, lineHeight: 1.15, color: colors.textPrimary }}>
-                  {item.val}
-                </div>
-                <div style={{ fontSize: isMobile ? 10 : 12, color: colors.textSecondary }}>
-                  {item.label}
-                </div>
-              </div>
+            <div key={i} className="pu-stat" style={{ padding: isMobile ? '14px 16px' : undefined }}>
+              <span className="pu-stat__icon" style={{ color: item.color, background: `${item.color}12` }}>
+                {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 15 } })}
+              </span>
+              <div className="pu-stat__label">{item.label}</div>
+              <div className="pu-stat__num">{item.val}</div>
+              {item.sub ? <div className="pu-stat__desc">{item.sub}</div> : null}
             </div>
           ))}
         </div>
 
         {/* 实验列表 */}
-        <div style={{
-          background: "#FFFFFF", borderRadius: 12,
-          padding: isMobile ? "12px" : "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
+        <div className="pu-card" style={{ padding: isMobile ? 14 : "20px 24px" }}>
           <div style={{ marginBottom: 16 }}>
             <h2 style={{
-              fontSize: 18, fontWeight: 700,
-              fontFamily: "'Manrope', sans-serif",
+              fontSize: 18, fontWeight: 650,
               color: colors.textPrimary, margin: 0,
             }}>
               实验列表

@@ -1398,23 +1398,22 @@ export default function Page() {
 
   return (
     <div
+      className="pu-page-fill"
       style={{
         flex: 1,
         minHeight: 0,
         height: 0,
-        display: "flex",
-        flexDirection: "column",
       }}
     >
       {/* 顶栏：标题 + 主 Tab（左侧） */}
       <div style={{
         background: "#fff",
-        borderRadius: isMobile ? 4 : 8,
-        boxShadow: isMobile ? "none" : "0 1px 3px rgba(0,0,0,0.04)",
-        margin: isMobile ? "0 0 1px" : 6,
-        padding: isMobile ? "6px 8px" : "8px 12px",
+        borderRadius: 14,
+        border: "1px solid var(--pu-line)",
+        margin: isMobile ? "0 0 4px" : "0 0 10px",
+        padding: isMobile ? "10px 12px" : "14px 18px",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, minHeight: isMobile ? 32 : 36, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, flexWrap: "wrap" }}>
           {returnUrl && (
             <span
               onClick={() => navigate(returnUrl)}
@@ -1450,7 +1449,16 @@ export default function Page() {
               返回推荐
             </span>
           )}
-          {/* 主 Tab 放左侧，醒目大尺寸 */}
+          <h1 style={{ fontSize: isMobile ? 17 : 20, fontWeight: 650, margin: 0, lineHeight: 1.4 }}>
+            图谱总览
+          </h1>
+          {!isMobile && (
+            <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>
+              把知识、能力与资源连接起来，形成清晰的学习路径。
+            </p>
+          )}
+          <div style={{ flex: 1 }} />
+          {/* 主 Tab 放右侧，醒目大尺寸 */}
           <Segmented
             className="graph-main-tabs"
             value={mainTab}
@@ -1464,10 +1472,10 @@ export default function Page() {
             }}
           />
           <style>{`
-            .graph-main-tabs.ant-segmented { background: #f1f3f5; padding: 4px; border-radius: 10px; }
-            .graph-main-tabs .ant-segmented-item { font-size: 15px; font-weight: 700; padding: 2px 6px; border-radius: 8px; min-width: 110px; text-align: center; }
-            .graph-main-tabs .ant-segmented-item-selected { background: linear-gradient(135deg, ${colors.primary} 0%, #1E3A8A 100%); color: #fff !important; box-shadow: 0 2px 8px rgba(37,115,230,0.28); }
-            .graph-main-tabs .ant-segmented-item-label { font-size: 15px; font-weight: 700; }
+            .graph-main-tabs.ant-segmented { background: #f3f5f9; padding: 4px; border-radius: 9999px; }
+            .graph-main-tabs .ant-segmented-item { font-size: 14px; font-weight: 600; padding: 2px 6px; border-radius: 9999px; min-width: 104px; text-align: center; }
+            .graph-main-tabs .ant-segmented-item-selected { background: ${colors.primary}; color: #fff !important; }
+            .graph-main-tabs .ant-segmented-item-label { font-size: 14px; font-weight: 600; }
           `}</style>
           <div style={{ flex: 1 }} />
           {mainTab === "knowledge" && courseId && (
@@ -1501,7 +1509,7 @@ export default function Page() {
       {/* 主体：布局不变（课程侧边栏 / 岗位图谱） */}
       {mainTab === "job" ? (
         // 岗位能力图谱：自带左侧数据侧边栏（专业→岗位→图谱）
-        <div style={{ flex: 1, minHeight: 0, height: 0, display: "flex", flexDirection: "column", padding: isMobile ? 0 : "4px 6px 6px" }}>
+        <div style={{ flex: 1, minHeight: 0, height: 0, display: "flex", flexDirection: "column", padding: isMobile ? 0 : 0 }}>
           <div style={{
             flex: 1,
             minHeight: 0,
@@ -1509,8 +1517,7 @@ export default function Page() {
             borderRadius: isMobile ? 0 : 14,
             background: "#fff",
             overflow: "hidden",
-            boxShadow: isMobile ? "none" : "inset 0 1px 3px rgba(0,0,0,0.04)",
-            border: isMobile ? "none" : "1px solid rgba(0,0,0,0.06)",
+            border: isMobile ? "none" : "1px solid var(--pu-line)",
             display: "flex",
             flexDirection: "column",
           }}>
@@ -1525,8 +1532,7 @@ export default function Page() {
             minHeight: isMobile ? 0 : 400,
             display: "flex",
             flexDirection: isMobile ? "column" : "row",
-            padding: isMobile ? 0 : "4px 6px 6px",
-            gap: isMobile ? 0 : 6,
+            gap: isMobile ? 0 : 10,
           }}
         >
           {/* 左侧：图谱类型（竖排，之前设计） */}
@@ -1544,12 +1550,12 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               flexShrink: 0,
-              width: 160,
+              width: 168,
               background: "#fff",
-              borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.06)",
-              padding: "8px 6px",
-              gap: 2,
+              borderRadius: 14,
+              border: "1px solid var(--pu-line)",
+              padding: 8,
+              gap: 3,
               height: "fit-content",
               position: "sticky",
               top: 6,
@@ -1563,20 +1569,25 @@ export default function Page() {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 8,
-                      padding: "10px 10px",
+                      gap: 9,
+                      padding: "9px 11px",
                       borderRadius: 8,
                       border: "none",
                       cursor: "pointer",
                       fontSize: 14,
-                      fontWeight: isActive ? 600 : 400,
-                      color: isActive ? "#fff" : "#5A5D66",
-                      background: isActive ? `linear-gradient(135deg, ${colors.primary} 0%, #1E3A8A 100%)` : "transparent",
-                      boxShadow: isActive ? "0 2px 6px rgba(37,115,230,0.25)" : "none",
+                      fontWeight: isActive ? 650 : 400,
+                      color: isActive ? colors.primary : "#596b84",
+                      background: isActive ? "#eaf0ff" : "transparent",
                       transition: "all 0.15s",
                       whiteSpace: "nowrap",
                       textAlign: "left" as const,
                       width: "100%",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) (e.currentTarget as HTMLElement).style.background = "#f2f5fb";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
                     }}
                   >
                     <span style={{ fontSize: 14 }}>{tab.icon}</span>
@@ -1596,11 +1607,10 @@ export default function Page() {
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            boxShadow: isMobile ? "none" : "inset 0 1px 3px rgba(0,0,0,0.04)",
-            border: isMobile ? "none" : "1px solid rgba(0,0,0,0.06)",
+            border: isMobile ? "none" : "1px solid var(--pu-line)",
           }}>
             {!isMobile && courseId && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: "1px solid #f0f0f0", background: "#fafbfc" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderBottom: "1px solid var(--pu-line)", background: "#f6f8fc" }}>
                 <ClusterOutlined style={{ color: colors.primary }} />
                 <span style={{ fontSize: 12, color: "#5f6368" }}>当前课程</span>
                 <Tag style={{ margin: 0, fontSize: 12, background: `${colors.primary}0a`, color: colors.primary, border: `1px solid ${colors.primary}20`, borderRadius: 6, padding: "0 8px", fontWeight: 600 }}>

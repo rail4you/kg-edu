@@ -2,8 +2,8 @@ import * as React from "react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Card, Button, Typography, Spin, Input, Select, DatePicker, Radio, Checkbox,
-  Upload, message, Tag, Space, Modal,
+  Button, Typography, Spin, Input, Select, DatePicker, Radio, Checkbox,
+  Upload, message, Space, Modal,
 } from "antd";
 import { ArrowLeftOutlined, UploadOutlined, RobotOutlined, SendOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
@@ -15,8 +15,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { uploadFileViaServer } from "@/lib/oss-upload";
 import { evaluateFormula } from "@/lib/practice";
+import { PageHead, ProtoCard, ProtoTag, ListItem } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function MyForms() {
   const navigate = useNavigate();
@@ -172,55 +173,89 @@ export default function MyForms() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>我的表单</Title>
-      </div>
+    <div className="pu-page">
+      <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ paddingLeft: 0, marginBottom: 6 }}>
+        返回
+      </Button>
+      <PageHead title="我的表单" description="填写可填报单，并查看提交审核状态。" />
 
-      <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto", width: "100%" }}>
         {!activeFormId ? (
           <>
-            <Card title="可填报单">
-              {(forms || []).map((f: any) => (
-                <Card.Grid key={f.id} style={{ width: "50%", cursor: "pointer" }} onClick={() => { setActiveFormId(f.id); setValues({}); }}>
-                  <Text strong>{f.title}</Text>
-                  <div><Tag>{f.category}</Tag></div>
-                </Card.Grid>
-              ))}
-              {(!forms || forms.length === 0) && <Text type="secondary">暂无可填报单</Text>}
-            </Card>
-            <Card title="我的提交" style={{ marginTop: 16 }}>
-              {(mine || []).map((s: any) => (
-                <div key={s.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
-                  <Text style={{ fontSize: 12 }}>{s.id.slice(0, 8)}…</Text>
-                  <Tag color={s.status === "approved" ? "green" : s.status === "rejected" ? "red" : "orange"}>
-                    {s.status === "approved" ? "已批准" : s.status === "rejected" ? "已驳回" : "待审核"}
-                  </Tag>
+            <ProtoCard title="可填报单" extra={<span style={{ fontSize: 12, color: "#64748b" }}>共 {(forms || []).length} 个</span>}>
+              {(forms || []).length === 0 ? (
+                <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>暂无可填报单</p>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+                  {(forms || []).map((f: any) => (
+                    <div
+                      key={f.id}
+                      className="pu-card"
+                      style={{ padding: 16, cursor: "pointer", transition: "transform .2s ease, box-shadow .2s ease" }}
+                      onClick={() => { setActiveFormId(f.id); setValues({}); }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 10px 24px rgba(21,50,84,0.07)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "";
+                      }}
+                    >
+                      <h3 style={{ fontSize: 15, fontWeight: 650, color: "#202f47", marginBottom: 10, lineHeight: 1.5 }}>{f.title}</h3>
+                      {f.category && <ProtoTag tone="blue">{f.category}</ProtoTag>}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </Card>
+              )}
+            </ProtoCard>
+
+            <div style={{ marginTop: 20 }}>
+              <ProtoCard title="我的提交" extra={<span style={{ fontSize: 12, color: "#64748b" }}>共 {(mine || []).length} 条</span>}>
+                {(mine || []).length === 0 ? (
+                  <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>暂无提交记录</p>
+                ) : (
+                  (mine || []).map((s: any) => (
+                    <ListItem
+                      key={s.id}
+                      title={<span style={{ fontSize: 14 }}>{s.id.slice(0, 8)}…</span>}
+                      extra={
+                        <ProtoTag tone={s.status === "approved" ? "green" : s.status === "rejected" ? "red" : "amber"}>
+                          {s.status === "approved" ? "已批准" : s.status === "rejected" ? "已驳回" : "待审核"}
+                        </ProtoTag>
+                      }
+                    />
+                  ))
+                )}
+              </ProtoCard>
+            </div>
           </>
         ) : (
-          <Card title={form?.title || "填报"} extra={<Button type="link" onClick={() => setActiveFormId(null)}>返回</Button>}>
-            <Card size="small" title={<span><RobotOutlined /> AI 填表（自然语言 / 图片回填）</span>} style={{ marginBottom: 16, background: "#f6f0ff" }}>
+          <ProtoCard
+            title={form?.title || "填报"}
+            extra={<Button type="link" onClick={() => setActiveFormId(null)}>返回</Button>}
+          >
+            <div style={{ marginBottom: 18, padding: 16, borderRadius: 10, background: "#f6f0ff", border: "1px solid #e6dcf7" }}>
+              <div style={{ fontSize: 14, fontWeight: 650, color: "#5b3fa8", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <RobotOutlined /> AI 填表（自然语言 / 图片回填）
+              </div>
               <Input.TextArea rows={2} value={aiText} onChange={(e) => setAiText(e.target.value)} placeholder="如：因感冒请假三天，从明天开始" style={{ marginBottom: 8 }} />
               <Space wrap>
                 <Button loading={aiLoading} onClick={() => aiFill("text")}>按描述回填</Button>
                 <Input value={aiImage} onChange={(e) => setAiImage(e.target.value)} placeholder="图片 URL（识别回填）" style={{ width: 260 }} />
                 <Button loading={aiLoading} onClick={() => aiFill("image")}>识别图片回填</Button>
               </Space>
-            </Card>
+            </div>
             {(form?.schema || []).map((f: any) => (
-              <div key={f.key} style={{ marginBottom: 12 }}>
+              <div key={f.key} style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 10, background: "#f9fbff", border: "1px solid var(--pu-line)" }}>
                 <Text strong>{f.required && <span style={{ color: "red" }}>* </span>}{f.label}</Text>
-                <div style={{ marginTop: 4 }}>{renderField(f)}</div>
+                <div style={{ marginTop: 6 }}>{renderField(f)}</div>
               </div>
             ))}
-            <Button type="primary" icon={<SendOutlined />} onClick={doSubmit}>
+            <Button type="primary" icon={<SendOutlined />} onClick={doSubmit} style={{ marginTop: 8 }}>
               提交（进入教师审核）
             </Button>
-          </Card>
+          </ProtoCard>
         )}
       </div>
     </div>

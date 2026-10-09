@@ -90,35 +90,15 @@ const StatCard: React.FC<{
   value: string | number;
   accent?: string;
 }> = ({ icon, label, value, accent }) => (
-  <div
-    style={{
-      flex: 1,
-      background: "#ffffff",
-      borderRadius: 16,
-      padding: "16px 20px",
-      display: "flex",
-      alignItems: "center",
-      gap: 14,
-    }}
-  >
-    <div
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        background: accent ? `${accent}12` : `${colors.primary}12`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
+  <div className="pu-stat" style={{ flex: 1, minWidth: 180 }}>
+    <span
+      className="pu-stat__icon"
+      style={accent ? { color: accent, background: `${accent}12` } : undefined}
     >
       {icon}
-    </div>
-    <div>
-      <div style={{ fontSize: 11, color: colors.textSecondary, letterSpacing: 0.3, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, letterSpacing: -0.3 }}>{value}</div>
-    </div>
+    </span>
+    <div className="pu-stat__label">{label}</div>
+    <div className="pu-stat__num" style={{ fontSize: 28 }}>{value}</div>
   </div>
 );
 
@@ -230,8 +210,7 @@ const ChapterSectionCard: React.FC<{
         background: "#ffffff",
         borderRadius: 14,
         overflow: "hidden",
-        border: "1px solid #e8eaed",
-        boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
+        border: "1px solid var(--pu-line)",
       }}
     >
       {/* 章节头部 */}
@@ -1275,11 +1254,10 @@ export default function CourseVideoPage() {
           {/* 课程标题区 */}
           <div style={{
             background: "#fff",
-            borderRadius: 20,
-            padding: isMobile ? "16px" : "28px 32px",
-            marginBottom: 20,
-            boxShadow: "0 2px 12px rgba(37,115,230,0.06)",
-            border: "1px solid rgba(37,115,230,0.08)",
+            borderRadius: 14,
+            padding: isMobile ? "16px" : "26px 30px",
+            marginBottom: 16,
+            border: "1px solid var(--pu-line)",
           }}>
             {/* 标签行 */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
@@ -1349,11 +1327,11 @@ export default function CourseVideoPage() {
             return (
               <div key={key} style={{
                 background: "#fff",
-                borderRadius: 16,
-                padding: isMobile ? "14px" : "24px 28px",
+                borderRadius: 14,
+                padding: isMobile ? "14px" : "22px 26px",
                 marginBottom: isMobile ? 10 : 16,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                borderLeft: `4px solid ${accent}`,
+                border: "1px solid var(--pu-line)",
+                borderLeft: `3px solid ${accent}`,
               }}>
                 {/* 带图标的标题 */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -1442,6 +1420,7 @@ export default function CourseVideoPage() {
                     padding: 18,
                     borderRadius: 14,
                     background: "#fff",
+                    border: "1px solid var(--pu-line)",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -1510,7 +1489,8 @@ export default function CourseVideoPage() {
                     gap: 14,
                     padding: 14,
                     background: "#fff",
-                    borderRadius: 12,
+                    borderRadius: 10,
+                    border: "1px solid var(--pu-line)",
                   }}
                 >
                   <Avatar style={{ background: colors.primary, borderRadius: 10 }} icon={<LinkOutlined />} />
@@ -1616,21 +1596,21 @@ export default function CourseVideoPage() {
         <div
           style={{
             background: "#fff",
-            borderRadius: 12,
-            padding: isMobile ? "6px 8px" : "10px 16px",
+            borderRadius: 14,
+            border: "1px solid var(--pu-line)",
+            padding: isMobile ? "6px 10px" : "4px 18px",
             display: "flex",
             alignItems: "center",
-            gap: isMobile ? 4 : 6,
+            gap: isMobile ? 10 : 26,
             overflowX: "auto",
-            boxShadow: "0 2px 8px rgba(0, 88, 190, 0.03)",
           }}
         >
-          {/* 水平 Tab - 圆角胶囊 */}
           {horizontalTabs.map((tab) => {
             const isActive = currentTab === tab.key;
             return (
-              <div
+              <button
                 key={tab.key}
+                type="button"
                 onClick={() => {
                   if (currentTab === "1") {
                     stopMainVideo();
@@ -1638,31 +1618,21 @@ export default function CourseVideoPage() {
                   }
                   setCurrentTab(tab.key);
                 }}
+                className={`pu-tabs__item${isActive ? " is-active" : ""}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: isMobile ? 4 : 6,
-                  padding: isMobile ? "6px 12px" : "8px 18px",
-                  cursor: "pointer",
-                  borderRadius: 20,
+                  padding: isMobile ? "10px 2px" : "14px 2px",
                   whiteSpace: "nowrap",
                   flexShrink: 0,
-                  background: isActive ? colors.primary : "transparent",
-                  color: isActive ? "#fff" : colors.textSecondary,
-                  fontWeight: isActive ? 600 : 400,
-                  fontSize: isMobile ? 12 : 13,
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#e8eaed";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "transparent";
+                  fontSize: isMobile ? 12 : 14,
+                  cursor: "pointer",
                 }}
               >
                 <span style={{ fontSize: 15, lineHeight: 1 }}>{tab.icon}</span>
                 <span>{tab.label}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1673,8 +1643,7 @@ export default function CourseVideoPage() {
         <div style={{
           height: "100%",
           borderRadius: 14,
-          border: "1px solid #e8eaed",
-          boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
+          border: "1px solid var(--pu-line)",
           overflow: "hidden",
         }}>
           {renderTabContent()}

@@ -21,8 +21,9 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { uploadFileViaServer } from "@/lib/oss-upload";
 import { evaluateFormula } from "@/lib/practice";
 import dayjs from "dayjs";
+import { PageHead, ProtoCard, ProtoTag } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Assignment {
   id: string;
@@ -421,24 +422,37 @@ export default function StudentDataForms() {
     const category = f?.category;
     const fieldCount = Array.isArray(f?.schema) ? f.schema.length : 0;
     return (
-      <Card
+      <section
         key={a.id}
-        size="small"
-        hoverable
+        className="pu-card"
         onClick={() => openAssignment(a)}
-        style={{ height: "100%", borderRadius: 12 }}
-        styles={{ body: { display: "flex", flexDirection: "column", height: "100%" } }}
+        style={{
+          height: "100%",
+          padding: 20,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          transition: "transform .2s ease, box-shadow .2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-3px)";
+          e.currentTarget.style.boxShadow = "0 12px 30px rgba(21,50,84,0.08)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "";
+        }}
       >
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-            <Text strong style={{ fontSize: 16, lineHeight: 1.4 }}>{title}</Text>
-            <Tag color={mode === "pending" ? "orange" : "green"} style={{ margin: 0 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 650, lineHeight: 1.5, color: "#202f47" }}>{title}</h3>
+            <ProtoTag tone={mode === "pending" ? "amber" : "green"}>
               {mode === "pending" ? "待填写" : "已提交"}
-            </Tag>
+            </ProtoTag>
           </div>
-          <div style={{ marginTop: 10 }}>
-            {category && <Tag color="blue">{category}</Tag>}
-            {fieldCount > 0 && <Tag color="purple">{fieldCount} 个字段</Tag>}
+          <div style={{ marginTop: 12 }} className="pu-tags">
+            {category && <ProtoTag tone="blue">{category}</ProtoTag>}
+            {fieldCount > 0 && <ProtoTag tone="gray">{fieldCount} 个字段</ProtoTag>}
           </div>
           <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 12 }}>
             {a.dueAt ? `截止：${dayjs(a.dueAt).format("YYYY-MM-DD")}` : "不限截止时间"}
@@ -448,28 +462,26 @@ export default function StudentDataForms() {
           type={mode === "pending" ? "primary" : "default"}
           icon={mode === "pending" ? <EditOutlined /> : <FileTextOutlined />}
           block
-          style={{ marginTop: 12 }}
+          style={{ marginTop: 16 }}
           onClick={(e) => { e.stopPropagation(); openAssignment(a); }}
         >
           {mode === "pending" ? "去填写" : "查看详情"}
         </Button>
-      </Card>
+      </section>
     );
   };
 
   if (activeAssignmentId && activeForm) {
     return (
-      <div style={{ padding: "20px 24px" }}>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={closeAssignment}>
-            返回
-          </Button>
-        </div>
-        <Title level={4} style={{ marginBottom: 4 }}>{activeForm.title}</Title>
-        <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-          填写表单内容并提交，等待教师审核
-        </Text>
-        <Card>
+      <div className="pu-page">
+        <Button type="text" icon={<ArrowLeftOutlined />} onClick={closeAssignment} style={{ paddingLeft: 0, marginBottom: 8 }}>
+          返回
+        </Button>
+        <PageHead
+          title={activeForm.title}
+          description="填写表单内容并提交，等待教师审核"
+        />
+        <ProtoCard>
           {submission && (
             <Card
               size="small"
@@ -511,7 +523,7 @@ export default function StudentDataForms() {
           <Row gutter={[16, 16]}>
             {(activeForm.schema || []).map((f: any) => (
               <Col xs={24} md={12} key={f.key}>
-                <div style={{ border: "1px solid #f0f0f0", borderRadius: 8, padding: "12px 14px", background: "#fafafa" }}>
+                <div style={{ border: "1px solid var(--pu-line)", borderRadius: 10, padding: "14px 16px", background: "#f9fbff" }}>
                   <Text strong>
                     {f.required && <span style={{ color: "red" }}>* </span>}
                     {f.label}
@@ -530,27 +542,25 @@ export default function StudentDataForms() {
               loading={submitting}
               block
               size="large"
-              style={{ marginTop: 16 }}
+              style={{ marginTop: 18 }}
             >
               提交（进入教师审核）
             </Button>
           )}
-        </Card>
+        </ProtoCard>
       </div>
     );
   }
 
 return (
-    <div style={{ padding: "20px 24px" }}>
-      <div style={{ marginBottom: 16 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-          返回
-        </Button>
-      </div>
-      <Title level={4} style={{ marginBottom: 4 }}>数据表单</Title>
-      <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-        填写教师分配的表单，并跟踪提交审核状态
-      </Text>
+    <div className="pu-page">
+      <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ paddingLeft: 0, marginBottom: 8 }}>
+        返回
+      </Button>
+      <PageHead
+        title="数据表单"
+        description="填写教师分配的表单，并跟踪提交审核状态。"
+      />
       {tenantMismatch && (
         <Alert
           type="warning"
@@ -575,7 +585,7 @@ return (
           }
         />
       )}
-      <Card>
+      <ProtoCard>
         <Tabs
           defaultActiveKey="pending"
           items={[
@@ -586,7 +596,7 @@ return (
                 pendingList.length === 0 ? (
                   <Empty description="暂无待填写的表单" />
                 ) : (
-                  <Row gutter={[16, 16]}>
+                  <Row gutter={[20, 20]}>
                     {pendingList.map((a) => (
                       <Col xs={24} sm={12} md={8} key={a.id}>
                         {renderAssignmentCard(a, "pending")}
@@ -602,7 +612,7 @@ return (
                 submittedList.length === 0 ? (
                   <Empty description="暂无已提交的表单" />
                 ) : (
-                  <Row gutter={[16, 16]}>
+                  <Row gutter={[20, 20]}>
                     {submittedList.map((a) => (
                       <Col xs={24} sm={12} md={8} key={a.id}>
                         {renderAssignmentCard(a, "submitted")}
@@ -613,7 +623,7 @@ return (
             },
           ]}
         />
-      </Card>
+      </ProtoCard>
     </div>
   );
 }

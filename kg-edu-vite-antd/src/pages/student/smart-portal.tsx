@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Spin, Typography } from "antd";
+import { Spin, Typography } from "antd";
 import { fetchSmartPortalLayout, EMPTY_LAYOUT } from "@/lib/smart-portal";
 import { SmartPortalRenderer } from "@/components/smart-portal/SmartPortalRenderer";
+import { PageHead } from "@/components/proto";
 import { useSmartPortalData } from "@/components/smart-portal/use-smart-portal-data";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function StudentSmartPortal() {
   const navigate = useNavigate();
@@ -21,21 +22,17 @@ export default function StudentSmartPortal() {
   const config = layoutQuery.data;
 
   return (
-    <div style={{ padding: "20px 24px", maxWidth: 1280, margin: "0 auto" }}>
-      <div style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>
-          {config?.name || "智能门户"}
-        </Title>
-        <Text type="secondary" style={{ fontSize: 13 }}>
-          汇集课程、知识点与学情数据的个性化门户
-        </Text>
-      </div>
+    <div className="pu-page">
+      <PageHead
+        title={config?.name || "智能门户"}
+        description="汇集课程、知识点与学情数据的个性化门户。"
+      />
 
       <Spin spinning={layoutQuery.isLoading}>
         {config && !config.enabled ? (
-          <Card>
+          <div className="pu-card" style={{ padding: 24 }}>
             <Text type="secondary">门户暂未启用</Text>
-          </Card>
+          </div>
         ) : (
           <SmartPortalRenderer
             layout={layout}

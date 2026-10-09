@@ -17,6 +17,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { listCourseAssignments, listCourses, getUser } from "@/lib/ash_rpc";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { themeColors as colors } from "@/styles/theme";
+import { PageHead, ProtoTag } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -129,21 +130,22 @@ const TeacherCard: React.FC<{ teacher: TeacherWithRole }> = ({ teacher }) => {
   return (
     <div
       style={{
-        borderRadius: isMobile ? 10 : 12,
+        borderRadius: 14,
         background: "#fff",
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-        border: "1px solid #f1f5f9",
+        border: "1px solid var(--pu-line)",
         overflow: "hidden",
-        transition: "all 0.3s ease",
+        transition: "transform 0.25s ease, box-shadow 0.25s ease",
         display: "flex",
         flexDirection: "column",
         height: "100%",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.1)";
+        e.currentTarget.style.transform = "translateY(-3px)";
+        e.currentTarget.style.boxShadow = "0 12px 30px rgba(21,50,84,0.08)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "";
       }}
     >
       {/* 全宽图片区域 */}
@@ -175,17 +177,15 @@ const TeacherCard: React.FC<{ teacher: TeacherWithRole }> = ({ teacher }) => {
         {roleConfig && (
           <div style={{
             position: "absolute",
-            top: 16,
-            right: 16,
+            top: 14,
+            right: 14,
             background: roleConfig.badgeBg,
             color: "#fff",
-            padding: "4px 14px",
-            borderRadius: 9999,
+            padding: "3px 10px",
+            borderRadius: 6,
             fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.5px",
-            textTransform: "uppercase" as const,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            fontWeight: 600,
+            letterSpacing: "0.3px",
           }}>
             {roleConfig.label}
           </div>
@@ -242,7 +242,7 @@ const TeacherCard: React.FC<{ teacher: TeacherWithRole }> = ({ teacher }) => {
         <div style={{
           marginTop: isMobile ? 8 : 12,
           paddingTop: isMobile ? 8 : 10,
-          borderTop: "1px solid #f1f5f9",
+          borderTop: "1px solid var(--pu-line-soft)",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           alignItems: isMobile ? "stretch" : "center",
@@ -596,13 +596,22 @@ export default function CourseTeachersPage() {
   }
 
   return (
-    <div style={{ padding: isMobile ? "12px" : "24px 40px", minHeight: isMobile ? "auto" : "calc(100vh - 200px)" }}>
+    <div className="pu-page">
+      <PageHead
+        title="教师团队"
+        description="与课程教师保持连接，获得学习支持。"
+        actions={
+          <div className="pu-tags">
+            <ProtoTag tone="blue">共 {teachers.length} 位教师</ProtoTag>
+          </div>
+        }
+      />
       {/* 教师卡片网格 */}
       <div style={{
         display: "grid",
         gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
-        gap: isMobile ? 8 : 16,
-        marginBottom: isMobile ? 12 : 24,
+        gap: isMobile ? 12 : 20,
+        marginBottom: isMobile ? 16 : 24,
       }}>
         {teachers.map((teacher) => (
           <TeacherCard key={teacher.id} teacher={teacher} />
@@ -611,14 +620,15 @@ export default function CourseTeachersPage() {
 
       {/* 底部提示 */}
       <div style={{
-        background: `${colors.primary}08`,
-        borderRadius: 10,
-        padding: isMobile ? "12px" : "14px 20px",
+        background: "#eef3fb",
+        border: "1px solid #e4ebf4",
+        borderRadius: 14,
+        padding: isMobile ? "16px" : "18px 24px",
         display: "flex",
         flexDirection: isMobile ? "column" : "row",
         alignItems: isMobile ? "stretch" : "center",
         justifyContent: "space-between",
-        gap: isMobile ? 8 : 0,
+        gap: isMobile ? 10 : 0,
       }}>
         <Text style={{ fontSize: isMobile ? 13 : 14, color: colors.primary }}>
           <MailOutlined style={{ marginRight: 8 }} />

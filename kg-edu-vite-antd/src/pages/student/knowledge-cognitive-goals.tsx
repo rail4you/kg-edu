@@ -761,43 +761,24 @@ export default function StudentKnowledgeCognitiveGoals() {
   ];
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: colors.pageBg, overflow: "hidden" }}>
+    <div className="pu-page-fill" style={{ height: "100%", overflow: "hidden" }}>
       {/* 统计卡片 */}
-      <div style={{ padding: isMobile ? "12px 8px 0" : "16px 20px 0", flexShrink: 0 }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: isMobile ? 6 : 10, marginBottom: isMobile ? 10 : 14 }}>
+      <div style={{ flexShrink: 0, marginBottom: 16 }}>
+        <div className="pu-grid pu-grid--stats" style={{ marginBottom: 14, gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))" }}>
           {statsCards.map((item) => (
-            <div
-              key={item.label}
-              style={{
-                background: item.bg,
-                borderRadius: 12,
-                padding: isMobile ? "8px 10px" : "12px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: isMobile ? 8 : 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}
-              >
-                {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 18, color: item.color } })}
-              </div>
-              <div>
-                <div style={{ fontSize: isMobile ? 17 : 22, fontWeight: 700, lineHeight: 1.15, color: "#191c1d" }}>{item.value}</div>
-                <div style={{ fontSize: 12, color: "#757780", fontWeight: 500 }}>{item.label}</div>
-              </div>
+            <div className="pu-stat" key={item.label} style={{ padding: isMobile ? "14px 16px" : undefined }}>
+              <span className="pu-stat__icon" style={{ color: item.color, background: item.bg }}>
+                {React.cloneElement(item.icon as React.ReactElement, { style: { fontSize: 15 } })}
+              </span>
+              <div className="pu-stat__label">{item.label}</div>
+              <div className="pu-stat__num">{item.value}</div>
             </div>
           ))}
         </div>
 
         {/* 认知层级条 */}
         {cognitiveStats.total > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr 1fr 1fr", gap: isMobile ? 4 : 6, marginBottom: isMobile ? 10 : 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(6, minmax(0, 1fr))", gap: isMobile ? 8 : 10 }}>
             {COGNITIVE_LEVELS.map((level) => {
               const count = cognitiveDistribution.find(d => d.id === level.id)?.count || 0;
               return (
@@ -805,22 +786,18 @@ export default function StudentKnowledgeCognitiveGoals() {
                   key={level.id}
                   style={{
                     background: "#fff",
-                    borderRadius: 8,
-                    padding: isMobile ? "6px 8px" : "8px 10px",
+                    borderRadius: 12,
+                    border: "1px solid var(--pu-line)",
+                    padding: isMobile ? "10px 12px" : "12px 14px",
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                    gap: 10,
                   }}
                 >
-                  <div style={{
-                    width: 8, height: 8, borderRadius: 2,
-                    background: level.color,
-                    flexShrink: 0,
-                  }} />
+                  <div style={{ width: 8, height: 26, borderRadius: 4, background: level.color, flexShrink: 0 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 15, color: "#757780", fontWeight: 600 }}>{level.name}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: level.color, lineHeight: 1.2 }}>{count}</div>
+                    <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>{level.name}</div>
+                    <div style={{ fontSize: 20, fontWeight: 650, color: "#202f47", lineHeight: 1.3 }}>{count}</div>
                   </div>
                 </div>
               );
@@ -830,10 +807,10 @@ export default function StudentKnowledgeCognitiveGoals() {
       </div>
 
       {/* 图表 + 表格区域 */}
-      <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: isMobile ? "0 8px 16px" : "0 20px 16px" }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: "auto", paddingBottom: 16 }}>
         {!selectedCourseId ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300 }}>
-            <div style={{ textAlign: "center", padding: 48, borderRadius: 16, background: "#fff", boxShadow: "0 4px 16px rgba(0, 88, 190, 0.04)", maxWidth: 360 }}>
+            <div style={{ textAlign: "center", padding: 48, borderRadius: 14, background: "#fff", border: "1px solid var(--pu-line)", maxWidth: 380 }}>
               <div
                 style={{
                   width: 72, height: 72, borderRadius: 18,
@@ -844,34 +821,34 @@ export default function StudentKnowledgeCognitiveGoals() {
               >
                 <BulbOutlined style={{ fontSize: 32, color: colors.primary }} />
               </div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#191c1d", marginBottom: 6 }}>请先选择一个课程</div>
-              <div style={{ color: "#757780" }}>选择课程后将显示该课程的认知目标数据</div>
+              <div style={{ fontSize: 18, fontWeight: 650, color: "#202f47", marginBottom: 6 }}>请先选择一个课程</div>
+              <div style={{ color: "#64748b" }}>选择课程后将显示该课程的认知目标数据</div>
             </div>
           </div>
         ) : (
           <>
             {/* 图表行 */}
-            <Row gutter={12} style={{ marginBottom: 12 }}>
+            <Row gutter={20} style={{ marginBottom: 20 }}>
               <Col xs={24} md={12}>
-                <div style={{
-                  borderRadius: 12, background: "#fff", padding: 16,
-                  boxShadow: "0 4px 16px rgba(0, 88, 190, 0.04)", height: "100%",
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#191c1d", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                    <FundOutlined style={{ color: colors.primary, fontSize: 14 }} />
-                    认知目标层级
+                <div className="pu-card" style={{ height: "100%", padding: 20 }}>
+                  <div className="pu-card-title" style={{ marginBottom: 12 }}>
+                    <h2 style={{ fontSize: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                      <FundOutlined style={{ color: colors.primary, fontSize: 15 }} />
+                      认知目标层级
+                    </h2>
+                    <span style={{ fontSize: 12, color: "#64748b" }}>共 {dimensionedKnowledges.length} 个已设维度知识点</span>
                   </div>
                   <CognitiveDistributionChart data={chartData} totalCount={dimensionedKnowledges.length} />
                 </div>
               </Col>
               <Col xs={24} md={12}>
-                <div style={{
-                  borderRadius: 12, background: "#fff", padding: 16,
-                  boxShadow: "0 4px 16px rgba(0, 88, 190, 0.04)", height: "100%",
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#191c1d", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                    <TagOutlined style={{ color: "#389e0d", fontSize: 14 }} />
-                    认知目标分布
+                <div className="pu-card" style={{ height: "100%", padding: 20 }}>
+                  <div className="pu-card-title" style={{ marginBottom: 12 }}>
+                    <h2 style={{ fontSize: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                      <TagOutlined style={{ color: "#389e0d", fontSize: 15 }} />
+                      认知目标分布
+                    </h2>
+                    <span style={{ fontSize: 12, color: "#64748b" }}>按认知层级统计</span>
                   </div>
                   <CognitivePieChart data={chartData} />
                 </div>
@@ -879,46 +856,42 @@ export default function StudentKnowledgeCognitiveGoals() {
             </Row>
 
             {/* 知识点表格 */}
-            <div style={{
-              borderRadius: 12, background: "#fff",
-              boxShadow: "0 4px 16px rgba(0, 88, 190, 0.04)", marginBottom: 12,
-            }}>
+            <div className="pu-card" style={{ padding: 0, overflow: "hidden", marginBottom: 20 }}>
               <div
+                className="pu-filters"
                 style={{
-                  padding: isMobile ? "10px" : "12px 16px",
-                  display: "flex",
+                  padding: isMobile ? "14px" : "16px 20px",
+                  marginBottom: 0,
                   flexDirection: isMobile ? "column" : "row",
-                  justifyContent: "space-between",
                   alignItems: isMobile ? "stretch" : "center",
-                  gap: 8,
+                  borderBottom: "1px solid var(--pu-line-soft)",
                 }}
               >
+                <Input
+                  placeholder="搜索知识点"
+                  prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+                  allowClear
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ width: isMobile ? "100%" : 260, borderRadius: 8 }}
+                />
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <Input
-                    placeholder="搜索知识点"
-                    prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-                    allowClear
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    style={{ width: isMobile ? "100%" : 260, borderRadius: 8 }}
+                  <Switch
+                    checked={showOnlyDimensioned}
+                    onChange={(checked) => setShowOnlyDimensioned(checked)}
+                    size="small"
                   />
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <Switch
-                      checked={showOnlyDimensioned}
-                      onChange={(checked) => setShowOnlyDimensioned(checked)}
-                      size="small"
-                    />
-                    <Text style={{ fontSize: 13, color: "#757780" }}>
-                      只显示已设维度
-                    </Text>
-                    {showOnlyDimensioned && (
-                      <Tag color="green" style={{ marginLeft: 4 }}>
-                        {dimensionedKnowledges.length}
-                      </Tag>
-                    )}
-                  </div>
+                  <Text style={{ fontSize: 13, color: "#64748b" }}>
+                    只显示已设维度
+                  </Text>
+                  {showOnlyDimensioned && (
+                    <Tag color="green" style={{ marginLeft: 4 }}>
+                      {dimensionedKnowledges.length}
+                    </Tag>
+                  )}
                 </div>
-                <Text style={{ fontSize: 12, color: "#757780" }}>
+                <div style={{ flex: 1 }} />
+                <Text style={{ fontSize: 13, color: "#64748b" }}>
                   共 {filteredRowCount} 条
                 </Text>
               </div>
@@ -946,12 +919,9 @@ export default function StudentKnowledgeCognitiveGoals() {
 
             {/* 已设维度知识点标签 */}
             {dimensionedKnowledges.length > 0 && (
-              <div style={{
-                borderRadius: 12, background: "#fff", padding: 16,
-                boxShadow: "0 4px 16px rgba(0, 88, 190, 0.04)",
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#191c1d", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                  <TagOutlined style={{ color: "#389e0d", fontSize: 14 }} />
+              <div className="pu-card" style={{ padding: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 650, color: "#202f47", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <TagOutlined style={{ color: "#389e0d", fontSize: 15 }} />
                   已设置认知维度的知识点
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

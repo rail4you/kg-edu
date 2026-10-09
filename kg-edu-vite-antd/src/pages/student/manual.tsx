@@ -28,6 +28,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { listFileTemplates } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import FilePreview from "@/components/FilePreview";
+import { PageHead } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -187,42 +188,32 @@ export default function ManualPage() {
   }
 
   return (
-    <div style={{ background: "#f7f8fa", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 32px 40px" }}>
+    <div className="pu-page">
+      <div style={{ maxWidth: 980, margin: "0 auto", width: "100%" }}>
+        <PageHead
+          title="使用手册"
+          description="欢迎使用学习平台。本手册帮助你快速了解课程学习、知识点浏览、练习测试与学习总结等核心功能。"
+        />
         {/* Main content card */}
-        <div style={{
-          background: "#fff", borderRadius: 16,
-          border: "1px solid #e8e8e8",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-          overflow: "hidden",
-        }}>
-          {/* Introduction section */}
-          <div style={{ padding: "36px 40px 28px", borderBottom: "1px solid #f0f0f0" }}>
-            <Title level={3} style={{ margin: "0 0 12px", color: "#1a1a1a", fontWeight: 600, letterSpacing: "0.5px" }}>
-              欢迎使用课堂星学习平台
-            </Title>
-            <Text style={{ fontSize: 15, lineHeight: 2, color: "#595959", display: "block" }}>
-              本手册将帮助你快速了解学习平台的核心功能，包括课程学习、知识点浏览、练习测试、学习总结等。
-              你可以在下方下载完整的使用手册文档，也可以在线预览。建议先下载到本地，方便随时查阅。
-            </Text>
-          </div>
+        <div className="pu-card" style={{ padding: 0, overflow: "hidden" }}>
 
           {/* Manual list */}
           {manuals.length === 0 ? (
             <div style={{ padding: "60px 40px", textAlign: "center" }}>
-              <FileTextOutlined style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }} />
-              <Title level={4} style={{ color: "#999", fontWeight: 400 }}>暂无可用的学生使用手册</Title>
+              <FileTextOutlined style={{ fontSize: 48, color: "#cfd6e0", marginBottom: 16 }} />
+              <div style={{ fontSize: 17, fontWeight: 650, color: "#202f47", marginBottom: 6 }}>暂无可用的学生使用手册</div>
               <Text type="secondary">系统管理员正在准备中，请稍后再来查看</Text>
             </div>
           ) : (
-            <div style={{ padding: "8px 40px 20px" }}>
+            <div style={{ padding: "8px 28px 20px" }}>
               {manuals.map((manual: FileTemplate, idx: number) => (
                 <div
                   key={manual.id}
+                  className="pu-item"
                   style={{
-                    padding: "24px 0",
-                    borderBottom: idx < manuals.length - 1 ? "1px solid #f0f0f0" : "none",
-                    display: "flex", alignItems: "center", gap: 20,
+                    padding: "20px 0",
+                    gap: 20,
+                    borderBottom: idx < manuals.length - 1 ? "1px solid var(--pu-line-soft)" : "none",
                   }}
                 >
                   <div style={{
@@ -274,15 +265,10 @@ export default function ManualPage() {
         {/* Bottom section: Help + Tips side by side */}
         <div style={{ display: "flex", gap: 20, marginTop: 20 }}>
           {/* Help items */}
-          <div style={{
-            background: "#fff", borderRadius: 12,
-            border: "1px solid #e8e8e8",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            flex: 1,
-          }}>
+          <div className="pu-card" style={{ padding: 0, flex: 1 }}>
             <div style={{
               padding: "18px 24px 14px",
-              borderBottom: "1px solid #f0f0f0",
+              borderBottom: "1px solid var(--pu-line-soft)",
               display: "flex", alignItems: "center", gap: 10,
             }}>
               <QuestionCircleOutlined style={{ color: "#2573E6", fontSize: 16 }} />
@@ -295,8 +281,8 @@ export default function ManualPage() {
                   style={{
                     display: "flex", alignItems: "center", gap: 12,
                     padding: "14px 10px",
-                    borderBottom: idx < 2 ? "1px solid #f5f5f5" : "none",
-                    borderRight: idx % 2 === 0 ? "1px solid #f5f5f5" : "none",
+                    borderBottom: idx < 2 ? "1px solid var(--pu-line-soft)" : "none",
+                    borderRight: idx % 2 === 0 ? "1px solid var(--pu-line-soft)" : "none",
                     borderRadius: 6,
                     cursor: "pointer",
                   }}
@@ -322,9 +308,10 @@ export default function ManualPage() {
 
           {/* Tip card */}
           <div style={{
-            background: "linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%)",
-            borderRadius: 12,
-            padding: "20px 24px",
+            background: "linear-gradient(135deg, #eef3fb 0%, #e2ecfb 100%)",
+            border: "1px solid #e4ebf4",
+            borderRadius: 14,
+            padding: "22px 24px",
             width: 300,
             flexShrink: 0,
             display: "flex",

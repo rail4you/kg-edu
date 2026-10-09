@@ -240,6 +240,7 @@ const QuestionCard: React.FC<{
   const typeConfig = QUESTION_TYPES[answer.questionType as QuestionType] || QUESTION_TYPES.text;
   const currentAnswer = answers[answer.studentExamAnswerId] || '';
   const isAnswered = currentAnswer.trim() !== '';
+  const isMobileCard = !Grid.useBreakpoint().md;
 
   const renderInput = () => {
     switch (answer.questionType) {
@@ -281,15 +282,15 @@ const QuestionCard: React.FC<{
   };
 
   return (
-    <Card
+    <section
       id={`question-${answer.studentExamAnswerId}`}
+      className="pu-card"
       style={{
-        marginBottom: 12,
-        borderRadius: 10,
-        borderLeft: `4px solid ${isAnswered ? '#52c41a' : typeConfig.color}`,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        marginBottom: 14,
+        padding: isMobileCard ? 14 : 20,
+        borderLeft: `3px solid ${isAnswered ? '#52c41a' : typeConfig.color}`,
+        scrollMarginTop: 90,
       }}
-      styles={{ body: { padding: 16 } }}
     >
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         <span style={{
@@ -344,21 +345,21 @@ const QuestionCard: React.FC<{
       </div>
 
       <div style={{
-        fontSize: 14, lineHeight: 1.7,
-        color: '#1a1a1a',
+        fontSize: 14, lineHeight: 1.8,
+        color: '#202f47',
         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-        marginBottom: 12,
-        padding: '8px 12px',
-        background: '#fafbfc',
-        borderRadius: 6,
+        marginBottom: 14,
+        padding: '12px 16px',
+        background: '#f6f8fb',
+        borderRadius: 10,
       }}>
         {answer.questionContent}
       </div>
 
-      <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
+      <div style={{ borderTop: '1px solid var(--pu-line-soft)', paddingTop: 14 }}>
         {renderInput()}
       </div>
-    </Card>
+    </section>
   );
 };
 
@@ -393,10 +394,10 @@ const QuestionNavigator: React.FC<{
   }, [answers]);
 
   return (
-    <Card style={{ position: 'sticky', top: 20 }}>
-      <Title level={5} style={{ marginBottom: 16 }}>
+    <section className="pu-card" style={{ position: 'sticky', top: 20, padding: 20 }}>
+      <div className="pu-section-title" style={{ marginBottom: 16 }}>
         答题进度
-      </Title>
+      </div>
 
       <Select
         style={{ width: '100%', marginBottom: 16 }}
@@ -483,11 +484,11 @@ const QuestionNavigator: React.FC<{
         })}
       </div>
 
-      <Divider />
+      <Divider style={{ borderColor: 'var(--pu-line-soft)' }} />
 
-      <Title level={5} style={{ marginBottom: 12 }}>
+      <div className="pu-section-title" style={{ marginBottom: 12 }}>
         答题统计
-      </Title>
+      </div>
       <Space direction="vertical" style={{ width: '100%' }} size="small">
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <Text type="secondary">总题数</Text>
@@ -525,7 +526,7 @@ const QuestionNavigator: React.FC<{
           })}
         </Space>
       </div>
-    </Card>
+    </section>
   );
 };
 
@@ -1020,11 +1021,14 @@ export default function ExamTaking() {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'var(--pu-bg, #f5f7fb)',
         overflow: 'hidden',
       }}
     >
-      <Card style={{ borderRadius: 0 }} styles={{ body: { padding: isMobile ? '8px 12px' : '12px 24px' } }}>
+      <Card
+        style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid var(--pu-line)', boxShadow: 'none' }}
+        styles={{ body: { padding: isMobile ? '10px 12px' : '14px 24px' } }}
+      >
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 8 : 0 }}>
           <Space style={{ justifyContent: 'space-between', width: isMobile ? '100%' : 'auto' }}>
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} size={isMobile ? 'small' : 'middle'} style={{ fontWeight: 500 }}>
@@ -1089,19 +1093,19 @@ export default function ExamTaking() {
               <Spin size="large" />
             </div>
           ) : exerciseAnswers.length === 0 ? (
-            <Card style={{ textAlign: 'center' }}>
+            <div className="pu-card" style={{ textAlign: 'center', padding: 48 }}>
               <Text type="secondary">该考试暂无题目</Text>
-            </Card>
+            </div>
           ) : (
-            <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <div style={{ maxWidth: 820, margin: '0 auto' }}>
               {activeType !== 'all' && (
-                <Card style={{ marginBottom: 16, backgroundColor: '#e6f7ff' }}>
-                  <Title level={5} style={{ margin: 0 }}>
+                <div className="pu-card" style={{ marginBottom: 16, padding: '14px 18px', background: '#eef3fb', borderColor: '#e4ebf4' }}>
+                  <div style={{ fontSize: 15, fontWeight: 650, color: '#202f47' }}>
                     {QUESTION_TYPES[activeType as QuestionType]?.icon}{' '}
                     {QUESTION_TYPES[activeType as QuestionType]?.label}
-                  </Title>
-                  <Text type="secondary">共 {filteredAnswers.length} 题</Text>
-                </Card>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>共 {filteredAnswers.length} 题</div>
+                </div>
               )}
 
               {filteredAnswers.map((answer, index) => (
@@ -1116,21 +1120,12 @@ export default function ExamTaking() {
               ))}
 
               {!viewMode && (
-                <Card style={{ marginTop: 16, textAlign: 'center', borderRadius: 10, background: '#fafbfc' }} styles={{ body: { padding: 16 } }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
-                    <div style={{
-                      flex: 1, height: 6, borderRadius: 3,
-                      background: '#e8e8e8', overflow: 'hidden',
-                      maxWidth: 240,
-                    }}>
-                      <div style={{
-                        height: '100%', borderRadius: 3,
-                        background: 'linear-gradient(90deg, #2573e6, #52c41a)',
-                        width: `${Math.round(progress)}%`,
-                        transition: 'width 0.3s',
-                      }} />
+                <section className="pu-card" style={{ marginTop: 20, textAlign: 'center', background: '#f6f8fb', padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 }}>
+                    <div className="pu-progress" style={{ flex: 1, maxWidth: 260, margin: 0 }}>
+                      <i style={{ width: `${Math.round(progress)}%`, background: 'linear-gradient(90deg, #2573e6, #52c41a)' }} />
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#666', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>
                       {answeredCount}/{exerciseAnswers.length}
                     </span>
                   </div>
@@ -1154,11 +1149,11 @@ export default function ExamTaking() {
                     提交考试
                   </Button>
                   {answeredCount < exerciseAnswers.length && (
-                    <div style={{ marginTop: 8, fontSize: 12, color: '#999' }}>
+                    <div style={{ marginTop: 10, fontSize: 12, color: '#64748b' }}>
                       还有 {exerciseAnswers.length - answeredCount} 题未作答
                     </div>
                   )}
-                </Card>
+                </section>
               )}
             </div>
           )}
@@ -1166,7 +1161,7 @@ export default function ExamTaking() {
 
         {/* 移动端：答题进度切换按钮 */}
         {isMobile && (
-          <div style={{ flexShrink: 0, background: '#fff', borderBottom: '1px solid #eee' }}>
+          <div style={{ flexShrink: 0, background: '#fff', borderBottom: '1px solid var(--pu-line)' }}>
             <div
               onClick={() => setShowMobileNav(!showMobileNav)}
               style={{
@@ -1212,7 +1207,7 @@ export default function ExamTaking() {
         )}
         {/* 桌面端：固定显示答题导航 */}
         {!isMobile && (
-          <div style={{ width: 280, padding: 16, overflow: 'auto' }}>
+          <div style={{ width: 300, padding: '16px 16px 16px 0', overflow: 'auto' }}>
             <QuestionNavigator
               answers={exerciseAnswers}
               currentAnswers={answers}
