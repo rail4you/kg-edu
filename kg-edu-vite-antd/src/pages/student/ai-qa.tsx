@@ -56,7 +56,7 @@ export default function StudentAiQa() {
   };
 
   return (
-    <div style={{ padding: "20px 24px", maxWidth: 1000, margin: "0 auto" }}>
+    <div style={{ padding: "16px 0" }}>
       <div style={{ marginBottom: 12 }}>
         <Title level={4} style={{ margin: 0 }}>
           互动故事

@@ -183,7 +183,10 @@ function naturalCompare(a?: string, b?: string): number {
     ) return sa2 - sb2;
     // 一方带节号、一方不带：带节号视为比不带更靠后（更具体）
     if (!isNaN(sa2) !== !isNaN(sb2)) return !isNaN(sa2) ? 1 : -1;
-    if (!isNaN(ca) && !isNaN(cb)) return 0;
+    // 注：章号+节号都解析成功且相等时，不要直接 return 0，否则会漏掉
+    // 文件名里「第 X 部分」「第 X 讲」等跟在章节后的数字片段。
+    // 例如 "第二章第1节第5部分" vs "第二章第1节第10部分" — 章+节相同但
+    // 第 X 部分不同，需要走下面文本兜底比较按 5<10 排序。
   }
   // 降级：阿拉伯数字按数值、文本按 Unicode 码点比较
   const re = /(\d+)|(\D+)/g;
@@ -850,14 +853,17 @@ export default function FileManagement() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
-  const getFileExtension = (filename?: string) => {
+  // 注：必须用 function 声明（而非 const）以便被前面的 displayList useMemo
+  // 安全引用——`displayList` 的列排序分支会调用 getFileExtension，
+  // 在 useMemo 重算时若该 const 还未声明则触发 TDZ（"Cannot access '...' before initialization"）。
+  function getFileExtension(filename?: string) {
     const name = filename || "";
     const ext = name.split(".").pop()?.toLowerCase();
     if (!ext || (ext === name && !name.includes("."))) return "文件";
     return ext.toUpperCase();
-  };
+  }
 
-  const getFileTypeColor = (fileType: string): string => {
+  function getFileTypeColor(fileType: string): string {
     const type = fileType.toLowerCase();
     if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(type)) return "blue";
     if (["mp4", "webm", "avi", "mov", "mkv", "wmv", "flv"].includes(type)) return "purple";
@@ -867,7 +873,7 @@ export default function FileManagement() {
     if (["ppt", "pptx"].includes(type)) return "magenta";
     if (type === "txt") return "cyan";
     return "default";
-  };
+  }
 
   const columns: TableProps<FileType>["columns"] = useMemo(() => [
     {
