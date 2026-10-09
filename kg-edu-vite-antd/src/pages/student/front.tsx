@@ -49,6 +49,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useBranding } from "@/hooks/use-branding";
+import { usePortalNavItems } from "@/hooks/use-portal-config";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { trackCourseView, getCourseViewStats } from "@/utils/viewTracking";
 import GlobalFooter from "@/components/layout/global-footer";
@@ -57,6 +58,8 @@ import CoursePanorama from "@/components/course-panorama";
 import courseGraphImage from "@/assets/course-album/course-graph.jpg";
 import courseStructureImage from "@/assets/course-album/course-structure.jpg";
 import courseSystemImage from "@/assets/course-album/course-system.jpg";
+import "@/styles/home-portal-theme.css";
+import "@/styles/portal-editorial.css";
 import "@/styles/student-front-dashboard.css";
 
 const { Paragraph } = Typography;
@@ -788,6 +791,47 @@ function buildPureTheme(): DashboardTheme {
   return pureTheme;
 }
 
+/** 统一主题：与首页 / 学生端设计系统对齐（#2859df 主色、白卡 + 浅边框） */
+const unifiedTheme: DashboardTheme = {
+  pageOverlayStart: "#f5f7fb",
+  pageOverlayEnd: "#f5f7fb",
+  pageTopFade:
+    "linear-gradient(180deg, rgba(245, 247, 251, 0.92) 0%, rgba(245, 247, 251, 0) 100%)",
+  headerBg: "rgba(255, 255, 255, 0.94)",
+  headerBorder: "#e3e9f1",
+  headerGlow: "rgba(255, 255, 255, 0.12)",
+  brandText: "#202f47",
+  heroTitle: "#202f47",
+  heroSubtitle: "#64748b",
+  metaBg: "#eef2f8",
+  metaBorder: "#e3e9f1",
+  metaText: "#475569",
+  cardBg: "#ffffff",
+  cardBorder: "#e3e9f1",
+  cardText: "#202f47",
+  cardMutedText: "#64748b",
+  surfaceBg: "#ffffff",
+  surfaceBorder: "#e3e9f1",
+  ghostButtonBg: "#ffffff",
+  ghostButtonBorder: "#e3e9f1",
+  ghostButtonText: "#202f47",
+  solidButtonBg: "linear-gradient(135deg, #2859df 0%, #1846bc 100%)",
+  solidButtonText: "#ffffff",
+  solidButtonShadow: "0 8px 20px rgba(40, 89, 223, 0.22)",
+  iconBg: "#edf2ff",
+  iconText: "#2859df",
+  systemBlue: "#2859df",
+  systemViolet: "#7c5cff",
+  systemGreen: "#137b62",
+  systemGold: "#b5851f",
+  systemPanelBlue: "#2859df",
+  systemPanelViolet: "#7c5cff",
+  systemPanelGreen: "#137b62",
+  systemPanelGold: "#b5851f",
+  systemPanelTitle: "#202f47",
+  logoVariant: "dark",
+};
+
 function buildAutoTheme(imageUrl?: string | null): DashboardTheme {
   if (!imageUrl) {
     return buildPresetTheme("graphite_blue");
@@ -939,6 +983,7 @@ export default function StudentFront() {
   const [activeAlbumIndex, setActiveAlbumIndex] = useState(0);
   const [albumHovered, setAlbumHovered] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navItems = usePortalNavItems();
   // 课程相册 → 课程全景窗口：route 供「进入详情页」跳转
   const [albumPanorama, setAlbumPanorama] = useState<{ route: string } | null>(null);
 
@@ -1348,19 +1393,12 @@ export default function StudentFront() {
   // 从课程数据中获取 colorScheme，如果没有则默认 auto
   const colorScheme = (courseData?.colorScheme as ColorSchemeKey) || "auto";
 
-  const colorTheme = useMemo<DashboardTheme>(() => {
-    if (colorScheme === "auto") {
-      return buildAutoTheme(courseData?.imageUrl);
-    }
-    if (colorScheme === "pure") {
-      return buildPureTheme();
-    }
-    return buildPresetTheme(colorScheme as PresetColorSchemeKey);
-  }, [courseData?.imageUrl, colorScheme]);
+  // 统一使用与首页 / 学生端一致的设计系统主题
+  const colorTheme = useMemo<DashboardTheme>(() => unifiedTheme, []);
 
   const pageThemeStyle = useMemo(
-    () => buildPageThemeStyle(colorTheme, courseData?.imageUrl),
-    [colorTheme, courseData?.imageUrl],
+    () => buildPageThemeStyle(colorTheme, null),
+    [colorTheme],
   );
 
   const logoSrc =
@@ -1668,51 +1706,35 @@ export default function StudentFront() {
   if (!urlCourseId) {
     return (
       <Layout className="front-dashboard-page" style={pageThemeStyle}>
-        <Header className="front-dashboard-header">
-          <div className="front-dashboard-header__inner">
-            <div className="front-dashboard-header__start">
-              <div className="front-dashboard-brand" onClick={() => navigate("/")}>
-                <img
-                  src={logoSrc}
-                  alt={branding.app_name}
-                  className="front-dashboard-brand__logo"
-                />
-                <div className="front-dashboard-brand__title">{branding.app_title}</div>
+        <Header className="home-header ed-top" style={{ boxShadow: "none" }}>
+          <div className="home-header__inner">
+            <div className="home-header__left">
+              <div className="home-brand" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
+                <img src={logoSrc} alt={branding.app_name} className="home-brand__logo" />
+                <div className="home-brand__title">{branding.app_title}</div>
               </div>
-              {user && isMobile && (
-              <div className="front-dashboard-header__user-menu-wrapper">
-                <UserMenu role="student" variant="header" />
-              </div>
-            )}
-            </div>
-            <div className="front-dashboard-header__actions">
-              {user ? (
-                <>
-                  {!isMobile && (
+              {!isMobile && (
+                <div className="home-nav">
+                  {navItems.map((item) => (
                     <Button
+                      key={item.key}
                       type="text"
-                      icon={<MenuOutlined />}
-                      className="front-dashboard-header__menu-trigger"
-                      onClick={() => setMobileMenuOpen(true)}
-                    />
-                  )}
-                  {!isMobile && (
-              <div className="front-dashboard-header__user-menu-wrapper">
+                      className="home-nav__button"
+                      onClick={() => navigate(item.key)}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="home-header__actions">
+              {user ? (
                 <UserMenu role="student" variant="header" />
-              </div>
-            )}
-                </>
               ) : (
                 <>
-                  <Button
-                    onClick={() => {
-                      const currentPath = `${window.location.pathname}${window.location.search}`;
-                      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
-                    }}
-                    className="front-dashboard-header__ghost"
-                  >
-                    登录
-                  </Button>
+                  <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
+                  <Button className="home-register-button" onClick={() => navigate("/")}>进入平台</Button>
                 </>
               )}
             </div>
@@ -1735,15 +1757,13 @@ export default function StudentFront() {
   if (courseLoading) {
     return (
       <Layout className="front-dashboard-page" style={pageThemeStyle}>
-        <Header className="front-dashboard-header">
-          <div className="front-dashboard-header__inner">
-            <div className="front-dashboard-brand" onClick={() => navigate("/")}>
-              <img
-                src={logoSrc}
-                alt={branding.app_name}
-                className="front-dashboard-brand__logo"
-              />
-              <div className="front-dashboard-brand__title">{branding.app_title}</div>
+        <Header className="home-header ed-top" style={{ boxShadow: "none" }}>
+          <div className="home-header__inner">
+            <div className="home-header__left">
+              <div className="home-brand" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
+                <img src={logoSrc} alt={branding.app_name} className="home-brand__logo" />
+                <div className="home-brand__title">{branding.app_title}</div>
+              </div>
             </div>
           </div>
         </Header>
@@ -1766,15 +1786,13 @@ export default function StudentFront() {
   if (!courseData) {
     return (
       <Layout className="front-dashboard-page" style={pageThemeStyle}>
-        <Header className="front-dashboard-header">
-          <div className="front-dashboard-header__inner">
-            <div className="front-dashboard-brand" onClick={() => navigate("/")}>
-              <img
-                src={logoSrc}
-                alt={branding.app_name}
-                className="front-dashboard-brand__logo"
-              />
-              <div className="front-dashboard-brand__title">{branding.app_title}</div>
+        <Header className="home-header ed-top" style={{ boxShadow: "none" }}>
+          <div className="home-header__inner">
+            <div className="home-header__left">
+              <div className="home-brand" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
+                <img src={logoSrc} alt={branding.app_name} className="home-brand__logo" />
+                <div className="home-brand__title">{branding.app_title}</div>
+              </div>
             </div>
           </div>
         </Header>
@@ -1794,47 +1812,54 @@ export default function StudentFront() {
 
   return (
     <Layout className="front-dashboard-page" style={pageThemeStyle}>
-      <Header className="front-dashboard-header">
-        <div className="front-dashboard-header__inner">
-          <div className="front-dashboard-header__start">
-            <div className="front-dashboard-brand" onClick={() => navigate("/")}>
-              <img src={logoSrc} alt={branding.app_name} className="front-dashboard-brand__logo" />
-              <div className="front-dashboard-brand__title">{branding.app_title}</div>
+      <Header className="home-header ed-top" style={{ boxShadow: "none" }}>
+        <div className="home-header__inner">
+          <div className="home-header__left">
+            <div className="home-brand" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
+              <img src={logoSrc} alt={branding.app_name} className="home-brand__logo" />
+              <div className="home-brand__title">{branding.app_title}</div>
             </div>
-            {user && isMobile && (
-              <div className="front-dashboard-header__user-menu-wrapper">
-                <UserMenu role="student" variant="header" />
+            {!isMobile && (
+              <div className="home-nav">
+                {navItems.map((item) => (
+                  <Button
+                    key={item.key}
+                    type="text"
+                    className="home-nav__button"
+                    onClick={() => navigate(item.key)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
               </div>
             )}
           </div>
-          <div className="front-dashboard-header__actions">
+          <div className="home-header__actions">
             {user ? (
               <>
-                {!isMobile && (
+                {isMobile && (
                   <Button
                     type="text"
                     icon={<MenuOutlined />}
-                    className="front-dashboard-header__menu-trigger"
+                    className="home-header__search-btn"
                     onClick={() => setMobileMenuOpen(true)}
+                    aria-label="课程入口"
                   />
                 )}
-                {!isMobile && (
-              <div className="front-dashboard-header__user-menu-wrapper">
                 <UserMenu role="student" variant="header" />
-              </div>
-            )}
               </>
             ) : (
               <>
                 <Button
+                  className="home-login-button"
                   onClick={() => {
                     const currentPath = `${window.location.pathname}${window.location.search}`;
                     navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
                   }}
-                  className="front-dashboard-header__ghost"
                 >
                   登录
                 </Button>
+                <Button className="home-register-button" onClick={() => navigate("/")}>进入平台</Button>
               </>
             )}
           </div>
@@ -2108,13 +2133,7 @@ export default function StudentFront() {
           </div>
 
           {isMobile && (
-            <div className="front-dashboard-glass-card" style={{
-              padding: "12px 14px",
-              borderRadius: 14,
-              border: "1px solid var(--front-card-border)",
-              background: "var(--front-card-bg)",
-              boxShadow: "0 18px 38px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.08)",
-            }}>
+            <div className="front-dashboard-glass-card" style={{ padding: "12px 14px" }}>
               <div className="front-dashboard-section-title">
                 <span className="front-dashboard-section-title__icon">
                   <ApartmentOutlined />
@@ -2234,7 +2253,7 @@ export default function StudentFront() {
         title={courseTitle}
         placement="right"
         width="86vw"
-        open={mobileMenuOpen}
+        open={isMobile && mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         className="front-dashboard-mobile-drawer"
         styles={{ body: { padding: 16 } }}

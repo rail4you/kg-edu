@@ -19,7 +19,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { myMicroMajorEnrollments, myApplications, myCertificates, getTemplateByMicroMajor } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
-import { PageHead } from "@/components/proto";
+import { PageHead, ProtoTag } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -332,205 +332,188 @@ export default function StudentMicroMajors() {
       />
 
       {/* Card Grid */}
-      <Row gutter={[24, 24]}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gap: 20,
+        }}
+      >
         {mergedEnrollments.map((enr) => {
           const mm = enr.microMajor;
-          const progress = enr.progress ?? 0;
           const statusConf = STATUS_TAG[enr.status] || { color: "default", icon: null, label: enr.status };
+          const statusTone =
+            enr.status === "pending"
+              ? "amber"
+              : enr.status === "rejected"
+                ? "red"
+                : enr.status === "active"
+                  ? "green"
+                  : "blue";
+          const isPending = enr.status === "pending";
+          const canNavigate = enr.status !== "pending";
+
           return (
-            <Col xs={24} sm={12} lg={8} xl={6} key={enr.id}>
-              <Card
-                hoverable
-                onClick={() => {
-                  if (enr.status === "pending") return; // 审核中不可点击
-                  navigate(`/micro-majors/${tenant}/${mm?.id || enr.microMajorId}`);
-                }}
+            <div
+              key={enr.id}
+              className="pu-card"
+              style={{
+                padding: 0,
+                overflow: "hidden",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                cursor: canNavigate ? "pointer" : "default",
+                opacity: enr.status === "rejected" ? 0.75 : 1,
+                transition: "border-color 0.2s ease, transform 0.2s ease",
+              }}
+              onClick={() => {
+                if (!canNavigate) return;
+                navigate(`/dashboard/micro-majors/${tenant}/${mm?.id || enr.microMajorId}`);
+              }}
+              onMouseEnter={(e) => {
+                if (!canNavigate) return;
+                e.currentTarget.style.borderColor = "#c6d3f7";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--pu-line)";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              {/* 封面 */}
+              <div
                 style={{
-                  borderRadius: 14,
-                  overflow: "hidden",
-                  height: "100%",
-                  border: "1px solid var(--pu-line)",
-                  opacity: enr.status === "rejected" ? 0.75 : 1,
+                  height: 128,
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  padding: 12,
+                  background: mm?.coverUrl
+                    ? `url(${mm.coverUrl}) center/cover no-repeat`
+                    : "linear-gradient(135deg, #2859df 0%, #1846bc 100%)",
                 }}
-                cover={
-                  <div
-                    style={{
-                      height: 140,
-                      background: mm?.coverUrl
-                        ? `url(${mm.coverUrl}) center/cover no-repeat`
-                        : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      display: "flex",
-                      alignItems: "flex-end",
-                      padding: 16,
-                    }}
-                  >
-                    <div>
-                      <Tag color={statusConf.color} style={{ marginBottom: 4 }} icon={statusConf.icon}>
-                        {statusConf.label}
-                      </Tag>
-                      <Title
-                        level={5}
-                        style={{
-                          margin: 0,
-                          color: "#fff",
-                          textShadow: "0 1px 4px rgba(0,0,0,0.3)",
-                        }}
-                        ellipsis
-                      >
-                        {mm?.name || "未命名微专业"}
-                      </Title>
-                    </div>
-                  </div>
-                }
               >
-                {/* 结业证书区块 - 醒目展示 */}
-                {enr.status === "completed" && (
-                  <div
-                    style={{
-                      margin: "-16px -16px 12px -16px",
-                      padding: 16,
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      borderRadius: "12px 12px 0 0",
-                      textAlign: "center",
-                    }}
-                  >
-                    {(() => {
-                      const cert = certByMajor.get(enr.microMajorId);
-                      const hasFile = cert?.fileUrl;
-                      const hasTemplate = cert?.template && (cert.template.logoUrl || cert.template.sealUrl || cert.template.signatureUrl);
-                      const canView = hasFile || hasTemplate;
-                      return (
-                        <>
-                          <div style={{ fontSize: 28, marginBottom: 4 }}>🎓</div>
-                          <div style={{ color: "#fff", fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
-                            已结业
-                          </div>
-                          <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginBottom: 12 }}>
-                            {cert?.certNo ? `编号: ${cert.certNo}` : "恭喜完成微专业学习"}
-                          </div>
-                          {canView ? (
-                            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                              <Button
-                                size="small"
-                                type="primary"
-                                ghost
-                                icon={<EyeOutlined />}
-                                style={{ color: "#fff", borderColor: "rgba(255,255,255,0.6)" }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewCert(cert!);
-                                  setCertPreviewOpen(true);
-                                }}
-                              >
-                                查看证书
-                              </Button>
-                              {hasFile && (
-                                <Button
-                                  size="small"
-                                  ghost
-                                  icon={<DownloadOutlined />}
-                                  style={{ color: "#fff", borderColor: "rgba(255,255,255,0.6)" }}
-                                  href={cert!.fileUrl!}
-                                  target="_blank"
-                                  download={cert!.fileName || "certificate"}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  下载
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <Tag icon={<FilePdfOutlined />} color="default" style={{ fontSize: 12 }}>证书待颁发</Tag>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
+                <ProtoTag tone={statusTone}>
+                  {statusConf.icon}
+                  <span style={{ marginLeft: 4 }}>{statusConf.label}</span>
+                </ProtoTag>
+                {enr.status === "completed" && <span style={{ fontSize: 22 }}>🎓</span>}
+              </div>
 
-                {/* 非结业状态：显示学习周期 */}
+              {/* 内容 */}
+              <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650, color: "var(--pu-ink)" }}>
+                  {mm?.name || "未命名微专业"}
+                </h3>
+
                 {mm?.learningCycle && enr.status !== "completed" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginBottom: 10,
-                      color: "#666",
-                      fontSize: 13,
-                    }}
-                  >
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--pu-muted)" }}>
                     <ClockCircleOutlined />
-                    <Text type="secondary" style={{ fontSize: 13 }}>
-                      {mm.learningCycle}
-                    </Text>
+                    <span>{mm.learningCycle}</span>
                   </div>
                 )}
 
-                {/* Description */}
-                <Paragraph
-                  ellipsis={{ rows: 2 }}
-                  type="secondary"
-                  style={{ marginBottom: 12, fontSize: 13, lineHeight: 1.5 }}
-                >
-                  {mm?.intro || mm?.projectBackground || "暂无描述"}
-                </Paragraph>
-
-                {/* Progress */}
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, color: "#888" }}>学习进度</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 600, color: progress >= 100 ? "#52c41a" : "#722ed1" }}>
-                      {progress >= 100 ? (
-                        <span>
-                          <CheckCircleFilled style={{ marginRight: 4 }} />
-                          已完成
-                        </span>
-                      ) : (
-                        `${progress}%`
-                      )}
-                    </Text>
-                  </div>
-                  <Progress
-                    percent={progress}
-                    size="small"
-                    strokeColor={progress >= 100 ? "#52c41a" : "#722ed1"}
-                    showInfo={false}
-                  />
-                </div>
-
-                {/* Rejected reason & re-apply */}
-                {enr.status === "rejected" && enr.rejectedReason && (
-                  <div style={{ marginTop: 8, padding: "6px 10px", background: "#fff2f0", borderRadius: 6, fontSize: 12, color: "#cf1322" }}>
-                    <Text style={{ fontSize: 12, color: "#cf1322" }}>拒绝原因：{enr.rejectedReason}</Text>
-                  </div>
-                )}
-
-                {/* Action area */}
-                <div
+                <p
                   style={{
-                    textAlign: enr.status === "pending" ? "center" : "right",
-                    marginTop: 12,
-                    color: enr.status === "pending" ? "#faad14" : "#d9d9d9",
-                    fontSize: enr.status === "pending" ? 12 : 16,
+                    margin: 0,
+                    fontSize: 13,
+                    lineHeight: 1.7,
+                    color: "var(--pu-muted)",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    minHeight: 44,
                   }}
                 >
-                  {enr.status === "pending" && "等待审核中..."}
-                  {enr.status === "completed" && <TrophyOutlined style={{ color: "#52c41a" }} />}
-                  {enr.status !== "pending" && enr.status !== "rejected" && enr.status !== "completed" && <RightOutlined />}
+                  {mm?.intro || mm?.projectBackground || "暂无描述"}
+                </p>
+
+                {/* 结业证书 */}
+                {enr.status === "completed" && (() => {
+                  const cert = certByMajor.get(enr.microMajorId);
+                  const hasFile = cert?.fileUrl;
+                  const hasTemplate = cert?.template && (cert.template.logoUrl || cert.template.sealUrl || cert.template.signatureUrl);
+                  const canView = hasFile || hasTemplate;
+                  return (
+                    <div style={{ background: "var(--pu-blue-soft, #edf2ff)", border: "1px solid #dce5ff", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                      <div style={{ fontSize: 13, fontWeight: 650, color: "var(--pu-ink)" }}>已结业</div>
+                      <div style={{ fontSize: 12, color: "var(--pu-muted)", margin: "4px 0 10px" }}>
+                        {cert?.certNo ? `编号: ${cert.certNo}` : "恭喜完成微专业学习"}
+                      </div>
+                      {canView ? (
+                        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                          <Button
+                            size="small"
+                            type="primary"
+                            icon={<EyeOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewCert(cert!);
+                              setCertPreviewOpen(true);
+                            }}
+                          >
+                            查看证书
+                          </Button>
+                          {hasFile && (
+                            <Button
+                              size="small"
+                              icon={<DownloadOutlined />}
+                              href={cert!.fileUrl!}
+                              target="_blank"
+                              download={cert!.fileName || "certificate"}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              下载
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <ProtoTag tone="gray">
+                          <FilePdfOutlined style={{ marginRight: 4 }} />
+                          证书待颁发
+                        </ProtoTag>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {enr.status === "rejected" && enr.rejectedReason && (
+                  <div style={{ padding: "8px 12px", background: "#fdeef1", border: "1px solid #f6d0d7", borderRadius: 8, fontSize: 12, color: "var(--pu-red)" }}>
+                    拒绝原因：{enr.rejectedReason}
+                  </div>
+                )}
+
+                {/* 底部 */}
+                <div
+                  style={{
+                    marginTop: "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderTop: "1px solid var(--pu-line-soft)",
+                    paddingTop: 12,
+                    fontSize: 12,
+                    color: "var(--pu-muted)",
+                  }}
+                >
+                  <span>
+                    {isPending && "等待审核中…"}
+                    {enr.status === "completed" && "已完成学习"}
+                    {enr.status === "rejected" && "未通过审核"}
+                    {enr.status === "active" && "继续学习"}
+                  </span>
+                  {enr.status === "active" && <RightOutlined style={{ color: "var(--pu-blue)" }} />}
+                  {enr.status === "completed" && <TrophyOutlined style={{ color: "var(--pu-blue)" }} />}
+                  {enr.status === "pending" && <ClockCircleFilled style={{ color: "#d97706" }} />}
                 </div>
-              </Card>
-            </Col>
+              </div>
+            </div>
           );
         })}
-      </Row>
+      </div>
 
       {/* 证书预览弹窗 */}
       <Modal

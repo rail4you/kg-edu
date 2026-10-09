@@ -9,6 +9,19 @@
 - 通用组件：`src/components/proto/index.tsx`（`PageHead / ProtoCard / StatGrid / ProtoTabs / ListItem / ProtoTag / ProgressBar / ProtoEmpty / MetricList`）
 - 在 `src/main.tsx` 全局引入，页面根节点加 `className="pu-page"` 即可获得统一的卡片/表格/标签页/分页antd 覆盖样式。
 
+## 学生端整体框架（左侧导航 Shell）
+
+参照原型 `#/student/学习首页`：顶栏 + **左侧功能菜单** + 右侧工作区。
+
+- 布局文件：`src/layouts/student-layout.tsx`（`.pu-shell / .pu-aside / .pu-scope / .pu-nav-link / .pu-workspace`，样式在 `proto-ui.css`）
+- 左侧菜单按原型分组：
+  - **学习空间**：学习首页 / 课程概览 / 图谱总览 / 课程视频 / 认知目标 / 教学资源 / 学习推荐
+  - **课堂与实践**：互动课堂 / 考试系统 / 实验系统 / 数据表单
+  - **支持与交流**：教师团队 / 邮件问答 / AI 助手 / 我的微专业
+  - **智慧功能**：智能门户 / 互动故事（本系统额外保留的入口）
+- 侧栏顶部为「当前学习课程」卡片，其下为菜单搜索框；移动端收进左侧抽屉。
+- 顶栏保留 Logo、当前课程焦点、搜索（⌘K）、通知、用户菜单。
+
 ## 页面处理顺序（按原型学生端导航）
 
 | # | 原型页面 | 前端路由 | 文件 | 状态 |
@@ -58,40 +71,45 @@
 
 ## 设计要点速查
 
+配色与按钮已按原型 CSS（`易课程-完整交互原型.html` 内联样式）逐项对齐：
+
 | 元素 | 规格 |
 |------|------|
-| 卡片 | `#fff` + `1px solid #e3e9f1` + `14px` 圆角 + `24px` 内边距，无重阴影 |
+| 主色 | `--pu-blue: #2859df`（hover `#1846bc`，浅底 `#edf2ff`） |
+| 页面底色 | `--pu-bg: #f5f7fb` |
+| 卡片 | `#fff` + `1px solid #e3e9f1` + `14px` 圆角 + `24px` 内边距，**无阴影** |
 | 页面头 | 29px/650 标题 + 14px `#64748b` 说明，右侧操作区 |
 | 指标卡 | 数字 32px/650，图标在右上角浅蓝底方块 |
 | 标签页 | 下划线式，激活项 3px 主色下边框 + 650 字重 |
 | 表格 | 表头 `#f6f8fc` / `#64748b` 14px；单元格 17px × 14px；分割线 `#edf0f5` |
 | 标签 pill | 圆角 5px，12px，绿/蓝/琥珀/灰/红五色 |
 | 列表行 | `.pu-item` 15px 分隔线 + 35px 圆角序号块 |
-| 进度条 | 6px 高，`#edf1f7` 底 + 主色填充 |
-| 欢迎横幅 | `#eef3fb` 底 + `#e4ebf4` 边框 + 14px 圆角，左右分栏 |
+| 进度条 | 6px 高，`#edf1f7` 底 + `#4776e8` 填充 |
+| 欢迎横幅 | `#eaf0ff` 底 + `#dce5ff` 边框 + 14px 圆角，左右分栏 |
+| 按钮 | 次级：白底 + `#e3e9f1` 边框 + 8px 圆角，hover `#edf2ff`；主按钮：`#2859df` 底 |
+| 输入/下拉 | 8px 圆角，边框 `#d9e1ec` |
 
-## 尚未改造的页面（下一批）
+## 第二批已改造的页面
 
-以下 8 个页面**可以点进去使用**，本轮未改造，样式仍为改造前的状态：
+以下页面本轮已套用同一套设计系统（`.pu-page` + `PageHead / ProtoCard / ProtoTag / ProtoEmpty` 等）：
 
 | 页面 | 入口 / 路由 | 文件 | 说明 |
 |------|-------------|------|------|
-| 课堂讨论 | 互动课堂 → 进入讨论；`/student/discussion/:tenantSchema/:token` | `discussion.tsx` | 内嵌模式（`embedded`）时在互动课堂卡片内渲染 |
-| 小组任务 | 互动课堂 → 进入任务；`/student/group-task/:tenantSchema/:token` | `group-task.tsx` | 同上 |
-| 岗位能力图谱 | 图谱总览 → 岗位能力图谱 Tab | `job-competency-graph.tsx` | 作为子组件被 `graph.tsx` 引用，仅外层卡片已随图谱页统一 |
-| 课程信息 | `/dashboard/course-info/:courseId` | `course-info.tsx` | 兼容旧链接 |
-| 课程体系 | `/dashboard/curriculum` | `curriculum.tsx` | 微专业课程体系 |
-| 微专业课程 | `/student/mm-course` | `mm-course-page.tsx` | 独立路由（不在学生端 Layout 内） |
-| 学习动态 | 我的微专业 → 学习动态；`/student/mm-timeline` | `mm-timeline.tsx` | 独立路由 |
-| 课堂签到 | 二维码链接 `/student/check-in/:tenantSchema/:token` | `check-in.tsx` | 免登录公开页，面向手机 |
+| 课程体系 | `/dashboard/curriculum` | `curriculum.tsx` | 表格改浅色表头 + 细分割线 |
+| 学习动态 | `/student/mm-timeline` | `mm-timeline.tsx` | 页面头 + 卡片化时间线 |
+| 课堂签到 | `/student/check-in/:tenantSchema/:token` | `check-in.tsx` | 免登录公开页，居中卡片 + 绿色主按钮 |
+| 小组任务 | 互动课堂 → 任务；`/student/group-task/:tenantSchema/:token` | `group-task.tsx` | embedded 时无外层内边距，独立路由包 `.pu-page` |
+| 课程信息 | `/dashboard/course-info/:courseId` | `course-info.tsx` | 左侧分节导航 + 卡片化内容，Tab 下划线式 |
+| 微专业课程 | `/student/mm-course` | `mm-course-page.tsx` | 工作区包 `.pu-page`，背景改 `--pu-bg` |
+| 课堂讨论 | 互动课堂 → 讨论；`/student/discussion/:tenantSchema/:token` | `discussion.tsx` | 独立路由包 `.pu-page`，页头改 `PageHead` |
+| 岗位能力图谱 | 图谱总览 → 岗位能力图谱 Tab | `job-competency-graph.tsx` | 子组件，背景统一为 `--pu-bg` |
 
 ### 无需处理
 
 - `front.tsx`（课程落地页 `/dashboard/front`）：已按门户风格单独改版。
+- 全屏画布型页面 `course-video.tsx`、`graph-layer.tsx`、`exam-taking.tsx`：已使用 `pu-*` 变量/`.pu-card`，保持全屏布局，不再加 `.pu-page` 外框。
 - 死代码（全项目无引用，不受影响）：`knowledge.tsx`、`course-summary.tsx`、`dashboard.tsx`、`mm-course.tsx`。
 - `discussion-hub.tsx`、`group-task-hub.tsx`、`graph-competency.tsx`：`App.tsx` 中有 import 但未挂到任何 Route，实际不可达。
-
-改造方式与已完成页面一致：不动数据逻辑，只套用 `src/styles/proto-ui.css` + `src/components/proto` 的 `PageHead / ProtoCard / ProtoTag / ProtoTabs / ListItem / StatGrid` 与 `.pu-*` 工具类。
 
 ## 截图对照
 

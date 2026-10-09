@@ -44,7 +44,7 @@ export default function StudentMMCoursePage() {
   if (!mmCourseId) return <div style={{ padding: 48, textAlign: "center" }}><Empty description="缺少课程参数" /></div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#F0F1F3" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--pu-bg, #f5f7fb)" }}>
       {/* Header */}
       <div style={{
         height: isMobile ? 52 : 60,
@@ -124,7 +124,7 @@ export default function StudentMMCoursePage() {
       />
 
       {/* Content */}
-      <div style={{ flex: 1, padding: isMobile ? "12px" : "16px 40px" }}>
+      <div className="pu-page" style={{ flex: 1, padding: isMobile ? "14px 12px 28px" : "18px 40px 32px" }}>
         <StudentMMCourse tenant={tenant} mmCourseId={mmCourseId} mmId={mmId || ""} headers={headers} />
       </div>
 

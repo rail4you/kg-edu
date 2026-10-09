@@ -750,7 +750,7 @@ export default function ResourcePage() {
                 trigger="hover"
                 mouseEnterDelay={0.3}
               >
-                <span style={{ cursor: "pointer", color: "#2573E6" }}>{title}</span>
+                <span style={{ cursor: "pointer", color: "#2859df" }}>{title}</span>
               </Popover>
             );
           }
@@ -782,7 +782,7 @@ export default function ResourcePage() {
                 trigger="hover"
                 mouseEnterDelay={0.3}
               >
-                <span style={{ cursor: "pointer", color: "#2573E6" }}>{title}</span>
+                <span style={{ cursor: "pointer", color: "#2859df" }}>{title}</span>
               </Popover>
             );
           }

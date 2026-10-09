@@ -33,6 +33,7 @@ import { useCourseCategories } from "@/hooks/use-course-categories";
 import { themeColors } from "@/styles/theme";
 import { setCurrentTenant } from "@/lib/tenant";
 import CourseCoverArt from "@/components/course-cover-art";
+import { ProtoTag } from "@/components/proto";
 import "@/styles/home-portal-theme.css";
 import "@/styles/portal-editorial.css";
 
@@ -72,7 +73,7 @@ function CourseCard({
   const artVariant = (course.id.charCodeAt(0) + course.title.length) % 3 + 1;
 
   return (
-    <article className="ed-course">
+    <article className={`ed-course${course.isEnrolled ? " is-enrolled" : ""}`}>
       <a
         className={`ed-course__art v${artVariant}`}
         onClick={() => onClick(course)}
@@ -83,17 +84,35 @@ function CourseCard({
         <span className="ed-course__sub">{course.orgName}</span>
       </a>
       <div className="ed-course__body">
-        <div className="ed-course__meta"><span>{course.standardSubject.name}</span><small>{course.isEnrolled ? "学习中" : "智慧课程"}</small></div>
+        <div className="ed-course__meta">
+          <span>{course.standardSubject.name}</span>
+          {course.isEnrolled ? <ProtoTag tone="blue">学习中</ProtoTag> : <small>智慧课程</small>}
+        </div>
         <h3><a onClick={() => onClick(course)}>{course.title}</a></h3>
         <p title={course.description || course.title}>
           {course.description && course.description !== course.title
             ? course.description
             : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
         </p>
-        <div className="ed-course__footer">
-          <span>{course.teacherName ? `教师：${course.teacherName}` : course.orgName}</span>
-          <span>{studyCount}人学习 →</span>
-        </div>
+        {course.isEnrolled ? (
+          <Button
+            type="primary"
+            block
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClick(course);
+            }}
+            style={{ marginTop: 12, height: 40, fontWeight: 600 }}
+          >
+            继续学习 →
+          </Button>
+        ) : (
+          <div className="ed-course__footer">
+            <span>{course.teacherName ? `教师：${course.teacherName}` : course.orgName}</span>
+            <span>{studyCount}人学习 →</span>
+          </div>
+        )}
       </div>
     </article>
   );

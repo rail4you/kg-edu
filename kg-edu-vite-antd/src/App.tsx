@@ -143,6 +143,8 @@ import StudentCourseInfo from "./pages/student/course-info";
 import StudentCourseIntro from "./pages/student/course-intro";
 import StudentManual from "./pages/student/manual";
 import StudentMicroMajors from "./pages/student/micro-majors";
+import StudentMicroMajorDetail from "./pages/student/mm-detail";
+import StudentMMCourseInLayout from "./pages/student/mm-course-student";
 import StudentMMCoursePage from "./pages/student/mm-course-page";
 import StudentMMTimeline from "./pages/student/mm-timeline";
 import StudentCurriculum from "./pages/student/curriculum";
@@ -424,6 +426,8 @@ export default function App() {
         {/* 认知与图谱功能 */}
         <Route path="knowledge-cognitive-goals" element={<StudentKnowledgeCognitiveGoals />} />
         <Route path="micro-majors" element={<StudentMicroMajors />} />
+        <Route path="micro-majors/:tenant/:id" element={<StudentMicroMajorDetail />} />
+        <Route path="mm-course" element={<StudentMMCourseInLayout />} />
         <Route path="graph-competency" element={<GraphCompetencyRedirect />} />
         <Route path="graph" element={<StudentGraph />} />
         <Route path="graph-layer" element={<StudentGraphLayer />} />

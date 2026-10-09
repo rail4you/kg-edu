@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, Typography, Button, Spin, Alert, Tag } from "antd";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { Typography, Button, Spin, Alert, Tag } from "antd";
+import { CheckCircleOutlined, CloseCircleOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getHeaders } from "@/utils/api-helpers";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { getSessionByToken, checkIn } from "@/lib/ash_rpc";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface CheckInSession {
   id: string;
@@ -139,23 +139,36 @@ export default function StudentCheckInPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          background: "var(--pu-bg, #f5f7fb)",
           padding: 24,
         }}
       >
-        <Card style={{ maxWidth: 500, padding: 24, textAlign: "center" }}>
-          <CloseCircleOutlined style={{ fontSize: 64, color: "#ff4d4f", marginBottom: 16 }} />
-          <Title level={4} style={{ color: "#ff4d4f", marginBottom: 8 }}>
-            签到链接无效
-          </Title>
-          <Text type="secondary">
-            该签到码可能已过期或不存在，请联系老师确认。
-          </Text>
-          <div style={{ marginTop: 24 }}>
-            <Button type="primary" onClick={() => navigate("/")}>
-              返回首页
-            </Button>
+        <div className="pu-card" style={{ maxWidth: 440, width: "100%", textAlign: "center", padding: 36 }}>
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 18,
+              background: "#fdeef1",
+              color: "#c93d50",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 18px",
+            }}
+          >
+            <CloseCircleOutlined style={{ fontSize: 30 }} />
           </div>
-        </Card>
+          <h2 style={{ fontSize: 20, fontWeight: 650, color: "var(--pu-ink)", marginBottom: 8 }}>
+            签到链接无效
+          </h2>
+          <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
+            该签到码可能已过期或不存在，请联系老师确认。
+          </p>
+          <Button type="primary" block onClick={() => navigate("/")} style={{ height: 44, fontWeight: 600 }}>
+            返回首页
+          </Button>
+        </div>
       </div>
     );
   }
@@ -171,36 +184,49 @@ export default function StudentCheckInPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#F8F9FA",
+        background: "var(--pu-bg, #f5f7fb)",
         padding: 24,
       }}
     >
-      <Card style={{ maxWidth: 500, width: "100%", borderRadius: 8, border: '1px solid #E0E0E0' }}>
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <Title level={3} style={{ marginBottom: 8 }}>
-            学生签到
-          </Title>
-          <Text type="secondary">
+      <div className="pu-card" style={{ maxWidth: 460, width: "100%", padding: 30 }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "var(--pu-blue-soft, #edf2ff)",
+              color: "var(--pu-blue, #2859df)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 14px",
+            }}
+          >
+            <EnvironmentOutlined style={{ fontSize: 26 }} />
+          </div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 650, color: "var(--pu-ink)" }}>学生签到</h1>
+          <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--pu-muted)" }}>
             {session.createdBy?.name || "老师"} 发起的签到
-          </Text>
+          </p>
         </div>
 
-        <div style={{ marginBottom: 24, textAlign: "center" }}>
-          <Title level={4} style={{ marginBottom: 8 }}>
+        <div style={{ marginBottom: 22, textAlign: "center" }}>
+          <h2 style={{ fontSize: 17, fontWeight: 650, color: "var(--pu-ink)", marginBottom: 6 }}>
             {session.title}
-          </Title>
+          </h2>
           {session.description && (
-            <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+            <p style={{ color: "var(--pu-muted)", fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
               {session.description}
-            </Text>
+            </p>
           )}
-          <div style={{ display: "flex", justifyContent: "center", gap: 16, alignItems: "center" }}>
-            <Tag color={isSessionActive ? "success" : "default"} style={{ fontWeight: 600 }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <Tag color={isSessionActive ? "success" : "default"} style={{ fontWeight: 600, margin: 0 }}>
               {isSessionActive ? "进行中" : "已关闭"}
             </Tag>
-            <Text type="secondary">
+            <span style={{ color: "var(--pu-muted)", fontSize: 13 }}>
               开始时间: {new Date(session.startedAt).toLocaleString("zh-CN")}
-            </Text>
+            </span>
           </div>
         </div>
 
@@ -211,13 +237,13 @@ export default function StudentCheckInPage() {
             showIcon
             message="签到成功！"
             description="您已完成签到，感谢配合。"
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 16, borderRadius: 10 }}
           />
         ) : checkInError ? (
           <Alert
             type="error"
             message={checkInError}
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 16, borderRadius: 10 }}
           />
         ) : null}
 
@@ -230,10 +256,11 @@ export default function StudentCheckInPage() {
               onClick={handleCheckIn}
               loading={checkInMutation.isPending}
               style={{
-                height: 56,
-                fontSize: 18,
+                height: 52,
+                fontSize: 17,
                 fontWeight: 600,
-                backgroundColor: "#52c41a",
+                background: "var(--pu-green, #137b62)",
+                borderColor: "var(--pu-green, #137b62)",
               }}
             >
               {checkInMutation.isPending
@@ -243,7 +270,7 @@ export default function StudentCheckInPage() {
                   : "确认签到"}
             </Button>
             {!user && (
-              <Text type="secondary" style={{ display: "block", marginTop: 12 }}>
+              <Text type="secondary" style={{ display: "block", marginTop: 12, fontSize: 12 }}>
                 点击后将跳转到登录页面
               </Text>
             )}
@@ -254,7 +281,7 @@ export default function StudentCheckInPage() {
           <Alert
             type="info"
             message="该签到已结束，无法继续签到。"
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 16, borderRadius: 10 }}
           />
         )}
 
@@ -262,23 +289,23 @@ export default function StudentCheckInPage() {
           <div
             style={{
               marginTop: 16,
-              padding: 12,
-              backgroundColor: "#F8F9FA",
-              borderRadius: 8,
+              padding: "10px 14px",
+              background: "#f6f8fb",
+              borderRadius: 10,
             }}
           >
-            <Text type="secondary">
-              签到用户: <strong>{(user as any).displayName || (user as any).email}</strong>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              签到用户: <strong style={{ color: "var(--pu-ink)" }}>{(user as any).displayName || (user as any).email}</strong>
             </Text>
           </div>
         )}
 
-        <div style={{ marginTop: 24, textAlign: "center" }}>
+        <div style={{ marginTop: 22, textAlign: "center" }}>
           <Text type="secondary" style={{ fontSize: 12 }}>
             签到码: {session.token}
           </Text>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

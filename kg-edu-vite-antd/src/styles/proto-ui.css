@@ -10,7 +10,7 @@
    ============================================================ */
 
 :root {
-  --pu-blue: #2573e6;
+  --pu-blue: #2859df;
   --pu-blue-strong: #1846bc;
   --pu-blue-soft: #edf2ff;
   --pu-navy: #142744;
@@ -144,7 +144,6 @@
   border-radius: var(--pu-radius);
   padding: 24px;
   min-width: 0;
-  box-shadow: 0 3px 16px rgba(21, 50, 84, 0.012);
 }
 
 .pu-card--flush {
@@ -208,7 +207,6 @@
   border: 1px solid var(--pu-line);
   border-radius: var(--pu-radius);
   min-width: 0;
-  box-shadow: 0 3px 16px rgba(21, 50, 84, 0.012);
 }
 
 .pu-stat__label {
@@ -252,8 +250,8 @@
 /* ---------- 欢迎横幅 ---------- */
 
 .pu-welcome {
-  background: linear-gradient(110deg, #edf3fc, #f6f8fc);
-  border: 1px solid #e2e9f3;
+  background: #eaf0ff;
+  border: 1px solid #dce5ff;
   border-radius: var(--pu-radius);
   padding: 26px 30px;
   display: flex;
@@ -547,7 +545,7 @@
   display: block;
   height: 100%;
   border-radius: 5px;
-  background: var(--pu-blue);
+  background: #4776e8;
 }
 
 .pu-progress--sm {
@@ -744,7 +742,7 @@
 :is(.pu-page, .pu-page-fill) .ant-card {
   border-radius: var(--pu-radius);
   border-color: var(--pu-line);
-  box-shadow: 0 3px 16px rgba(21, 50, 84, 0.012);
+  box-shadow: none;
 }
 
 :is(.pu-page, .pu-page-fill) .ant-card-head {
@@ -820,13 +818,37 @@
 
 :is(.pu-page, .pu-page-fill) .ant-btn {
   border-radius: 8px;
+  font-weight: 400;
+}
+
+:is(.pu-page, .pu-page-fill) .ant-btn-default:not(:disabled):not(.ant-btn-disabled) {
+  background: #fff;
+  border-color: var(--pu-line);
+  color: var(--pu-ink);
+}
+
+:is(.pu-page, .pu-page-fill) .ant-btn-default:not(:disabled):not(.ant-btn-disabled):hover {
+  background: #edf2ff;
+  border-color: #c6d3f7;
+  color: var(--pu-ink);
+}
+
+:is(.pu-page, .pu-page-fill) .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
+  background: var(--pu-blue);
+  border-color: var(--pu-blue);
+}
+
+:is(.pu-page, .pu-page-fill) .ant-btn-primary:not(:disabled):not(.ant-btn-disabled):hover {
+  background: var(--pu-blue-strong);
+  border-color: var(--pu-blue-strong);
 }
 
 :is(.pu-page, .pu-page-fill) .ant-input,
 :is(.pu-page, .pu-page-fill) .ant-input-affix-wrapper,
 :is(.pu-page, .pu-page-fill) .ant-select-selector,
 :is(.pu-page, .pu-page-fill) .ant-picker {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
+  border-color: #d9e1ec;
 }
 
 :is(.pu-page, .pu-page-fill) .ant-empty-description {
@@ -852,6 +874,241 @@
 :is(.pu-page, .pu-page-fill) .ant-typography h1,
 .pu-page h1.ant-typography {
   font-size: 29px;
+}
+
+/* ============================================================
+   学生端 · 左侧导航 Shell（参照交互原型 #/student/*）
+   顶栏 + 左侧功能菜单 + 右侧工作区
+   ============================================================ */
+
+.pu-shell {
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.pu-aside {
+  background: #fff;
+  border-right: 1px solid var(--pu-line);
+  padding: 20px 14px 30px;
+  position: sticky;
+  top: 60px;
+  align-self: start;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.pu-scope {
+  border: 1px solid var(--pu-line);
+  border-radius: 10px;
+  padding: 13px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.pu-scope small {
+  color: var(--pu-muted);
+  font-size: 12px;
+}
+
+.pu-scope b {
+  display: block;
+  margin-top: 4px;
+  color: var(--pu-ink);
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pu-nav-search {
+  margin-bottom: 14px;
+}
+
+.pu-nav-group {
+  margin: 16px 12px 6px;
+  color: #8090a5;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.pu-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  color: #596b84;
+  padding: 9px 13px;
+  margin: 3px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pu-nav-link:hover {
+  background: #f2f5fb;
+}
+
+.pu-nav-link.active {
+  background: #eaf0ff;
+  color: var(--pu-blue);
+  font-weight: 650;
+}
+
+.pu-nav-icon {
+  display: inline-flex;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.pu-workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  .pu-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pu-shell > .pu-aside {
+    display: none;
+  }
+}
+
+/* 抽屉内导航：去掉粘性定位与右分割线 */
+.ant-drawer .pu-aside {
+  position: static;
+  height: auto;
+  border-right: none;
+  padding: 16px 10px 24px;
+}
+
+/* ---------- 登录页（参照原型 .login-wrap / .login-art） ---------- */
+
+.pu-login-wrap {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 24px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.pu-login-wrap > .pu-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pu-login-art {
+  background: #eaf0ff;
+  border-radius: 20px;
+  padding: 46px 42px 42px;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.pu-login-art__img {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 180px;
+  margin-top: 30px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.pu-login-art h1 {
+  font-size: 38px;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: -0.5px;
+  color: var(--pu-ink);
+  margin: 0;
+}
+
+.pu-login-art p {
+  margin-top: 22px;
+  color: #5c7291;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.pu-role-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid var(--pu-line);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.16s, background 0.16s, transform 0.16s;
+}
+
+.pu-role-option:hover {
+  border-color: var(--pu-blue);
+  background: #f7faff;
+  transform: translateX(4px);
+}
+
+.pu-role-option__icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 13px;
+  background: var(--pu-blue-soft);
+  color: var(--pu-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .pu-login-wrap {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 16px 14px 32px;
+  }
+
+  .pu-login-art {
+    min-height: 0;
+    padding: 28px 24px;
+  }
+
+  .pu-login-art__img {
+    min-height: 150px;
+    margin-top: 20px;
+  }
+
+  .pu-login-art h1 {
+    font-size: 27px;
+  }
+}
+
+/* ---------- 课程列表页：选中课程卡片强调 ---------- */
+
+.ed-course.is-enrolled {
+  border: 1px solid #c7d8fb;
+  box-shadow: 0 8px 24px rgba(40, 89, 223, 0.06);
 }
 
 /* ---------- 响应式 ---------- */
@@ -974,5 +1231,104 @@
   .pu-filters .ant-select {
     width: 100%;
     max-width: none;
+  }
+}
+
+/* ---------- 对齐信息表（label / value 两列） ---------- */
+
+.pu-info {
+  border: 1px solid var(--pu-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pu-info__row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--pu-line-soft);
+  font-size: 14px;
+}
+
+.pu-info__row:last-child {
+  border-bottom: 0;
+}
+
+.pu-info__row:nth-child(odd) {
+  background: #fafbfd;
+}
+
+.pu-info__label {
+  color: var(--pu-muted);
+}
+
+.pu-info__value {
+  color: var(--pu-ink);
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .pu-info__row {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 12px;
+    padding: 11px 14px;
+  }
+}
+
+/* ---------- 课程信息：桌面两栏（简介 + 信息表） ---------- */
+
+.pu-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .pu-intro-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+/* 课程信息卡与下方指标卡之间保留适当空白 */
+.pu-intro-card {
+  margin-bottom: 18px;
+}
+
+.pu-intro-stats .pu-grid--stats {
+  margin-bottom: 24px;
+}
+
+/* 无底色欢迎横幅（仅文字，无背景/边框） */
+.pu-welcome--plain {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* ---------- 微专业详情：主内容 + 粘性侧栏 ---------- */
+
+.pu-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.pu-detail-side {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 1100px) {
+  .pu-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pu-detail-side {
+    position: static;
   }
 }

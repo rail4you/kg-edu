@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Card,
   Empty,
   Spin,
   Tag,
@@ -14,7 +13,6 @@ import {
   VideoCameraOutlined,
   FileTextOutlined,
   FileOutlined,
-  ClockCircleOutlined,
   ApartmentOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
@@ -24,13 +22,14 @@ import {
   listActivityLogsByUser,
 } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
+import { PageHead, ProtoCard } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {
   mm_video_view: <VideoCameraOutlined style={{ color: "#722ed1" }} />,
   mm_exercise_submit: <FileTextOutlined style={{ color: "#52c41a" }} />,
-  mm_resource_download: <FileOutlined style={{ color: "#1890ff" }} />,
+  mm_resource_download: <FileOutlined style={{ color: "#2859df" }} />,
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -42,7 +41,7 @@ const ACTION_LABELS: Record<string, string> = {
 const ACTION_COLORS: Record<string, string> = {
   mm_video_view: "#722ed1",
   mm_exercise_submit: "#52c41a",
-  mm_resource_download: "#1890ff",
+  mm_resource_download: "#2859df",
 };
 
 interface ActivityItem {
@@ -131,30 +130,30 @@ export default function StudentMMTimeline() {
   }, [enrollments]);
 
   return (
-    <div style={{ padding: "24px 0" }}>
-      <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Title level={3} style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-          <ClockCircleOutlined style={{ color: "#722ed1" }} />
-          学习动态
-        </Title>
-        <Select
-          style={{ minWidth: 200 }}
-          placeholder="全部微专业"
-          value={selectedMMId}
-          onChange={setSelectedMMId}
-          allowClear
-          options={mmOptions.map(mm => ({ value: mm.id, label: mm.name }))}
-        />
-      </div>
+    <div className="pu-page">
+      <PageHead
+        title="学习动态"
+        description="记录你在微专业中的视频观看、习题完成与资源下载"
+        actions={
+          <Select
+            style={{ minWidth: 200 }}
+            placeholder="全部微专业"
+            value={selectedMMId}
+            onChange={setSelectedMMId}
+            allowClear
+            options={mmOptions.map(mm => ({ value: mm.id, label: mm.name }))}
+          />
+        }
+      />
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}><Spin size="large" /></div>
       ) : activities.length === 0 ? (
-        <Card>
+        <ProtoCard>
           <Empty description="暂无学习记录，开始学习后记录会显示在此处" />
-        </Card>
+        </ProtoCard>
       ) : (
-        <Card>
+        <ProtoCard>
           {Object.entries(groupedByDate).map(([date, items]) => (
             <div key={date} style={{ marginBottom: 24 }}>
               <div
@@ -164,7 +163,7 @@ export default function StudentMMTimeline() {
                   color: "#666",
                   marginBottom: 12,
                   paddingBottom: 8,
-                  borderBottom: "1px solid #f0f0f0",
+                  borderBottom: "1px solid #edf0f5",
                 }}
               >
                 {date}
@@ -211,7 +210,7 @@ export default function StudentMMTimeline() {
               />
             </div>
           ))}
-        </Card>
+        </ProtoCard>
       )}
     </div>
   );

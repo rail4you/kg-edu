@@ -9,22 +9,20 @@ import {
   TeamOutlined,
   BookOutlined,
   FileOutlined,
+  FormOutlined,
   ExperimentOutlined,
   BarChartOutlined,
   VideoCameraOutlined,
   ReadOutlined,
   SearchOutlined,
   MenuOutlined,
-  RightOutlined,
-  CommentOutlined,
-  DeploymentUnitOutlined,
+  HomeOutlined,
   InteractionOutlined,
   EnterOutlined,
   AppstoreOutlined,
   RobotOutlined,
-  DownOutlined,
 } from "@ant-design/icons";
-import { Input, Spin, Modal, Drawer, Button, Grid, Dropdown } from "antd";
+import { Input, Spin, Modal, Drawer, Grid } from "antd";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { UserMenu } from "@/components/layout/user-menu";
 import { UserManualModal } from "@/components/layout/user-manual-modal";
@@ -47,32 +45,17 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
-  /** 桌面端以父菜单（下拉）形式呈现 */
-  dropdown?: boolean;
   items: NavItem[];
 }
 
-// 按「智慧功能 → 内容 → 学习 → 评测 → 工具」分组
+// 参照「易课程-完整交互原型」学生端导航：学习空间 / 课堂与实践 / 支持与交流
 const navGroups: NavGroup[] = [
   {
-    label: "智慧功能",
-    dropdown: true,
+    label: "学习空间",
     items: [
-      { key: "/dashboard/smart-portal", label: "智能门户", icon: <AppstoreOutlined /> },
-      { key: "/dashboard/ai-qa", label: "互动故事", icon: <RobotOutlined /> },
-    ],
-  },
-  {
-    label: "内容",
-    items: [
-      { key: "/dashboard/overview", label: "课程概述", icon: <BookOutlined /> },
-      { key: "/dashboard/intro", label: "课程概览", icon: <ReadOutlined /> },
+      { key: "/dashboard/overview", label: "学习首页", icon: <HomeOutlined /> },
+      { key: "/dashboard/intro", label: "课程概览", icon: <BookOutlined /> },
       { key: "/dashboard/graph", label: "图谱总览", icon: <PartitionOutlined /> },
-    ],
-  },
-  {
-    label: "学习",
-    items: [
       { key: "/dashboard/course-video", label: "课程视频", icon: <VideoCameraOutlined /> },
       { key: "/dashboard/knowledge-cognitive-goals", label: "认知目标", icon: <BarChartOutlined /> },
       { key: "/dashboard/resource", label: "教学资源", icon: <FileOutlined /> },
@@ -80,24 +63,33 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "互动",
+    label: "课堂与实践",
     items: [
       { key: "/dashboard/interaction", label: "互动课堂", icon: <InteractionOutlined /> },
-    ],
-  },
-  {
-    label: "评测",
-    items: [
       { key: "/dashboard/exam-courses", label: "考试系统", icon: <ScheduleOutlined /> },
       { key: "/dashboard/experiment-courses", label: "实验系统", icon: <ExperimentOutlined /> },
+      { key: "/dashboard/data-forms", label: "数据表单", icon: <FormOutlined /> },
     ],
   },
   {
-    label: "工具",
+    label: "微专业",
     items: [
-      { key: "/dashboard/data-forms", label: "数据表单", icon: <FileOutlined /> },
+      { key: "/dashboard/micro-majors", label: "我的微专业", icon: <AppstoreOutlined /> },
+    ],
+  },
+  {
+    label: "支持与交流",
+    items: [
       { key: "/dashboard/teacher", label: "教师团队", icon: <TeamOutlined /> },
       { key: "/dashboard/email-qa", label: "邮件问答", icon: <MailOutlined /> },
+      { key: "/dashboard/chat", label: "AI 助手", icon: <RobotOutlined /> },
+    ],
+  },
+  {
+    label: "智慧功能",
+    items: [
+      { key: "/dashboard/smart-portal", label: "智能门户", icon: <AppstoreOutlined /> },
+      { key: "/dashboard/ai-qa", label: "互动故事", icon: <ReadOutlined /> },
     ],
   },
 ];
@@ -109,7 +101,7 @@ export default function StudentLayout() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const branding = useBranding();
-  const [searchValue, setSearchValue] = useState("");
+  const [navSearch, setNavSearch] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   usePageTitle();
   const screens = useBreakpoint();
@@ -132,6 +124,15 @@ export default function StudentLayout() {
     const kw = commandSearch.toLowerCase();
     return allNavItems.filter(item => item.label.toLowerCase().includes(kw));
   }, [commandSearch, allNavItems]);
+
+  // 左侧导航搜索过滤
+  const visibleGroups = useMemo(() => {
+    const kw = navSearch.trim().toLowerCase();
+    if (!kw) return navGroups;
+    return navGroups
+      .map(g => ({ ...g, items: g.items.filter(it => it.label.toLowerCase().includes(kw)) }))
+      .filter(g => g.items.length > 0);
+  }, [navSearch]);
 
   const handleCommandSelect = useCallback((key: string) => {
     const params = new URLSearchParams(searchParams);
@@ -165,7 +166,7 @@ export default function StudentLayout() {
   const courseId = searchParams.get("courseId") || localStorage.getItem("selectedCourse") || "";
   const currentTenant = getCurrentTenant();
 
-  // 获取当前课程信息用于面包屑
+  // 获取当前课程信息用于侧边栏
   const { data: courseData } = useQuery({
     queryKey: ["nav-course-info", courseId, currentTenant?.schemaName],
     queryFn: async () => {
@@ -191,8 +192,6 @@ export default function StudentLayout() {
   const courseTitle = courseData?.title || "";
 
   const handleNavClick = (key: string) => {
-    // 跳到任意子路由时，丢掉 ?tenant= 查询串 — 当前租户由 sessionStorage["tenant"] / localStorage["selected_tenant"] 决定。
-    // 不带 query 的导航也保留原本行为；其它参数（如 courseId）会跟随。
     const params = new URLSearchParams(searchParams);
     params.delete("tenant");
     const str = params.toString();
@@ -201,19 +200,68 @@ export default function StudentLayout() {
   };
 
   const isActive = (key: string) => {
-    if (key === "/dashboard/overview" && currentPath === "/dashboard") {
+    if (key === "/dashboard/overview" && (currentPath === "/dashboard" || currentPath === "/dashboard/")) {
       return true;
     }
-    // Sub-route matching for interaction hub
     if (key === "/dashboard/interaction" && currentPath.startsWith("/dashboard/interaction")) {
+      return true;
+    }
+    if (key === "/dashboard/exam-courses" && currentPath.startsWith("/dashboard/exam-")) {
+      return true;
+    }
+    if (key === "/dashboard/experiment-courses" && currentPath.startsWith("/dashboard/experiment-")) {
       return true;
     }
     return currentPath === key;
   };
 
+  const renderNav = () => (
+    <aside className="pu-aside">
+      <div className="pu-scope">
+        <small>当前学习课程</small>
+        <b title={courseTitle || "未选择课程"}>{courseTitle || "未选择课程"}</b>
+      </div>
+
+      <Input
+        className="pu-nav-search"
+        prefix={<SearchOutlined style={{ color: "#9aa7ba" }} />}
+        placeholder="查找功能页面"
+        value={navSearch}
+        onChange={(e) => setNavSearch(e.target.value)}
+        allowClear
+      />
+
+      {visibleGroups.map((group) => (
+        <div key={group.label}>
+          <div className="pu-nav-group">{group.label}</div>
+          {group.items.map((item) => {
+            const active = isActive(item.key);
+            return (
+              <button
+                key={`${group.label}-${item.key}-${item.label}`}
+                type="button"
+                className={`pu-nav-link${active ? " active" : ""}`}
+                onClick={() => handleNavClick(item.key)}
+              >
+                <span className="pu-nav-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+
+      {visibleGroups.length === 0 && (
+        <div style={{ padding: "16px 12px", color: colors.textSecondary, fontSize: 13 }}>
+          没有匹配的功能页面
+        </div>
+      )}
+    </aside>
+  );
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: colors.background }}>
-      {/* 顶部导航区域 - Refined Layout 风格：白底浅色顶栏 */}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--pu-bg, #f5f7fb)" }}>
+      {/* 顶部栏 */}
       <div
         style={{
           position: "sticky",
@@ -221,16 +269,14 @@ export default function StudentLayout() {
           zIndex: 1000,
           background: "#FFFFFF",
           boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
-          overflow: "hidden",
         }}
       >
-        {/* 主导航行 - 白底，深色文字 */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: isMobile ? "0 6px" : "0 40px",
+            padding: isMobile ? "0 6px" : "0 24px",
             minHeight: isMobile ? 44 : 60,
             gap: isMobile ? 2 : 0,
           }}
@@ -253,7 +299,7 @@ export default function StudentLayout() {
             />
             {!isMobile && (
               <span style={{
-                fontSize: isMobile ? 18 : 22,
+                fontSize: 22,
                 fontWeight: 700,
                 fontFamily: "'Manrope', sans-serif",
                 color: colors.textPrimary,
@@ -294,7 +340,7 @@ export default function StudentLayout() {
                 >
                   <span
                     style={{
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: 800,
                       color: "#111827",
                       lineHeight: 1.1,
@@ -309,7 +355,7 @@ export default function StudentLayout() {
                   {courseMajor && (
                     <span
                       style={{
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: 600,
                         color: colors.primary,
                         whiteSpace: "nowrap",
@@ -330,7 +376,6 @@ export default function StudentLayout() {
 
           {/* 右侧功能区域 */}
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 2 : 10, flexShrink: 0 }}>
-            {/* 搜索按钮 */}
             <div
               onClick={() => { setCommandVisible(true); setCommandSearch(""); setCommandIndex(0); }}
               style={{
@@ -396,232 +441,22 @@ export default function StudentLayout() {
             )}
           </div>
         </div>
-
-        {isMobile && courseTitle && (
-          <div
-            style={{
-              padding: "0 16px 12px",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                color: "#111827",
-                lineHeight: 1.2,
-              }}
-            >
-              {courseTitle}
-            </span>
-            {courseMajor && (
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: colors.primary,
-                  whiteSpace: "nowrap",
-                  padding: "4px 10px",
-                  background: `${colors.primary}0d`,
-                  border: `1px solid ${colors.primary}22`,
-                  borderRadius: 9999,
-                }}
-              >
-                {courseMajor}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Sub Navigation Bar - Glassmorphism + 药丸容器 (Refined Layout 风格) */}
-        {!isMobile && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "12px 40px",
-              background: "rgba(248, 249, 250, 0.4)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              overflowX: "auto",
-            }}
-          >
-            {/* 药丸容器 - 包裹所有 Tab，分组显示 */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0,
-                padding: 4,
-                background: "#F3F4F5",
-                borderRadius: 9999,
-                flexShrink: 0,
-              }}
-            >
-              {navGroups.map((group, gi) => {
-                const items = group.items;
-                const groupActive = items.some((it) => isActive(it.key));
-                return (
-                  <React.Fragment key={group.label}>
-                    {/* Group separator */}
-                    {gi > 0 && (
-                      <div
-                        style={{
-                          width: 1,
-                          height: 20,
-                          background: "#D1D5DB",
-                          margin: "0 4px",
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                    {group.dropdown ? (
-                      <Dropdown
-                        menu={{
-                          items: items.map((it) => ({
-                            key: it.key,
-                            label: (
-                              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                {it.icon}
-                                {it.label}
-                              </span>
-                            ),
-                          })),
-                          onClick: ({ key }) => handleNavClick(key),
-                        }}
-                        trigger={["hover", "click"]}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "8px 16px",
-                            cursor: "pointer",
-                            fontSize: 15,
-                            fontWeight: groupActive ? 600 : 400,
-                            fontFamily: "'Manrope', sans-serif",
-                            color: groupActive ? "#FFFFFF" : "#424754",
-                            whiteSpace: "nowrap",
-                            borderRadius: 9999,
-                            background: groupActive ? colors.primary : "transparent",
-                            transition: "all 0.2s ease",
-                            flexShrink: 0,
-                            letterSpacing: "0.01em",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!groupActive) {
-                              (e.currentTarget as HTMLDivElement).style.background = "rgba(255, 255, 255, 0.5)";
-                              (e.currentTarget as HTMLDivElement).style.color = colors.textPrimary;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!groupActive) {
-                              (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                              (e.currentTarget as HTMLDivElement).style.color = "#424754";
-                            }
-                          }}
-                        >
-                          {group.label}
-                          <DownOutlined style={{ fontSize: 11 }} />
-                        </div>
-                      </Dropdown>
-                    ) : (
-                      items.map((item) => {
-                        const active = isActive(item.key);
-                        return (
-                          <div
-                            key={item.key}
-                            onClick={() => handleNavClick(item.key)}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              padding: "8px 16px",
-                              cursor: "pointer",
-                              fontSize: 15,
-                              fontWeight: active ? 600 : 400,
-                              fontFamily: "'Manrope', sans-serif",
-                              color: active ? "#FFFFFF" : "#424754",
-                              whiteSpace: "nowrap",
-                              borderRadius: 9999,
-                              background: active ? colors.primary : "transparent",
-                              transition: "all 0.2s ease",
-                              flexShrink: 0,
-                              letterSpacing: "0.01em",
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!active) {
-                                (e.currentTarget as HTMLDivElement).style.background = "rgba(255, 255, 255, 0.5)";
-                                (e.currentTarget as HTMLDivElement).style.color = colors.textPrimary;
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!active) {
-                                (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                                (e.currentTarget as HTMLDivElement).style.color = "#424754";
-                              }
-                            }}
-                          >
-                            {item.icon && (
-                              <span style={{ fontSize: 15, opacity: active ? 1 : 0.7 }}>{item.icon}</span>
-                            )}
-                            {item.label}
-                          </div>
-                        );
-                      })
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            {/* AI 智能助手 - Tab 栏右侧 */}
-            <div style={{ flex: 1 }} />
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "0 14px",
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-                background: colors.primaryLightBg,
-                border: `1px solid ${colors.primaryBorder}`,
-                color: colors.primary,
-                borderRadius: 9999,
-                height: 34,
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = "rgba(37, 115, 230, 0.10)";
-                el.style.borderColor = "rgba(37, 115, 230, 0.25)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = colors.primaryLightBg;
-                el.style.borderColor = colors.primaryBorder;
-              }}
-            >
-              <AIChatButton variant="inline" />
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* 主内容区域 */}
-      <div data-outlet-scroll style={{ flex: 1, padding: isMobile ? "0 0 8px" : "0 12px 12px", minHeight: "calc(100vh - 132px)", display: "flex", flexDirection: "column" }}>
-        <Outlet />
-      </div>
+      {/* 主体：左侧导航 + 工作区 */}
+      <div className="pu-shell">
+        {!isMobile && renderNav()}
 
-      <GlobalFooter />
+        <main className="pu-workspace">
+          <div
+            data-outlet-scroll
+            style={{ flex: 1, minHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}
+          >
+            <Outlet />
+          </div>
+          <GlobalFooter />
+        </main>
+      </div>
 
       {/* AI 助手悬浮按钮 */}
       <AIChatButton variant="fab" />
@@ -630,113 +465,13 @@ export default function StudentLayout() {
         title={
           <span style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>学习导航</span>
         }
-        placement="right"
+        placement="left"
         onClose={() => setMobileNavOpen(false)}
         open={mobileNavOpen}
         width="72vw"
-        styles={{ body: { padding: 10, background: "#F0F2F5" } }}
+        styles={{ body: { padding: 0 } }}
       >
-        {courseTitle && (
-          <div
-            style={{
-              padding: 12,
-              borderRadius: 12,
-              background: `linear-gradient(135deg, ${colors.primary}10 0%, ${colors.primary}04 100%)`,
-              border: `1px solid ${colors.primaryBorder}`,
-              marginBottom: 10,
-            }}
-          >
-            <div style={{ fontSize: 11, fontWeight: 600, color: colors.primary, marginBottom: 4, letterSpacing: 1 }}>
-              当前课程
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: colors.textPrimary, lineHeight: 1.3 }}>
-              {courseTitle}
-            </div>
-            {courseMajor && (
-              <div style={{ marginTop: 6 }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: colors.primary,
-                    padding: "2px 8px",
-                    background: colors.primaryLightBg,
-                    border: `1px solid ${colors.primaryBorder}`,
-                    borderRadius: 9999,
-                  }}
-                >
-                  {courseMajor}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {navGroups.map((group) => (
-            <div
-              key={group.label}
-              style={{
-                borderRadius: 10,
-                background: "#FFFFFF",
-                overflow: "hidden",
-              }}
-            >
-              {/* 分组标题 */}
-              <div style={{
-                padding: "10px 12px 2px",
-                fontSize: 10,
-                fontWeight: 700,
-                color: "#999",
-                letterSpacing: 1.5,
-                textTransform: "uppercase" as const,
-              }}>
-                {group.label}
-              </div>
-              <div style={{ padding: "2px 6px 6px" }}>
-                {group.items.map((item) => {
-                  const active = isActive(item.key);
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => handleNavClick(item.key)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        border: "none",
-                        background: active ? `${colors.primary}08` : "transparent",
-                        color: active ? colors.primary : "#333",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "all 0.12s",
-                      }}
-                    >
-                      <div style={{
-                        width: 26, height: 26, borderRadius: 7,
-                        background: active ? colors.primary : "#F3F4F5",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        flexShrink: 0,
-                        transition: "background 0.12s",
-                      }}>
-                        <span style={{ fontSize: 13, color: active ? "#fff" : "#757780", lineHeight: 1 }}>{item.icon}</span>
-                      </div>
-                      <span style={{ flex: 1, fontSize: 13, fontWeight: active ? 600 : 500 }}>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <UserManualModal role="student" />
-        </div>
+        {renderNav()}
       </Drawer>
 
       {/* Command Palette */}
@@ -788,7 +523,7 @@ export default function StudentLayout() {
                       const isSelected = globalIdx === commandIndex;
                       return (
                         <div
-                          key={item.key}
+                          key={`${item.group}-${item.key}-${item.label}`}
                           onClick={() => handleCommandSelect(item.key)}
                           onMouseEnter={() => setCommandIndex(globalIdx)}
                           style={{

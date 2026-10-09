@@ -685,10 +685,10 @@ export default function StudentJobCompetencyGraph() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", flex: 1, minHeight: 0, height: 0, background: "#f5f5f5" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", flex: 1, minHeight: 0, height: 0, background: "var(--pu-bg, #f5f7fb)" }}>
       {/* 左侧数据侧边栏：选择专业/岗位/图谱 */}
       {isMobile ? (
-        <div style={{ background: "#fff", padding: 8, borderBottom: "1px solid #f0f0f0" }}>
+        <div style={{ background: "#fff", padding: 8, borderBottom: "1px solid #edf0f5" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ fontSize: 12, color: "#374151", fontWeight: 700 }}>所属专业</div>
             {majors.length === 0 ? (
@@ -716,8 +716,8 @@ export default function StudentJobCompetencyGraph() {
           </div>
         </div>
       ) : (
-        <div style={{ width: 268, flexShrink: 0, background: "#fff", borderRight: "1px solid #f0f0f0", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ width: 268, flexShrink: 0, background: "#fff", borderRight: "1px solid #edf0f5", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid #edf0f5", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #C0392B 0%, #8e2a22 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, flexShrink: 0 }}>
               <ApartmentOutlined />
             </span>
@@ -726,7 +726,7 @@ export default function StudentJobCompetencyGraph() {
               <span style={{ fontSize: 11, color: "#8a9199" }}>{majors.length === 0 ? "暂无匹配专业" : majors[0].name} · {jobs.length} 个岗位</span>
             </div>
           </div>
-          <div style={{ padding: "12px 14px", borderBottom: "1px solid #f0f0f0", background: "#fafbfc" }}>
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid #edf0f5", background: "#fafbfc" }}>
             <div style={{ fontSize: 12, color: "#374151", marginBottom: 8, fontWeight: 700, letterSpacing: 0.3 }}>所属专业</div>
             {majors.length === 0 ? (
               <div style={{ fontSize: 13, color: "#9aa0a6", padding: "6px 0" }}>当前课程暂无匹配专业</div>
@@ -752,7 +752,7 @@ export default function StudentJobCompetencyGraph() {
                         cursor: "pointer",
                         background: isActive ? "#eef2ff" : "#fff",
                         border: isActive ? "1px solid #c7d2fe" : "1px solid #eef2f7",
-                        boxShadow: isActive ? "0 1px 6px rgba(37,115,230,0.08)" : "none",
+                        boxShadow: isActive ? "0 1px 6px rgba(40, 89, 223,0.08)" : "none",
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
@@ -761,17 +761,17 @@ export default function StudentJobCompetencyGraph() {
                       onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#f8fafc"; }}
                       onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
                     >
-                      <span style={{ width: 28, height: 28, borderRadius: 7, background: isActive ? "#2573E6" : "#f1f5f9", color: isActive ? "#fff" : "#64748b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>
+                      <span style={{ width: 28, height: 28, borderRadius: 7, background: isActive ? "#2859df" : "#f1f5f9", color: isActive ? "#fff" : "#64748b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>
                         <ApartmentOutlined />
                       </span>
                       <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? "#1e3a8a" : "#1f2428", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{j.title}</span>
-                      {isActive && <span style={{ width: 6, height: 6, borderRadius: 9999, background: "#2573E6", flexShrink: 0 }} />}
+                      {isActive && <span style={{ width: 6, height: 6, borderRadius: 9999, background: "#2859df", flexShrink: 0 }} />}
                     </div>
                   );
                 })}
               </div>
             )}
-            <div style={{ padding: "14px 14px 6px", fontSize: 10, color: "#9aa0a6", fontWeight: 700, letterSpacing: 0.8, marginTop: 4, borderTop: "1px solid #f5f5f5" }}>图谱</div>
+            <div style={{ padding: "14px 14px 6px", fontSize: 10, color: "#9aa0a6", fontWeight: 700, letterSpacing: 0.8, marginTop: 4, borderTop: "1px solid #f5f7fb" }}>图谱</div>
             {graphsLoading ? (
               <div style={{ padding: 12, textAlign: "center" }}><Spin size="small" /></div>
             ) : graphs.length === 0 ? (
@@ -790,7 +790,7 @@ export default function StudentJobCompetencyGraph() {
                         cursor: "pointer",
                         background: isActive ? "#f0f7ff" : "#fff",
                         border: isActive ? "1px solid #bfdbfe" : "1px solid #eef2f7",
-                        boxShadow: isActive ? "0 1px 6px rgba(37,115,230,0.08)" : "none",
+                        boxShadow: isActive ? "0 1px 6px rgba(40, 89, 223,0.08)" : "none",
                         transition: "all 0.15s",
                         display: "flex",
                         alignItems: "center",
@@ -800,7 +800,7 @@ export default function StudentJobCompetencyGraph() {
                       onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
                     >
                       <div style={{ flex: 1, fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? "#1e40af" : "#1f2428", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.name}</div>
-                      {isActive && <span style={{ width: 6, height: 6, borderRadius: 9999, background: "#2573E6", flexShrink: 0 }} />}
+                      {isActive && <span style={{ width: 6, height: 6, borderRadius: 9999, background: "#2859df", flexShrink: 0 }} />}
                     </div>
                   );
                 })}
@@ -808,7 +808,7 @@ export default function StudentJobCompetencyGraph() {
             )}
           </div>
           {graphId && (
-            <div style={{ padding: 10, borderTop: "1px solid #f0f0f0", background: "#fafafa" }}>
+            <div style={{ padding: 10, borderTop: "1px solid #edf0f5", background: "#fafafa" }}>
               <div style={{ fontSize: 11, color: "#999", marginBottom: 6, fontWeight: 600 }}>统计</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <Tag color="#E67E22" style={{ margin: 0, fontSize: 11 }}>{tasks.length} 任务</Tag>
@@ -831,7 +831,7 @@ export default function StudentJobCompetencyGraph() {
               flexWrap: "wrap",
               alignItems: "center",
               padding: isMobile ? "8px" : "8px 12px",
-              borderBottom: "1px solid #f0f0f0",
+              borderBottom: "1px solid #edf0f5",
               background: "#fafafa",
               flexShrink: 0,
             }}

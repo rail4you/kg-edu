@@ -1,29 +1,33 @@
 import { useState, useMemo } from "react";
-import { Form, Input, Button, message, Modal, Layout, Typography, List, Tooltip, Grid } from "antd";
+import { Form, Input, Button, message, Modal, Typography, Grid } from "antd";
 import {
   UserOutlined,
   LockOutlined,
   TeamOutlined,
   PhoneOutlined,
-  QuestionCircleOutlined,
+  ApartmentOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { setCurrentTenant } from "@/lib/tenant";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useBranding } from "@/hooks/use-branding";
+import { usePortalNavItems } from "@/hooks/use-portal-config";
+import { UserMenu } from "@/components/layout/user-menu";
 import GlobalFooter from "@/components/layout/global-footer";
-import { themeColors } from "@/styles/theme";
+import { ProtoTag } from "@/components/proto";
+import "@/styles/home-portal-theme.css";
+import "@/styles/portal-editorial.css";
 
-const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-/** 登录页品牌 Logo + 标题 */
+/** 登录页品牌 Logo + 标题（与首页一致） */
 function LoginBrandSection() {
   const branding = useBranding();
   return (
     <>
-      <img src={branding.logo_dark} alt={branding.app_name} style={{ height: 44, objectFit: "contain" }} />
+      <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
+      <div className="home-brand__title">{branding.app_title}</div>
     </>
   );
 }
@@ -36,13 +40,6 @@ interface MatchedTenant {
 
 type RoleType = "student" | "teacher" | "admin";
 type LoginMode = "username" | "phone";
-
-const colors = {
-  primary: themeColors.primary,        // "#2573E6"
-  primaryLight: themeColors.primaryHover, // "#1D5FCC"
-  accent: "#D4A843",
-  navBg: themeColors.navBg,
-};
 
 interface RoleConfig {
   key: RoleType;
@@ -96,8 +93,9 @@ async function callFindUserTenants(memberId: string, password: string): Promise<
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const screens = Grid.useBreakpoint();
+  const navItems = usePortalNavItems();
   usePageTitle();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -226,463 +224,255 @@ export default function LoginPage() {
     form.setFieldsValue({ memberId: undefined });
   };
 
-  return (
-    <Layout style={{ minHeight: "100vh" }}>
-      {/* Header */}
-      <Header
-        style={{
-          background: colors.navBg || themeColors.navBg,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: isMobile ? "0 16px" : "0 48px",
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
-          height: 56,
-          lineHeight: "56px",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
-        }}
-      >
-        <div
-          style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
-          onClick={() => navigate("/")}
-        >
-          <LoginBrandSection />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link
-            to="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "0 14px",
-              height: 32,
-              lineHeight: "32px",
-              background: "rgba(255, 255, 255, 0.08)",
-              border: "1px solid rgba(255, 255, 255, 0.28)",
-              textDecoration: "none",
-              fontSize: 13,
-              fontWeight: 500,
-              color: "rgba(255, 255, 255, 0.92)",
-              borderRadius: 6,
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.16)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.42)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.28)";
-            }}
-          >
-            返回首页
-          </Link>
-        </div>
-      </Header>
-
-      <Content
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: isMobile ? "16px 12px 24px" : "24px 8px",
-          background: "linear-gradient(180deg, #F7FAFF 0%, #FFFFFF 40%)",
-        }}
-      >
-        {/* 角色选择卡片 */}
-        {!roleConfig && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              width: "100%",
-              maxWidth: 960,
-              background: "#FFFFFF",
-              borderRadius: isMobile ? 18 : 16,
-              overflow: "hidden",
-              boxShadow: isMobile ? "0 12px 32px rgba(37,115,230,0.12)" : "0 4px 24px rgba(0,0,0,0.1)",
-            }}
-          >
-            {/* 左侧图片 */}
-            <div
-              style={{
-                flex: isMobile ? "0 0 180px" : "0 0 50%",
-                position: "relative",
+  const roleSelection = (
+    <>
+      <h2 className="pu-section-title" style={{ marginBottom: 6 }}>选择登录角色</h2>
+      <p style={{ color: "var(--pu-muted)", fontSize: 13, marginBottom: 20 }}>
+        请选择您的身份进入对应的登录页面
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {(["student", "teacher", "admin"] as RoleType[]).map((role) => {
+          const config = roleConfigs[role];
+          return (
+            <button
+              key={role}
+              type="button"
+              className="pu-role-option"
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set("role", role);
+                if (redirectParam) params.set("redirect", redirectParam);
+                navigate(`/login?${params.toString()}`);
               }}
             >
-              <img
-                src="/assets/login-hero.png"
-                alt="education"
-                style={{
-                  width: "100%",
-                  height: isMobile ? 180 : "100%",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-              {isMobile && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    inset: 0,
-                    background: "linear-gradient(180deg, rgba(12,32,61,0.1) 0%, rgba(12,32,61,0.6) 100%)",
-                    display: "flex",
-                    alignItems: "flex-end",
-                    padding: 18,
-                  }}
-                >
-                  <div>
-                    <div style={{ color: "#FFFFFF", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
-                      选择你的入口
-                    </div>
-                    <div style={{ color: "rgba(255,255,255,0.88)", fontSize: 13 }}>
-                      学生、教师、管理员分角色登录
-                    </div>
-                  </div>
-                </div>
-              )}
+              <span className="pu-role-option__icon">
+                <TeamOutlined style={{ fontSize: 22 }} />
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 16, fontWeight: 650, color: "var(--pu-ink)" }}>
+                  {config.label}
+                </span>
+                <span style={{ display: "block", fontSize: 13, color: "var(--pu-muted)", marginTop: 3 }}>
+                  {config.subtitle}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--pu-bg, #f5f7fb)" }}>
+      {/* Header（与首页一致） */}
+      <header className="home-header ed-top" style={{ boxShadow: "none" }}>
+        <div className="home-header__inner">
+          <div className="home-header__left">
+            <div className="home-brand" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
+              <LoginBrandSection />
             </div>
 
-            {/* 右侧角色选择 */}
-            <div
-              style={{
-                flex: 1,
-                padding: isMobile ? 18 : 28,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
-            >
-              <Title level={isMobile ? 4 : 3} style={{ color: colors.primary, marginBottom: 6, textAlign: "center" }}>
-                选择登录角色
-              </Title>
-              <Text style={{ color: "#666", fontSize: 13, display: "block", marginBottom: 16, textAlign: "center" }}>
-                请选择您的身份进入对应的登录页面
-              </Text>
+            {!isMobile && (
+              <div className="home-nav">
+                {navItems.map((item) => (
+                  <Button
+                    key={item.key}
+                    type="text"
+                    className={`home-nav__button ${item.key === "/" ? "is-active" : ""}`}
+                    onClick={() => navigate(item.key)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 10 : 6 }}>
-                {(["student", "teacher", "admin"] as RoleType[]).map((role) => {
-                  const config = roleConfigs[role];
-                  return (
-                    <div
-                      key={role}
-                      onClick={() => {
-                        const params = new URLSearchParams();
-                        params.set("role", role);
-                        if (redirectParam) params.set("redirect", redirectParam);
-                        navigate(`/login?${params.toString()}`);
-                      }}
-                      style={{
-                        padding: isMobile ? "14px 16px" : 16,
-                        background: "#FFFFFF",
-                        borderRadius: 14,
-                        boxShadow: isMobile ? "0 8px 18px rgba(15,23,42,0.08)" : "0 2px 8px rgba(0,0,0,0.06)",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        border: "1px solid #E8E8E8",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 14,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (isMobile) return;
-                        e.currentTarget.style.borderColor = colors.primary;
-                        e.currentTarget.style.boxShadow = `0 4px 16px rgba(0,102,204,0.15)`;
-                        e.currentTarget.style.transform = "translateX(6px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        if (isMobile) return;
-                        e.currentTarget.style.borderColor = "#E8E8E8";
-                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
-                        e.currentTarget.style.transform = "translateX(0)";
-                      }}
-                    >
+          <div className="home-header__actions">
+            {user ? (
+              <UserMenu role="student" variant="header" />
+            ) : (
+              <>
+                <Button className="home-login-button" onClick={() => navigate("/login")}>
+                  登录
+                </Button>
+                <Button className="home-register-button" onClick={() => navigate("/")}>
+                  进入平台
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+        <div className="pu-login-wrap">
+          {/* 左侧品牌区 */}
+          <div className="pu-login-art">
+            <div className="pu-eyebrow">学习 · 连接 · 成长</div>
+            <h1>
+              让知识相连，
+              <br />
+              让成长可见。
+            </h1>
+            <p>
+              {roleConfig
+                ? roleConfig.subtitle + "。在易课程，连接课程、知识与实践，开启更清晰的学习旅程。"
+                : "在易课程，连接课程、知识与实践，开启更清晰的教学与学习旅程。"}
+            </p>
+            <img
+              className="pu-login-art__img"
+              src="/assets/login-hero.png"
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* 右侧表单/角色选择 */}
+          <div className="pu-card" style={{ padding: isMobile ? 20 : 32 }}>
+            <div style={{ width: "100%", maxWidth: 400, margin: "0 auto" }}>
+            {!roleConfig ? (
+              roleSelection
+            ) : (
+              <>
+                {/* 登录标题 */}
+                <div style={{ marginBottom: 18 }}>
+                  <h2 className="pu-section-title" style={{ marginBottom: 4 }}>{roleConfig.label}</h2>
+                  <p style={{ color: "var(--pu-muted)", fontSize: 13 }}>{roleConfig.subtitle}</p>
+                </div>
+
+                {/* 登录模式切换 */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", background: "#f3f5fb", borderRadius: 10, padding: 3 }}>
+                    {[
+                      { key: "username" as LoginMode, label: "用户名登录" },
+                      { key: "phone" as LoginMode, label: "手机号登录" },
+                    ].map((mode) => (
                       <div
+                        key={mode.key}
+                        onClick={() => handleLoginModeChange(mode.key)}
                         style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: 10,
-                          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
+                          flex: 1,
+                          textAlign: "center",
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          background: loginMode === mode.key ? "#FFFFFF" : "transparent",
+                          boxShadow: loginMode === mode.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                          transition: "all 0.2s ease",
                         }}
                       >
-                        <TeamOutlined style={{ fontSize: 20, color: "#FFFFFF" }} />
-                      </div>
-                      <div>
-                        <Title level={5} style={{ margin: "0 0 2px", color: "#1F1F1F" }}>
-                          {config.label}
-                        </Title>
-                        <Text style={{ color: "#666", fontSize: isMobile ? 13 : 12 }}>
-                          {config.subtitle}
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: loginMode === mode.key ? 600 : 400,
+                            color: loginMode === mode.key ? "var(--pu-blue)" : "#666",
+                          }}
+                        >
+                          {mode.label}
                         </Text>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 登录表单 */}
-        {roleConfig && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              width: "100%",
-              maxWidth: 860,
-              background: "#FFFFFF",
-              borderRadius: isMobile ? 18 : 16,
-              overflow: "hidden",
-              boxShadow: isMobile ? "0 12px 32px rgba(37,115,230,0.12)" : "0 4px 24px rgba(0,0,0,0.1)",
-            }}
-          >
-            {/* 左侧图片 */}
-            <div
-              style={{
-                flex: isMobile ? "0 0 180px" : "0 0 45%",
-                position: "relative",
-              }}
-            >
-              <img
-                src="/assets/login-hero.png"
-                alt="education"
-                style={{
-                  width: "100%",
-                  height: isMobile ? 180 : "100%",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-              {isMobile && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    inset: 0,
-                    background: "linear-gradient(180deg, rgba(12,32,61,0.08) 0%, rgba(12,32,61,0.62) 100%)",
-                    display: "flex",
-                    alignItems: "flex-end",
-                    padding: 18,
-                  }}
-                >
-                  <div>
-                    <div style={{ color: "#FFFFFF", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
-                      {roleConfig.label}
-                    </div>
-                    <div style={{ color: "rgba(255,255,255,0.88)", fontSize: 13 }}>
-                      {roleConfig.subtitle}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 右侧表单 */}
-            <div
-              style={{
-                flex: 1,
-                padding: isMobile ? 18 : 24,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
-            >
-              {/* 登录标题 */}
-              <div style={{ textAlign: "center", marginBottom: isMobile ? 16 : 12, display: isMobile ? "none" : "block" }}>
-                <Title level={4} style={{ margin: "0 0 4px", color: "#1F1F1F" }}>
-                  {roleConfig.label}
-                </Title>
-                <Text style={{ color: "#666", fontSize: 12 }}>
-                  {roleConfig.subtitle}
-                </Text>
-              </div>
-
-              {/* 登录模式切换 */}
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", background: "#F5F7FA", borderRadius: 10, padding: 3 }}>
-                  {[
-                    { key: "username" as LoginMode, label: "用户名登录" },
-                    { key: "phone" as LoginMode, label: "手机号登录" },
-                  ].map((mode) => (
-                    <div
-                      key={mode.key}
-                      onClick={() => handleLoginModeChange(mode.key)}
-                      style={{
-                        flex: 1,
-                        textAlign: "center",
-                        padding: isMobile ? "10px 12px" : "8px 12px",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                        background: loginMode === mode.key ? "#FFFFFF" : "transparent",
-                        boxShadow: loginMode === mode.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: isMobile ? 14 : 13,
-                          fontWeight: loginMode === mode.key ? 600 : 400,
-                          color: loginMode === mode.key ? colors.primary : "#666",
-                        }}
-                      >
-                        {mode.label}
-                      </Text>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 错误提示 */}
-              {errorMsg && (
-                <div
-                  style={{
-                    marginBottom: 12,
-                    padding: "10px 12px",
-                    background: "#FFF2F0",
-                    border: "1px solid #FFCCC7",
-                    borderRadius: 8,
-                    color: "#CF1322",
-                    fontSize: 13,
-                  }}
-                >
-                  {errorMsg}
-                </div>
-              )}
-
-              {/* 表单 */}
-              <Form form={form} onFinish={onFinish} layout="vertical">
-                <Form.Item
-                  name="memberId"
-                  rules={[
-                    { required: true, message: loginMode === "username" ? "请输入用户名" : "请输入手机号" },
-                    ...(loginMode === "phone"
-                      ? [{ pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号格式" }]
-                      : []),
-                  ]}
-                >
-                  <Input
-                    prefix={loginMode === "username" ? <UserOutlined style={{ color: "#999" }} /> : <PhoneOutlined style={{ color: "#999" }} />}
-                    placeholder={loginMode === "username" ? "请输入用户名" : "请输入手机号"}
-                    size="large"
-                    maxLength={loginMode === "phone" ? 11 : undefined}
-                    style={{ borderRadius: 12, height: isMobile ? 46 : undefined }}
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  name="password"
-                  rules={[
-                    { required: true, message: "请输入密码" },
-                    { min: 6, message: "密码长度不能少于6位" },
-                  ]}
-                  help="密码长度至少6位"
-                >
-                  <Input.Password
-                    prefix={<LockOutlined style={{ color: "#999" }} />}
-                    placeholder="请输入密码"
-                    size="large"
-                    style={{ borderRadius: 12, height: isMobile ? 46 : undefined }}
-                  />
-                </Form.Item>
-
-                <Form.Item style={{ marginTop: 12, marginBottom: 0 }}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    size="large"
-                    loading={loading}
-                    style={{
-                      background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
-                      border: "none",
-                      borderRadius: 12,
-                      height: isMobile ? 46 : 44,
-                      fontSize: 15,
-                      fontWeight: 600,
-                      boxShadow: "0 4px 16px rgba(0,102,204,0.3)",
-                    }}
-                  >
-                    登 录
-                  </Button>
-                </Form.Item>
-              </Form>
-
-              {/* 返回选择角色 */}
-              <div style={{ textAlign: "center", marginTop: 12 }}>
-                <Link to={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"} style={{ color: "#999", fontSize: 12 }}>
-                  ← 返回选择角色
-                </Link>
-              </div>
-
-              {/* 切换角色 */}
-              {isMobile ? (
-                <div style={{ marginTop: 14 }}>
-                  <div style={{ textAlign: "center", color: "#999", fontSize: 12, marginBottom: 10 }}>
-                    切换到其他角色
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                    {otherRoles.map((r) => (
-                      <Link
-                        key={r}
-                        to={`/login?role=${r}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ""}`}
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: 999,
-                          border: "1px solid rgba(37,115,230,0.18)",
-                          background: "#F7FAFF",
-                          color: colors.primary,
-                          fontSize: 13,
-                          fontWeight: 500,
-                          textDecoration: "none",
-                        }}
-                      >
-                        {roleConfigs[r].label}
-                      </Link>
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div style={{ textAlign: "center", marginTop: 8 }}>
-                  <Tooltip
-                    title={
-                      <div>
-                        <div style={{ marginBottom: 4 }}>选择其他登录角色：</div>
-                        {otherRoles.map((r) => (
-                          <div key={r}>
-                            <Link to={`/login?role=${r}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ""}`} style={{ color: "#fff" }}>
-                              {roleConfigs[r].label}
-                            </Link>
-                          </div>
-                        ))}
-                      </div>
-                    }
-                    placement="bottom"
+
+                {/* 错误提示 */}
+                {errorMsg && (
+                  <div
+                    style={{
+                      marginBottom: 12,
+                      padding: "10px 12px",
+                      background: "#fdeef1",
+                      border: "1px solid #f6d0d7",
+                      borderRadius: 8,
+                      color: "var(--pu-red)",
+                      fontSize: 13,
+                    }}
                   >
-                    <span style={{ color: "#999", fontSize: 12, cursor: "pointer" }}>
-                      切换角色 <QuestionCircleOutlined style={{ marginLeft: 4 }} />
-                    </span>
-                  </Tooltip>
-                </div>
-              )}
+                    {errorMsg}
+                  </div>
+                )}
+
+                {/* 表单 */}
+                <Form form={form} onFinish={onFinish} layout="vertical">
+                  <Form.Item
+                    name="memberId"
+                    rules={[
+                      { required: true, message: loginMode === "username" ? "请输入用户名" : "请输入手机号" },
+                      ...(loginMode === "phone"
+                        ? [{ pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号格式" }]
+                        : []),
+                    ]}
+                  >
+                    <Input
+                      prefix={loginMode === "username" ? <UserOutlined style={{ color: "#999" }} /> : <PhoneOutlined style={{ color: "#999" }} />}
+                      placeholder={loginMode === "username" ? "请输入用户名" : "请输入手机号"}
+                      size="large"
+                      maxLength={loginMode === "phone" ? 11 : undefined}
+                      style={{ borderRadius: 8, height: 46 }}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="password"
+                    rules={[
+                      { required: true, message: "请输入密码" },
+                      { min: 6, message: "密码长度不能少于6位" },
+                    ]}
+                  >
+                    <Input.Password
+                      prefix={<LockOutlined style={{ color: "#999" }} />}
+                      placeholder="请输入密码"
+                      size="large"
+                      style={{ borderRadius: 8, height: 46 }}
+                    />
+                  </Form.Item>
+
+                  <Form.Item style={{ marginTop: 4, marginBottom: 0 }}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      block
+                      size="large"
+                      loading={loading}
+                      style={{
+                        background: "var(--pu-blue)",
+                        border: "none",
+                        borderRadius: 8,
+                        height: 46,
+                        fontSize: 15,
+                        fontWeight: 600,
+                      }}
+                    >
+                      登 录
+                    </Button>
+                  </Form.Item>
+                </Form>
+
+                {/* 切换身份（紧凑单行） */}
+                {otherRoles.length > 0 && (
+                  <div style={{ marginTop: 18, textAlign: "center", fontSize: 13, color: "var(--pu-muted)" }}>
+                    切换身份：
+                    {otherRoles.map((r, i) => (
+                      <span key={r}>
+                        {i > 0 && <span style={{ margin: "0 6px", color: "#cbd5e1" }}>·</span>}
+                        <Link
+                          to={`/login?role=${r}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ""}`}
+                          style={{ color: "var(--pu-blue)", fontWeight: 600 }}
+                        >
+                          {roleConfigs[r].label}
+                        </Link>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
             </div>
           </div>
-        )}
-      </Content>
+        </div>
+      </div>
 
       <GlobalFooter />
 
@@ -695,9 +485,10 @@ export default function LoginPage() {
           setPendingCredentials(null);
         }}
         footer={null}
-        width={isMobile ? "calc(100vw - 24px)" : 400}
+        centered
+        width={isMobile ? "calc(100vw - 24px)" : 440}
+        styles={{ content: { borderRadius: 16, padding: 26 } }}
       >
-        <p style={{ color: "#666", marginBottom: 16 }}>您的账号存在于多个组织中，请选择要登录的组织：</p>
         {(() => {
           const urlTenantHint = redirectParam
             ? new URLSearchParams(
@@ -709,78 +500,61 @@ export default function LoginPage() {
           const hasUrlHint =
             !!urlTenantHint &&
             matchedTenants.some((t) => t.schemaName === urlTenantHint);
-          const matchInList = !urlTenantHint
-            ? null
-            : matchedTenants.find((t) => t.schemaName === urlTenantHint) || null;
 
-          if (!hasUrlHint) {
-            return (
-              <div
-                style={{
-                  marginBottom: 12,
-                  padding: "8px 12px",
-                  background: "#fff7e6",
-                  border: "1px solid #ffd591",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: "#874d00",
-                }}
-              >
-                {urlTenantHint ? (
-                  <>
-                    ⚠ 本链接属于租户 <code>{urlTenantHint}</code>，但你当前账号无权访问。下面的列表是该账号可登录的组织。
-                  </>
-                ) : null}
-              </div>
-            );
-          }
-          return null;
-        })()}
-        <List
-          dataSource={matchedTenants}
-          renderItem={(tenant) => {
-            const urlTenantHint = redirectParam
-              ? new URLSearchParams(
-                  redirectParam.includes("?")
-                    ? redirectParam.split("?")[1] || ""
-                    : ""
-                ).get("tenant") || ""
-              : "";
-            const recommended = tenant.schemaName === urlTenantHint;
-            return (
-              <List.Item
-                style={{
-                  cursor: "pointer",
-                  padding: "12px 16px",
-                  borderRadius: 8,
-                  border: recommended ? "2px solid #1890ff" : "1px solid transparent",
-                  background: recommended ? "#e6f7ff" : undefined,
-                }}
-                onClick={() => handleLoginWithTenant(tenant)}
-              >
-                <List.Item.Meta
-                  title={
-                    <span>
-                      {tenant.tenantName || tenant.schemaName}
-                      {recommended && (
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            fontSize: 12,
-                            color: "#1890ff",
-                          }}
-                        >
-                          （与链接匹配，推荐）
+          return (
+            <>
+              <p style={{ color: "var(--pu-muted)", fontSize: 14, marginBottom: 16 }}>
+                您的账号存在于多个组织中，请选择要登录的组织：
+              </p>
+
+              {!hasUrlHint && urlTenantHint && (
+                <div
+                  style={{
+                    marginBottom: 14,
+                    padding: "10px 14px",
+                    background: "#fff4df",
+                    border: "1px solid #f0d9a8",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    lineHeight: 1.7,
+                    color: "#956009",
+                  }}
+                >
+                  ⚠ 本链接属于租户 <code>{urlTenantHint}</code>，但你当前账号无权访问。下面的列表是该账号可登录的组织。
+                </div>
+              )}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {matchedTenants.map((tenant) => {
+                  const recommended = tenant.schemaName === urlTenantHint;
+                  return (
+                    <button
+                      key={tenant.schemaName}
+                      type="button"
+                      className="pu-role-option"
+                      style={recommended ? { borderColor: "var(--pu-blue)", background: "#f7faff" } : undefined}
+                      onClick={() => handleLoginWithTenant(tenant)}
+                    >
+                      <span className="pu-role-option__icon">
+                        <ApartmentOutlined style={{ fontSize: 20 }} />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                        <span style={{ display: "block", fontSize: 15, fontWeight: 650, color: "var(--pu-ink)" }}>
+                          {tenant.tenantName || tenant.schemaName}
                         </span>
-                      )}
-                    </span>
-                  }
-                />
-              </List.Item>
-            );
-          }}
-        />
+                        <span style={{ display: "block", fontSize: 12, color: "var(--pu-muted)", marginTop: 2 }}>
+                          {tenant.schemaName}
+                        </span>
+                      </span>
+                      {recommended && <ProtoTag tone="blue">推荐</ProtoTag>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
       </Modal>
-    </Layout>
+    </div>
   );
 }

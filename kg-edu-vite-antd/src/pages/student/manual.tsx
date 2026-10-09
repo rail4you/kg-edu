@@ -113,7 +113,7 @@ export default function ManualPage() {
         return <FilePdfOutlined style={{ ...iconStyle, color: "#f5222d" }} />;
       case "doc":
       case "docx":
-        return <FileWordOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
+        return <FileWordOutlined style={{ ...iconStyle, color: "#2859df" }} />;
       case "xls":
       case "xlsx":
         return <FileExcelOutlined style={{ ...iconStyle, color: "#52c41a" }} />;
@@ -271,7 +271,7 @@ export default function ManualPage() {
               borderBottom: "1px solid var(--pu-line-soft)",
               display: "flex", alignItems: "center", gap: 10,
             }}>
-              <QuestionCircleOutlined style={{ color: "#2573E6", fontSize: 16 }} />
+              <QuestionCircleOutlined style={{ color: "#2859df", fontSize: 16 }} />
               <Text strong style={{ fontSize: 15 }}>需要更多帮助？</Text>
             </div>
             <div style={{ padding: "6px 20px 10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
@@ -293,7 +293,7 @@ export default function ManualPage() {
                     width: 36, height: 36, borderRadius: 8,
                     background: "#f0f5ff", display: "flex",
                     alignItems: "center", justifyContent: "center",
-                    flexShrink: 0, color: "#2573E6", fontSize: 15,
+                    flexShrink: 0, color: "#2859df", fontSize: 15,
                   }}>
                     {item.icon}
                   </div>
@@ -319,8 +319,8 @@ export default function ManualPage() {
             justifyContent: "center",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <ReadOutlined style={{ color: "#2573E6", fontSize: 15 }} />
-              <Text strong style={{ fontSize: 14, color: "#2573E6" }}>温馨提示</Text>
+              <ReadOutlined style={{ color: "#2859df", fontSize: 15 }} />
+              <Text strong style={{ fontSize: 14, color: "#2859df" }}>温馨提示</Text>
             </div>
             <Text style={{ fontSize: 13, color: "#4d8fef", lineHeight: 1.8 }}>
               建议先下载手册到本地，方便随时查阅。如遇到学习问题，可先查看手册中的常见问题，或直接联系老师获取帮助。

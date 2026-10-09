@@ -7,7 +7,6 @@ import {
   StarOutlined,
   TeamOutlined,
   MailOutlined,
-  CalendarOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -20,9 +19,6 @@ import { themeColors as colors } from "@/styles/theme";
 import { PageHead, ProtoTag } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
-
-const DEFAULT_AVATAR =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Ccircle cx='50' cy='35' r='20' fill='%23ccc'/%3E%3Cellipse cx='50' cy='80' rx='30' ry='20' fill='%23ccc'/%3E%3C/svg%3E";
 
 interface TeacherWithRole {
   id: string;
@@ -110,7 +106,7 @@ const CopyText: React.FC<{ text: string; icon?: React.ReactNode }> = ({
           transition: "background 0.15s",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#f0f0f0";
+          e.currentTarget.style.background = "#edf0f5";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = "transparent";
@@ -126,155 +122,121 @@ const TeacherCard: React.FC<{ teacher: TeacherWithRole }> = ({ teacher }) => {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const roleConfig = ROLE_CONFIG[teacher.role];
+  const initial = (teacher.name || "师").trim().charAt(0);
 
   return (
     <div
+      className="pu-card"
       style={{
-        borderRadius: 14,
-        background: "#fff",
-        border: "1px solid var(--pu-line)",
-        overflow: "hidden",
-        transition: "transform 0.25s ease, box-shadow 0.25s ease",
+        padding: isMobile ? 16 : 20,
         display: "flex",
         flexDirection: "column",
+        gap: 12,
         height: "100%",
+        transition: "border-color 0.2s ease, transform 0.2s ease",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-3px)";
-        e.currentTarget.style.boxShadow = "0 12px 30px rgba(21,50,84,0.08)";
+        e.currentTarget.style.borderColor = "#c6d3f7";
+        e.currentTarget.style.transform = "translateY(-2px)";
       }}
       onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--pu-line)";
         e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "";
       }}
     >
-      {/* 全宽图片区域 */}
-      <div style={{
-        height: isMobile ? 100 : 140,
-        overflow: "hidden",
-        position: "relative",
-        background: "#e2e8f0",
-      }}>
-        <img
-          src={teacher.avatarUrl || DEFAULT_AVATAR}
-          alt={teacher.name || "Teacher"}
+      {/* 头像 + 姓名 + 角色 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            filter: "grayscale(100%)",
-            transition: "filter 0.5s ease",
-            display: "block",
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            overflow: "hidden",
+            background: "var(--pu-blue-soft, #edf2ff)",
+            color: "var(--pu-blue, #2859df)",
+            display: "grid",
+            placeItems: "center",
+            fontSize: 22,
+            fontWeight: 650,
+            flexShrink: 0,
           }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLImageElement).style.filter = "grayscale(0%)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLImageElement).style.filter = "grayscale(100%)";
-          }}
-        />
-        {/* 角色标签 - 悬浮在图片右上角 */}
-        {roleConfig && (
-          <div style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            background: roleConfig.badgeBg,
-            color: "#fff",
-            padding: "3px 10px",
-            borderRadius: 6,
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.3px",
-          }}>
-            {roleConfig.label}
-          </div>
-        )}
-      </div>
-
-      {/* 内容区域 */}
-      <div style={{ padding: isMobile ? "10px 12px" : "16px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* 姓名 + 职称 */}
-        <div style={{ marginBottom: isMobile ? 6 : 10 }}>
-          <Text strong style={{
-            fontSize: isMobile ? 14 : 17,
-            fontFamily: "'Manrope', sans-serif",
-            color: "#191b23",
-            display: "block",
-            marginBottom: 2,
-          }}>
-            {teacher.name || "未知教师"}
-          </Text>
-          {teacher.jobTitle && (
-            <Text style={{ fontSize: isMobile ? 12 : 13, color: colors.primary, fontWeight: 600 }}>
-              {teacher.jobTitle}
-            </Text>
-          )}
-        </div>
-
-        {/* 院校信息 */}
-        {(teacher.colledge || teacher.major) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
-            <EnvironmentOutlined style={{ fontSize: 12, color: "#727785" }} />
-            <Text style={{ fontSize: isMobile ? 11 : 12, color: "#727785" }}>
-              {[teacher.colledge, teacher.major].filter(Boolean).join(" · ")}
-            </Text>
-          </div>
-        )}
-
-        {/* 简介 */}
-        <div style={{ flex: 1 }}>
-          {teacher.bio ? (
-            <Paragraph
-              ellipsis={{ rows: 2, expandable: true, symbol: "展开" }}
-              style={{ lineHeight: 1.6, fontSize: isMobile ? 12 : 13, color: "#424753", marginBottom: 0 }}
-            >
-              {teacher.bio}
-            </Paragraph>
+        >
+          {teacher.avatarUrl ? (
+            <img
+              src={teacher.avatarUrl}
+              alt={teacher.name || "Teacher"}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           ) : (
-            <Text style={{ fontSize: 13, color: "#c2c6d6" }}>
-              暂无简介
-            </Text>
+            initial
           )}
         </div>
-
-        {/* 联系方式 */}
-        <div style={{
-          marginTop: isMobile ? 8 : 12,
-          paddingTop: isMobile ? 8 : 10,
-          borderTop: "1px solid var(--pu-line-soft)",
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "stretch" : "center",
-          gap: isMobile ? 4 : 0,
-        }}>
-          {teacher.email && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              cursor: "pointer",
-              minWidth: 0,
-            }}>
-              <MailOutlined style={{ fontSize: 14, color: "#485e8b" }} />
-              <CopyText
-                text={teacher.email}
-                icon={
-                  <Text style={{ fontSize: 12, color: "#485e8b", fontWeight: 500 }} ellipsis>
-                    {teacher.email}
-                  </Text>
-                }
-              />
-            </div>
-          )}
-          {teacher.assignedAt && (
-            <Text style={{ fontSize: isMobile ? 10 : 11, color: "#c2c6d6", whiteSpace: "nowrap" }}>
-              <CalendarOutlined style={{ fontSize: 10, marginRight: 4 }} />
-              {new Date(teacher.assignedAt).toISOString().slice(0, 10).replace(/-/g, '/')}
-            </Text>
-          )}
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 17,
+              fontWeight: 650,
+              color: "var(--pu-ink)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {teacher.name || "未知教师"}
+          </div>
+          <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {roleConfig && <ProtoTag tone="blue">{roleConfig.label}</ProtoTag>}
+            {teacher.jobTitle && (
+              <span style={{ fontSize: 12, color: "var(--pu-muted)" }}>{teacher.jobTitle}</span>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* 院校 / 专业 */}
+      {(teacher.colledge || teacher.major) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--pu-muted)" }}>
+          <EnvironmentOutlined />
+          <span>{[teacher.colledge, teacher.major].filter(Boolean).join(" · ")}</span>
+        </div>
+      )}
+
+      {/* 简介 */}
+      <div style={{ flex: 1, minHeight: 20 }}>
+        {teacher.bio ? (
+          <Paragraph
+            ellipsis={{ rows: 2, expandable: true, symbol: "展开" }}
+            style={{ lineHeight: 1.7, fontSize: 13, color: "var(--pu-muted)", marginBottom: 0 }}
+          >
+            {teacher.bio}
+          </Paragraph>
+        ) : (
+          <Text style={{ fontSize: 13, color: "var(--pu-muted)" }}>暂无简介</Text>
+        )}
+      </div>
+
+      {/* 邮箱 */}
+      {teacher.email && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            color: "var(--pu-muted)",
+          }}
+        >
+          <MailOutlined />
+          <CopyText
+            text={teacher.email}
+            icon={
+              <Text style={{ fontSize: 12, color: "var(--pu-muted)" }} ellipsis>
+                {teacher.email}
+              </Text>
+            }
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -609,51 +571,13 @@ export default function CourseTeachersPage() {
       {/* 教师卡片网格 */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
         gap: isMobile ? 12 : 20,
         marginBottom: isMobile ? 16 : 24,
       }}>
         {teachers.map((teacher) => (
           <TeacherCard key={teacher.id} teacher={teacher} />
         ))}
-      </div>
-
-      {/* 底部提示 */}
-      <div style={{
-        background: "#eef3fb",
-        border: "1px solid #e4ebf4",
-        borderRadius: 14,
-        padding: isMobile ? "16px" : "18px 24px",
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        alignItems: isMobile ? "stretch" : "center",
-        justifyContent: "space-between",
-        gap: isMobile ? 10 : 0,
-      }}>
-        <Text style={{ fontSize: isMobile ? 13 : 14, color: colors.primary }}>
-          <MailOutlined style={{ marginRight: 8 }} />
-          有问题？通过邮件问答随时向教师提问
-        </Text>
-        <Button
-          type="primary"
-          icon={<MailOutlined />}
-          onClick={() =>
-            navigate(
-              selectedCourse
-                ? `/dashboard/email-qa?courseId=${encodeURIComponent(selectedCourse)}`
-                : "/dashboard/email-qa"
-            )
-          }
-          block={isMobile}
-          style={{
-            borderRadius: 6,
-            height: 32,
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          发送邮件问答
-        </Button>
       </div>
     </div>
   );

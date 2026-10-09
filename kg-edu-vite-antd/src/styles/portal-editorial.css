@@ -206,6 +206,16 @@
 .ed-container .cl-pagination .ant-pagination-total-text { color: #9aa8ba; margin-right: 12px; }
 .ed-container section:last-child { padding-bottom: 40px; }
 
+/* 课程列表：筛选区与列表区左右对齐（列表区不再叠加额外容器内边距） */
+.ed-container .cl-list-section__inner {
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.ed-container .cl-list-section { padding-top: 0; }
+.ed-container .cl-filter-bar { margin-bottom: 22px; }
+.ed-container .cl-search-bar { margin-bottom: 4px; }
+
 /* 层级悬浮大学科菜单 */
 .ed-levels { position: relative; }
 .ed-level-item { position: relative; }

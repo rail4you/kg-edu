@@ -43,6 +43,7 @@ import {
   listUsers,
 } from "@/lib/ash_rpc";
 import type { DiscussionResourceSchema } from "@/lib/ash_rpc";
+import { PageHead } from "@/components/proto";
 import { useCourses } from "@/hooks/use-courses";
 
 const { Title, Text, Paragraph } = Typography;
@@ -472,7 +473,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
   }
 
   return (
-    <div style={{ minHeight: embedded ? "auto" : "100vh", background: embedded ? "transparent" : "#f5f5f5" }}>
+    <div className={embedded ? "" : "pu-page"} style={{ minHeight: embedded ? "auto" : undefined, background: embedded ? "transparent" : undefined }}>
       {/* Embedded mode: back button + header */}
       {embedded && (
         <div style={{ marginBottom: 16 }}>
@@ -509,40 +510,26 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
         </div>
       )}
 
-      {/* Standalone mode: original header */}
+      {/* Standalone mode: proto page head */}
       {!embedded && (
-        <div
-          style={{
-            background: "white",
-            padding: isMobile ? "12px 16px" : "16px 24px",
-            borderBottom: "1px solid #e0e0e0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Title level={isMobile ? 5 : 4} style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {session.title}
-            </Title>
-            {!isMobile && <Text type="secondary">{session.title}</Text>}
-          </div>
-          <Space>
-            {isMobile && (
-              <Button
-                type="text"
-                icon={<MenuOutlined />}
-                onClick={() => setSidebarDrawerOpen(true)}
-              />
-            )}
-            <Tag color={isSessionActive ? "green" : "default"} style={{ margin: 0 }}>
-              {isSessionActive ? "进行中" : "已关闭"}
-            </Tag>
-          </Space>
-        </div>
+        <PageHead
+          title={session.title}
+          description="参与课堂讨论，分享你的观点与疑问"
+          actions={
+            <>
+              {isMobile && (
+                <Button
+                  type="text"
+                  icon={<MenuOutlined />}
+                  onClick={() => setSidebarDrawerOpen(true)}
+                />
+              )}
+              <Tag color={isSessionActive ? "green" : "default"} style={{ margin: 0 }}>
+                {isSessionActive ? "进行中" : "已关闭"}
+              </Tag>
+            </>
+          }
+        />
       )}
 
       {isMobile && (
@@ -577,7 +564,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
                   <List.Item
                     style={{
                       cursor: "pointer",
-                      background: course.id === courseId ? "#e6f7ff" : "transparent",
+                      background: course.id === courseId ? "#eaf0ff" : "transparent",
                       padding: "8px 12px",
                       margin: "4px 0",
                       borderRadius: 4,
@@ -588,7 +575,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
                     }}
                   >
                     <Space>
-                      {course.id === courseId && <BookOutlined style={{ color: "#1890ff" }} />}
+                      {course.id === courseId && <BookOutlined style={{ color: "#2859df" }} />}
                       <Text ellipsis>{course.title}</Text>
                     </Space>
                   </List.Item>
@@ -662,7 +649,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
                     <List.Item
                       style={{
                         cursor: "pointer",
-                        background: course.id === courseId ? "#e6f7ff" : "transparent",
+                        background: course.id === courseId ? "#eaf0ff" : "transparent",
                         padding: "8px 12px",
                         margin: "4px 0",
                         borderRadius: 4,
@@ -670,7 +657,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
                       onClick={() => setSelectedCourseId(course.id)}
                     >
                       <Space>
-                        {course.id === courseId && <BookOutlined style={{ color: "#1890ff" }} />}
+                        {course.id === courseId && <BookOutlined style={{ color: "#2859df" }} />}
                         <Text>{course.title}</Text>
                       </Space>
                     </List.Item>
@@ -734,7 +721,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
             </div>
 
             {showCreateForm && (
-              <div style={{ marginBottom: isMobile ? 16 : 24, padding: isMobile ? 12 : 16, background: "#f5f5f5", borderRadius: 8 }}>
+              <div style={{ marginBottom: isMobile ? 16 : 24, padding: isMobile ? 12 : 16, background: "#f5f7fb", borderRadius: 8 }}>
                 <div style={{ marginBottom: 12 }}>
                   <Input
                     placeholder="请输入讨论标题"
@@ -915,10 +902,10 @@ function DiscussionItem({
   const discussionUser = (discussion as any).user || {};
 
   return (
-    <List.Item style={{ padding: isMobile ? "8px 0" : "12px 0", borderBottom: "1px solid #f0f0f0" }}>
+    <List.Item style={{ padding: isMobile ? "8px 0" : "12px 0", borderBottom: "1px solid #edf0f5" }}>
       <div style={{ width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 4 }}>
-          <Avatar size="small" icon={<UserOutlined />} style={{ background: isTeacher(discussionUser) ? "#1890ff" : undefined, marginRight: 8 }} />
+          <Avatar size="small" icon={<UserOutlined />} style={{ background: isTeacher(discussionUser) ? "#2859df" : undefined, marginRight: 8 }} />
           <Text strong style={{ fontSize: isMobile ? 13 : 14 }}>
             {discussionUser.id === user?.id
               ? discussionUser.name || user.displayName || user.email?.split('@')[0] || "我"
@@ -948,7 +935,7 @@ function DiscussionItem({
           <Button
             type="link"
             size="small"
-            style={{ padding: 0, fontSize: 13, color: "#1890ff" }}
+            style={{ padding: 0, fontSize: 13, color: "#2859df" }}
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? "收起回复" : "回复列表"}
@@ -958,7 +945,7 @@ function DiscussionItem({
             <Button
               type="link"
               size="small"
-              style={{ padding: 0, fontSize: 13, color: "#1890ff" }}
+              style={{ padding: 0, fontSize: 13, color: "#2859df" }}
               onClick={() => {
                 setExpanded(true);
                 setShowReplyInput(!showReplyInput);
@@ -989,11 +976,11 @@ function DiscussionItem({
                       padding: isMobile ? "8px" : "10px 12px",
                       background: teacher ? "#f0f7ff" : "#fafafa",
                       borderRadius: 6,
-                      borderLeft: teacher ? "3px solid #1890ff" : "3px solid #d9d9d9",
+                      borderLeft: teacher ? "3px solid #2859df" : "3px solid #d9d9d9",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", marginBottom: 4, gap: 6, flexWrap: "wrap" }}>
-                      <Avatar size="small" icon={<UserOutlined />} style={{ background: teacher ? "#1890ff" : undefined }} />
+                      <Avatar size="small" icon={<UserOutlined />} style={{ background: teacher ? "#2859df" : undefined }} />
                       <Text strong style={{ fontSize: 13 }}>
                         {reply.user?.id === user?.id
                           ? reply.user?.name || "我"

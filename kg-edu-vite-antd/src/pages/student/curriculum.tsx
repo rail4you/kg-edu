@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Typography, Card, Table, Space, Button, Drawer, Empty, Spin, Tooltip,
+  Typography, Table, Space, Button, Drawer, Empty, Spin, Tooltip,
 } from "antd";
 import {
   FileTextOutlined, EyeOutlined, DownloadOutlined, ArrowLeftOutlined,
@@ -13,6 +13,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { listCurriculumDesigns } from "@/lib/ash_rpc";
+import { PageHead, ProtoCard } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -75,7 +76,7 @@ export default function StudentCurriculum() {
       key: "title",
       render: (title: string, record: CurriculumDesign) => (
         <Space size={4} style={{ maxWidth: "100%" }}>
-          <FileTextOutlined style={{ color: "#1890ff", flexShrink: 0 }} />
+          <FileTextOutlined style={{ color: "#2859df", flexShrink: 0 }} />
           <Tooltip title={title} mouseEnterDelay={0.3}>
             <a onClick={() => { setPreviewData(record); setPreviewVisible(true); }} style={{ display: "inline-block", verticalAlign: "middle", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{title}</a>
           </Tooltip>
@@ -116,21 +117,19 @@ export default function StudentCurriculum() {
   ];
 
   return (
-    <div style={{ padding: "20px 24px" }}>
-      {/* Top bar */}
-      <div style={{ marginBottom: 20 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate("/dashboard")}>
-          返回首页
-        </Button>
-      </div>
-
-      <Title level={4} style={{ marginBottom: 4 }}>课程体系</Title>
-      <Text type="secondary" style={{ display: "block", marginBottom: 20 }}>
-        查看教师发布的课程体系文档
-      </Text>
+    <div className="pu-page">
+      <PageHead
+        title="课程体系"
+        description="查看教师发布的课程体系文档"
+        actions={
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate("/dashboard")}>
+            返回首页
+          </Button>
+        }
+      />
 
       {/* List */}
-      <Card>
+      <ProtoCard>
         {isLoading ? (
           <div style={{ textAlign: "center", padding: 40 }}><Spin size="large" /></div>
         ) : allDesigns.length === 0 ? (
@@ -143,7 +142,7 @@ export default function StudentCurriculum() {
             pagination={{ pageSize: 10 }}
           />
         )}
-      </Card>
+      </ProtoCard>
 
       {/* Preview Drawer */}
       <Drawer

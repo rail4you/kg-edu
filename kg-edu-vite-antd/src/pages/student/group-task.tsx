@@ -1,17 +1,15 @@
 import * as React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, Typography, Button, Input, Spin, Result, Space, message, Tag, Descriptions } from "antd";
-import { ArrowLeftOutlined, CheckCircleOutlined, DeploymentUnitOutlined, SendOutlined } from "@ant-design/icons";
+import { Button, Input, Spin, message, Descriptions } from "antd";
+import { ArrowLeftOutlined, CheckCircleOutlined, SendOutlined } from "@ant-design/icons";
 import { getTaskByToken, submitTask } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { saveStudentActivityHistory } from "@/lib/student-activity-history";
 import { setCurrentTenant, getCurrentTenant } from "@/lib/tenant";
 import { themeColors as colors } from "@/styles/theme";
-
-const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
+import { ProtoCard, ProtoTag, ProtoEmpty } from "@/components/proto";
 
 const TASK_TYPE_LABELS: Record<string, string> = { submission: "提交任务", discussion: "讨论任务", survey: "投票调查", file_upload: "文件上传" };
 
@@ -125,81 +123,77 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
   if (hasSubmitted) {
     const isGraded = existingSubmission?.status === "graded";
     return (
-      <div style={{ maxWidth: embedded ? "100%" : 700, margin: embedded ? 0 : "40px auto", padding: embedded ? 0 : 24 }}>
+      <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 760, margin: "0 auto" }}>
         {embedded && (
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={handleBack}
-            style={{ marginBottom: 16, color: colors.primary }}
+            style={{ marginBottom: 16, color: colors.primary, padding: "4px 0" }}
           >
             返回任务列表
           </Button>
         )}
-        <Card style={{ borderRadius: 20 }}>
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <div>
-              <Space style={{ marginBottom: 8 }}>
-                <Tag color="green" style={{ margin: 0 }}>
-                  <DeploymentUnitOutlined /> 小组任务
-                </Tag>
-              </Space>
-              <Title level={3} style={{ margin: "8px 0 0" }}>{task.title}</Title>
-              <Space style={{ marginTop: 8 }}>
-                <Tag>{TASK_TYPE_LABELS[task.taskType] || task.taskType}</Tag>
-                {isGraded ? (
-                  <Tag color="green" icon={<CheckCircleOutlined />}>已评分</Tag>
-                ) : (
-                  <Tag color="blue">已提交 · 待审核</Tag>
-                )}
-              </Space>
-            </div>
-            {task.description && <Paragraph>{task.description}</Paragraph>}
-
-            <Descriptions column={1} size="small" bordered>
-              <Descriptions.Item label="参与分组">{activeGroup?.name || "-"}</Descriptions.Item>
-              <Descriptions.Item label="提交时间">
-                {existingSubmission?.submittedAt
-                  ? new Date(existingSubmission.submittedAt).toLocaleString("zh-CN")
-                  : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="提交内容">
-                {existingSubmission?.content || "（无文字内容）"}
-              </Descriptions.Item>
-            </Descriptions>
-
-            {isGraded && (
-              <Card
-                size="small"
-                style={{
-                  background: "linear-gradient(135deg, rgba(82,196,26,0.06) 0%, rgba(82,196,26,0.02) 100%)",
-                  border: "1px solid rgba(82,196,26,0.2)",
-                  borderRadius: 16,
-                }}
-              >
-                <Space direction="vertical" style={{ width: "100%" }} size="middle">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
-                    <Text strong style={{ fontSize: 16 }}>评分结果</Text>
-                  </div>
-                  <Descriptions column={1} size="small">
-                    <Descriptions.Item label="得分">
-                      <Text strong style={{ fontSize: 24, color: existingSubmission.score >= 60 ? "#52c41a" : "#ff4d4f" }}>
-                        {existingSubmission.score}
-                      </Text>
-                      <Text type="secondary"> / 100</Text>
-                    </Descriptions.Item>
-                    {existingSubmission?.feedback && (
-                      <Descriptions.Item label="教师评语">
-                        <Text>{existingSubmission.feedback}</Text>
-                      </Descriptions.Item>
-                    )}
-                  </Descriptions>
-                </Space>
-              </Card>
+        <ProtoCard>
+          <div className="pu-eyebrow">小组任务</div>
+          <h2 style={{ fontSize: 20, fontWeight: 650, color: "var(--pu-ink)", margin: "4px 0 12px" }}>
+            {task.title}
+          </h2>
+          <div className="pu-tags" style={{ marginBottom: 18 }}>
+            <ProtoTag tone="green">小组任务</ProtoTag>
+            <ProtoTag tone="blue">{TASK_TYPE_LABELS[task.taskType] || task.taskType}</ProtoTag>
+            {isGraded ? (
+              <ProtoTag tone="green">已评分</ProtoTag>
+            ) : (
+              <ProtoTag tone="amber">已提交 · 待审核</ProtoTag>
             )}
-          </Space>
-        </Card>
+          </div>
+          {task.description && (
+            <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.8, marginBottom: 18 }}>
+              {task.description}
+            </p>
+          )}
+
+          <Descriptions column={1} size="small" bordered>
+            <Descriptions.Item label="参与分组">{activeGroup?.name || "-"}</Descriptions.Item>
+            <Descriptions.Item label="提交时间">
+              {existingSubmission?.submittedAt
+                ? new Date(existingSubmission.submittedAt).toLocaleString("zh-CN")
+                : "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="提交内容">
+              {existingSubmission?.content || "（无文字内容）"}
+            </Descriptions.Item>
+          </Descriptions>
+
+          {isGraded && (
+            <div
+              style={{
+                marginTop: 18,
+                padding: 18,
+                background: "linear-gradient(135deg, rgba(19,123,98,0.06) 0%, rgba(19,123,98,0.02) 100%)",
+                border: "1px solid rgba(19,123,98,0.18)",
+                borderRadius: 12,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <CheckCircleOutlined style={{ color: "var(--pu-green)", fontSize: 18 }} />
+                <span style={{ fontWeight: 650, fontSize: 15, color: "var(--pu-ink)" }}>评分结果</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: existingSubmission?.feedback ? 12 : 0 }}>
+                <span style={{ fontSize: 30, fontWeight: 650, color: existingSubmission.score >= 60 ? "var(--pu-green)" : "var(--pu-red)" }}>
+                  {existingSubmission.score}
+                </span>
+                <span style={{ color: "var(--pu-muted)", fontSize: 13 }}>/ 100</span>
+              </div>
+              {existingSubmission?.feedback && (
+                <p style={{ margin: 0, color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.75 }}>
+                  教师评语：{existingSubmission.feedback}
+                </p>
+              )}
+            </div>
+          )}
+        </ProtoCard>
       </div>
     );
   }
@@ -209,12 +203,11 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
       ? `/login?role=student&redirect=/dashboard/interaction/task/${token}`
       : `/login?role=student&redirect=/student/group-task/${tenantSchema}/${token}`;
     return (
-      <div style={{ maxWidth: embedded ? "100%" : 600, margin: embedded ? 0 : "40px auto", padding: embedded ? 0 : 24 }}>
-        <Result
-          status="info"
+      <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 600, margin: "0 auto" }}>
+        <ProtoEmpty
           title="请先登录"
-          subTitle="登录后才能参与分组任务"
-          extra={<Button type="primary" href={loginPath}>登录</Button>}
+          description="登录后才能参与分组任务"
+          action={<Button type="primary" href={loginPath}>登录</Button>}
         />
       </div>
     );
@@ -222,28 +215,27 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
 
   if (!activeGroup) {
     return (
-      <div style={{ maxWidth: embedded ? "100%" : 600, margin: embedded ? 0 : "40px auto", padding: embedded ? 0 : 24 }}>
+      <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 600, margin: "0 auto" }}>
         {embedded && (
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={handleBack}
-            style={{ marginBottom: 16, color: colors.primary }}
+            style={{ marginBottom: 16, color: colors.primary, padding: "4px 0" }}
           >
             返回任务列表
           </Button>
         )}
-        <Result
-          status="403"
+        <ProtoEmpty
           title="无权参与该任务"
-          subTitle="你不在该任务所分配的分组内，只有分组内学生才能参与。"
+          description="你不在该任务所分配的分组内，只有分组内学生才能参与。"
         />
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: embedded ? "100%" : 700, margin: embedded ? 0 : "40px auto", padding: embedded ? 0 : 24 }}>
+    <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 760, margin: "0 auto" }}>
       {embedded && (
         <Button
           type="text"
@@ -254,32 +246,44 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
           返回任务列表
         </Button>
       )}
-      <Card style={{ borderRadius: 20 }}>
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <div>
-            <Space style={{ marginBottom: 8 }}>
-              <Tag color="green" style={{ margin: 0 }}>
-                <DeploymentUnitOutlined /> 小组任务
-              </Tag>
-            </Space>
-            <Title level={3} style={{ margin: "8px 0 0" }}>{task.title}</Title>
-            <Space style={{ marginTop: 8 }}>
-              <Tag color="blue">{TASK_TYPE_LABELS[task.taskType] || task.taskType}</Tag>
-              {task.status === "active" ? <Tag color="green" icon={<CheckCircleOutlined />}>进行中</Tag> : <Tag color="red">已结束</Tag>}
-            </Space>
-          </div>
-          {task.description && <Paragraph>{task.description}</Paragraph>}
-          <Descriptions column={1} size="small" bordered>
-            <Descriptions.Item label="参与分组">{activeGroup.name}</Descriptions.Item>
-          </Descriptions>
-          {task.status === "active" ? (
-            <>
-              <div><Text>提交内容</Text><TextArea value={content} onChange={e => setContent(e.target.value)} placeholder="输入你的回答..." rows={6} style={{ marginTop: 8 }} /></div>
-              <Button type="primary" size="large" block icon={<SendOutlined />} onClick={handleSubmit} disabled={!content.trim()}>提交任务</Button>
-            </>
-          ) : <Result status="warning" title="任务已结束" subTitle="该任务已关闭，无法继续提交。" />}
-        </Space>
-      </Card>
+      <ProtoCard>
+        <div className="pu-eyebrow">小组任务</div>
+        <h2 style={{ fontSize: 20, fontWeight: 650, color: "var(--pu-ink)", margin: "4px 0 12px" }}>
+          {task.title}
+        </h2>
+        <div className="pu-tags" style={{ marginBottom: 18 }}>
+          <ProtoTag tone="green">小组任务</ProtoTag>
+          <ProtoTag tone="blue">{TASK_TYPE_LABELS[task.taskType] || task.taskType}</ProtoTag>
+          {task.status === "active" ? <ProtoTag tone="green">进行中</ProtoTag> : <ProtoTag tone="red">已结束</ProtoTag>}
+        </div>
+        {task.description && (
+          <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.8, marginBottom: 18 }}>
+            {task.description}
+          </p>
+        )}
+        <Descriptions column={1} size="small" bordered style={{ marginBottom: 18 }}>
+          <Descriptions.Item label="参与分组">{activeGroup.name}</Descriptions.Item>
+        </Descriptions>
+        {task.status === "active" ? (
+          <>
+            <div style={{ marginBottom: 14 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--pu-ink)" }}>提交内容</span>
+              <Input.TextArea
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="输入你的回答..."
+                rows={6}
+                style={{ marginTop: 8 }}
+              />
+            </div>
+            <Button type="primary" size="large" block icon={<SendOutlined />} onClick={handleSubmit} disabled={!content.trim()} style={{ height: 46, fontWeight: 600 }}>
+              提交任务
+            </Button>
+          </>
+        ) : (
+          <ProtoEmpty title="任务已结束" description="该任务已关闭，无法继续提交。" />
+        )}
+      </ProtoCard>
     </div>
   );
 }

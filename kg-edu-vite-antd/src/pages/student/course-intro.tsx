@@ -50,8 +50,8 @@ const ds = {
   surfaceLow: "#f3f4f5",
   surfaceHigh: "#e7e8e9",
   primary: colors.primary,
-  primaryLight: "rgba(37, 115, 230, 0.06)",
-  primaryBorder: "rgba(37, 115, 230, 0.12)",
+  primaryLight: "rgba(40, 89, 223, 0.06)",
+  primaryBorder: "rgba(40, 89, 223, 0.12)",
   onSurface: "#191c1d",
   onSurfaceVariant: "#424754",
   muted: "#757780",
@@ -361,14 +361,6 @@ export default function CourseIntroPage() {
   const isLoading =
     coursesLoading || chaptersLoading || knowledgeLoading || filesLoading || linksLoading || videosLoading || booksLoading;
 
-  const handleStartLearning = () => {
-    navigate(`/dashboard/graph?courseId=${selectedCourseId}`);
-  };
-
-  const handleViewResources = () => {
-    navigate(`/dashboard/resource?courseId=${selectedCourseId}`);
-  };
-
   const generateChapterNumber = (path: string | null): string => {
     if (!path) return "";
     const parts: string[] = [];
@@ -383,11 +375,10 @@ export default function CourseIntroPage() {
 
   const renderChapterCards = (nodes: any[], level: number = 0) => {
     const levelStyles = [
-      { bg: "rgba(37, 115, 230, 0.05)", color: colors.primary, accent: colors.primary },
-      { bg: "rgba(82, 196, 26, 0.05)", color: "#389e0d", accent: "#52c41a" },
-      { bg: "rgba(250, 173, 20, 0.05)", color: "#d48806", accent: "#faad14" },
-      { bg: "rgba(114, 46, 209, 0.05)", color: "#531dab", accent: "#722ed1" },
-      { bg: "rgba(19, 194, 194, 0.05)", color: "#08979c", accent: "#13c2c2" },
+      { bg: "rgba(40, 89, 223, 0.08)", color: "#1d4fc4", accent: "#2859df" },
+      { bg: "rgba(40, 89, 223, 0.055)", color: "#3f74e6", accent: "#4f82e8" },
+      { bg: "rgba(40, 89, 223, 0.035)", color: "#5b8bef", accent: "#6f9cf2" },
+      { bg: "rgba(40, 89, 223, 0.02)", color: "#7aa4f4", accent: "#8fb2f6" },
     ];
     const style = levelStyles[level % levelStyles.length];
     const leftPadding = level * 16;
@@ -477,85 +468,54 @@ export default function CourseIntroPage() {
 
   return (
     <div className="pu-page">
-      {/* ═══════════════════ Hero ═══════════════════ */}
-      <section className="pu-hero">
-        <div style={{ minWidth: 0 }}>
-          <div className="pu-eyebrow">EXPLORE · LEARN · CREATE</div>
-          <h1>{selectedCourse.title}</h1>
-          <div
-            style={{
-              color: ds.onSurfaceVariant,
-              fontSize: 14,
-              lineHeight: 1.9,
-              display: descExpanded ? "block" : "-webkit-box",
-              WebkitLineClamp: descExpanded ? undefined : 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {selectedCourse.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}
-          </div>
-          <span
-            onClick={() => setDescExpanded((v) => !v)}
-            style={{ fontSize: 12, color: ds.primary, cursor: "pointer", fontWeight: 500 }}
-          >
-            {descExpanded ? "收起" : "...展开更多"}
-          </span>
-
-          <div className="pu-provider">
-            <span className="pu-provider__icon">
-              <TeamOutlined />
-            </span>
-            <div>
-              <small>授课教师</small>
-              <strong>
-                {teachers.length > 0 ? teachers.map((t: any) => t.name).join("、") : "教学团队"}
-                <span>本课程</span>
-              </strong>
-            </div>
+      {/* ═══════════════════ 课程信息 ═══════════════════ */}
+      <ProtoCard className="pu-intro-card">
+        <div className="pu-intro-grid">
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 650, color: "var(--pu-ink)", marginBottom: 10 }}>
+              {selectedCourse.title}
+            </h2>
+            <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.9, margin: 0 }}>
+              {selectedCourse.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}
+            </p>
           </div>
 
-          <div className="pu-tags">
-            {selectedCourse.major && <ProtoTag tone="gray">{selectedCourse.major}</ProtoTag>}
-            <ProtoTag tone="green">已发布</ProtoTag>
-            <ProtoTag tone="gray">{selectedCourse.semesterHours || "--"} 学时</ProtoTag>
-            <ProtoTag tone="gray">{chapters.length} 个章节</ProtoTag>
-            <ProtoTag tone="gray">{selectedCourse.browseCount || 0} 次浏览</ProtoTag>
+          <div className="pu-info">
+            {[
+              { label: "课程名称", value: selectedCourse.title },
+              { label: "所属专业", value: selectedCourse.major || "—" },
+              { label: "课程状态", value: "已发布" },
+              { label: "总学时", value: `${selectedCourse.semesterHours || "--"} 学时` },
+              { label: "章节数", value: `${chapters.length} 个章节` },
+              { label: "浏览次数", value: `${selectedCourse.browseCount || 0} 次` },
+              {
+                label: "授课教师",
+                value: teachers.length > 0 ? teachers.map((t: any) => t.name).join("、") : "教学团队",
+              },
+            ].map((row) => (
+              <div className="pu-info__row" key={row.label}>
+                <span className="pu-info__label">{row.label}</span>
+                <span className="pu-info__value">{row.value}</span>
+              </div>
+            ))}
           </div>
         </div>
-
-        <div className="pu-hero__card">
-          <small>循序渐进，学以致用</small>
-          <h2>开启这门课程</h2>
-          <p>课程讲解 · 配套资料 · 实践练习</p>
-          <Button
-            block
-            type="primary"
-            size="large"
-            icon={<PlayCircleOutlined />}
-            onClick={handleStartLearning}
-            style={{ backgroundColor: colors.primary, borderColor: colors.primary, fontWeight: 700 }}
-          >
-            立即参加 →
-          </Button>
-          <span className="pu-hero__link" onClick={handleViewResources}>
-            先看课程资源 ↓
-          </span>
-        </div>
-      </section>
+      </ProtoCard>
 
       {/* ═══════════════════ 数据概览 ═══════════════════ */}
-      <StatGrid
-        columns={3}
-        items={[
-          { label: "知识资源", value: knowledgeData?.total || 0, unit: "个节点", desc: "课程知识体系规模", icon: <ApartmentOutlined /> },
-          { label: "课程章节", value: chapters.length, unit: "章", desc: "含子章节结构", icon: <BookOutlined /> },
-          { label: "课程教材", value: booksData?.length || 0, unit: "本", desc: "配套教材与讲义", icon: <ReadOutlined /> },
-          { label: "教学视频", value: videosData?.length || 0, unit: "个", desc: "课程视频资源", icon: <PlayCircleOutlined /> },
-          { label: "学习资源", value: (filesData?.length || 0) + (linksData?.length || 0), unit: "项", desc: "文件与链接资源", icon: <FolderOutlined /> },
-          { label: "浏览次数", value: selectedCourse?.browseCount || 0, unit: "次", desc: "本课程累计浏览", icon: <EyeOutlined /> },
-        ]}
-      />
+      <div className="pu-intro-stats">
+        <StatGrid
+          columns={3}
+          items={[
+            { label: "知识资源", value: knowledgeData?.total || 0, unit: "个节点", desc: "课程知识体系规模", icon: <ApartmentOutlined /> },
+            { label: "课程章节", value: chapters.length, unit: "章", desc: "含子章节结构", icon: <BookOutlined /> },
+            { label: "课程教材", value: booksData?.length || 0, unit: "本", desc: "配套教材与讲义", icon: <ReadOutlined /> },
+            { label: "教学视频", value: videosData?.length || 0, unit: "个", desc: "课程视频资源", icon: <PlayCircleOutlined /> },
+            { label: "学习资源", value: (filesData?.length || 0) + (linksData?.length || 0), unit: "项", desc: "文件与链接资源", icon: <FolderOutlined /> },
+            { label: "浏览次数", value: selectedCourse?.browseCount || 0, unit: "次", desc: "本课程累计浏览", icon: <EyeOutlined /> },
+          ]}
+        />
+      </div>
 
       {/* ═══════════════════ 媒体播放 ═══════════════════ */}
       <ProtoCard
@@ -826,7 +786,7 @@ export default function CourseIntroPage() {
                       onClick={() => { setActiveVideoIndex(0); setMediaMode("video"); }}
                       style={{
                         position: "absolute", top: 16, left: 16,
-                        background: "rgba(37,115,230,0.85)",
+                        background: "rgba(40, 89, 223,0.85)",
                         borderRadius: 8, padding: "6px 12px",
                         color: "#fff", fontSize: 12, fontWeight: 600,
                         cursor: "pointer",
@@ -868,7 +828,7 @@ export default function CourseIntroPage() {
               justifyContent: "center",
             }}
           >
-            <div className="pu-eyebrow" style={{ marginBottom: 6 }}>NOW PLAYING</div>
+            <div className="pu-eyebrow" style={{ marginBottom: 6 }}>正在播放</div>
             <div style={{ fontSize: 18, fontWeight: 650, color: ds.onSurface, lineHeight: 1.5 }}>
               {mediaMode === "video"
                 ? activeVideo?.name || "课程视频"
@@ -909,10 +869,6 @@ export default function CourseIntroPage() {
               </div>
             ))}
           </div>
-
-          <Button block icon={<FolderOutlined />} onClick={handleViewResources} style={{ height: 42, borderRadius: 8 }}>
-            查看课程资源
-          </Button>
         </div>
         </div>
 
@@ -1149,7 +1105,7 @@ export default function CourseIntroPage() {
             <iframe
               src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
               style={{ width: "100%", height: "100%", border: "none" }}
-              title="PDF Preview"
+              title="PDF 预览"
             />
           ) : (
             <FilePreview

@@ -98,7 +98,7 @@ function SubjectSection({
           style={{
             width: isMobile ? 40 : 44,
             height: isMobile ? 40 : 44,
-            background: isExpanded ? "#2573e6" : "#eef1f6",
+            background: isExpanded ? "#2859df" : "#eef1f6",
             borderRadius: 6,
             display: "flex",
             alignItems: "center",
@@ -113,13 +113,13 @@ function SubjectSection({
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Text
               strong
-              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#2573e6" : "#202f47", margin: 0 }}
+              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#2859df" : "#202f47", margin: 0 }}
             >
               {section.number}
             </Text>
             <Text
               strong
-              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#2573e6" : "#202f47", margin: 0 }}
+              style={{ fontSize: isMobile ? 15 : 16, color: isExpanded ? "#2859df" : "#202f47", margin: 0 }}
             >
               {section.title}
             </Text>
@@ -128,7 +128,7 @@ function SubjectSection({
             {section.topics.length} 个单元 · 点击{isExpanded ? "收起" : "展开"}
           </Text>
         </div>
-        <div style={{ color: isExpanded ? "#2573e6" : "#98a6b8" }}>
+        <div style={{ color: isExpanded ? "#2859df" : "#98a6b8" }}>
           {isExpanded ? (
             <DownOutlined style={{ fontSize: 14, fontWeight: "bold" }} />
           ) : (
@@ -164,7 +164,7 @@ function SubjectSection({
                     style={{
                       width: 36,
                       height: 36,
-                      background: "#2573e6",
+                      background: "#2859df",
                       borderRadius: 4,
                       display: "flex",
                       alignItems: "center",
@@ -198,7 +198,7 @@ function SubjectSection({
                     </Text>
                     <div style={{ display: "flex", gap: 8 }}>
                       <Tag
-                        style={{ borderRadius: 5, margin: 0, background: "#edf2ff", border: "1px solid #dce5ff", color: "#2573e6" }}
+                        style={{ borderRadius: 5, margin: 0, background: "#edf2ff", border: "1px solid #dce5ff", color: "#2859df" }}
                       >
                         单元
                       </Tag>
@@ -207,7 +207,7 @@ function SubjectSection({
                           style={{
                             borderRadius: 5,
                             background: "#edf2ff",
-                            color: "#2573e6",
+                            color: "#2859df",
                             border: "1px solid #dce5ff",
                             margin: 0,
                           }}
@@ -568,7 +568,7 @@ export default function GraphCategoryPage() {
                 style={{
                   fontSize: 14,
                   fontWeight: 650,
-                  color: "#2573e6",
+                  color: "#2859df",
                   background: "#eaf0ff",
                   padding: "10px 14px",
                   borderRadius: 8,
@@ -718,7 +718,7 @@ export default function GraphCategoryPage() {
                 style={{
                   marginTop: 24,
                   paddingTop: 16,
-                  borderTop: "1px solid #f0f0f0",
+                  borderTop: "1px solid #edf0f5",
                 }}
               >
                 <Text
@@ -783,7 +783,7 @@ export default function GraphCategoryPage() {
                 style={{
                   marginTop: 24,
                   paddingTop: 16,
-                  borderTop: "1px solid #f0f0f0",
+                  borderTop: "1px solid #edf0f5",
                 }}
               >
                 <Text
@@ -834,7 +834,7 @@ export default function GraphCategoryPage() {
                 style={{
                   marginTop: 24,
                   paddingTop: 16,
-                  borderTop: "1px solid #f0f0f0",
+                  borderTop: "1px solid #edf0f5",
                 }}
               >
                 <Text
@@ -851,7 +851,7 @@ export default function GraphCategoryPage() {
                         padding: 12,
                         background: "#fafafa",
                         borderRadius: 8,
-                        border: "1px solid #f0f0f0",
+                        border: "1px solid #edf0f5",
                       }}
                     >
                       <Text strong style={{ display: "block", marginBottom: 4 }}>

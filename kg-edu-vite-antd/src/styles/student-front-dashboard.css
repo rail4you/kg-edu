@@ -3089,3 +3089,216 @@
     transform: scale(1);
   }
 }
+/* ============================================================
+   统一主题覆盖：课程前台对齐首页 / 学生端设计系统
+   白卡 + 1px #e3e9f1 边框 + 14px 圆角 + #2859df 主色
+   ============================================================ */
+.front-dashboard-glass-card,
+.front-dashboard-feature-card,
+.front-dashboard-cumulative-card {
+  background: #ffffff;
+  border: 1px solid #e3e9f1;
+  border-radius: 14px;
+  box-shadow: 0 3px 16px rgba(21, 50, 84, 0.02);
+}
+
+.front-dashboard-album-card,
+.front-dashboard-album-card.is-page-light {
+  background: #ffffff !important;
+  border-color: #e3e9f1 !important;
+  box-shadow: 0 8px 24px rgba(21, 50, 84, 0.06);
+}
+
+.front-dashboard-album-card.is-active,
+.front-dashboard-album-card.is-page-light.is-active {
+  background: #ffffff !important;
+  box-shadow: 0 16px 36px rgba(21, 50, 84, 0.1);
+}
+
+.front-dashboard-album-card .front-dashboard-album-card__title,
+.front-dashboard-album-card.is-page-light .front-dashboard-album-card__title {
+  color: #202f47;
+}
+
+.front-dashboard-album-card .front-dashboard-album-card__title:hover {
+  color: #2859df;
+}
+
+/* 主/次按钮与首页保持一致：8px 圆角、#2859df 实心主色 */
+.front-dashboard-primary-button,
+.front-dashboard-secondary-button {
+  height: 40px;
+  border-radius: 8px !important;
+  padding: 0 16px !important;
+  font-weight: 600 !important;
+  font-size: 14px;
+}
+
+.front-dashboard-primary-button {
+  background: #2859df !important;
+  border: 1px solid #2859df !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.front-dashboard-primary-button:hover {
+  background: #1846bc !important;
+  border-color: #1846bc !important;
+}
+
+.front-dashboard-secondary-button {
+  background: #ffffff !important;
+  border: 1px solid #e3e9f1 !important;
+  color: #202f47 !important;
+}
+
+.front-dashboard-secondary-button:hover {
+  background: #edf2ff !important;
+  border-color: #c6d3f7 !important;
+  color: #202f47 !important;
+}
+
+/* 能力体系 / 系统面板卡片：白底 + 浅边框 + 轻投影，与页面底色拉开层次 */
+.front-dashboard-system-layer__surface {
+  background: #ffffff !important;
+  border-color: #e3e9f1 !important;
+  box-shadow: 0 6px 20px rgba(21, 50, 84, 0.05) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* 能力体系 / 课程图谱侧栏：按卡片方式渲染每一层 */
+.front-dashboard-system-panel {
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
+.front-dashboard-system-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.front-dashboard-system-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 0 !important;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e3e9f1;
+  border-radius: 14px;
+  box-shadow: 0 3px 16px rgba(21, 50, 84, 0.02);
+  cursor: pointer;
+  transition: border-color 0.16s, box-shadow 0.16s, transform 0.16s;
+}
+
+.front-dashboard-system-row:hover {
+  border-color: #c6d3f7;
+  box-shadow: 0 8px 24px rgba(40, 89, 223, 0.06);
+  transform: translateY(-1px);
+}
+
+.front-dashboard-system-layer {
+  flex: 1;
+  min-height: 0 !important;
+}
+
+.front-dashboard-system-layer__surface {
+  display: none !important;
+}
+
+.front-dashboard-system-layer__inner {
+  position: static !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 16px !important;
+  display: flex;
+  align-items: center;
+}
+
+.front-dashboard-system-metric {
+  width: auto !important;
+  padding: 0 0 0 16px !important;
+  align-self: center !important;
+  border-left: 1px solid #e3e9f1;
+}
+
+.front-dashboard-system-metric::before {
+  display: none !important;
+}
+
+.front-dashboard-system-metric strong {
+  font-size: 28px !important;
+}
+
+/* 精简装饰效果：去除毛玻璃 / 重投影 / 光晕，保留简洁卡片层次 */
+.front-dashboard-page,
+.front-dashboard-page * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.front-dashboard-glass-card,
+.front-dashboard-feature-card,
+.front-dashboard-cumulative-card,
+.front-dashboard-album-card,
+.front-dashboard-teacher-row,
+.front-dashboard-system-row,
+.front-dashboard-intro-card,
+.front-dashboard-hero__content {
+  box-shadow: none !important;
+}
+
+.front-dashboard-hero__content {
+  background: transparent !important;
+  border: none !important;
+}
+
+.front-dashboard-teacher-row {
+  background: #ffffff !important;
+}
+
+.front-dashboard-album-card {
+  border-color: #e3e9f1 !important;
+}
+
+.front-dashboard-album-card.is-active {
+  border-color: #c6d3f7 !important;
+}
+
+.front-dashboard-system-node i,
+.front-dashboard-system-metric::before,
+.front-dashboard-system-layer::before,
+.front-dashboard-system-layer::after {
+  display: none !important;
+}
+
+/* 体系卡片：去掉内部圆角/渐变/斜切背景，只保留外层白卡 */
+.front-dashboard-system-layer,
+.front-dashboard-system-layer.is-blue,
+.front-dashboard-system-layer.is-violet,
+.front-dashboard-system-layer.is-green,
+.front-dashboard-system-layer.is-gold {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  min-height: 0 !important;
+  transform: none !important;
+}
+
+.front-dashboard-system-layer:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.front-dashboard-system-row:hover {
+  transform: none !important;
+}

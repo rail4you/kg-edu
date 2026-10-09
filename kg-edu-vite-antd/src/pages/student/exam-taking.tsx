@@ -96,7 +96,7 @@ const MultipleChoiceOptions: React.FC<{
               borderRadius: 8,
               cursor: disabled ? 'not-allowed' : 'pointer',
               border: `1.5px solid ${value === option.value ? colors.primary : '#e0e0e0'}`,
-              backgroundColor: value === option.value ? '#e6f7ff' : '#fff',
+              backgroundColor: value === option.value ? '#eaf0ff' : '#fff',
               transition: 'all 0.15s ease',
               display: 'flex',
               alignItems: 'center',
@@ -109,7 +109,7 @@ const MultipleChoiceOptions: React.FC<{
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 24, height: 24, borderRadius: '50%',
-              background: value === option.value ? colors.primary : '#f0f0f0',
+              background: value === option.value ? colors.primary : '#edf0f5',
               color: value === option.value ? '#fff' : '#666',
               fontSize: 12, fontWeight: 700,
               flexShrink: 0,
@@ -295,7 +295,7 @@ const QuestionCard: React.FC<{
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         <span style={{
           fontSize: 12, fontWeight: 700, color: '#fff',
-          background: 'linear-gradient(135deg, #2573e6, #1a5cc8)',
+          background: 'linear-gradient(135deg, #2859df, #1a5cc8)',
           padding: '2px 10px', borderRadius: 4,
           lineHeight: '22px',
         }}>
@@ -315,7 +315,7 @@ const QuestionCard: React.FC<{
           fontSize: 12, fontWeight: 500,
           color: '#888',
           padding: '2px 8px', borderRadius: 4,
-          background: '#f5f5f5',
+          background: '#f5f7fb',
           lineHeight: '22px',
         }}>
           {answer.points} 分
@@ -472,7 +472,7 @@ const QuestionNavigator: React.FC<{
                   width: 40,
                   height: 40,
                   fontWeight: 600,
-                  backgroundColor: isAnswered ? '#52c41a' : '#f0f0f0',
+                  backgroundColor: isAnswered ? '#52c41a' : '#edf0f5',
                   color: isAnswered ? '#fff' : 'inherit',
                   border: `2px solid ${isAnswered ? '#52c41a' : typeConfig.color}`,
                 }}
@@ -944,7 +944,7 @@ export default function ExamTaking() {
               borderRadius: 8,
               fontWeight: 600,
               height: 42,
-              boxShadow: '0 2px 8px rgba(37,115,230,0.25)',
+              boxShadow: '0 2px 8px rgba(40, 89, 223,0.25)',
             }}
           >
             返回考试列表
@@ -1123,7 +1123,7 @@ export default function ExamTaking() {
                 <section className="pu-card" style={{ marginTop: 20, textAlign: 'center', background: '#f6f8fb', padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 }}>
                     <div className="pu-progress" style={{ flex: 1, maxWidth: 260, margin: 0 }}>
-                      <i style={{ width: `${Math.round(progress)}%`, background: 'linear-gradient(90deg, #2573e6, #52c41a)' }} />
+                      <i style={{ width: `${Math.round(progress)}%`, background: 'linear-gradient(90deg, #2859df, #52c41a)' }} />
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>
                       {answeredCount}/{exerciseAnswers.length}
@@ -1175,7 +1175,7 @@ export default function ExamTaking() {
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: 24, height: 24, borderRadius: 6,
-                  background: '#2573e610', color: '#2573e6', fontSize: 12,
+                  background: '#2859df10', color: '#2859df', fontSize: 12,
                 }}>📋</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
                   答题进度
@@ -1185,7 +1185,7 @@ export default function ExamTaking() {
                 </span>
               </Space>
               <span style={{
-                fontSize: 11, color: '#2573e6', fontWeight: 500,
+                fontSize: 11, color: '#2859df', fontWeight: 500,
                 transform: showMobileNav ? 'rotate(180deg)' : 'none',
                 transition: 'transform 0.2s',
               }}>

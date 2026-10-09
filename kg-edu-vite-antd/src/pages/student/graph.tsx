@@ -621,7 +621,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         {selectedLog.resourceType?.toLowerCase() === "file" && (
           <div>
             <Title level={5}>
-              <FileOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+              <FileOutlined style={{ marginRight: 8, color: "#2859df" }} />
               文件详情
             </Title>
             <div style={{ marginTop: 12 }}>
@@ -710,7 +710,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                           border:
                             details.answer === choice
                               ? "1px solid #52c41a"
-                              : "1px solid #f0f0f0",
+                              : "1px solid #edf0f5",
                         }}
                       >
                         <Text>
@@ -730,7 +730,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                   size="small"
                   style={{ marginTop: 8, background: "rgba(24, 144, 255, 0.05)" }}
                 >
-                  <Text style={{ color: "#1890ff" }}>{selectedLog.metadata.answer}</Text>
+                  <Text style={{ color: "#2859df" }}>{selectedLog.metadata.answer}</Text>
                 </Card>
               </div>
             )}
@@ -877,7 +877,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         { value: stats.videoCount, name: "视频", itemStyle: { color: "#faad14" } },
         { value: stats.exerciseCount, name: "练习", itemStyle: { color: "#52c41a" } },
         { value: stats.homeworkCount, name: "作业", itemStyle: { color: "#eb2f96" } },
-        { value: stats.fileCount, name: "文件", itemStyle: { color: "#1890ff" } },
+        { value: stats.fileCount, name: "文件", itemStyle: { color: "#2859df" } },
       ].filter(d => d.value > 0),
     }],
   }), [stats]);
@@ -891,7 +891,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
       data: stats.last7DaysCount.map(d => d.count),
       type: "bar",
       barWidth: "60%",
-      itemStyle: { color: "#1890ff", borderRadius: [4, 4, 0, 0] },
+      itemStyle: { color: "#2859df", borderRadius: [4, 4, 0, 0] },
     }],
   }), [stats.last7DaysCount]);
 
@@ -998,7 +998,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                   { icon: <VideoCameraOutlined />, label: "视频观看", count: stats.videoCount, bg: "rgba(250, 173, 20, 0.08)", color: "#d48806" },
                   { icon: <FileTextOutlined />, label: "练习提交", count: stats.exerciseCount, bg: "rgba(82, 196, 26, 0.08)", color: "#389e0d" },
                   { icon: <SolutionOutlined />, label: "作业提交", count: stats.homeworkCount, bg: "rgba(235, 47, 150, 0.08)", color: "#c41d7f" },
-                  { icon: <FileOutlined />, label: "文件查看", count: stats.fileCount, bg: "rgba(37, 115, 230, 0.08)", color: colors.primary },
+                  { icon: <FileOutlined />, label: "文件查看", count: stats.fileCount, bg: "rgba(40, 89, 223, 0.08)", color: colors.primary },
                 ].map((item) => (
                   <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: item.bg, borderRadius: isMobile ? 5 : 8, padding: isMobile ? "4px 8px" : "6px 12px" }}>
                     <Space size={isMobile ? 2 : 4}>
@@ -1124,7 +1124,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                 <FileTextOutlined style={{ color: "#eb2f96" }} />
               )}
               {selectedLog.resourceType?.toLowerCase() === "file" && (
-                <FileOutlined style={{ color: "#1890ff" }} />
+                <FileOutlined style={{ color: "#2859df" }} />
               )}
               <span>{selectedLog ? getActionTypeLabel(selectedLog.actionType) : ""} - 资源详情</span>
             </Space>
@@ -1169,8 +1169,8 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
             {homeworkAnswerModal.answer}
           </Text>
         </Card>
-        <div style={{ marginTop: 16, padding: 12, background: "#e6f7ff", borderRadius: 4 }}>
-          <Text style={{ color: "#1890ff" }}>
+        <div style={{ marginTop: 16, padding: 12, background: "#eaf0ff", borderRadius: 4 }}>
+          <Text style={{ color: "#2859df" }}>
             答案解析
           </Text>
         </div>

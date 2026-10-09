@@ -754,7 +754,7 @@ export default function StudentKnowledgeCognitiveGoals() {
 
   // 统计卡片配置
   const statsCards = [
-    { label: "知识点总数", value: cognitiveStats.total, icon: <AppstoreOutlined />, bg: "rgba(37, 115, 230, 0.08)", color: colors.primary },
+    { label: "知识点总数", value: cognitiveStats.total, icon: <AppstoreOutlined />, bg: "rgba(40, 89, 223, 0.08)", color: colors.primary },
     { label: "已设维度", value: cognitiveStats.dimensioned, icon: <TagOutlined />, bg: "rgba(82, 196, 26, 0.08)", color: "#389e0d" },
     { label: "目标覆盖率", value: `${cognitiveStats.percentage}%`, icon: <PercentageOutlined />, bg: "rgba(250, 173, 20, 0.08)", color: cognitiveStats.percentage >= 80 ? "#389e0d" : cognitiveStats.percentage >= 50 ? colors.primary : "#cf1322" },
     { label: "认知层级", value: cognitiveDistribution.length, icon: <BulbOutlined />, bg: "rgba(114, 46, 209, 0.08)", color: "#722ed1" },
@@ -794,7 +794,6 @@ export default function StudentKnowledgeCognitiveGoals() {
                     gap: 10,
                   }}
                 >
-                  <div style={{ width: 8, height: 26, borderRadius: 4, background: level.color, flexShrink: 0 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>{level.name}</div>
                     <div style={{ fontSize: 20, fontWeight: 650, color: "#202f47", lineHeight: 1.3 }}>{count}</div>

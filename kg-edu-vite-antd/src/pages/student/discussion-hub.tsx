@@ -137,7 +137,7 @@ export default function StudentDiscussionHubPage() {
         style={{
           padding: "24px 24px 20px",
           borderRadius: 24,
-          background: "linear-gradient(135deg, rgba(37,115,230,0.08) 0%, rgba(37,115,230,0.02) 100%)",
+          background: "linear-gradient(135deg, rgba(40, 89, 223,0.08) 0%, rgba(40, 89, 223,0.02) 100%)",
           border: `1px solid ${colors.primary}1f`,
           marginBottom: 20,
         }}

@@ -352,16 +352,13 @@ export default function ExamCourses() {
     }
 
     const course = courseData.data;
-
-    console.log('Rendering course exams view, course:', course.title);
-    console.log('Exams count:', exams.length);
-    console.log('Student exams:', Array.from(studentExamMap.entries()));
+    const courseTitle = course?.title || "当前课程";
 
     return (
       <div className="pu-page" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <PageHead
           title="考试系统"
-          description={`${course.title} 的全部考试，可在此查看考试时间、时长与成绩。`}
+          description={`${courseTitle} 的全部考试，可在此查看考试时间、时长与成绩。`}
         />
         <div style={{ flexGrow: 1, overflow: 'auto' }}>
           {/* 紧凑统计卡片 */}
@@ -403,7 +400,7 @@ export default function ExamCourses() {
                   考试列表
                 </h2>
                 <p style={{ fontSize: isMobile ? 12 : 13, color: colors.textSecondary, margin: '4px 0 0' }}>
-                  {course.title} 的全部考试
+                  {courseTitle} 的全部考试
                 </p>
               </div>
               <Space size="middle" wrap>
@@ -491,7 +488,7 @@ export default function ExamCourses() {
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', gap: 24, padding: '12px 0', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', marginTop: 12 }}>
+                        <div style={{ display: 'flex', gap: 24, padding: '12px 0', borderTop: '1px solid #edf0f5', borderBottom: '1px solid #edf0f5', marginTop: 12 }}>
                           <div>
                             <div style={{ fontSize: 12, color: '#8c8c8c' }}>时长</div>
                             <div style={{ fontSize: 15, fontWeight: 500 }}>{exam.durationMinutes} 分钟</div>
@@ -530,7 +527,7 @@ export default function ExamCourses() {
                         </div>
                       </div>
 
-                      <div style={{ padding: '8px 20px 16px', background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
+                      <div style={{ padding: '8px 20px 16px', background: '#fafafa', borderTop: '1px solid #edf0f5' }}>
                         {deadlinePassed && examStatus.status === 'not_started' && (
                           <Button
                             block

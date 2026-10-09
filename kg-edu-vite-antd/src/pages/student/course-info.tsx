@@ -3,14 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Typography,
-  Card,
-  List,
-  Divider,
   Spin,
   Alert,
-  Breadcrumb,
   Avatar,
-  Tag,
   Row,
   Col,
   Empty,
@@ -25,17 +20,17 @@ import {
   BulbOutlined,
   TeamOutlined,
   AppstoreOutlined,
-  RightOutlined,
+  ArrowLeftOutlined,
   PaperClipOutlined,
 } from "@ant-design/icons";
 import { listCourses, listCourseInfos, listBooks } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
-import { themeColors as colors } from "@/styles/theme";
 import FilePreview from "@/components/FilePreview";
+import { PageHead, ProtoCard, ProtoTag } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface SidebarSection {
   id: string;
@@ -267,10 +262,6 @@ export default function CourseInfoPage() {
       case "overview":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              {course.title}
-            </Title>
-
             {course.imageUrl && (
               <img
                 src={course.imageUrl}
@@ -279,58 +270,46 @@ export default function CourseInfoPage() {
                   width: "100%",
                   maxHeight: 300,
                   objectFit: "cover",
-                  borderRadius: 8,
-                  marginBottom: 16,
+                  borderRadius: 12,
+                  marginBottom: 18,
                 }}
               />
             )}
 
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              {course.major && <Tag color="blue">{course.major}</Tag>}
-              {course.semester && <Tag color="purple">{course.semester}</Tag>}
+            <div className="pu-tags" style={{ marginBottom: 18 }}>
+              {course.major && <ProtoTag tone="blue">{course.major}</ProtoTag>}
+              {course.semester && <ProtoTag tone="amber">{course.semester}</ProtoTag>}
             </div>
 
             {course.description && (
-              <div style={{ marginBottom: 16 }}>
-                <Title level={5}>课程简介</Title>
-                <Paragraph style={{ lineHeight: 1.8 }}>{course.description}</Paragraph>
+              <div style={{ marginBottom: 20 }}>
+                <h2 className="pu-section-title">课程简介</h2>
+                <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
+                  {course.description}
+                </Paragraph>
               </div>
             )}
 
-            <Row gutter={24}>
-              <Col xs={24} md={12}>
-                <Title level={5}>
-                  <BookOutlined style={{ marginRight: 8 }} />
-                  教材资源
-                </Title>
-                <div>
-                  <Text strong style={{ fontSize: 24, color: colors.primary }}>
-                    {books.length}
-                  </Text>
-                  <br />
-                  <Text type="secondary">本相关教材</Text>
-                </div>
-              </Col>
+            <div className="pu-metrics" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+              <div>
+                <small>教材资源</small>
+                <strong>{books.length}</strong>
+              </div>
               {courseInfo && (
-                <Col xs={24} md={12}>
-                  <Title level={5}>
-                    <InfoCircleOutlined style={{ marginRight: 8 }} />
-                    课程信息
-                  </Title>
-                  <Text type="secondary">完整的背景、目标、结构等信息</Text>
-                </Col>
+                <div>
+                  <small>课程信息</small>
+                  <strong style={{ fontSize: 16 }}>背景 · 目标 · 结构</strong>
+                </div>
               )}
-            </Row>
+            </div>
           </div>
         );
 
       case "background":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              课程背景
-            </Title>
-            <Paragraph style={{ lineHeight: 1.8, fontSize: 16 }}>
+            <h2 className="pu-section-title">课程背景</h2>
+            <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
               {courseInfo?.background || "暂无背景信息"}
             </Paragraph>
           </div>
@@ -339,10 +318,8 @@ export default function CourseInfoPage() {
       case "objectives":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              教学目标
-            </Title>
-            <Paragraph style={{ lineHeight: 1.8, fontSize: 16 }}>
+            <h2 className="pu-section-title">教学目标</h2>
+            <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
               {courseInfo?.objectives || "暂无目标信息"}
             </Paragraph>
           </div>
@@ -351,10 +328,8 @@ export default function CourseInfoPage() {
       case "target":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              面向对象
-            </Title>
-            <Paragraph style={{ lineHeight: 1.8, fontSize: 16 }}>
+            <h2 className="pu-section-title">面向对象</h2>
+            <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
               {courseInfo?.target || "暂无对象信息"}
             </Paragraph>
           </div>
@@ -363,10 +338,8 @@ export default function CourseInfoPage() {
       case "highlights":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              课程亮点
-            </Title>
-            <Paragraph style={{ lineHeight: 1.8, fontSize: 16 }}>
+            <h2 className="pu-section-title">课程亮点</h2>
+            <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
               {courseInfo?.courseHighlights || "暂无亮点信息"}
             </Paragraph>
           </div>
@@ -375,10 +348,8 @@ export default function CourseInfoPage() {
       case "introduction":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              课程介绍
-            </Title>
-            <Paragraph style={{ lineHeight: 1.8, fontSize: 16 }}>
+            <h2 className="pu-section-title">课程介绍</h2>
+            <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
               {courseInfo?.courseIntroduction || "暂无介绍信息"}
             </Paragraph>
           </div>
@@ -387,10 +358,8 @@ export default function CourseInfoPage() {
       case "structure":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              课程结构
-            </Title>
-            <Paragraph style={{ lineHeight: 1.8, fontSize: 16 }}>
+            <h2 className="pu-section-title">课程结构</h2>
+            <Paragraph style={{ lineHeight: 1.9, fontSize: 14 }}>
               {courseInfo?.courseStructure || "暂无结构信息"}
             </Paragraph>
           </div>
@@ -399,64 +368,65 @@ export default function CourseInfoPage() {
       case "books":
         return (
           <div>
-            <Title level={3} style={{ color: colors.primary, marginBottom: 16 }}>
-              教材资源
-            </Title>
+            <h2 className="pu-section-title">教材资源</h2>
 
             {books.length === 0 ? (
               <Empty description="该课程暂无相关教材" />
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {books.map((book) => (
-                  <Card
+                  <div
                     key={book.id}
-                    size="small"
-                    hoverable
-                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
+                    style={{
+                      display: "flex",
+                      gap: 16,
+                      alignItems: "center",
+                      padding: 16,
+                      border: "1px solid var(--pu-line)",
+                      borderRadius: 12,
+                    }}
                   >
-                    <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                      <Avatar
-                        src={book.coverImage}
-                        shape="square"
-                        size={64}
-                        style={{ borderRadius: 4 }}
-                        icon={<BookOutlined />}
-                      />
+                    <Avatar
+                      src={book.coverImage}
+                      shape="square"
+                      size={64}
+                      style={{ borderRadius: 8, flexShrink: 0 }}
+                      icon={<BookOutlined />}
+                    />
 
-                      <div style={{ flex: 1 }}>
-                        <Text strong style={{ display: "block", marginBottom: 4 }}>
-                          {book.title}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Text strong style={{ display: "block", marginBottom: 4 }}>
+                        {book.title}
+                      </Text>
+                      {(book.author || book.publisher) && (
+                        <Text type="secondary" style={{ fontSize: 13, display: "block", marginBottom: 6 }}>
+                          {book.author}{book.author && book.publisher ? " / " : ""}{book.publisher}
                         </Text>
-                        {(book.author || book.publisher) && (
-                          <Text type="secondary" style={{ fontSize: 13, display: "block", marginBottom: 4 }}>
-                            {book.author}{book.author && book.publisher ? " / " : ""}{book.publisher}
-                          </Text>
-                        )}
-                        <Tag color={book.publish ? "success" : "default"}>
-                          {book.publish ? "已发布" : "草稿"}
-                        </Tag>
-                      </div>
-
-                      {book.attachment && (
-                        <Button
-                          type="primary"
-                          size="small"
-                          icon={<PaperClipOutlined />}
-                          onClick={() => {
-                            const fileName = book.attachment.split("/").pop() || book.title;
-                            const ext = fileName.split(".").pop()?.toLowerCase() || "";
-                            setPreviewFile({
-                              url: book.attachment!,
-                              name: fileName,
-                              type: ext,
-                            });
-                          }}
-                        >
-                          预览
-                        </Button>
                       )}
+                      <ProtoTag tone={book.publish ? "green" : "gray"}>
+                        {book.publish ? "已发布" : "草稿"}
+                      </ProtoTag>
                     </div>
-                  </Card>
+
+                    {book.attachment && (
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<PaperClipOutlined />}
+                        onClick={() => {
+                          const fileName = book.attachment.split("/").pop() || book.title;
+                          const ext = fileName.split(".").pop()?.toLowerCase() || "";
+                          setPreviewFile({
+                            url: book.attachment!,
+                            name: fileName,
+                            type: ext,
+                          });
+                        }}
+                      >
+                        预览
+                      </Button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -496,9 +466,7 @@ export default function CourseInfoPage() {
           minHeight: "100vh",
         }}
       >
-        <Title level={3} type="danger">
-          用户未登录
-        </Title>
+        <h3 style={{ color: "var(--pu-red)" }}>用户未登录</h3>
         <Text>请登录以访问课程信息。</Text>
       </div>
     );
@@ -528,146 +496,83 @@ export default function CourseInfoPage() {
           minHeight: "100vh",
         }}
       >
-        <Title level={3} type="danger">
-          课程ID缺失
-        </Title>
+        <h3 style={{ color: "var(--pu-red)" }}>课程ID缺失</h3>
         <Text>无法确定要查看的课程。</Text>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: isMobile ? "12px 0 0" : 16 }}>
-      {!isMobile && (
-        <Breadcrumb
-          separator={<RightOutlined />}
-          items={[
-            { title: <a href="/student/dashboard">仪表板</a> },
-            { title: <a href="/student/dashboard">我的课程</a> },
-            { title: <Text>{course?.title || "课程信息"}</Text> },
-          ]}
-          style={{ marginBottom: 16 }}
-        />
-      )}
+    <div className="pu-page">
+      <PageHead
+        title={course?.title || "课程信息"}
+        description="课程背景、教学目标、课程结构与教材资源"
+        actions={
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+            返回
+          </Button>
+        }
+      />
 
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: isMobile ? 16 : 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          padding: isMobile ? 16 : 24,
-        }}
-      >
-        {isMobile ? (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ marginBottom: 12 }}>
-              <Text style={{ fontSize: 12, color: "#757780", fontWeight: 700 }}>课程导航</Text>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                paddingBottom: 4,
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
+      {isMobile ? (
+        <div>
+          <div className="pu-tabs">
+            {availableSections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className={`pu-tabs__item${activeSection === section.id ? " is-active" : ""}`}
+                onClick={() => handleSectionClick(section.id)}
+              >
+                {section.title}
+              </button>
+            ))}
+          </div>
+          <ProtoCard>{renderContent()}</ProtoCard>
+        </div>
+      ) : (
+        <Row gutter={24}>
+          <Col xs={24} md={8} lg={6}>
+            <ProtoCard style={{ position: "sticky", top: 16, padding: 14 }}>
               {availableSections.map((section) => {
                 const active = activeSection === section.id;
                 return (
-                  <button
+                  <div
                     key={section.id}
-                    type="button"
                     onClick={() => handleSectionClick(section.id)}
                     style={{
-                      display: "inline-flex",
+                      display: "flex",
                       alignItems: "center",
-                      gap: 8,
-                      padding: "10px 14px",
-                      borderRadius: 9999,
-                      border: active ? "none" : "1px solid #E8EAED",
-                      background: active ? colors.primary : "#F8F9FA",
-                      color: active ? "#fff" : "#1f2937",
-                      whiteSpace: "nowrap",
+                      gap: 12,
+                      padding: "11px 12px",
+                      borderRadius: 10,
                       cursor: "pointer",
-                      boxShadow: active ? "0 10px 24px rgba(37, 115, 230, 0.18)" : "none",
+                      marginBottom: 4,
+                      background: active ? "var(--pu-blue-soft)" : "transparent",
+                      transition: "background 0.15s",
                     }}
                   >
-                    <span>{section.icon}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700 }}>{section.title}</span>
-                  </button>
+                    <span style={{ color: active ? "var(--pu-blue)" : "var(--pu-muted)", display: "inline-flex" }}>
+                      {section.icon}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: active ? "var(--pu-blue)" : "var(--pu-ink)" }}>
+                        {section.title}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--pu-muted)" }}>
+                        {section.description}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </div>
-          </div>
-        ) : (
-          <Row gutter={24}>
-            <Col xs={24} md={6}>
-              <div
-                style={{
-                  borderRight: "1px solid #f0f0f0",
-                  paddingRight: 20,
-                }}
-              >
-                <Title level={5} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f0f0f0" }}>
-                  课程导航
-                </Title>
-
-                <List
-                  dataSource={availableSections}
-                  renderItem={(section, index) => (
-                    <div key={section.id}>
-                      <List.Item
-                        style={{
-                          padding: "8px 12px",
-                          cursor: "pointer",
-                          borderRadius: 6,
-                          marginBottom: 4,
-                          backgroundColor: activeSection === section.id ? colors.primary : "transparent",
-                          color: activeSection === section.id ? "#fff" : "inherit",
-                          transition: "all 0.2s",
-                        }}
-                        onClick={() => handleSectionClick(section.id)}
-                      >
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, width: "100%" }}>
-                          <span style={{ marginTop: 2 }}>{section.icon}</span>
-                          <div>
-                            <Text
-                              strong
-                              style={{
-                                display: "block",
-                                color: activeSection === section.id ? "#fff" : "inherit",
-                              }}
-                            >
-                              {section.title}
-                            </Text>
-                            <Text
-                              type={activeSection === section.id ? undefined : "secondary"}
-                              style={{
-                                fontSize: 12,
-                                color: activeSection === section.id ? "rgba(255,255,255,0.8)" : undefined,
-                              }}
-                            >
-                              {section.description}
-                            </Text>
-                          </div>
-                        </div>
-                      </List.Item>
-                      {index < availableSections.length - 1 && <Divider style={{ margin: "8px 0" }} />}
-                    </div>
-                  )}
-                />
-              </div>
-            </Col>
-
-            <Col xs={24} md={18}>{renderContent()}</Col>
-          </Row>
-        )}
-
-        {isMobile && (
-          <div>{renderContent()}</div>
-        )}
-      </div>
+            </ProtoCard>
+          </Col>
+          <Col xs={24} md={16} lg={18}>
+            <ProtoCard>{renderContent()}</ProtoCard>
+          </Col>
+        </Row>
+      )}
 
       <FilePreview
         open={!!previewFile}

@@ -712,7 +712,7 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
                   <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, minWidth: 0, flex: 1 }}>
                     <div style={{
                       width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: "50%",
-                      background: isSentByMe ? "rgba(37, 115, 230, 0.1)" : "rgba(16, 185, 129, 0.1)",
+                      background: isSentByMe ? "rgba(40, 89, 223, 0.1)" : "rgba(16, 185, 129, 0.1)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0,
                       color: isSentByMe ? colors.primary : "#10B981",

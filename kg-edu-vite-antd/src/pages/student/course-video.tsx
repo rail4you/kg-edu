@@ -283,7 +283,7 @@ const ChapterSectionCard: React.FC<{
 
       {/* 展开内容 */}
       {expanded && totalVideos > 0 && (
-        <div style={{ borderTop: "1px solid #f0f0f0" }}>
+        <div style={{ borderTop: "1px solid #edf0f5" }}>
           {/* 视频行 */}
           {chapterVideos.map((video, idx) => (
             <VideoTableRow
@@ -1185,7 +1185,7 @@ export default function CourseVideoPage() {
                 value={chapters.length}
               />
               <StatCard
-                icon={<VideoCameraOutlined style={{ fontSize: 18, color: "#2573E6" }} />}
+                icon={<VideoCameraOutlined style={{ fontSize: 18, color: "#2859df" }} />}
                 label="视频数"
                 value={allVideos.length}
               />
@@ -1273,7 +1273,7 @@ export default function CourseVideoPage() {
               {selectedCourse?.semester && (
                 <span style={{
                   fontSize: 12, fontWeight: 600, padding: "5px 14px",
-                  borderRadius: 20, background: "#f0f0f0", color: "#666",
+                  borderRadius: 20, background: "#edf0f5", color: "#666",
                 }}>
                   {selectedCourse.semester}
                 </span>
@@ -1281,7 +1281,7 @@ export default function CourseVideoPage() {
               {courseCreator && (
                 <span style={{
                   fontSize: 12, fontWeight: 600, padding: "5px 14px",
-                  borderRadius: 20, background: "#f0f0f0", color: "#666",
+                  borderRadius: 20, background: "#edf0f5", color: "#666",
                 }}>
                   <UserOutlined style={{ marginRight: 4, fontSize: 11 }} />
                   {courseCreator.name}
@@ -1589,7 +1589,7 @@ export default function CourseVideoPage() {
       <div
         style={{
           flexShrink: 0,
-          padding: isMobile ? "8px 8px" : "12px 50px",
+          padding: isMobile ? "8px 8px" : "10px 16px 0",
           background: colors.pageBg,
         }}
       >
@@ -1639,7 +1639,7 @@ export default function CourseVideoPage() {
       </div>
 
       {/* Tab 内容区域 - 带边框容器 */}
-      <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: isMobile ? "0 8px 16px" : "0 50px 16px" }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: isMobile ? "0 8px 16px" : "12px 16px 16px" }}>
         <div style={{
           height: "100%",
           borderRadius: 14,

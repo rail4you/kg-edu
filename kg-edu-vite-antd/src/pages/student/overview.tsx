@@ -10,7 +10,6 @@ import {
   Button,
   Avatar,
   Empty,
-  Select,
 } from "antd";
 import {
   DownloadOutlined,
@@ -18,7 +17,6 @@ import {
   PaperClipOutlined,
   FolderOutlined,
   UserOutlined,
-  ApartmentOutlined,
   FileTextOutlined,
   RightOutlined,
   TeamOutlined,
@@ -74,20 +72,6 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       localStorage.setItem("selectedCourse", selectedCourseId);
     }
   }, [selectedCourseId]);
-
-  const { data: coursesData, isLoading: coursesLoading } = useQuery({
-    queryKey: ["courses", tenant],
-    queryFn: async () => {
-      const result = await listCourses({
-        tenant,
-        fields: ["id", "title", "description", "major", "semester"],
-        sort: "title",
-        headers: getHeaders(user),
-      });
-      return extractArrayData(result);
-    },
-    enabled: !!tenant && !!user,
-  });
 
   const { data: course, isLoading: courseLoading, error: courseError } = useQuery({
     queryKey: ["course", selectedCourseId, tenant],
@@ -362,11 +346,10 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
   // 递归渲染嵌套章节
   const renderChapterCards = (nodes: any[], level: number = 0) => {
     const levelStyles = [
-      { bg: "rgba(37, 115, 230, 0.06)", color: colors.primary, borderBg: colors.primary },
-      { bg: "rgba(82, 196, 26, 0.06)", color: "#389e0d", borderBg: "#52c41a" },
-      { bg: "rgba(250, 173, 20, 0.06)", color: "#d48806", borderBg: "#faad14" },
-      { bg: "rgba(245, 34, 45, 0.06)", color: "#cf1322", borderBg: "#f5222d" },
-      { bg: "rgba(114, 46, 209, 0.06)", color: "#531dab", borderBg: "#722ed1" },
+      { bg: "rgba(40, 89, 223, 0.08)", color: "#1d4fc4", accent: "#2859df" },
+      { bg: "rgba(40, 89, 223, 0.055)", color: "#3f74e6", accent: "#4f82e8" },
+      { bg: "rgba(40, 89, 223, 0.035)", color: "#5b8bef", accent: "#6f9cf2" },
+      { bg: "rgba(40, 89, 223, 0.02)", color: "#7aa4f4", accent: "#8fb2f6" },
     ];
     const style = levelStyles[level % levelStyles.length];
     const leftPadding = level * 20;
@@ -386,7 +369,6 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
                 padding: level === 0 ? "10px 16px" : "7px 14px",
                 borderRadius: 10,
                 backgroundColor: style.bg,
-                borderLeft: `3px solid ${style.borderBg}`,
               }}
             >
               {hasChildren ? (
@@ -400,7 +382,7 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
                     fontSize: 11,
                     fontWeight: 700,
                     color: "#fff",
-                    background: style.borderBg,
+                    background: style.accent,
                     borderRadius: 6,
                     padding: "1px 8px",
                     lineHeight: "20px",
@@ -746,7 +728,6 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
     );
   }
 
-  const courses: any[] = coursesData || [];
   const courseTagLine = [course?.major, course?.semester, courseCreator?.name]
     .filter(Boolean)
     .join(" · ");
@@ -781,33 +762,15 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
         title={course?.title || "课程概述"}
         description={courseTagLine || "查看课程的基本信息、教学目标与章节结构。"}
         actions={
-          <>
-            {courses.length > 0 && (
-              <Select
-                loading={coursesLoading}
-                value={selectedCourseId || undefined}
-                placeholder="切换课程"
-                style={{ minWidth: 180 }}
-                onChange={(v) => {
-                  setSelectedCourseId(v);
-                  localStorage.setItem("selectedCourse", v);
-                }}
-                options={courses.map((c) => ({
-                  value: c.id,
-                  label: c.title,
-                }))}
-              />
-            )}
-            <Button
-              type="primary"
-              icon={<RightOutlined />}
-              onClick={() =>
-                navigate(`/dashboard/course-video${selectedCourseId ? `?courseId=${selectedCourseId}` : ""}`)
-              }
-            >
-              开始学习
-            </Button>
-          </>
+          <Button
+            type="primary"
+            icon={<RightOutlined />}
+            onClick={() =>
+              navigate(`/dashboard/course-video${selectedCourseId ? `?courseId=${selectedCourseId}` : ""}`)
+            }
+          >
+            开始学习
+          </Button>
         }
       />
 
@@ -822,9 +785,9 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       ) : (
         <>
           {/* 欢迎横幅 */}
-          <div className="pu-welcome">
+          <div className="pu-welcome pu-welcome--plain">
             <div style={{ minWidth: 0 }}>
-              <div className="pu-eyebrow">COURSE OVERVIEW</div>
+              <div className="pu-eyebrow">课程概述</div>
               <h2>{courseInfo?.courseHighlights || "从观察，到表达，再到创造。"}</h2>
               <p>{course.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}</p>
               <div className="pu-tags">
@@ -834,13 +797,6 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
                 {courseCreator?.name && <ProtoTag tone="gray">主讲教师 · {courseCreator.name}</ProtoTag>}
               </div>
             </div>
-            <Button
-              icon={<ApartmentOutlined />}
-              onClick={() => navigate(`/dashboard/graph${selectedCourseId ? `?courseId=${selectedCourseId}` : ""}`)}
-              style={{ flexShrink: 0, height: 40, borderRadius: 8 }}
-            >
-              查看知识图谱 →
-            </Button>
           </div>
 
           {/* 指标概览 */}

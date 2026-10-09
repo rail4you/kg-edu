@@ -324,7 +324,7 @@ export default function LearningRecommendations() {
         {knowledgeSection && knowledgeSection.items.length > 0 && (
           <div className="pu-welcome">
             <div style={{ minWidth: 0 }}>
-              <div className="pu-eyebrow">YOUR NEXT STEP</div>
+              <div className="pu-eyebrow">下一步学习</div>
               <h2>从《{knowledgeSection.items[0].name}》开始下一步</h2>
               <p>先回顾基础概念，再通过案例与练习检验理解。</p>
               <Button
@@ -392,7 +392,7 @@ export default function LearningRecommendations() {
                     }}
                   >
                     <div className="pu-eyebrow" style={{ marginBottom: 10 }}>
-                      STEP {String(idx + 1).padStart(2, "0")}
+                      第 {idx + 1} 步
                     </div>
                     <h3 style={{ fontSize: 17, fontWeight: 650, lineHeight: 1.5, color: "#202f47", marginBottom: 8 }}>
                       {item.name}

@@ -659,7 +659,7 @@ export default function GraphLayerPage() {
           borderRadius: 8,
         }}
       >
-        <BookOutlined style={{ fontSize: 64, color: "#2573E6", marginBottom: 24 }} />
+        <BookOutlined style={{ fontSize: 64, color: "#2859df", marginBottom: 24 }} />
         <Title level={3} style={{ color: "#333", marginBottom: 8 }}>
           请先选择一个课程
         </Title>
@@ -719,7 +719,7 @@ export default function GraphLayerPage() {
             color: "#999",
             textAlign: "center",
             fontWeight: 500,
-            background: "#f5f5f5",
+            background: "#f5f7fb",
             padding: 10,
             borderRadius: 4,
           }}

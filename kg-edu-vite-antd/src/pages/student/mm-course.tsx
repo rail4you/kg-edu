@@ -6,6 +6,7 @@ import { getMicroMajorCourse, getMmCourseFullHierarchy, listMmVideosByChapter, l
 import { extractArrayData } from "@/utils/api-helpers";
 import { useAuth } from "@/auth/auth-context";
 import { themeColors as colors } from "@/styles/theme";
+import { ProtoTag } from "@/components/proto";
 import FilePreview from "@/components/FilePreview";
 
 const { Title, Text, Paragraph } = Typography;
@@ -51,7 +52,7 @@ const fmtSz = (b: number) => { if (!b) return "-"; if (b < 1024) return `${b} B`
 
 const lStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: "#8C8F93", marginBottom: 4 };
 const vStyle: React.CSSProperties = { background: "#F8F9FC", borderRadius: 8, padding: "10px 14px", minHeight: 44 };
-const tStyle: React.CSSProperties = { fontSize: 14, color: "#191c1d" };
+const tStyle: React.CSSProperties = { fontSize: 14, color: "#202f47" };
 
 const TABS = [
   { key: "intro", label: "课程介绍", icon: <BookOutlined /> },
@@ -207,16 +208,16 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
 
   const renderEx = (ex: ExerciseItem) => {
     const a = ans[ex.id]; const d = done[ex.id]; const o = parseOpts(ex.options);
-    return (<Card key={ex.id} size="small" style={{ marginBottom: 12, borderLeft: d ? "3px solid #722ed1" : "3px solid #e8e8e8", borderRadius: 6 }}>
-      <Space style={{ marginBottom: 8 }}><Tag color="blue">{QTYPE[ex.questionType] || ex.questionType}</Tag><Text strong>{ex.title}</Text></Space>
-      <Paragraph style={{ whiteSpace: "pre-wrap", marginBottom: 12 }}>{ex.questionContent}</Paragraph>
-      {ex.questionType === "multiple_choice" && (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{o.choices.filter(Boolean).map((c: string, i: number) => { const cor = i === o.correctAnswer, sel = a === i; let bd = "#d9d9d9", bg = "#fff"; if (d && cor) { bd = "#52c41a"; bg = "#f6ffed"; } else if (d && sel && !cor) { bd = "#ff4d4f"; bg = "#fff2f0"; } else if (sel) { bd = "#722ed1"; bg = "#f9f0ff"; } return (<div key={i} style={{ padding: "6px 12px", border: `1px solid ${bd}`, borderRadius: 6, background: bg, cursor: d ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={() => { if (!d) { setAns(p => ({ ...p, [ex.id]: i })); } }}><div style={{ width: 16, height: 16, borderRadius: "50%", border: sel ? "5px solid #722ed1" : "1px solid #d9d9d9", flexShrink: 0, background: sel ? "#fff" : "#fff", transition: "all 0.15s" }} /><span>{String.fromCharCode(65 + i)}. {c}</span>{d && cor && <CheckCircleFilled style={{ color: "#52c41a", marginLeft: "auto" }} />}{d && sel && !cor && <CloseCircleFilled style={{ color: "#ff4d4f", marginLeft: "auto" }} />}</div>); })}</div>)}
-      {ex.questionType === "multiple_response" && (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{o.choices.filter(Boolean).map((c: string, i: number) => { const selArr: number[] = Array.isArray(a) ? a : []; const sel = selArr.includes(i); const cor = (o.correctAnswers || []).includes(i); let bd = "#d9d9d9", bg = "#fff"; if (d && cor) { bd = "#52c41a"; bg = "#f6ffed"; } else if (d && sel && !cor) { bd = "#ff4d4f"; bg = "#fff2f0"; } else if (sel) { bd = "#722ed1"; bg = "#f9f0ff"; } return (<div key={i} style={{ padding: "6px 12px", border: `1px solid ${bd}`, borderRadius: 6, background: bg, cursor: d ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={() => { if (!d) { const next = [...selArr]; const idx = next.indexOf(i); if (idx >= 0) { next.splice(idx, 1); } else { next.push(i); } setAns(p => ({ ...p, [ex.id]: next })); } }}><div style={{ width: 16, height: 16, borderRadius: 4, border: sel ? "5px solid #722ed1" : "1px solid #d9d9d9", flexShrink: 0, background: sel ? "#f9f0ff" : "#fff", transition: "all 0.15s" }} /><span>{String.fromCharCode(65 + i)}. {c}</span>{d && cor && <CheckCircleFilled style={{ color: "#52c41a", marginLeft: "auto" }} />}{d && sel && !cor && <CloseCircleFilled style={{ color: "#ff4d4f", marginLeft: "auto" }} />}</div>); })}</div>)}
-      {ex.questionType === "true_false" && (<div style={{ display: "flex", gap: 12 }}>{[0, 1].map(i => { const lb = i === 0 ? "正确" : "错误", cor = i === o.correctAnswer, sel = a === i; let bd = "#d9d9d9", bg = "#fff"; if (d && cor) { bd = "#52c41a"; bg = "#f6ffed"; } else if (d && sel && !cor) { bd = "#ff4d4f"; bg = "#fff2f0"; } else if (sel) { bd = "#722ed1"; bg = "#f9f0ff"; } return <div key={i} style={{ padding: "6px 24px", border: `1px solid ${bd}`, borderRadius: 6, background: bg, cursor: d ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={() => { if (!d) setAns(p => ({ ...p, [ex.id]: i })); }}><div style={{ width: 16, height: 16, borderRadius: "50%", border: sel ? "5px solid #722ed1" : "1px solid #d9d9d9", flexShrink: 0, background: "#fff", transition: "all 0.15s" }} />{lb}</div>; })}</div>)}
+    return (<div key={ex.id} style={{ border: "1px solid var(--pu-line)", borderRadius: 12, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}><ProtoTag tone="blue">{QTYPE[ex.questionType] || ex.questionType}</ProtoTag><span style={{ fontWeight: 600, color: "var(--pu-ink)" }}>{ex.title}</span></div>
+      <p style={{ whiteSpace: "pre-wrap", margin: "0 0 12px", color: "var(--pu-ink)", fontSize: 14, lineHeight: 1.8 }}>{ex.questionContent}</p>
+      {ex.questionType === "multiple_choice" && (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{o.choices.filter(Boolean).map((c: string, i: number) => { const cor = i === o.correctAnswer, sel = a === i; let bd = "var(--pu-line)", bg = "#fff"; if (d && cor) { bd = "#52c41a"; bg = "#f6ffed"; } else if (d && sel && !cor) { bd = "#ff4d4f"; bg = "#fff2f0"; } else if (sel) { bd = "#2859df"; bg = "#edf2ff"; } return (<div key={i} style={{ padding: "6px 12px", border: `1px solid ${bd}`, borderRadius: 6, background: bg, cursor: d ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={() => { if (!d) { setAns(p => ({ ...p, [ex.id]: i })); } }}><div style={{ width: 16, height: 16, borderRadius: "50%", border: sel ? "5px solid #2859df" : "1px solid var(--pu-line)", flexShrink: 0, background: sel ? "#fff" : "#fff", transition: "all 0.15s" }} /><span>{String.fromCharCode(65 + i)}. {c}</span>{d && cor && <CheckCircleFilled style={{ color: "#52c41a", marginLeft: "auto" }} />}{d && sel && !cor && <CloseCircleFilled style={{ color: "#ff4d4f", marginLeft: "auto" }} />}</div>); })}</div>)}
+      {ex.questionType === "multiple_response" && (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{o.choices.filter(Boolean).map((c: string, i: number) => { const selArr: number[] = Array.isArray(a) ? a : []; const sel = selArr.includes(i); const cor = (o.correctAnswers || []).includes(i); let bd = "var(--pu-line)", bg = "#fff"; if (d && cor) { bd = "#52c41a"; bg = "#f6ffed"; } else if (d && sel && !cor) { bd = "#ff4d4f"; bg = "#fff2f0"; } else if (sel) { bd = "#2859df"; bg = "#edf2ff"; } return (<div key={i} style={{ padding: "6px 12px", border: `1px solid ${bd}`, borderRadius: 6, background: bg, cursor: d ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={() => { if (!d) { const next = [...selArr]; const idx = next.indexOf(i); if (idx >= 0) { next.splice(idx, 1); } else { next.push(i); } setAns(p => ({ ...p, [ex.id]: next })); } }}><div style={{ width: 16, height: 16, borderRadius: 4, border: sel ? "5px solid #2859df" : "1px solid var(--pu-line)", flexShrink: 0, background: sel ? "#edf2ff" : "#fff", transition: "all 0.15s" }} /><span>{String.fromCharCode(65 + i)}. {c}</span>{d && cor && <CheckCircleFilled style={{ color: "#52c41a", marginLeft: "auto" }} />}{d && sel && !cor && <CloseCircleFilled style={{ color: "#ff4d4f", marginLeft: "auto" }} />}</div>); })}</div>)}
+      {ex.questionType === "true_false" && (<div style={{ display: "flex", gap: 12 }}>{[0, 1].map(i => { const lb = i === 0 ? "正确" : "错误", cor = i === o.correctAnswer, sel = a === i; let bd = "var(--pu-line)", bg = "#fff"; if (d && cor) { bd = "#52c41a"; bg = "#f6ffed"; } else if (d && sel && !cor) { bd = "#ff4d4f"; bg = "#fff2f0"; } else if (sel) { bd = "#2859df"; bg = "#edf2ff"; } return <div key={i} style={{ padding: "6px 24px", border: `1px solid ${bd}`, borderRadius: 6, background: bg, cursor: d ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={() => { if (!d) setAns(p => ({ ...p, [ex.id]: i })); }}><div style={{ width: 16, height: 16, borderRadius: "50%", border: sel ? "5px solid #2859df" : "1px solid var(--pu-line)", flexShrink: 0, background: "#fff", transition: "all 0.15s" }} />{lb}</div>; })}</div>)}
       {["fill_in_blank", "essay", "term_definition", "case_study"].includes(ex.questionType) && (<div><TextArea rows={ex.questionType === "case_study" ? 4 : 2} value={a || ""} onChange={e => setAns(p => ({ ...p, [ex.id]: e.target.value }))} placeholder="请输入答案..." disabled={d} style={{ marginBottom: 8 }} />{d && ex.answer && (<Card size="small" style={{ background: "#f6ffed", marginTop: 8 }}><Space><CheckCircleFilled style={{ color: "#52c41a" }} /><Text strong>参考答案：</Text></Space><Paragraph style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{ex.answer}</Paragraph>{ex.answerExplanation && <><Text strong>解析：</Text><Paragraph style={{ whiteSpace: "pre-wrap" }}>{ex.answerExplanation}</Paragraph></>}</Card>)}</div>)}
       {d && ex.answerExplanation && !["multiple_choice", "true_false", "fill_in_blank", "essay", "term_definition", "case_study"].includes(ex.questionType) && (<Card size="small" style={{ marginTop: 8, background: "#fffbe6" }}><Text strong>解析：</Text><Paragraph style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{ex.answerExplanation}</Paragraph></Card>)}
-      {!d && <Button type="primary" size="small" onClick={() => submitEx(ex)} disabled={ex.questionType === "multiple_response" ? (!Array.isArray(a) || a.length === 0) : (a === undefined || a === null || a === "")} style={{ marginTop: 8 }}>提交答案</Button>}
-    </Card>);
+      {!d && <Button type="primary" onClick={() => submitEx(ex)} disabled={ex.questionType === "multiple_response" ? (!Array.isArray(a) || a.length === 0) : (a === undefined || a === null || a === "")} style={{ marginTop: 4 }}>提交答案</Button>}
+    </div>);
   };
 
   if (isLoading) return <div style={{ display: "flex", justifyContent: "center", padding: 80 }}><Spin size="large" /></div>;
@@ -224,78 +225,70 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
 
   return (
     <div>
-      <div style={{ background: "#fff", borderRadius: 12, padding: mobile ? 16 : 24, marginBottom: 12, boxShadow: "0 4px 16px rgba(0,88,190,0.04)" }}>
-        <div style={{ display: "flex", gap: mobile ? 12 : 24, alignItems: mobile ? "flex-start" : "middle" }}>
-          <div style={{
-            width: mobile ? 60 : 90,
-            height: mobile ? 60 : 90,
-            borderRadius: 8,
-            flexShrink: 0,
-            background: course.imageUrl ? `url(${course.imageUrl}) center/cover no-repeat` : "linear-gradient(135deg, #667eea, #764ba2)",
-          }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Title level={mobile ? 5 : 4} style={{ margin: 0 }}>{course.title}</Title>
-            <Paragraph type="secondary" style={{ margin: "4px 0 0", fontSize: mobile ? 13 : undefined }} ellipsis={{ rows: mobile ? 2 : 1 }}>{course.description}</Paragraph>
-            <Space wrap style={{ marginTop: 6, gap: 4 }}>
-              {course.major && <Tag icon={<ApartmentOutlined />} color="purple" style={{ fontSize: mobile ? 11 : undefined, padding: mobile ? "0 6px" : undefined }}>{course.major}</Tag>}
-              {course.semester && <Tag icon={<ClockCircleOutlined />} color="blue" style={{ fontSize: mobile ? 11 : undefined, padding: mobile ? "0 6px" : undefined }}>{course.semester}</Tag>}
-              {course.credits != null && <Tag color="green" style={{ fontSize: mobile ? 11 : undefined }}>{course.credits} 学分</Tag>}
-              {course.semesterHours != null && <Tag color="orange" style={{ fontSize: mobile ? 11 : undefined }}>{course.semesterHours} 学时</Tag>}
-            </Space>
+      {/* 课程头部 */}
+      <div className="pu-card" style={{ marginBottom: 12, display: "flex", gap: mobile ? 12 : 20, alignItems: "center" }}>
+        <div style={{
+          width: mobile ? 56 : 80,
+          height: mobile ? 56 : 80,
+          borderRadius: 12,
+          flexShrink: 0,
+          background: course.imageUrl ? `url(${course.imageUrl}) center/cover no-repeat` : "linear-gradient(135deg, #2859df, #1846bc)",
+        }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ margin: 0, fontSize: mobile ? 18 : 22, fontWeight: 650, color: "var(--pu-ink)" }}>{course.title}</h2>
+          <p style={{
+            margin: "6px 0 0", color: "var(--pu-muted)", fontSize: mobile ? 13 : 14, lineHeight: 1.7,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{course.description}</p>
+          <div className="pu-tags" style={{ marginTop: 10 }}>
+            {course.major && <ProtoTag tone="blue">{course.major}</ProtoTag>}
+            {course.semester && <ProtoTag tone="gray">{course.semester}</ProtoTag>}
+            {course.credits != null && <ProtoTag tone="gray">{course.credits} 学分</ProtoTag>}
+            {course.semesterHours != null && <ProtoTag tone="gray">{course.semesterHours} 学时</ProtoTag>}
           </div>
         </div>
       </div>
 
-      <div style={{
-        background: "#fff",
-        borderRadius: 12,
-        padding: mobile ? "6px 12px" : "10px 16px",
-        marginBottom: 12,
-        display: "flex",
-        alignItems: "center",
-        gap: mobile ? 4 : 6,
-        overflowX: mobile ? "auto" : undefined,
-        boxShadow: "0 2px 8px rgba(0,88,190,0.03)",
-      }}>
+      {/* 标签页 */}
+      <div className="pu-tabs">
         {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            style={{
-              ...pillStyle(tab === t.key),
-              padding: mobile ? "6px 12px" : "8px 18px",
-              fontSize: mobile ? 12 : 13,
-              flexShrink: 0,
-            }}
-            onMouseEnter={e => { if (tab !== t.key) (e.target as HTMLElement).style.background = "#e8eaed"; }}
-            onMouseLeave={e => { if (tab !== t.key) (e.target as HTMLElement).style.background = "transparent"; }}
+          <button key={t.key} type="button" onClick={() => setTab(t.key)}
+            className={`pu-tabs__item${tab === t.key ? " is-active" : ""}`}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}
           >
-            {!mobile && <span style={{ fontSize: 15, lineHeight: 1 }}>{t.icon}</span>}
-            <span>{mobile ? t.label.replace(/学习|教学/, "") : t.label}</span>
+            <span style={{ fontSize: 15, lineHeight: 1 }}>{t.icon}</span>
+            <span>{t.label}</span>
           </button>
         ))}
       </div>
 
-      <div style={{
-        background: "#fff",
-        borderRadius: 14,
-        border: "1px solid #e8eaed",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-        padding: mobile ? 16 : 28,
-        minHeight: 300,
-      }}>
+      {/* 内容 */}
+      <div className="pu-card" style={{ padding: mobile ? 16 : 24, minHeight: 300 }}>
 
         {tab === "intro" && (
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#191c1d", marginBottom: 16 }}>基本信息</div>
-            <Row gutter={[16, 12]}>
-              <Col xs={24} md={12}><div style={lStyle}>课程标题</div><div style={vStyle}><Text strong style={tStyle}>{course.title}</Text></div></Col>
-              <Col xs={24} md={12}><div style={lStyle}>专业</div><div style={vStyle}><Text style={tStyle}>{course.major || "未指定"}</Text></div></Col>
-              <Col xs={24} md={12}><div style={lStyle}>学期</div><div style={vStyle}><Text style={tStyle}>{course.semester || "未指定"}</Text></div></Col>
-              <Col xs={24} md={6}><div style={lStyle}>学分</div><div style={vStyle}><Text style={tStyle}>{course.credits ?? "-"}</Text></div></Col>
-              <Col xs={24} md={6}><div style={lStyle}>学时</div><div style={vStyle}><Text style={tStyle}>{course.semesterHours ?? "-"}</Text></div></Col>
-            </Row>
-            <div style={{ height: 1, background: "#f0f0f0", margin: "20px 0" }} />
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#191c1d", marginBottom: 16 }}>课程章节</div>
-            {flat.map(ch => (<div key={ch.id} style={{ padding: `10px 12px 10px ${12 + ch.level * 20}px`, display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid #f5f5f5" }}><FolderOutlined style={{ color: colors.primary, fontSize: 15 }} /><Text style={{ fontSize: 14, color: "#191c1d" }}>{genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}</Text></div>))}
+            <div className="pu-section-title">基本信息</div>
+            <div className="pu-info">
+              {[
+                { label: "课程标题", value: course.title },
+                { label: "专业", value: course.major || "未指定" },
+                { label: "学期", value: course.semester || "未指定" },
+                { label: "学分", value: course.credits ?? "-" },
+                { label: "学时", value: course.semesterHours ?? "-" },
+              ].map((row) => (
+                <div className="pu-info__row" key={row.label}>
+                  <span className="pu-info__label">{row.label}</span>
+                  <span className="pu-info__value">{row.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="pu-section-title" style={{ marginTop: 24 }}>课程章节</div>
+            {flat.map(ch => (
+              <div key={ch.id} style={{ padding: `9px 12px 9px ${12 + ch.level * 18}px`, display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--pu-line-soft)" }}>
+                <FolderOutlined style={{ color: "var(--pu-blue)", fontSize: 14, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, color: "var(--pu-ink)" }}>{genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}</span>
+              </div>
+            ))}
           </div>)}
 
         {tab === "videos" && (mobile ? (
@@ -322,13 +315,13 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
                     <div style={{ marginTop: 6 }}><Text strong style={{ fontSize: 14 }}>{vid.title || "未命名视频"}</Text></div>
                   </div>
                 )}
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: "#191c1d" }}>视频列表 ({vids.length})</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: "#202f47" }}>视频列表 ({vids.length})</div>
                 {vids.map(v => (
                   <div key={v.id} onClick={() => setVid(v)}
                     style={{
                       padding: "8px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
                       borderRadius: 8, marginBottom: 6,
-                      background: vid?.id === v.id ? "#f0f0ff" : "#fafafa",
+                      background: vid?.id === v.id ? "#eaf0ff" : "#fafafa",
                       border: vid?.id === v.id ? `1px solid ${colors.primary}44` : "1px solid transparent",
                     }}>
                     {v.thumbnail ? (
@@ -352,13 +345,13 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
           /* 桌面端：两栏布局 */
           <Row gutter={16}>
             <Col xs={24} md={7}>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: "#191c1d" }}>章节</div>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: "#202f47" }}>章节</div>
               <div style={{ maxHeight: "calc(100vh - 400px)", overflow: "auto", border: "1px solid #f0f0f0", borderRadius: 8, padding: "4px 0" }}>
                 {flat.map(ch => (
                   <div key={ch.id} onClick={() => { setCid(ch.id); setVid(null); }}
                     style={{
                       padding: `8px 12px 8px ${12 + ch.level * 16}px`, cursor: "pointer", fontSize: 13,
-                      marginBottom: 2, background: cid === ch.id ? "#f0f0ff" : "transparent",
+                      marginBottom: 2, background: cid === ch.id ? "#eaf0ff" : "transparent",
                       color: cid === ch.id ? colors.primary : "#444",
                     }}>
                     {genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}
@@ -379,13 +372,13 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
                       <div style={{ marginTop: 8 }}><Text strong style={{ fontSize: 15 }}>{vid.title || "未命名视频"}</Text></div>
                     </div>
                   )}
-                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: "#191c1d" }}>视频列表 ({vids.length})</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: "#202f47" }}>视频列表 ({vids.length})</div>
                   {vids.map(v => (
                     <div key={v.id} onClick={() => setVid(v)}
                       style={{
                         padding: "10px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
                         borderRadius: 8, marginBottom: 6,
-                        background: vid?.id === v.id ? "#f0f0ff" : "#fafafa",
+                        background: vid?.id === v.id ? "#eaf0ff" : "#fafafa",
                         border: vid?.id === v.id ? `1px solid ${colors.primary}44` : "1px solid transparent",
                       }}>
                       {v.thumbnail ? <img src={v.thumbnail} alt="" style={{ width: 96, height: 54, borderRadius: 6, objectFit: "cover" }} /> : <VideoCameraOutlined style={{ fontSize: 28, color: colors.primary }} />}
@@ -404,84 +397,37 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
 
         {tab === "content" && (
           <div>
-            {/* 资源统计卡片 - 统一布局 */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: mobile ? "1fr" : "1fr 1fr",
-              gap: mobile ? 10 : 16,
-              marginBottom: mobile ? 14 : 20,
-            }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: mobile ? 14 : 40,
-                padding: mobile ? "14px 16px" : "32px 40px",
-                borderRadius: 12,
-                background: "rgba(37,115,230,0.04)",
-                border: "1px solid rgba(37,115,230,0.08)",
-              }}>
-                <div style={{
-                  width: mobile ? 44 : 90,
-                  height: mobile ? 44 : 90,
-                  borderRadius: mobile ? 12 : 24,
-                  background: `linear-gradient(135deg, ${colors.primary}18 0%, ${colors.primary}08 100%)`,
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
-                  <FileTextOutlined style={{ fontSize: mobile ? 22 : 42, color: colors.primary }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: mobile ? 20 : 56, fontWeight: 800, lineHeight: 1, color: colors.textPrimary }}>{ress.length + exs.length}</div>
-                  <div style={{ fontSize: mobile ? 13 : 16, fontWeight: 600, color: colors.primary, marginTop: mobile ? 2 : 8 }}>教学资源</div>
-                  <div style={{ fontSize: mobile ? 12 : 14, color: colors.textSecondary, marginTop: mobile ? 0 : 10 }}>共 {ress.length} 文件 · {exs.length} 习题</div>
-                </div>
+            {/* 资源统计 */}
+            <div className="pu-grid pu-grid--three" style={{ marginBottom: mobile ? 14 : 20 }}>
+              <div className="pu-stat">
+                <span className="pu-stat__icon"><FileTextOutlined /></span>
+                <div className="pu-stat__label">教学资源</div>
+                <div className="pu-stat__num">{ress.length + exs.length}</div>
+                <div className="pu-stat__desc">共 {ress.length} 文件 · {exs.length} 习题</div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: mobile ? 10 : 16 }}>
-                <div style={{ padding: mobile ? "12px 14px" : 20, borderRadius: 10, background: "rgba(37,115,230,0.04)", border: "1px solid rgba(37,115,230,0.08)" }}>
-                  <FileOutlined style={{ fontSize: mobile ? 16 : 18, color: colors.primary }} />
-                  <div style={{ fontSize: mobile ? 22 : 32, fontWeight: 700, marginTop: mobile ? 6 : 16, color: colors.textPrimary }}>{ress.length}</div>
-                  <div style={{ fontSize: mobile ? 11 : 13, color: colors.textSecondary }}>资源文件</div>
-                </div>
-                <div style={{ padding: mobile ? "12px 14px" : 20, borderRadius: 10, background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.08)" }}>
-                  <FileTextOutlined style={{ fontSize: mobile ? 16 : 18, color: "#8b5cf6" }} />
-                  <div style={{ fontSize: mobile ? 22 : 32, fontWeight: 700, marginTop: mobile ? 6 : 16, color: colors.textPrimary }}>{exs.length}</div>
-                  <div style={{ fontSize: mobile ? 11 : 13, color: colors.textSecondary }}>课程习题</div>
-                </div>
+              <div className="pu-stat">
+                <span className="pu-stat__icon"><FileOutlined /></span>
+                <div className="pu-stat__label">资源文件</div>
+                <div className="pu-stat__num">{ress.length}</div>
+                <div className="pu-stat__desc">可预览与下载</div>
+              </div>
+              <div className="pu-stat">
+                <span className="pu-stat__icon"><FileTextOutlined /></span>
+                <div className="pu-stat__label">课程习题</div>
+                <div className="pu-stat__num">{exs.length}</div>
+                <div className="pu-stat__desc">练习与巩固</div>
               </div>
             </div>
 
             {/* Sub tabs: 资源文件 / 习题 */}
-            <div style={{
-              background: "#F0F1F3",
-              borderRadius: 10,
-              padding: mobile ? "4px 8px" : "8px 12px",
-              marginBottom: mobile ? 12 : 16,
-              display: "flex",
-              alignItems: "center",
-              gap: mobile ? 4 : 6,
-            }}>
-              {[{ key: "files", label: `资源文件 (${ress.length})` }, { key: "exercises", label: `习题 (${exs.length})` }].map(st => {
-                const isActive = subTab === st.key;
-                return (
-                  <button key={st.key} onClick={() => setSubTab(st.key)}
-                    style={{
-                      padding: mobile ? "6px 14px" : "8px 20px",
-                      borderRadius: 7,
-                      fontSize: mobile ? 13 : 15,
-                      fontWeight: isActive ? 600 : 400,
-                      color: isActive ? "#fff" : colors.textSecondary,
-                      background: isActive ? colors.primary : "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      flex: mobile ? 1 : undefined,
-                      textAlign: "center",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {st.label}
-                  </button>
-                );
-              })}
+            <div className="pu-tabs" style={{ marginBottom: mobile ? 12 : 16 }}>
+              {[{ key: "files", label: `资源文件 (${ress.length})` }, { key: "exercises", label: `习题 (${exs.length})` }].map(st => (
+                <button key={st.key} type="button" onClick={() => setSubTab(st.key)}
+                  className={`pu-tabs__item${subTab === st.key ? " is-active" : ""}`}
+                >
+                  {st.label}
+                </button>
+              ))}
             </div>
 
             {/* Files table */}
@@ -490,13 +436,23 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
               <Collapse defaultActiveKey={flat.filter(ch => (resMap[ch.id]?.length || 0) > 0).map(ch => ch.id)}
                 items={flat.filter(ch => (resMap[ch.id]?.length || 0) > 0).map(ch => ({
                   key: ch.id,
-                  label: (<Space><FolderOutlined style={{ color: colors.primary }} /><Text strong>{genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}</Text><Tag color="cyan">{resMap[ch.id]?.length || 0} 个</Tag></Space>),
+                  label: (<Space><FolderOutlined style={{ color: "var(--pu-blue)" }} /><Text strong>{genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}</Text><ProtoTag tone="blue">{resMap[ch.id]?.length || 0} 个</ProtoTag></Space>),
                   children: (
-                    <List dataSource={resMap[ch.id]} renderItem={(r: ResourceItem) => (
-                      <List.Item actions={[<Button key="pv" size="small" icon={<EyeOutlined />} onClick={() => setPf({ url: r.path, name: r.filename, type: r.fileType })}>预览</Button>, <Button key="dl" size="small" icon={<DownloadOutlined />} onClick={() => dl(r)}>下载</Button>]}>
-                        <List.Item.Meta avatar={<FileOutlined style={{ fontSize: 20, color: colors.primary }} />} title={r.filename} description={<Text type="secondary">{r.fileType?.toUpperCase()} - {fmtSz(r.size)}</Text>} />
-                      </List.Item>
-                    )} />
+                    <div>
+                      {resMap[ch.id]?.map((r: ResourceItem) => (
+                        <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 4px", borderBottom: "1px solid var(--pu-line-soft)" }}>
+                          <span style={{ width: 34, height: 34, borderRadius: 9, background: "var(--pu-blue-soft, #edf2ff)", color: "var(--pu-blue)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                            <FileOutlined />
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--pu-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.filename}</div>
+                            <div style={{ fontSize: 12, color: "var(--pu-muted)", marginTop: 2 }}>{r.fileType?.toUpperCase()} · {fmtSz(r.size)}</div>
+                          </div>
+                          <Button size="small" icon={<EyeOutlined />} onClick={() => setPf({ url: r.path, name: r.filename, type: r.fileType })}>预览</Button>
+                          <Button size="small" icon={<DownloadOutlined />} onClick={() => dl(r)}>下载</Button>
+                        </div>
+                      ))}
+                    </div>
                   ),
                 }))}
               />
@@ -509,14 +465,14 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
                 items={(() => {
                   const panels = flat.filter(ch => (exMap[ch.id]?.length || 0) > 0).map(ch => ({
                     key: ch.id,
-                    label: (<Space><FolderOutlined style={{ color: colors.primary }} /><Text strong>{genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}</Text><Tag color="purple">{exMap[ch.id]?.length || 0} 题</Tag></Space>),
+                    label: (<Space><FolderOutlined style={{ color: "var(--pu-blue)" }} /><Text strong>{genNum(ch.path) ? `${genNum(ch.path)} ` : ""}{ch.title}</Text><ProtoTag tone="blue">{exMap[ch.id]?.length || 0} 题</ProtoTag></Space>),
                     children: <div>{exMap[ch.id]?.map(ex => renderEx(ex))}</div>,
                   }));
                   const uncategorized = exs.filter(e => !e.microMajorChapterId);
                   if (uncategorized.length > 0) {
                     panels.push({
                       key: "_uncategorized",
-                      label: (<Space><FolderOutlined style={{ color: "#faad14" }} /><Text strong>未分类</Text><Tag color="gold">{uncategorized.length} 题</Tag></Space>),
+                      label: (<Space><FolderOutlined style={{ color: "#d97706" }} /><Text strong>未分类</Text><ProtoTag tone="amber">{uncategorized.length} 题</ProtoTag></Space>),
                       children: <div>{uncategorized.map(ex => renderEx(ex))}</div>,
                     });
                   }
@@ -528,7 +484,7 @@ export default function StudentMMCourse({ tenant, mmCourseId, mmId, headers }: S
 
         {tab === "homework" && (
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#191c1d", marginBottom: 16 }}>课程作业</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#202f47", marginBottom: 16 }}>课程作业</div>
             {homeworks.length === 0 ? (
               <Empty description="暂无作业" />
             ) : (
