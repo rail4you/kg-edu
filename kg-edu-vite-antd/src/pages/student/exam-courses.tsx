@@ -3,7 +3,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Card, Button, Typography, Spin, Tag, Alert, Space, Row, Col, Table, Select, Segmented, Popover, Grid, Tooltip } from 'antd';
-import { PlayCircleOutlined, RightOutlined, FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined, AppstoreOutlined, UnorderedListOutlined, CalendarOutlined, InfoCircleOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, AppstoreOutlined, UnorderedListOutlined, CalendarOutlined, InfoCircleOutlined, ScheduleOutlined } from '@ant-design/icons';
 import { useAuth } from '@/auth/auth-context';
 import { getAuthHeaders } from '@/lib/auth';
 import { getCurrentTenant } from '@/lib/tenant';
@@ -208,15 +208,7 @@ export default function ExamCourses() {
     return labels[examType];
   };
 
-  const getExamTypeColor = (examType: Exam['examType']) => {
-    const typeColors: Record<Exam['examType'], string> = {
-      midterm: 'blue',
-      final: 'purple',
-      quiz: 'cyan',
-      assignment: 'default'
-    };
-    return typeColors[examType];
-  };
+  // 统一蓝色系
 
   // 将 ISO 字符串当作本地时间处理
   const parseLocalDate = (isoString: string): Date => {
@@ -366,8 +358,8 @@ export default function ExamCourses() {
             {[
               { label: '考试系统', val: exams.length, icon: <ScheduleOutlined />, color: colors.primary, sub: `已完成 ${completedCount} · 进行中 ${exams.filter(e => getStudentExamStatus(e).status === 'in_progress').length}` },
               { label: '可用考试', val: exams.length, icon: <CalendarOutlined />, color: colors.primary, sub: '当前课程发布的考试' },
-              { label: '已完成', val: completedCount, icon: <CheckCircleOutlined />, color: '#10B981', sub: '已提交或已批改' },
-              { label: '未完成', val: exams.length - completedCount, icon: <ClockCircleOutlined />, color: '#D16900', sub: '待参加的考试' },
+              { label: '已完成', val: completedCount, icon: <CheckCircleOutlined />, color: colors.primary, sub: '已提交或已批改' },
+              { label: '未完成', val: exams.length - completedCount, icon: <ClockCircleOutlined />, color: colors.primary, sub: '待参加的考试' },
             ].map((item, i) => (
               <div
                 key={i}
@@ -463,15 +455,14 @@ export default function ExamCourses() {
                       <div style={{ padding: '20px 20px 16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                           <Tag 
-                            color={getExamTypeColor(exam.examType)}
+                            color="blue"
                             style={{ margin: 0, borderRadius: 4 }}
                           >
                             {getExamTypeLabel(exam.examType)}
                           </Tag>
                           <Tag 
-                            color={examStatus.color}
-                            icon={examStatus.status === 'graded' ? <CheckCircleOutlined /> : (examStatus.status === 'in_progress' ? <ClockCircleOutlined /> : undefined)}
-                            style={{ borderRadius: 4 }}
+                            color="blue"
+                            style={{ borderRadius: 4, margin: 0 }}
                           >
                             {examStatus.label}
                           </Tag>
@@ -499,12 +490,12 @@ export default function ExamCourses() {
                           </div>
                           <div>
                             <div style={{ fontSize: 12, color: '#8c8c8c' }}>及格线</div>
-                            <div style={{ fontSize: 15, fontWeight: 500, color: '#faad14' }}>{exam.passingScore || 0}</div>
+                            <div style={{ fontSize: 15, fontWeight: 500, color: colors.textPrimary }}>{exam.passingScore || 0}</div>
                           </div>
                           {studentExam && studentExam.status === 'graded' && (
                             <div>
                               <div style={{ fontSize: 12, color: '#8c8c8c' }}>得分</div>
-                              <div style={{ fontSize: 15, fontWeight: 600, color: studentExam.passed ? '#52c41a' : '#ff4d4f' }}>
+                              <div style={{ fontSize: 15, fontWeight: 600, color: colors.primary }}>
                                 {studentExam.score}
                               </div>
                             </div>
@@ -561,8 +552,7 @@ export default function ExamCourses() {
                           <Button
                             type="primary"
                             block
-                            icon={<PlayCircleOutlined />}
-                            style={{ height: 40, fontSize: 14, background: '#faad14', borderColor: '#faad14' }}
+                            style={{ height: 40, fontSize: 14 }}
                             onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
                           >
                             继续考试
@@ -579,7 +569,7 @@ export default function ExamCourses() {
                         {examStatus.status === 'graded' && (
                           <Button
                             block
-                            icon={<FileTextOutlined />}
+                            style={{ color: colors.primary, borderColor: colors.primary }}
                             onClick={() => navigate(`/dashboard/exam-taking/${exam.id}?mode=view`)}
                           >
                             查看成绩
@@ -605,27 +595,30 @@ export default function ExamCourses() {
                     title: isMobile ? '名称' : '考试名称',
                     dataIndex: 'title',
                     key: 'title',
-                    render: (text: string, exam: Exam) => (
-                      <Space size={4} style={{ maxWidth: "100%" }}>
-                        <Tooltip title={text} mouseEnterDelay={0.3}>
-                          <Text strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{text}</Text>
-                        </Tooltip>
-                        <Tag color={getExamTypeColor(exam.examType)} style={{ flexShrink: 0 }}>
-                          {getExamTypeLabel(exam.examType)}
-                        </Tag>
-                      </Space>
+                    render: (text: string) => (
+                      <Tooltip title={text} mouseEnterDelay={0.3}>
+                        <Text strong style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</Text>
+                      </Tooltip>
+                    ),
+                  },
+                  {
+                    title: '类型',
+                    key: 'type',
+                    width: 100,
+                    render: (_: any, exam: Exam) => (
+                      <Tag color="blue" style={{ margin: 0 }}>
+                        {getExamTypeLabel(exam.examType)}
+                      </Tag>
                     ),
                   },
                   {
                     title: isMobile ? '状态' : '考试状态',
                     key: 'status',
+                    width: 100,
                     render: (_: any, exam: Exam) => {
                       const examStatus = getStudentExamStatus(exam);
                       return (
-                        <Tag
-                          color={examStatus.color}
-                          icon={examStatus.status === 'graded' ? <CheckCircleOutlined /> : (examStatus.status === 'in_progress' ? <ClockCircleOutlined /> : undefined)}
-                        >
+                        <Tag color="blue" style={{ margin: 0 }}>
                           {examStatus.label}
                         </Tag>
                       );
@@ -643,14 +636,7 @@ export default function ExamCourses() {
                     dataIndex: 'deadlineAt',
                     key: 'deadlineAt',
                     responsive: ['md'],
-                    render: (date: string, exam: Exam) => {
-                      const passed = isDeadlinePassed(exam);
-                      return date ? (
-                        <Text type={passed ? 'danger' : undefined}>
-                          {date.replace('T', ' ').substring(0, 19)}
-                        </Text>
-                      ) : '-';
-                    },
+                    render: (date: string) => date ? date.replace('T', ' ').substring(0, 19) : '-',
                   },
                   {
                     title: '时长',
@@ -660,7 +646,7 @@ export default function ExamCourses() {
                     render: (minutes: number) => `${minutes} 分钟`,
                   },
                   {
-                    title: isMobile ? '得分/及格' : '总分/及格分',
+                    title: isMobile ? '总分/及格' : '总分/及格分',
                     key: 'scores',
                     responsive: ['md'],
                     render: (_: any, exam: Exam) => `${exam.totalScore || 0} / ${exam.passingScore || 0}`,
@@ -673,7 +659,7 @@ export default function ExamCourses() {
                       const studentExam = studentExamMap.get(exam.id);
                       if (!studentExam || studentExam.status === 'in_progress') return '-';
                       return (
-                        <Text strong style={{ color: studentExam.passed ? '#52c41a' : '#ff4d4f' }}>
+                        <Text strong style={{ color: colors.primary }}>
                           {studentExam.score} 分
                         </Text>
                       );
@@ -687,7 +673,7 @@ export default function ExamCourses() {
                       const studentExam = studentExamMap.get(exam.id);
                       if (!studentExam || studentExam.status !== 'graded') return '-';
                       return (
-                        <Tag color={studentExam.passed ? 'success' : 'error'}>
+                        <Tag color={studentExam.passed ? 'blue' : 'default'} style={{ margin: 0 }}>
                           {studentExam.passed ? '及格' : '不及格'}
                         </Tag>
                       );
@@ -702,14 +688,14 @@ export default function ExamCourses() {
                       const examNotStarted = isExamNotStarted(exam);
                       if (deadlinePassed && examStatus.status === 'not_started') {
                         return (
-                          <Button size="small" disabled icon={<ClockCircleOutlined />}>
+                          <Button size="small" disabled>
                             已过截止时间
                           </Button>
                         );
                       }
                       if (examNotStarted && examStatus.status === 'not_started' && !deadlinePassed) {
                         return (
-                          <Button size="small" disabled icon={<ClockCircleOutlined />}>
+                          <Button size="small" disabled>
                             考试时间未到
                           </Button>
                         );
@@ -719,7 +705,6 @@ export default function ExamCourses() {
                           <Button
                             type="primary"
                             size="small"
-                            icon={<PlayCircleOutlined />}
                             onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
                           >
                             开始考试
@@ -731,17 +716,26 @@ export default function ExamCourses() {
                           <Button
                             type="primary"
                             size="small"
-                            icon={<PlayCircleOutlined />}
-                            style={{ background: '#faad14', borderColor: '#faad14' }}
                             onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
                           >
                             继续考试
                           </Button>
                         );
                       }
+                      if (examStatus.status === 'graded') {
+                        return (
+                          <Button
+                            size="small"
+                            style={{ color: colors.primary, borderColor: colors.primary }}
+                            onClick={() => navigate(`/dashboard/exam-taking/${exam.id}?mode=view`)}
+                          >
+                            查看成绩
+                          </Button>
+                        );
+                      }
                       return (
                         <Button size="small" disabled>
-                          {examStatus.status === 'graded' ? '已完成' : '待批改'}
+                          待批改
                         </Button>
                       );
                     },

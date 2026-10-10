@@ -576,15 +576,82 @@ export const IpWidget: React.FC<BlockRenderProps> = ({ block }) => {
 
 /* ----------------------------- map ------------------------------- */
 
+/** 经纬度 → 瓦片坐标 */
+const lngLatToTile = (lng: number, lat: number, z: number) => {
+  const n = 2 ** z;
+  const x = Math.floor(((lng + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
+  );
+  return { x, y };
+};
+
+const tencentTileUrl = (z: number, x: number, y: number) =>
+  `https://rt0.map.gtimg.com/realtimerender?z=${z}&x=${x}&y=${y}&type=vector&style=0`;
+
 export const MapWidget: React.FC<BlockRenderProps> = ({ block }) => {
   const bbox = (block.config.bbox as string) || "116.30,39.95,116.45,40.05";
   const height = asNumber(block.config.height, 220);
+  const nums = bbox
+    .split(",")
+    .map((n) => Number(n.trim()))
+    .filter((n) => !Number.isNaN(n));
+  const [minLon, minLat, maxLon, maxLat] =
+    nums.length === 4 ? nums : [116.30, 39.95, 116.45, 40.05];
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLng = (minLon + maxLon) / 2;
+
+  const z = 11;
+  const { x: cx, y: cy } = lngLatToTile(centerLng, centerLat, z);
+  const cols = 5;
+  const rows = 3;
+  const tile = 256;
+
+  const tiles: React.ReactNode[] = [];
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const x = cx + dx;
+      const y = cy + dy;
+      tiles.push(
+        <img
+          key={`${z}-${x}-${y}`}
+          src={tencentTileUrl(z, x, y)}
+          alt=""
+          loading="lazy"
+          style={{ width: tile, height: tile, display: "block" }}
+        />
+      );
+    }
+  }
+
   return (
-    <iframe
-      title="portal-map"
-      style={{ width: "100%", height, border: 0, borderRadius: 8, display: "block" }}
-      src={`https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik`}
-    />
+    <div
+      style={{
+        width: "100%",
+        height,
+        borderRadius: 8,
+        overflow: "hidden",
+        position: "relative",
+        background: "#e8eef5",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: cols * tile,
+          height: rows * tile,
+          transform: "translate(-50%, -50%)",
+          display: "grid",
+          gridTemplateColumns: `repeat(${cols}, ${tile}px)`,
+          gridTemplateRows: `repeat(${rows}, ${tile}px)`,
+        }}
+      >
+        {tiles}
+      </div>
+    </div>
   );
 };
 

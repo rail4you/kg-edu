@@ -124,16 +124,16 @@ const getTypeIcon = (type: string) => {
 };
 
 const getTypeTag = (type: string) => {
-  const typeMap: Record<string, { label: string; color: string }> = {
-    video: { label: "视频", color: "purple" },
-    file: { label: "文件", color: "blue" },
-    exercise: { label: "练习", color: "orange" },
-    homework: { label: "作业", color: "cyan" },
-    link: { label: "链接", color: "green" },
+  const typeMap: Record<string, { label: string }> = {
+    video: { label: "视频" },
+    file: { label: "文件" },
+    exercise: { label: "练习" },
+    homework: { label: "作业" },
+    link: { label: "链接" },
   };
-  const config = typeMap[type] || { label: "资源", color: "default" };
+  const config = typeMap[type] || { label: "资源" };
   return (
-    <Tag icon={getTypeIcon(type)} color={config.color}>
+    <Tag icon={getTypeIcon(type)} color="blue" style={{ margin: 0 }}>
       {config.label}
     </Tag>
   );
@@ -742,7 +742,7 @@ export default function ResourcePage() {
                     {answerDisplay && (
                       <div style={{ marginBottom: 12 }}>
                         <Text type="secondary" style={{ fontSize: 12 }}>答案:</Text>
-                        <div style={{ marginTop: 4, fontSize: 13, color: "#52c41a", fontWeight: "bold" }}>{answerDisplay}</div>
+                        <div style={{ marginTop: 4, fontSize: 13, color: colors.primary, fontWeight: "bold" }}>{answerDisplay}</div>
                       </div>
                     )}
                   </div>
@@ -801,8 +801,18 @@ export default function ResourcePage() {
       title: "大小",
       dataIndex: "size",
       key: "size",
-      width: 140,
+      width: 120,
       render: (size?: number) => formatFileSize(size),
+    },
+    {
+      title: "状态",
+      key: "status",
+      width: 100,
+      render: () => (
+        <Tag color="blue" style={{ margin: 0 }}>
+          已发布
+        </Tag>
+      ),
     },
     {
       title: "操作",
@@ -813,12 +823,16 @@ export default function ResourcePage() {
           {record.type === "file" && (
             <>
               <Button
+                type="text"
                 size="small"
+                style={{ color: colors.primary }}
                 icon={<EyeOutlined />}
                 onClick={() => handleResourceAction(record, "study")}
               />
               <Button
+                type="text"
                 size="small"
+                style={{ color: colors.primary }}
                 icon={<DownloadOutlined />}
                 onClick={() => handleResourceAction(record, "download")}
               />
@@ -826,16 +840,18 @@ export default function ResourcePage() {
           )}
           {record.type === "video" && (
             <Button
+              type="text"
               size="small"
+              style={{ color: colors.primary }}
               icon={<PlayCircleOutlined />}
               onClick={() => handleResourceAction(record, "study")}
             />
           )}
           {(record.type === "exercise" || record.type === "homework") && (
-            <Button size="small" icon={<BookOutlined />} onClick={() => handleResourceAction(record, "study")} />
+            <Button type="text" size="small" style={{ color: colors.primary }} icon={<BookOutlined />} onClick={() => handleResourceAction(record, "study")} />
           )}
           {record.type === "link" && (
-            <Button size="small" icon={<LinkOutlined />} onClick={() => handleResourceAction(record, "study")} />
+            <Button type="text" size="small" style={{ color: colors.primary }} icon={<LinkOutlined />} onClick={() => handleResourceAction(record, "study")} />
           )}
         </Space>
       ),
@@ -889,8 +905,8 @@ export default function ResourcePage() {
             {[
               { key: 0, label: "全部资源", val: totalCount, icon: <FolderOutlined />, color: colors.primary, tabKey: 0 },
               { key: 1, label: "文件资源", val: files.length, icon: <FileTextOutlined />, color: colors.primary, tabKey: 1 },
-              { key: 2, label: "在线视频", val: videos.length, icon: <VideoCameraOutlined />, color: "#10B981", tabKey: 2 },
-              { key: 3, label: "练习题", val: exercises.length + homeworks.length, icon: <ReadOutlined />, color: "#D16900", tabKey: 3 },
+              { key: 2, label: "在线视频", val: videos.length, icon: <VideoCameraOutlined />, color: colors.primary, tabKey: 2 },
+              { key: 3, label: "练习题", val: exercises.length + homeworks.length, icon: <ReadOutlined />, color: colors.primary, tabKey: 3 },
             ].map((item) => (
               <div
                 key={item.key}
@@ -1167,7 +1183,7 @@ export default function ResourcePage() {
             {studyDialog.hasSubmitted && (
               <Card size="small" style={{ marginTop: 16, background: "#f6ffed", borderColor: "#b7eb8f" }}>
                 <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-                  <BulbOutlined style={{ color: "#52c41a", marginRight: 8 }} />
+                  <BulbOutlined style={{ color: colors.primary, marginRight: 8 }} />
                   <Text strong>参考答案：</Text>
                 </div>
                 <Paragraph style={{ marginTop: 8 }}>

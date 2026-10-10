@@ -164,15 +164,6 @@ export default function ExperimentCourses() {
     return labels[level];
   };
 
-  const getDifficultyLevelColor = (level: Experiment["difficultyLevel"]) => {
-    const colorMap: Record<Experiment["difficultyLevel"], string> = {
-      easy: "success",
-      medium: "warning",
-      hard: "error",
-    };
-    return colorMap[level];
-  };
-
   return (
     <div className="pu-page" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <PageHead
@@ -184,9 +175,9 @@ export default function ExperimentCourses() {
         <div className="pu-grid pu-grid--stats" style={{ gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0,1fr))' }}>
           {[
             { label: '实验项目', val: experiments.length, icon: <ExperimentOutlined />, color: colors.primary, sub: `共 ${onlineCount} 线上 · ${offlineCount} 线下 · ${totalHours} 学时` },
-            { label: '线上实验', val: onlineCount, icon: <ExperimentOutlined />, color: '#10B981', sub: '在线完成的实验' },
-            { label: '线下实验', val: offlineCount, icon: <ExperimentOutlined />, color: '#6177A5', sub: '需到实验场完成' },
-            { label: '总学时', val: totalHours, icon: <ClockCircleOutlined />, color: '#D16900', sub: '实验环节总时长' },
+            { label: '线上实验', val: onlineCount, icon: <ExperimentOutlined />, color: colors.primary, sub: '在线完成的实验' },
+            { label: '线下实验', val: offlineCount, icon: <ExperimentOutlined />, color: colors.primary, sub: '需到实验场完成' },
+            { label: '总学时', val: totalHours, icon: <ClockCircleOutlined />, color: colors.primary, sub: '实验环节总时长' },
           ].map((item, i) => (
             <div key={i} className="pu-stat" style={{ padding: isMobile ? '14px 16px' : undefined }}>
               <span className="pu-stat__icon" style={{ color: item.color, background: `${item.color}12` }}>
@@ -246,7 +237,7 @@ export default function ExperimentCourses() {
                   width: 100,
                   align: "center",
                   render: (type: "online" | "offline") => (
-                    <Tag color={type === "online" ? "processing" : "success"}>
+                    <Tag color="blue" style={{ margin: 0 }}>
                       {getExperimentTypeLabel(type)}
                     </Tag>
                   ),
@@ -258,7 +249,7 @@ export default function ExperimentCourses() {
                   width: 80,
                   align: "center",
                   render: (level: "easy" | "medium" | "hard") => (
-                    <Tag color={getDifficultyLevelColor(level)}>
+                    <Tag color="blue" style={{ margin: 0 }}>
                       {getDifficultyLevelLabel(level)}
                     </Tag>
                   ),
