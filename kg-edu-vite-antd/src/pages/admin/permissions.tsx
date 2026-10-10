@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Card, Table, Space, Tag, Typography, Alert, Avatar, Tooltip, Select } from "antd";
+import { Card, Table, Space, Tag, Typography, Alert, Tooltip, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
@@ -106,10 +106,6 @@ const getRoleTag = (role: string) => {
   return <Tag>{role}</Tag>;
 };
 
-const getRoleIcon = (role: string) => {
-  return rolePermissions.find((r) => r.role === role)?.icon || "👤";
-};
-
 // ── Component ───────────────────────────────────────────────────────
 
 export default function PermissionsManagement() {
@@ -195,9 +191,6 @@ export default function PermissionsManagement() {
       width: 260,
       render: (_, record) => (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Avatar size={32} style={{ backgroundColor: "#f5f5f5", color: "#1677ff", flexShrink: 0 }}>
-            {getRoleIcon(record.role)}
-          </Avatar>
           <div style={{ minWidth: 0 }}>
             <Text strong ellipsis style={{ display: "block", fontSize: 14 }}>
               {record.name || "未设置姓名"}

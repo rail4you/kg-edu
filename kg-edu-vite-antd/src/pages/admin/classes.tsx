@@ -508,14 +508,6 @@ export default function ClassManagement() {
         {isMobile && (
           <div style={{ marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <Space size={4} wrap>
-                <Tag color="blue" style={{ fontSize: 11, padding: "0 6px" }}>
-                  班级: {filteredClasses.length}
-                </Tag>
-                <Tag color="green" style={{ fontSize: 11, padding: "0 6px" }}>
-                  学生: {classes.reduce((sum, c) => sum + (c.studentCount || 0), 0)}
-                </Tag>
-              </Space>
               <ReadonlyActionButton type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
                 添加班级
               </ReadonlyActionButton>
@@ -549,12 +541,6 @@ export default function ClassManagement() {
                 }}
               >
                 <Space size={4} wrap>
-                  <Tag color="blue" style={{ fontSize: 13 }}>
-                    班级: {filteredClasses.length}
-                  </Tag>
-                  <Tag color="green" style={{ fontSize: 13 }}>
-                    学生: {classes.reduce((sum, c) => sum + (c.studentCount || 0), 0)}
-                  </Tag>
                   <Input
                     placeholder="搜索班级..."
                     prefix={<SearchOutlined />}

@@ -356,9 +356,6 @@ export default function StudentManagement() {
         {isMobile && (
           <div style={{ marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <Tag color="blue" style={{ fontSize: 11, padding: "0 6px" }}>
-                学生: {students.length}
-              </Tag>
               <Space size={4} wrap>
                 <Button
                   size="small"
@@ -420,9 +417,6 @@ export default function StudentManagement() {
                 }}
               >
                 <Space wrap>
-                  <Tag color="blue" style={{ fontSize: 13 }}>
-                    学生: {students.length}
-                  </Tag>
                   <Input
                     placeholder="搜索学生..."
                     prefix={<SearchOutlined />}

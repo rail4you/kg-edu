@@ -45,7 +45,7 @@ import { useResponsive } from "@/hooks/use-responsive";
 import { useTenantFilter, ALL_TENANTS } from "@/hooks/use-tenant-filter";
 import { TenantLayout } from "@/components/admin/tenant-layout";
 import { fetchAcrossTenants } from "@/lib/tenant-query";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage } from "@/components/proto";
 import type { IUserItem } from "@/types/user";
 
 interface UserData {
@@ -475,12 +475,6 @@ export default function AdminManagement() {
     >
     <AppPage title="管理员管理" description="管理组织内的管理员账户">
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
-        {/* 顶部信息栏：管理员统计 */}
-        <StatGrid
-          columns={4}
-          items={[{ label: "管理员", value: users.length }]}
-        />
-
         {/* 移动端工具栏 */}
         {isMobile && (
           <div style={{ marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>

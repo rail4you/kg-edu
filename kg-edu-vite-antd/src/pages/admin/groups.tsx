@@ -436,14 +436,6 @@ export default function GroupManagement() {
         {isMobile && (
           <div style={{ marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <Space size={4} wrap>
-                <Tag color="blue" style={{ fontSize: 11, padding: "0 6px" }}>
-                  小组: {filteredGroups.length}
-                </Tag>
-                <Tag color="green" style={{ fontSize: 11, padding: "0 6px" }}>
-                  成员: {groups.reduce((sum, g) => sum + g.memberCount, 0)}
-                </Tag>
-              </Space>
               <ReadonlyActionButton type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
                 创建小组
               </ReadonlyActionButton>
@@ -477,12 +469,6 @@ export default function GroupManagement() {
                 }}
               >
                 <Space size={4} wrap>
-                  <Tag color="blue" style={{ fontSize: 13 }}>
-                    小组: {filteredGroups.length}
-                  </Tag>
-                  <Tag color="green" style={{ fontSize: 13 }}>
-                    成员: {groups.reduce((sum, g) => sum + g.memberCount, 0)}
-                  </Tag>
                   <Input
                     placeholder="搜索小组..."
                     prefix={<SearchOutlined />}

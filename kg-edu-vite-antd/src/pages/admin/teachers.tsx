@@ -540,9 +540,6 @@ export default function TeacherManagement() {
                 gap: 8,
               }}
             >
-              <Tag color="blue" style={{ fontSize: 11, padding: "0 6px" }}>
-                教师: {users.length}
-              </Tag>
               <Space size={4} wrap>
                 <Button size="small" icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
                   模板
@@ -597,9 +594,6 @@ export default function TeacherManagement() {
                 }}
               >
                 <Space wrap>
-                  <Tag color="blue" style={{ fontSize: 13 }}>
-                    教师: {users.length}
-                  </Tag>
                   <Input
                     placeholder="搜索教师..."
                     prefix={<SearchOutlined />}
