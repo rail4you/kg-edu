@@ -952,6 +952,27 @@
   letter-spacing: 1px;
 }
 
+.pu-nav-group__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.pu-nav-group__toggle:hover {
+  color: var(--pu-blue);
+}
+
+.pu-nav-group__toggle .anticon {
+  font-size: 11px;
+}
+
 .pu-nav-link {
   display: flex;
   align-items: center;

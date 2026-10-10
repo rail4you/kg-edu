@@ -212,9 +212,9 @@ function ScrollToTop() {
       const style = window.getComputedStyle(el);
       if ((style.overflowY === "auto" || style.overflow === "auto") && el.scrollTop > 0) {
         // 仅对主布局相关的可滚动区域生效，避免误触下拉菜单等；
-        // 侧边导航菜单（.ant-layout-sider 内）的滚动位置必须保留，
-        // 否则每次切换页面菜单都会被置顶跳回顶部
-        if (el.clientHeight > 200 && !el.closest(".ant-layout-sider")) {
+        // 侧边导航菜单（.ant-layout-sider / .pu-aside 教师端与管理端侧栏）的
+        // 滚动位置必须保留，否则每次切换页面菜单都会被置顶跳回顶部
+        if (el.clientHeight > 200 && !el.closest(".ant-layout-sider") && !el.closest(".pu-aside")) {
           el.scrollTop = 0;
         }
       }

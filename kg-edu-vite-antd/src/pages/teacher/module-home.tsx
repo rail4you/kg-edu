@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Row, Col } from "antd";
+import { Row, Col, Button } from "antd";
 import {
   ReadOutlined,
   ApartmentOutlined,
@@ -24,7 +24,6 @@ const MODULES = [
   {
     key: "smart-course",
     title: "智慧课程",
-    eyebrow: "Course Intelligence",
     description:
       "面向课程建设与教学运行的统一工作台，覆盖课程管理、知识图谱、教学资源、学习分析与 AI 辅助。",
     icon: <ReadOutlined />,
@@ -44,7 +43,6 @@ const MODULES = [
   {
     key: "micro-major",
     title: "微专业",
-    eyebrow: "Micro Credential",
     description:
       "围绕职业方向与能力目标组织短期项目，独立管理课程组合、章节视频、习题作业、学生与资源。",
     icon: <ApartmentOutlined />,
@@ -143,18 +141,6 @@ export default function ModuleHome() {
                           {mod.icon}
                         </span>
                         <span>
-                          <span
-                            style={{
-                              display: "block",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              letterSpacing: 1,
-                              color: "var(--pu-muted)",
-                              marginBottom: 4,
-                            }}
-                          >
-                            {mod.eyebrow}
-                          </span>
                           {mod.title}
                         </span>
                       </span>
@@ -188,14 +174,12 @@ export default function ModuleHome() {
                         paddingTop: 16,
                         borderTop: "1px solid var(--pu-line-soft)",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        color: "var(--pu-blue)",
-                        fontWeight: 650,
+                        justifyContent: "flex-end",
                       }}
                     >
-                      <span>进入模块</span>
-                      <ArrowRightOutlined />
+                      <Button type="primary" style={{ borderRadius: 8, fontWeight: 600 }}>
+                        进入模块 <ArrowRightOutlined />
+                      </Button>
                     </div>
                   </ProtoCard>
                 </Col>

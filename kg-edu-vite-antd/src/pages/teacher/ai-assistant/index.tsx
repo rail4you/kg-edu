@@ -324,7 +324,7 @@ export default function AIAssistantPage() {
 
   return (
     <AppPage fill className="ai-assistant-wrap" style={{ padding: 0 }}>
-      <style>{`@media(max-width:768px){.ai-assistant-wrap{height:calc(100vh-56px)!important}.ai-assistant-sidebar{display:none!important}.ai-assistant-chat-header{display:flex!important}}@media(min-width:769px){.ai-assistant-chat-header{display:none!important}}`}</style>
+      <style>{`.ai-assistant-wrap{height:calc(100vh - 60px)}@media(max-width:768px){.ai-assistant-wrap{height:calc(100vh - 54px)!important}.ai-assistant-sidebar{display:none!important}.ai-assistant-chat-header{display:flex!important}}@media(min-width:769px){.ai-assistant-chat-header{display:none!important}}`}</style>
       <div style={{ display: "flex", flex: 1, minHeight: 0, width: "100%" }}>
       {/* 移动端 Drawer 会话列表 */}
       <Drawer

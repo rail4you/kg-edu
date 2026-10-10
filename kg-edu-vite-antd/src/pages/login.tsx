@@ -542,9 +542,6 @@ export default function LoginPage() {
                         <span style={{ display: "block", fontSize: 15, fontWeight: 650, color: "var(--pu-ink)" }}>
                           {tenant.tenantName || tenant.schemaName}
                         </span>
-                        <span style={{ display: "block", fontSize: 12, color: "var(--pu-muted)", marginTop: 2 }}>
-                          {tenant.schemaName}
-                        </span>
                       </span>
                       {recommended && <ProtoTag tone="blue">推荐</ProtoTag>}
                     </button>

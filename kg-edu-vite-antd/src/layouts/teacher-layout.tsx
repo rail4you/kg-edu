@@ -33,6 +33,8 @@ import {
   EnterOutlined,
   AudioOutlined,
   MenuOutlined,
+  DownOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -48,21 +50,14 @@ import { listEmailMessages } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { themeColors as colors } from "@/styles/theme";
 
-interface RecentItem {
-  path: string;
-  timestamp: number;
-}
-
-const FAVORITES_KEY = "teacher-favorites";
-const RECENT_VIEWS_KEY = "teacher-recent-views";
-const MAX_RECENT_VIEWS = 15;
-
 interface NavItem {
   path: string;
   label: string;
   icon: React.ReactNode;
   group: string;
 }
+
+const FAVORITES_KEY = "teacher-favorites";
 
 // 参照「易课程-完整交互原型」教师端导航分组
 const NAV_ITEMS: NavItem[] = [
@@ -112,35 +107,32 @@ const NAV_ITEMS: NavItem[] = [
   { path: "/teacher/dashboard/learning-recommendations", label: "学习推荐分析", icon: <TrophyOutlined />, group: "统计分析" },
   { path: "/teacher/dashboard/activity-summary", label: "活动总结", icon: <BarChartOutlined />, group: "统计分析" },
 
-  { path: "/teacher/dashboard/job-list", label: "岗位管理", icon: <TeamOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/job-competency-graphs", label: "课程能力图谱", icon: <ApartmentOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/email-config", label: "邮件配置", icon: <SettingOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/email-messages", label: "邮件消息", icon: <MailOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/ai-practice", label: "AI 实践", icon: <RobotOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/custom-form", label: "自定义表单", icon: <FileTextOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/assistant-plugins", label: "助教插件", icon: <MacCommandOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/research-track", label: "学术追踪", icon: <SearchOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/tts", label: "AI 语音合成", icon: <AudioOutlined />, group: "专业与服务" },
-  { path: "/teacher/dashboard/settings", label: "系统设置", icon: <SettingOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/job-list", label: "岗位管理", icon: <TeamOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/job-competency-graphs", label: "课程能力图谱", icon: <ApartmentOutlined />, group: "知识体系" },
+
+  { path: "/teacher/dashboard/email-messages", label: "邮件消息", icon: <MailOutlined />, group: "邮件与表单" },
+  { path: "/teacher/dashboard/email-config", label: "邮件配置", icon: <SettingOutlined />, group: "邮件与表单" },
+  { path: "/teacher/dashboard/custom-form", label: "自定义表单", icon: <FileTextOutlined />, group: "邮件与表单" },
+
+  { path: "/teacher/dashboard/ai-practice", label: "AI 实践", icon: <RobotOutlined />, group: "AI 工具" },
+  { path: "/teacher/dashboard/tts", label: "AI 语音合成", icon: <AudioOutlined />, group: "AI 工具" },
+  { path: "/teacher/dashboard/research-track", label: "学术追踪", icon: <SearchOutlined />, group: "AI 工具" },
+  { path: "/teacher/dashboard/assistant-plugins", label: "助教插件", icon: <MacCommandOutlined />, group: "AI 工具" },
+
+  { path: "/teacher/dashboard/settings", label: "系统设置", icon: <SettingOutlined />, group: "设置" },
 ];
 
 const GROUP_ORDER = [
   "工作空间",
   "AI 工作台",
+  "AI 工具",
   "课程建设",
   "知识体系",
   "教学运行",
   "统计分析",
-  "专业与服务",
+  "邮件与表单",
+  "设置",
 ];
-
-const LABEL_BY_PATH: Record<string, string> = NAV_ITEMS.reduce(
-  (acc, it) => {
-    acc[it.path] = it.label;
-    return acc;
-  },
-  {} as Record<string, string>
-);
 
 const getFavorites = (): string[] => {
   try {
@@ -156,23 +148,6 @@ const saveFavorites = (favorites: string[]) => {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
   } catch (e) {
     console.error("Failed to save favorites:", e);
-  }
-};
-
-const getRecentViews = (): RecentItem[] => {
-  try {
-    const stored = localStorage.getItem(RECENT_VIEWS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveRecentViews = (recentViews: RecentItem[]) => {
-  try {
-    localStorage.setItem(RECENT_VIEWS_KEY, JSON.stringify(recentViews));
-  } catch (e) {
-    console.error("Failed to save recent views:", e);
   }
 };
 
@@ -195,7 +170,7 @@ export default function TeacherLayout() {
   const [navSearch, setNavSearch] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => getFavorites());
-  const [recentViews, setRecentViews] = useState<RecentItem[]>(() => getRecentViews());
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
 
   const [commandVisible, setCommandVisible] = useState(false);
   const [commandSearch, setCommandSearch] = useState("");
@@ -212,17 +187,11 @@ export default function TeacherLayout() {
     })).filter((g) => g.items.length > 0);
   }, []);
 
-  // 记录最近访问
-  useEffect(() => {
-    const path = location.pathname;
-    if (!LABEL_BY_PATH[path]) return;
-    setRecentViews((prev) => {
-      const filtered = prev.filter((item) => item.path !== path);
-      const updated = [{ path, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENT_VIEWS);
-      saveRecentViews(updated);
-      return updated;
-    });
-  }, [location.pathname]);
+  const toggleGroup = useCallback((label: string) => {
+    setCollapsedGroups((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+    );
+  }, []);
 
   const toggleFavorite = useCallback((path: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -236,14 +205,6 @@ export default function TeacherLayout() {
   const favoriteItems = useMemo(
     () => favorites.map((p) => NAV_ITEMS.find((it) => it.path === p)).filter((x): x is NavItem => Boolean(x)),
     [favorites]
-  );
-
-  const recentItems = useMemo(
-    () =>
-      recentViews
-        .map((r) => NAV_ITEMS.find((it) => it.path === r.path))
-        .filter((x): x is NavItem => Boolean(x)),
-    [recentViews]
   );
 
   const visibleGroups = useMemo(() => {
@@ -383,26 +344,41 @@ export default function TeacherLayout() {
         allowClear
       />
 
-      {!navSearch.trim() && favoriteItems.length > 0 && (
-        <div>
-          <div className="pu-nav-group">收藏</div>
-          {favoriteItems.map((item) => renderNavLink(item))}
-        </div>
-      )}
+      {!navSearch.trim() && favoriteItems.length > 0 && (() => {
+        const collapsed = collapsedGroups.includes("收藏");
+        return (
+          <div>
+            <button
+              type="button"
+              className="pu-nav-group pu-nav-group__toggle"
+              onClick={() => toggleGroup("收藏")}
+              aria-expanded={!collapsed}
+            >
+              <span>收藏</span>
+              {collapsed ? <RightOutlined /> : <DownOutlined />}
+            </button>
+            {!collapsed && favoriteItems.map((item) => renderNavLink(item))}
+          </div>
+        );
+      })()}
 
-      {!navSearch.trim() && recentItems.length > 0 && (
-        <div>
-          <div className="pu-nav-group">最近访问</div>
-          {recentItems.slice(0, 5).map((item) => renderNavLink(item))}
-        </div>
-      )}
-
-      {visibleGroups.map((group) => (
-        <div key={group.label}>
-          <div className="pu-nav-group">{group.label}</div>
-          {group.items.map((item) => renderNavLink(item))}
-        </div>
-      ))}
+      {visibleGroups.map((group) => {
+        const collapsed = !navSearch.trim() && collapsedGroups.includes(group.label);
+        return (
+          <div key={group.label}>
+            <button
+              type="button"
+              className="pu-nav-group pu-nav-group__toggle"
+              onClick={() => toggleGroup(group.label)}
+              aria-expanded={!collapsed}
+            >
+              <span>{group.label}</span>
+              {collapsed ? <RightOutlined /> : <DownOutlined />}
+            </button>
+            {!collapsed && group.items.map((item) => renderNavLink(item))}
+          </div>
+        );
+      })}
 
       {visibleGroups.length === 0 && (
         <div style={{ padding: "16px 12px", color: colors.textSecondary, fontSize: 13 }}>
