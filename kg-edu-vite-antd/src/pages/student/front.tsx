@@ -24,6 +24,7 @@ import {
   MenuOutlined,
   CommentOutlined,
   DeploymentUnitOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 import {
   getCourseByGuest,
@@ -969,12 +970,23 @@ function formatAlbumMetric(
 export default function StudentFront() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const entryFrom = searchParams.get("from");
   const { user } = useAuth();
   const branding = useBranding();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   usePageTitle();
   const currentTenant = getCurrentTenant();
+
+  const handleBack = () => {
+    if (entryFrom === "home") {
+      navigate("/", { state: { scrollTo: "home-courses" } });
+    } else if (entryFrom === "courses") {
+      navigate("/courses");
+    } else {
+      navigate(-1);
+    }
+  };
 
   const rawCourseId = searchParams.get("courseId");
   const urlCourseId = rawCourseId || localStorage.getItem("selectedCourse") || "";
@@ -1893,6 +1905,9 @@ export default function StudentFront() {
       <main className="front-dashboard-shell">
         <section className="front-dashboard-hero">
           <div className="front-dashboard-hero__content">
+            <button type="button" className="front-back-btn" onClick={handleBack}>
+              <ArrowLeftOutlined /> {entryFrom === "home" ? "返回首页" : "返回课程列表"}
+            </button>
             <div className="front-dashboard-hero__headline">
               <h1>{courseTitle}</h1>
               <p>{courseMajor}</p>
@@ -2186,21 +2201,6 @@ export default function StudentFront() {
                 <div className="front-dashboard-system-panel">
                   <div className="front-dashboard-system-stage">
                     {systemLayers.map((layer) => {
-                      const getLayerColors = () => {
-                        switch (layer.type) {
-                          case "is-blue":
-                            return { title: colorTheme.systemPanelTitle, node: colorTheme.systemPanelBlue };
-                          case "is-violet":
-                            return { title: colorTheme.systemPanelTitle, node: colorTheme.systemPanelViolet };
-                          case "is-green":
-                            return { title: colorTheme.systemPanelTitle, node: colorTheme.systemPanelGreen };
-                          case "is-gold":
-                            return { title: colorTheme.systemPanelTitle, node: colorTheme.systemPanelGold };
-                          default:
-                            return { title: colorTheme.systemPanelTitle, node: colorTheme.systemPanelBlue };
-                        }
-                      };
-                      const colors = getLayerColors();
                       const isAbility = layer.title === "能力体系";
                       const isQuestion = layer.title === "问题体系";
                       const isKnowledge = layer.title === "知识体系";
@@ -2237,25 +2237,15 @@ export default function StudentFront() {
                             }
                           }}
                         >
-                          <div
-                            className={`front-dashboard-system-layer ${layer.type}`}
-                          >
-                            <div className="front-dashboard-system-layer__surface" />
+                          <div className="front-dashboard-system-layer">
                             <div className="front-dashboard-system-layer__inner">
-                              <span
-                                className="front-dashboard-system-layer__title"
-                                style={{ color: colors.title, textShadow: "none" }}
-                              >
+                              <span className="front-dashboard-system-layer__title">
                                 {layer.title}
                               </span>
                               <div className="front-dashboard-system-layer__nodes">
                                 {layer.nodes.map((node) => (
-                                  <span
-                                    key={node}
-                                    className="front-dashboard-system-node"
-                                    style={{ color: colors.node }}
-                                  >
-                                    <i style={{ background: colors.node }} />
+                                  <span key={node} className="front-dashboard-system-node">
+                                    <i />
                                     {node}
                                   </span>
                                 ))}

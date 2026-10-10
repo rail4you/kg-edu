@@ -1,35 +1,20 @@
 import { useMemo, useState, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
-  Button,
   Empty,
   Grid,
   Input,
   Layout,
   Pagination,
-  Skeleton,
   Select,
-  Tag,
-  Typography,
-  message,
+  Skeleton,
 } from "antd";
-import {
-  ApartmentOutlined,
-  BookOutlined,
-  CheckCircleFilled,
-  MenuOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import { MobileFullMenu } from "@/components/layout/mobile-full-menu";
-import { useNavigate } from "react-router-dom";
+import { SearchOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import GlobalFooter from "@/components/layout/global-footer";
-import { UserMenu } from "@/components/layout/user-menu";
+import PortalHeader from "@/components/layout/portal-header";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useBranding } from "@/hooks/use-branding";
-import { themeColors } from "@/styles/theme";
 import { useQuery } from "@tanstack/react-query";
-import { usePortalNavItems } from "@/hooks/use-portal-config";
 import { setCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
 import { listMicroMajors, myMicroMajorEnrollments, myApplications, listOrganizations } from "@/lib/ash_rpc";
@@ -37,28 +22,29 @@ import { extractArrayData } from "@/utils/api-helpers";
 import "@/styles/home-portal-theme.css";
 import "@/styles/portal-editorial.css";
 
-const { Header, Content } = Layout;
-const { Paragraph, Text } = Typography;
+const { Content } = Layout;
 
 const MICRO_MAJORS_PER_PAGE = 12;
+
+interface MicroMajorCourseLite {
+  id: string;
+  title?: string | null;
+  credits?: number | null;
+  semesterHours?: number | null;
+}
 
 interface MicroMajorItem {
   id: string;
   name: string;
   projectBackground?: string | null;
-  knowledgeObjective?: string | null;
   abilityObjective?: string | null;
-  qualityObjective?: string | null;
-  projectFeatures?: string | null;
   learningCycle?: string | null;
   assessmentMethod?: string | null;
   tuitionFee?: string | null;
   coverUrl?: string | null;
   intro?: string | null;
   status?: "draft" | "active" | "archived";
-  responsibleTeacher?: { id: string; name?: string | null; jobTitle?: string | null } | null;
-  consultantTeacher?: { id: string; name?: string | null; jobTitle?: string | null } | null;
-  microMajorCourses?: Array<{ id: string; credits?: number | null; semesterHours?: number | null }>;
+  microMajorCourses?: MicroMajorCourseLite[];
 }
 
 interface OrganizationItem {
@@ -67,52 +53,37 @@ interface OrganizationItem {
   schemaName?: string | null;
 }
 
-interface MicroMajorEnrollmentItem {
-  id: string;
-  microMajorId: string;
-  status?: string;
+/** 依据名称推断方向（与卡片主题一致）：商务数据 / 设计艺术 / 工程技术 / 其他方向 */
+function categoryOf(name: string): { label: string; theme: string } {
+  if (/数据|商务|分析/.test(name)) return { label: "商务数据", theme: "theme-blue" };
+  if (/设计|艺术|表达/.test(name)) return { label: "设计艺术", theme: "theme-purple" };
+  if (/制造|材料|工程|智能/.test(name)) return { label: "工程技术", theme: "theme-teal" };
+  return { label: "其他方向", theme: "theme-default" };
 }
 
-function extractResults<T>(data: unknown): T[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data as T[];
-  if (typeof data === "object" && "results" in data) {
-    const results = (data as { results?: unknown }).results;
-    return Array.isArray(results) ? results as T[] : [];
-  }
-  return [];
-}
+const CATEGORIES = ["全部", "商务数据", "设计艺术", "工程技术"];
 
 function MicroMajorCard({
   major,
   enrollmentStatus,
-  isLoggedIn,
   onClick,
 }: {
-  major: MicroMajorItem;
-  enrollmentStatus: string | null;
-  isLoggedIn: boolean;
+  major: MicroMajorItem & { _orgName?: string };
+  enrollmentStatus?: string | null;
   onClick: (major: MicroMajorItem) => void;
 }) {
-  const statusConfig: Record<string, { color: string; label: string; icon: string }> = {
-    active: { color: "#52c41a", label: "已通过", icon: "✅" },
-    pending: { color: "#faad14", label: "审核中", icon: "⏳" },
-    rejected: { color: "#ff4d4f", label: "已拒绝", icon: "❌" },
-  };
-  const cfg = enrollmentStatus ? statusConfig[enrollmentStatus] : null;
-  const orgName = (major as any)._orgName || "";
-  const themeClass = /数据|商务|分析/.test(major.name || "")
-    ? "theme-blue"
-    : /设计|艺术|表达/.test(major.name || "")
-      ? "theme-purple"
-      : /制造|材料|工程|智能/.test(major.name || "")
-        ? "theme-teal"
-        : "theme-default";
+  const orgName = major._orgName || "";
+  const cat = categoryOf(major.name || "");
+  const courses = major.microMajorCourses || [];
+  const titles = courses.map((c) => c.title).filter((t): t is string => Boolean(t));
+  const desc = major.intro || major.projectBackground || "暂无简介";
+  const isEnrolled = enrollmentStatus === "active" || enrollmentStatus === "completed";
+  const levelLabel = isEnrolled ? "学习中" : major.status === "active" || !major.status ? "招生中" : "已结束";
 
   return (
     <article className="major-card">
       <a
-        className={`major-card-cover ${themeClass}`}
+        className={`major-card-cover ${cat.theme}`}
         onClick={() => onClick(major)}
         style={
           major.coverUrl
@@ -126,17 +97,47 @@ function MicroMajorCard({
       >
         <span className="major-code">{orgName || "MICRO MAJOR"}</span>
         <span className="major-cover-title">{major.name}</span>
-        <span className="major-cover-bottom">{major.learningCycle || "系统学习"}<span aria-hidden="true">↗</span></span>
+        <span className="major-cover-bottom">
+          {cat.label}
+          <span aria-hidden="true">↗</span>
+        </span>
       </a>
       <div className="major-card-content">
         <div className="major-tags">
-          {major.learningCycle && <span>{major.learningCycle}</span>}
-          <span>{major.microMajorCourses?.length || 0} 门课程</span>
-          <span>{cfg ? cfg.label : "招生中"}</span>
+          <span>{major.learningCycle || "系统学习"}</span>
+          <span>{courses.length} 门课程</span>
+          <span>{levelLabel}</span>
         </div>
         <h3><a onClick={() => onClick(major)}>{major.name}微专业</a></h3>
-        <p className="major-desc" title={major.intro || major.projectBackground || "暂无简介"}>{major.intro || major.projectBackground || "暂无简介"}</p>
-        <div className="major-card-bottom"><span>{major.tuitionFee || orgName || "微专业"}</span><a onClick={() => onClick(major)}>了解微专业 ↗</a></div>
+        <p className="major-desc" title={desc}>{desc}</p>
+        <div className="major-course-preview">
+          <div>
+            <b>你将学习</b>
+            <small>{courses.length} 门系列课程</small>
+          </div>
+          {titles.length > 0 ? (
+            <ol>
+              {titles.slice(0, 3).map((t, i) => (
+                <li key={i}><span>0{i + 1}</span>{t}</li>
+              ))}
+            </ol>
+          ) : (
+            <ol>
+              <li><span>--</span>课程体系即将公布</li>
+            </ol>
+          )}
+          <a className="major-more-courses" onClick={() => onClick(major)}>
+            查看全部 {courses.length} 门课程 <span>→</span>
+          </a>
+        </div>
+        <div className="major-card-bottom">
+          <span>{levelLabel}</span>
+          {isEnrolled ? (
+            <a className="major-cta is-enrolled" onClick={() => onClick(major)}>继续学习 ↗</a>
+          ) : (
+            <a onClick={() => onClick(major)}>了解微专业 ↗</a>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -146,16 +147,13 @@ export default function MicroMajorListPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { authenticated, user, tenant } = useAuth();
-  const branding = useBranding();
   usePageTitle();
   const breakpoint = Grid.useBreakpoint();
   const isMobile = !breakpoint.md;
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // 动态门户导航（固定 2 项（课程/微专业）+ 模板页（上限 6））
-  const navItems = usePortalNavItems();
-  
+  const [categoryFilter, setCategoryFilter] = useState("全部");
+
   const urlTenant = searchParams.get("tenant");
   // 默认 null 表示"全部学校"
   const [selectedTenant, setSelectedTenant] = useState<string | null>(urlTenant || null);
@@ -211,7 +209,6 @@ export default function MicroMajorListPage() {
 
   const enrollmentStatusMap = useMemo(() => {
     const map = new Map<string, string>();
-    // 合并两个数据源，去重
     const all = [...myEnrollments, ...myApps];
     const seen = new Set<string>();
     all.forEach((e) => {
@@ -224,77 +221,53 @@ export default function MicroMajorListPage() {
     return map;
   }, [myEnrollments, myApps]);
 
+  const majorFields = [
+    "id",
+    "name",
+    "projectBackground",
+    "abilityObjective",
+    "learningCycle",
+    "assessmentMethod",
+    "tuitionFee",
+    "coverUrl",
+    "intro",
+    "status",
+    { microMajorCourses: ["id", "title", "credits", "semesterHours"] },
+  ] as any;
+
   // 查询微专业列表 - 当 selectedTenant 为 null 时查询所有学校
   const { data: microMajors = [], isLoading } = useQuery({
     queryKey: ["micro-major-list", selectedTenant, allOrganizations],
     queryFn: async () => {
       const headers = user ? getAuthHeaders(user) as Record<string, string> : undefined;
-      
-      // 如果选择了特定租户，直接查询该租户
+
       if (selectedTenant) {
         const result = await listMicroMajors({
           tenant: selectedTenant,
-          fields: [
-            "id",
-            "name",
-            "projectBackground",
-            "knowledgeObjective",
-            "abilityObjective",
-            "qualityObjective",
-            "projectFeatures",
-            "learningCycle",
-            "assessmentMethod",
-            "tuitionFee",
-            "coverUrl",
-            "intro",
-            "status",
-            { responsibleTeacher: ["id", "name", "jobTitle"] },
-            { consultantTeacher: ["id", "name", "jobTitle"] },
-            { microMajorCourses: ["id", "credits", "semesterHours"] },
-          ],
+          fields: majorFields,
           sort: "sortOrder",
           page: { limit: 100, offset: 0 },
           headers,
         });
-
         if (!result.success) {
           throw new Error("获取微专业列表失败");
         }
         return extractArrayData(result);
       }
-      
-      // selectedTenant 为 null 时，查询所有学校的微专业
+
       const allResults: MicroMajorItem[] = [];
       for (const org of allOrganizations) {
         if (!org.schemaName) continue;
         try {
           const result = await listMicroMajors({
             tenant: org.schemaName,
-            fields: [
-              "id",
-              "name",
-              "projectBackground",
-              "knowledgeObjective",
-              "abilityObjective",
-              "qualityObjective",
-              "projectFeatures",
-              "learningCycle",
-              "assessmentMethod",
-              "tuitionFee",
-              "coverUrl",
-              "intro",
-              "status",
-              { responsibleTeacher: ["id", "name", "jobTitle"] },
-              { consultantTeacher: ["id", "name", "jobTitle"] },
-              { microMajorCourses: ["id", "credits", "semesterHours"] },
-            ],
+            fields: majorFields,
             sort: "sortOrder",
             page: { limit: 100, offset: 0 },
             headers,
           });
           if (result.success) {
             const items = extractArrayData(result);
-            // 标记每个微专业来自哪个学校
             items.forEach((item: MicroMajorItem) => {
               (item as any)._tenant = org.schemaName;
               (item as any)._orgName = org.name || org.schemaName;
@@ -314,6 +287,9 @@ export default function MicroMajorListPage() {
 
   const filteredMajors = useMemo(() => {
     let results = microMajors;
+    if (categoryFilter !== "全部") {
+      results = results.filter((m: MicroMajorItem) => categoryOf(m.name || "").label === categoryFilter);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       results = results.filter(
@@ -324,8 +300,7 @@ export default function MicroMajorListPage() {
           m.tuitionFee?.toLowerCase().includes(q) ||
           m.intro?.toLowerCase().includes(q) ||
           m.projectBackground?.toLowerCase().includes(q) ||
-          m.responsibleTeacher?.name?.toLowerCase().includes(q) ||
-          m.consultantTeacher?.name?.toLowerCase().includes(q)
+          (m.microMajorCourses || []).some((c) => c.title?.toLowerCase().includes(q))
       );
     }
     // 已通过的微专业排在前面
@@ -336,7 +311,7 @@ export default function MicroMajorListPage() {
       if (statusA !== "active" && statusB === "active") return 1;
       return 0;
     });
-  }, [searchQuery, microMajors, enrollmentStatusMap]);
+  }, [searchQuery, categoryFilter, microMajors, enrollmentStatusMap]);
 
   const maxPage = Math.max(1, Math.ceil(filteredMajors.length / MICRO_MAJORS_PER_PAGE));
   const currentPage = Math.min(page, maxPage);
@@ -345,25 +320,8 @@ export default function MicroMajorListPage() {
     currentPage * MICRO_MAJORS_PER_PAGE
   );
 
-  const getEnrollmentStatus = (majorId: string): string | null => {
-    return enrollmentStatusMap.get(majorId) || null;
-  };
-
   const handleTenantChange = (newTenant: string | null | undefined) => {
-    const t = newTenant || null;
-    setSelectedTenant(t);
-    if (t) {
-      const org = allOrganizations.find((o) => o.schemaName === t);
-      const orgName = org?.name || t;
-      setCurrentTenant({
-        id: t,
-        name: orgName,
-        schemaName: t,
-      });
-      message.success(`已切换到 ${orgName}`);
-    } else {
-      message.success('已显示全部学校微专业');
-    }
+    setSelectedTenant(newTenant || null);
     setPage(1);
   };
 
@@ -382,204 +340,85 @@ export default function MicroMajorListPage() {
 
   return (
     <Layout className="home-page cl-page">
-      <Header className="home-header ed-top">
-        <div className="home-header__inner">
-          <div className="home-header__left">
-            <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
-              <div className="home-brand__title">{branding.app_title}</div>
-            </div>
-            {!isMobile && (
-              <div className="cl-nav">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.key}
-                    type="text"
-                    className={`home-nav__button ${item.key === "/micro-majors" ? "is-active" : ""}`}
-                    onClick={() => navigate(item.key)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="home-header__actions">
-            {isMobile ? (
-              <>
-                {authenticated && user && (
-                  <UserMenu role="student" variant="header" />
-                )}
-                <Button
-                  type="text"
-                  icon={<MenuOutlined style={{ fontSize: 18, color: themeColors.textPrimary }} />}
-                  onClick={() => setMobileMenuOpen(true)}
-                  aria-label="打开菜单"
-                />
-              </>
-            ) : authenticated && user ? (
-              <UserMenu role="student" variant="header" />
-            ) : (
-              <>
-                <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
-                <Button className="home-register-button" onClick={() => navigate("/login")}>进入平台</Button>
-              </>
-            )}
-          </div>
-        </div>
-      </Header>
-
-      <MobileFullMenu
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        items={navItems}
-        activeKey="/micro-majors"
-        sectionTitle="导航"
-      />
+      <PortalHeader activeKey="/micro-majors" sectionTitle="导航" />
 
       <Content>
         <div className="ed-container">
-        {/* 原型风格目录 Hero */}
-        <section className="major-directory-hero">
-          <h1>用一段系统学习，<br />打开新的专业可能。</h1>
-          <p>发现适合你的微专业，从课程体系到实践成果，找到清晰的成长路径。</p>
-          <div className="major-hero-foot"><span>系统化课程</span><span>项目实践</span><span>能力进阶</span></div>
-        </section>
+          <div className="majors-page">
+            {/* Hero */}
+            <section className="major-directory-hero">
+              <div className="home-mini">发现你的下一个能力方向</div>
+              <h1>用一段系统学习，<br />打开新的专业可能。</h1>
+              <p>发现适合你的微专业，从课程体系到实践成果，找到清晰的成长路径。</p>
+              <div className="major-hero-foot">
+                <span>系统化课程</span>
+                <span>项目实践</span>
+                <span>能力进阶</span>
+              </div>
+            </section>
 
-        {/* Talent Direction Cards removed - prototype style */}
-        {false && (
-          <section className="micro-major-hero-panel">
-            <div className="micro-major-hero-panel__inner">
-              <div className="micro-major-hero-panel__grid">
-                <div className="micro-major-hero-panel__item">
-                  <div className="micro-major-hero-panel__item-header">
-                    <div className="micro-major-hero-panel__item-icon" style={{ background: "linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)" }}>
-                      🚀
-                    </div>
-                    <div className="micro-major-hero-panel__item-title">急需紧缺型</div>
-                  </div>
-                  <div className="micro-major-hero-panel__item-desc">
-                    聚焦国家战略和产业急需领域，快速培养适应新兴产业需求的专门人才
-                  </div>
-                  <img 
-                    src="/assets/urgent-needed_001.jpg"
-                    alt="急需紧缺型"
-                    className="micro-major-hero-panel__item-img"
-                  />
+            {/* 工具区：标题 + 搜索 + 分类 + 结果行 */}
+            <div className="major-directory-tools">
+              <div className="major-section-heading">
+                <div>
+                  <h2>探索微专业</h2>
+                  <p>选择感兴趣的方向，查看具体课程与学习安排。</p>
                 </div>
-                <div className="micro-major-hero-panel__item">
-                  <div className="micro-major-hero-panel__item-header">
-                    <div className="micro-major-hero-panel__item-icon" style={{ background: "linear-gradient(135deg, #4ECDC4 0%, #7EDDD6 100%)" }}>
-                      💼
-                    </div>
-                    <div className="micro-major-hero-panel__item-title">应用技能型</div>
-                  </div>
-                  <div className="micro-major-hero-panel__item-desc">
-                    强化实践操作与职业素养，掌握「即学即用」的技能，缩短职场适应周期
-                  </div>
-                  <img 
-                    src="/assets/applied-skill_001.jpg"
-                    alt="应用技能型"
-                    className="micro-major-hero-panel__item-img"
+                <div className="major-heading-tools">
+                  <Select
+                    className="major-school-select"
+                    size="large"
+                    placeholder="全部学校"
+                    value={selectedTenant || undefined}
+                    onChange={handleTenantChange}
+                    allowClear
+                    options={allOrganizations
+                      .filter((o) => o.schemaName)
+                      .map((org) => ({ label: org.name || org.schemaName!, value: org.schemaName! }))}
                   />
-                </div>
-                <div className="micro-major-hero-panel__item">
-                  <div className="micro-major-hero-panel__item-header">
-                    <div className="micro-major-hero-panel__item-icon" style={{ background: "linear-gradient(135deg, #9B59B6 0%, #BB8FCE 100%)" }}>
-                      🔮
-                    </div>
-                    <div className="micro-major-hero-panel__item-title">交叉复合型</div>
-                  </div>
-                  <div className="micro-major-hero-panel__item-desc">
-                    融合多学科知识，培养跨领域复合型人才，满足高端岗位需求
-                  </div>
-                  <img 
-                    src="/assets/interdisciplinary_001.jpg"
-                    alt="交叉复合型"
-                    className="micro-major-hero-panel__item-img"
-                  />
+                  <label className="major-search">
+                    <Input
+                      placeholder="搜索微专业、课程名称"
+                      prefix={<SearchOutlined />}
+                      allowClear
+                      size="large"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setPage(1);
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
 
-        {/* Tenant Filter + Search */}
-        <section className="micro-major-filter">
-          <div className="micro-major-filter__inner" style={isMobile ? { flexDirection: "column", gap: 10, padding: "12px 14px" } : undefined}>
-            <div className="micro-major-filter__left" style={isMobile ? { width: "100%" } : undefined}>
-              {isMobile ? (
-                <Select
-                  style={{ width: "100%" }}
-                  placeholder="选择学校"
-                  value={selectedTenant || undefined}
-                  onChange={handleTenantChange}
-                  allowClear
-                  options={[
-                    ...allOrganizations
-                      .filter(o => o.schemaName)
-                      .map(org => ({ label: org.name || org.schemaName!, value: org.schemaName! })),
-                  ]}
-                />
-              ) : (
-                <>
-                  <span className="micro-major-filter__label">选择学校</span>
-                  <div className="micro-major-filter__schools">
-                    <button
-                      type="button"
-                      className={`micro-major-filter__school ${selectedTenant === null ? 'is-active' : ''}`}
-                      onClick={() => handleTenantChange(null)}
-                    >
-                      全部学校
-                    </button>
-                    {allOrganizations.map((org) => (
-                      <button
-                        key={org.id}
-                        type="button"
-                        className={`micro-major-filter__school ${selectedTenant === org.schemaName ? 'is-active' : ''}`}
-                        onClick={() => org.schemaName && handleTenantChange(org.schemaName)}
-                      >
-                        {org.name || org.schemaName || '未命名'}
-                      </button>
-                    ))}
-                    {allOrganizations.length === 0 && (
-                      <span style={{ color: 'var(--home-text-muted)' }}>暂无可用学校</span>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="micro-major-filter__stat" style={isMobile ? { width: "100%" } : undefined}>
-              共 <strong>{filteredMajors.length}</strong> 个微专业
-              {enrollmentStatusMap.size > 0 && (
-                <Tag color="green" style={{ marginLeft: 8 }}>
-                  <CheckCircleFilled /> 已关联 {enrollmentStatusMap.size} 个
-                </Tag>
-              )}
-            </div>
-            <div className="micro-major-filter__right" style={isMobile ? { width: "100%" } : undefined}>
-              <Input
-                placeholder={isMobile ? "搜索微专业" : "搜索微专业名称、教师或简介"}
-                prefix={<SearchOutlined />}
-                allowClear
-                size={isMobile ? "middle" : "large"}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="micro-major-filter__search"
-              />
-            </div>
-          </div>
-        </section>
+              <div className="major-category-tabs" role="group" aria-label="微专业方向">
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={categoryFilter === c ? "active" : ""}
+                    aria-pressed={categoryFilter === c}
+                    onClick={() => {
+                      setCategoryFilter(c);
+                      setPage(1);
+                    }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
 
-        {/* Course List - prototype major-grid */}
-        <section>
-          <div style={isMobile ? { padding: "0 0 24px" } : undefined}>
+              <div className="major-results-line">
+                <span>{filteredMajors.length} 个微专业</span>
+                <small>课程与项目以平台实际公布为准</small>
+              </div>
+            </div>
+
+            {/* 卡片网格 */}
             {isLoading ? (
               <div className="major-grid">
-                {Array.from({ length: isMobile ? 4 : 12 }).map((_, index) => (
+                {Array.from({ length: isMobile ? 4 : 9 }).map((_, index) => (
                   <div key={index} className="major-card">
                     <Skeleton.Image active style={{ width: "100%", height: 178 }} />
                     <div style={{ padding: 16 }}>
@@ -594,9 +433,8 @@ export default function MicroMajorListPage() {
                   {paginatedMajors.map((major: MicroMajorItem) => (
                     <MicroMajorCard
                       key={`${major.id}_${(major as any)._tenant || selectedTenant || ""}`}
-                      major={major}
-                      enrollmentStatus={getEnrollmentStatus(major.id)}
-                      isLoggedIn={!!user}
+                      major={major as MicroMajorItem & { _orgName?: string }}
+                      enrollmentStatus={enrollmentStatusMap.get(major.id) || null}
                       onClick={handleCardClick}
                     />
                   ))}
@@ -617,11 +455,17 @@ export default function MicroMajorListPage() {
               <Empty
                 className="home-empty"
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={searchQuery ? "未找到匹配的微专业" : "当前学校暂无微专业"}
+                description={searchQuery || categoryFilter !== "全部" ? "未找到匹配的微专业" : "当前暂无微专业"}
               />
             )}
+
+            {/* 帮助区 */}
+            <section className="major-help">
+              <h2>还不确定从哪里开始？</h2>
+              <p>先看适合人群，再看课程目录；结合自己的基础与可投入时间，选择合适的学习路径。</p>
+              <a onClick={() => navigate("/courses")}>先探索单门课程 →</a>
+            </section>
           </div>
-        </section>
         </div>
       </Content>
 

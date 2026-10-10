@@ -63,6 +63,7 @@ const FAVORITES_KEY = "teacher-favorites";
 const NAV_ITEMS: NavItem[] = [
   { path: "/teacher/dashboard", label: "教师工作台", icon: <HomeOutlined />, group: "工作空间" },
   { path: "/teacher/dashboard/virtual-research-room", label: "虚拟教研室", icon: <ExperimentOutlined />, group: "工作空间" },
+  { path: "/teacher/dashboard/profile", label: "个人中心", icon: <UserOutlined />, group: "工作空间" },
 
   { path: "/teacher/dashboard/ai-assistant", label: "AI智能体助手", icon: <RobotOutlined />, group: "AI 工作台" },
   { path: "/teacher/dashboard/ai-exercise", label: "AI生成试题", icon: <EditOutlined />, group: "AI 工作台" },

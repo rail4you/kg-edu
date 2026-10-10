@@ -150,6 +150,13 @@ const standardItems: AdminNavigationItem[] = [
     icon: <FileTextOutlined />,
     color: "#f5222d",
   },
+  {
+    path: "/admin/dashboard/profile",
+    name: "个人中心",
+    description: "维护个人资料与账号安全",
+    icon: <UserOutlined />,
+    color: "#1677ff",
+  },
 ];
 
 export function getAdminNavigationItems(role?: string): AdminNavigationItem[] {

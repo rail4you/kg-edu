@@ -4753,17 +4753,14 @@ body[data-theme="light"] {
 
 .cl-cc__tag {
   display: inline-block;
-  padding: 3px 9px;
-  border-radius: 5px;
-  background: #f0f3f7;
-  color: #64748b;
   font-size: 12px;
+  font-weight: 600;
+  color: #202f47;
   white-space: nowrap;
 }
 
 .cl-cc__tag.is-enrolled {
-  background: #eaf6f0;
-  color: #137b62;
+  color: #202f47;
 }
 
 .cl-cc__btn {
@@ -4863,4 +4860,175 @@ body[data-theme="light"] {
   .cl-cat-list {
     display: none;
   }
+}
+
+/* ===== 课程页：桌面端左右分栏独立滚动 ===== */
+@media (min-width: 993px) {
+  .cl-courses-page {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .cl-courses-page > .ant-layout-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cl-courses-page .ed-container {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cl-courses-page .cl-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .cl-courses-page .cl-sidebar {
+    position: static;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+
+  .cl-courses-page .cl-main {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+}
+
+/* 课程页：更纤细、自动隐藏的滚动条 */
+.cl-page .cl-sidebar,
+.cl-page .cl-side-list--scroll,
+.cl-page .cl-main {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.cl-page .cl-sidebar:hover,
+.cl-page .cl-side-list--scroll:hover,
+.cl-page .cl-main:hover {
+  scrollbar-color: #d5dde8 transparent;
+}
+
+.cl-page .cl-sidebar::-webkit-scrollbar,
+.cl-page .cl-side-list--scroll::-webkit-scrollbar,
+.cl-page .cl-main::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.cl-page .cl-sidebar::-webkit-scrollbar-track,
+.cl-page .cl-side-list--scroll::-webkit-scrollbar-track,
+.cl-page .cl-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cl-page .cl-sidebar::-webkit-scrollbar-thumb,
+.cl-page .cl-side-list--scroll::-webkit-scrollbar-thumb,
+.cl-page .cl-main::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.cl-page .cl-sidebar:hover::-webkit-scrollbar-thumb,
+.cl-page .cl-side-list--scroll:hover::-webkit-scrollbar-thumb,
+.cl-page .cl-main:hover::-webkit-scrollbar-thumb {
+  background: #d5dde8;
+}
+
+.cl-page .cl-sidebar::-webkit-scrollbar-thumb:hover,
+.cl-page .cl-side-list--scroll::-webkit-scrollbar-thumb:hover,
+.cl-page .cl-main::-webkit-scrollbar-thumb:hover {
+  background: #c2ccd9;
+}
+
+/* 微专业工具区：学校下拉与搜索框对齐（均 size=large） */
+.major-heading-tools {
+  align-items: center;
+}
+
+.major-heading-tools .major-school-select,
+.major-search {
+  display: inline-flex;
+  align-items: center;
+}
+
+.major-search input {
+  vertical-align: middle;
+}
+
+.major-search .ant-input-affix-wrapper {
+  align-items: center;
+  width: 280px;
+}
+
+/* 门户分页与链接：对齐页面主色 #2859df */
+.cl-pagination .ant-pagination-item,
+.cl-pagination .ant-pagination-prev .ant-pagination-item-link,
+.cl-pagination .ant-pagination-next .ant-pagination-item-link {
+  border-radius: 8px;
+}
+
+.cl-pagination .ant-pagination-item a,
+.cl-pagination .ant-pagination-prev .ant-pagination-item-link,
+.cl-pagination .ant-pagination-next .ant-pagination-item-link {
+  color: #202f47;
+}
+
+.cl-pagination .ant-pagination-item:hover,
+.cl-pagination .ant-pagination-prev:hover .ant-pagination-item-link,
+.cl-pagination .ant-pagination-next:hover .ant-pagination-item-link {
+  border-color: #2859df;
+}
+
+.cl-pagination .ant-pagination-item:hover a,
+.cl-pagination .ant-pagination-prev:hover .ant-pagination-item-link,
+.cl-pagination .ant-pagination-next:hover .ant-pagination-item-link {
+  color: #2859df;
+}
+
+.cl-pagination .ant-pagination-item-active {
+  background: #2859df;
+  border-color: #2859df;
+}
+
+.cl-pagination .ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+.cl-pagination .ant-pagination-disabled .ant-pagination-item-link {
+  color: #c0c8d4;
+}
+
+.major-help a {
+  color: #2859df;
+  font-weight: 600;
+}
+
+.major-help a:hover {
+  color: #1846bc;
+}
+
+/* 课程卡片：继续学习按钮强调（与查看课程同尺寸，仅配色/字重强调） */
+.cl-cc__btn.is-enrolled {
+  background: #fff;
+  border-color: #2859df;
+  color: #2859df;
+  font-weight: 700;
+}
+
+.cl-cc__btn.is-enrolled:hover {
+  background: #f3f7ff;
+  border-color: #1846bc;
+  color: #1846bc;
 }

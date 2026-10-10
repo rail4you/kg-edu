@@ -784,10 +784,9 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
         <Alert type="warning" message="未找到课程信息" description="请先在课程列表中选择一门课程。" />
       ) : (
         <>
-          {/* 欢迎横幅 */}
-          <div className="pu-welcome pu-welcome--plain">
+          {/* 课程概述 */}
+          <div className="pu-welcome">
             <div style={{ minWidth: 0 }}>
-              <div className="pu-eyebrow">课程概述</div>
               <h2>{courseInfo?.courseHighlights || "从观察，到表达，再到创造。"}</h2>
               <p>{course.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}</p>
               <div className="pu-tags">

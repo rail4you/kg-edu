@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Button,
   Empty,
   Grid,
   Input,
@@ -8,29 +7,19 @@ import {
   Pagination,
   Select,
   Skeleton,
-  Switch,
-  Typography,
 } from "antd";
-import {
-  MenuOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/auth/auth-context";
 import GlobalFooter from "@/components/layout/global-footer";
-import { UserMenu } from "@/components/layout/user-menu";
-import MobileFullMenu from "@/components/layout/mobile-full-menu";
+import PortalHeader from "@/components/layout/portal-header";
 import { buildSubjectStats, useCourseCatalog, type CatalogCourse } from "@/hooks/use-course-catalog";
-import { useBranding } from "@/hooks/use-branding";
-import { usePortalNavItems, useLevelTitleMap } from "@/hooks/use-portal-config";
+import { useLevelTitleMap } from "@/hooks/use-portal-config";
 import { useCourseCategories } from "@/hooks/use-course-categories";
-import { themeColors } from "@/styles/theme";
 import { setCurrentTenant } from "@/lib/tenant";
 import "@/styles/home-portal-theme.css";
 import "@/styles/portal-editorial.css";
 
-const { Header, Content } = Layout;
-const { Text } = Typography;
+const { Content } = Layout;
 
 const COURSES_PER_PAGE = 12;
 
@@ -55,11 +44,9 @@ function useDynamicLevelOptions() {
 
 function CourseCard({
   course,
-  index,
   onClick,
 }: {
   course: CatalogCourse;
-  index: number;
   onClick: (course: CatalogCourse) => void;
 }) {
   const hasImage = Boolean(course.imageUrl);
@@ -82,7 +69,6 @@ function CourseCard({
             : undefined
         }
       >
-        <small>COURSE {String(index + 1).padStart(2, "0")}</small>
         <b>{course.title}</b>
       </a>
       <h3><a onClick={() => onClick(course)}>{course.title}</a></h3>
@@ -100,7 +86,7 @@ function CourseCard({
         </span>
         <button
           type="button"
-          className="cl-cc__btn"
+          className={`cl-cc__btn${course.isEnrolled ? " is-enrolled" : ""}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -117,12 +103,8 @@ function CourseCard({
 export default function CourseListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { authenticated, user } = useAuth();
-  const branding = useBranding();
   const screens = Grid.useBreakpoint();
   const { courses, subjectStats: allSubjectStats, organizations, isLoading } = useCourseCatalog();
-  // 动态门户导航（固定 2 项（课程/微专业）+ 模板页（上限 6））
-  const navItems = usePortalNavItems();
   // 动态层级名称
   const levelOptions = useDynamicLevelOptions();
 
@@ -137,7 +119,6 @@ export default function CourseListPage() {
     [courses, selectedLevel, allSubjectStats],
   );
   const isMobile = !screens.md;
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // 动态课程类别（Tab：全部课程 + 管理端配置的类别）
   const { categories: categorySections } = useCourseCategories();
   const categoryTabs = useMemo(
@@ -160,9 +141,6 @@ export default function CourseListPage() {
   const selectedOrg = searchParams.get("org") || "all";
   const searchQuery = searchParams.get("q") || "";
   const [page, setPage] = useState(1);
-
-  // "仅显示有课学科" 默认勾选
-  const onlyWithCourses = searchParams.get("hasCourses") !== "0";
 
   // Local search state to avoid URL-sync issues during typing
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -205,13 +183,10 @@ export default function CourseListPage() {
     return section ? section.courses : courses;
   }, [activeTab, courses, categorySections]);
 
-  const visibleSubjects = useMemo(() => {
-    // 移动端强制只显示有课学科，非移动端使用开关状态（默认勾选）
-    const useFilter = isMobile || onlyWithCourses;
-    return useFilter
-      ? subjectStats.filter((s) => s.count > 0)
-      : subjectStats;
-  }, [subjectStats, isMobile, onlyWithCourses]);
+  const visibleSubjects = useMemo(
+    () => subjectStats.filter((s) => s.count > 0),
+    [subjectStats]
+  );
 
   useEffect(() => {
     if (
@@ -278,69 +253,12 @@ export default function CourseListPage() {
       schemaName: course.orgSchemaName,
     };
     setCurrentTenant(tenant);
-    navigate(`/dashboard/front?courseId=${course.id}&tenant=${course.orgSchemaName}`);
+    navigate(`/dashboard/front?courseId=${course.id}&tenant=${course.orgSchemaName}&from=courses`);
   };
 
   return (
-    <Layout className="home-page cl-page">
-      <Header className="home-header ed-top">
-        <div className="home-header__inner">
-          <div className="home-header__left">
-            <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
-              <div className="home-brand__title">{branding.app_title}</div>
-            </div>
-            {!isMobile && (
-              <div className="home-nav">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.key}
-                    type="text"
-                    className={`home-nav__button ${item.key === "/courses" ? "is-active" : ""}`}
-                    onClick={() => navigate(item.key)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="home-header__actions">
-            {isMobile ? (
-              <>
-                {authenticated && user && (
-                  <UserMenu role="student" variant="header" />
-                )}
-                <Button
-                  type="text"
-                  icon={<MenuOutlined style={{ fontSize: 18, color: themeColors.textPrimary }} />}
-                  onClick={() => setMobileMenuOpen(true)}
-                  aria-label="打开菜单"
-                />
-              </>
-            ) : authenticated && user ? (
-              <UserMenu role="student" variant="header" />
-            ) : (
-              <>
-                <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
-              </>
-            )}
-          </div>
-        </div>
-      </Header>
-
-      {/* 移动端全屏菜单 */}
-      <MobileFullMenu
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        items={navItems}
-        activeKey="/courses"
-        authActions={
-          !authenticated
-            ? [{ label: "登录" }, { label: "进入平台", primary: true }]
-            : undefined
-        }
-      />
+    <Layout className="home-page cl-page cl-courses-page">
+      <PortalHeader activeKey="/courses" sectionTitle="导航" />
 
       <Content>
         <div className="ed-container">
@@ -464,14 +382,6 @@ export default function CourseListPage() {
                       </button>
                     ))}
                   </div>
-                  <label className="cl-side-toggle">
-                    <Switch
-                      size="small"
-                      checked={onlyWithCourses}
-                      onChange={(checked) => updateSearchParams({ hasCourses: checked ? undefined : "0" })}
-                    />
-                    <Text className="cl-side-toggle__text">仅显示有课学科</Text>
-                  </label>
                 </div>
               </aside>
             )}
@@ -557,8 +467,8 @@ export default function CourseListPage() {
                   ) : paginatedCourses.length > 0 ? (
                     <>
                       <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
-                        {paginatedCourses.map((course, index) => (
-                          <CourseCard key={`${course.id}_${course.orgSchemaName}`} course={course} index={index} onClick={handleCourseClick} />
+                        {paginatedCourses.map((course) => (
+                          <CourseCard key={`${course.id}_${course.orgSchemaName}`} course={course} onClick={handleCourseClick} />
                         ))}
                       </div>
                       <div className="cl-pagination" style={isMobile ? { padding: "16px 14px 8px" } : undefined}>

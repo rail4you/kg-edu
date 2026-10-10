@@ -7,6 +7,8 @@ import TemplatePage from "./pages/template-page";
 import TeacherLayout from "./layouts/teacher-layout";
 import StudentLayout from "./layouts/student-layout";
 import AdminLayout from "./layouts/admin-layout";
+import ProfilePage from "./pages/profile";
+import { StandaloneProfile } from "./pages/profile";
 
 import TeacherDashboard from "./pages/teacher/dashboard";
 import TeacherCourse from "./pages/teacher/course";
@@ -394,6 +396,7 @@ export default function App() {
         <Route path="micro-major-edit/:microMajorId" element={<TeacherMicroMajorEdit />} />
         <Route path="micro-major-courses/:microMajorId" element={<TeacherMicroMajorCourses />} />
         <Route path="micro-major-students/:microMajorId" element={<RedirectToStudentMgmt />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="/dashboard/front" element={<StudentFront />} />
@@ -456,6 +459,8 @@ export default function App() {
         <Route path="curriculum/:majorId" element={<StudentCurriculum />} />
       </Route>
 
+      <Route path="/dashboard/profile" element={<StandaloneProfile />} />
+
       <Route path="/admin/dashboard" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
         <Route path="organizations" element={<AdminOrganizations />} />
@@ -475,6 +480,7 @@ export default function App() {
         <Route path="smart-portal" element={<AdminSmartPortal />} />
         <Route path="data-insight" element={<AdminDataInsight />} />
         <Route path="manual" element={<AdminManual />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

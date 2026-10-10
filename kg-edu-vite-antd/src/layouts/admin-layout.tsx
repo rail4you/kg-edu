@@ -79,6 +79,7 @@ export default function AdminLayout() {
           "/admin/dashboard/permissions",
           "/admin/dashboard/system",
           "/admin/dashboard/logs",
+          "/admin/dashboard/profile",
         ],
       },
     ],

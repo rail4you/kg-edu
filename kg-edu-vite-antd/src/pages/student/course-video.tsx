@@ -1316,12 +1316,12 @@ export default function CourseVideoPage() {
 
           {/* 内容卡片区 */}
           {[
-            { key: "background", label: "课程背景", icon: "📚", accent: "#6366f1" },
-            { key: "objectives", label: "教学目标", icon: "🎯", accent: "#10b981" },
-            { key: "target", label: "目标学员", icon: "👥", accent: "#f59e0b" },
-            { key: "courseStructure", label: "课程结构", icon: "🏗️", accent: "#8b5cf6" },
-            { key: "courseHighlights", label: "课程亮点", icon: "✨", accent: "#ec4899" },
-          ].map(({ key, label, icon, accent }) => {
+            { key: "background", label: "课程背景" },
+            { key: "objectives", label: "教学目标" },
+            { key: "target", label: "目标学员" },
+            { key: "courseStructure", label: "课程结构" },
+            { key: "courseHighlights", label: "课程亮点" },
+          ].map(({ key, label }) => {
             const content = courseInfo?.[key];
             if (!content) return null;
             return (
@@ -1331,19 +1331,14 @@ export default function CourseVideoPage() {
                 padding: isMobile ? "14px" : "22px 26px",
                 marginBottom: isMobile ? 10 : 16,
                 border: "1px solid var(--pu-line)",
-                borderLeft: `3px solid ${accent}`,
               }}>
-                {/* 带图标的标题 */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                  <span style={{ fontSize: 18 }}>{icon}</span>
-                  <span style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: accent,
-                    letterSpacing: 0.5,
-                  }}>
-                    {label}
-                  </span>
+                <div style={{
+                  fontSize: 16,
+                  fontWeight: 650,
+                  color: "var(--pu-ink)",
+                  marginBottom: 14,
+                }}>
+                  {label}
                 </div>
                 <Paragraph style={{
                   color: colors.textPrimary,

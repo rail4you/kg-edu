@@ -1,17 +1,16 @@
-import { useMemo } from "react";
-import { Button, Empty, Grid, Layout, Skeleton, Typography } from "antd";
+import { useEffect, useMemo } from "react";
+import { Empty, Grid, Layout, Skeleton, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import {
   BankOutlined,
   BarChartOutlined,
   EyeOutlined,
   RightOutlined,
-  SearchOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import GlobalFooter from "@/components/layout/global-footer";
-import { UserMenu } from "@/components/layout/user-menu";
+import PortalHeader from "@/components/layout/portal-header";
 import PortalHero from "@/components/home/editorial-hero";
 import MobilePromoBanner from "@/components/home/mobile-promo-banner";
 import "@/styles/portal-editorial.css";
@@ -20,8 +19,7 @@ import CourseCoverArt from "@/components/course-cover-art";
 import { buildSubjectCategoryPanels, CATEGORY_EDUCATION_LEVEL } from "@/lib/subject-category-grouping";
 import { useCourseCatalog, type CatalogCourse } from "@/hooks/use-course-catalog";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useBranding } from "@/hooks/use-branding";
-import { usePortalNavItems, useLevelTitleMap } from "@/hooks/use-portal-config";
+import { useLevelTitleMap } from "@/hooks/use-portal-config";
 import { useCourseCategories } from "@/hooks/use-course-categories";
 import { setCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
@@ -29,7 +27,7 @@ import { listMicroMajors, listOrganizations, listCoursesByMicroMajor } from "@/l
 import { extractArrayData } from "@/utils/api-helpers";
 import "@/styles/home-portal-theme.css";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Text, Title } = Typography;
 
 /** 学历层级入口（key 与课程页 level 参数一致） */
@@ -66,15 +64,6 @@ function LevelIcon({ index }: { index: number }) {
 }
 
 /** 品牌 Logo + 标题（使用动态配置） */
-function HomeBrandSection() {
-  const branding = useBranding();
-  return (
-    <>
-      <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
-      <div className="home-brand__title">{branding.app_title}</div>
-    </>
-  );
-}
 
 function CourseCard({
   course,
@@ -222,7 +211,18 @@ function CourseSection({
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { user, authenticated } = useAuth();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  // 从课程页返回首页时，定位到「精选课程」区域
+  useEffect(() => {
+    const target = (location.state as { scrollTo?: string } | null)?.scrollTo;
+    if (!target) return;
+    const timer = setTimeout(() => {
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [location.state]);
   usePageTitle();
   const breakpoint = Grid.useBreakpoint();
   const isMobile = !breakpoint.md;
@@ -231,8 +231,6 @@ export default function HomePage() {
   // 课程类别模块（推荐课程/新开课程等，管理端动态配置）
   const { categories: categorySections } = useCourseCategories();
 
-  // 动态导航：固定 2 项（课程/微专业）+ 模板页（按顺序，启用项，总数上限 6）
-  const navItems = usePortalNavItems();
   // 动态学历层级名称（研究生/本科/高职/中职，可被超级管理员修改）
   const levelTitleMap = useLevelTitleMap();
   // 学科面板（真实课程数据，供层级悬浮菜单使用）
@@ -301,10 +299,6 @@ export default function HomePage() {
     navigate(`/micro-majors/${m._tenant}/${m.id}`);
   };
 
-  const handleNav = (path: string) => {
-    navigate(path);
-  };
-
   const handleCourseClick = (course: CatalogCourse) => {
     setCurrentTenant({
       id: course.orgSchemaName,
@@ -312,66 +306,12 @@ export default function HomePage() {
       schemaName: course.orgSchemaName,
     });
 
-    navigate(`/dashboard/front?courseId=${course.id}&tenant=${course.orgSchemaName}`);
+    navigate(`/dashboard/front?courseId=${course.id}&tenant=${course.orgSchemaName}&from=home`);
   };
 
   return (
     <Layout className="home-page home-immersive">
-      <Header className="home-header ed-top">
-        <div className="home-header__inner">
-          <div className="home-header__left">
-            <div className="home-brand">
-              <HomeBrandSection />
-            </div>
-
-            {!isMobile && (
-              <div className="home-nav">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.key}
-                    type="text"
-                    className={`home-nav__button ${item.key === "/" ? "is-active" : ""}`}
-                    onClick={() => handleNav(item.key)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-            )}
-
-
-          </div>
-
-          <div className="home-header__actions">
-            {authenticated && user ? (
-              <UserMenu role="student" variant="header" />
-            ) : isMobile ? (
-              <>
-                <Button
-                  type="text"
-                  className="home-header__search-btn"
-                  aria-label="搜索课程"
-                  onClick={() => navigate("/courses")}
-                  icon={<SearchOutlined />}
-                />
-                <Button
-                  type="text"
-                  className="home-header__login-text"
-                  onClick={() => navigate("/login")}
-                >
-                  登录
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button className="home-login-button" onClick={() => navigate("/login")}>
-                  登录
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </Header>
+      <PortalHeader activeKey="/" />
 
       <Content>
         {isMobile ? (
@@ -461,7 +401,7 @@ export default function HomePage() {
             </section>
 
             {/* 精选课程：取推荐课程前3，保持真实数据 */}
-            <section className="ed-section ed-container">
+            <section className="ed-section ed-container" id="home-courses">
               <div className="ed-section__title">
                 <div><h2>好课程，陪伴每一步成长。</h2></div>
                 <a className="ed-text-link" onClick={() => navigate("/courses")}>探索全部课程 <span>→</span></a>

@@ -80,7 +80,8 @@
 .major-card-cover.theme-blue { background: #234968; } .major-card-cover.theme-purple { background: #554562; } .major-card-cover.theme-teal { background: #285957; } .major-card-cover.theme-default { background: #233d61; }
 .major-code { font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,.65); }
 .major-cover-title { font-size: 26px; font-weight: 600; margin: 22px 0 14px; line-height: 1.45; }
-.major-cover-bottom { font-size: 12px; color: rgba(255,255,255,.7); display: flex; justify-content: space-between; margin-top: auto; }
+.major-cover-bottom { font-size: 12px; color: rgba(255,255,255,.7); display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+.major-cover-bottom > span { font-size: 22px; }
 .major-card-content { padding: 22px; flex: 1; display: flex; flex-direction: column; }
 .major-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
 .major-tags span { font-size: 11px; background: #f3f6fa; color: #687a91; padding: 3px 7px; border-radius: 4px; }
@@ -96,14 +97,29 @@
 .major-card-bottom a:hover { color: #2859df; }
 .ed-breadcrumb { display: flex; gap: 8px; font-size: 13px; color: #758293; padding: 26px 0 18px; }
 .ed-breadcrumb a { color: #2859df; }
-.major-directory-hero { background: #101f37; color: #fff; border-radius: 16px; padding: 56px; margin: 8px 0 30px; }
-.major-directory-hero h1 { font-size: 40px; line-height: 1.4; margin: 16px 0; color: #fff; }
-.major-directory-hero p { color: #c6d4e5; line-height: 1.9; }
-.major-hero-foot { display: flex; gap: 22px; margin-top: 26px; font-size: 13px; color: #9db1c9; }
-.major-category-tabs { display: flex; gap: 8px; margin: 16px 0; }
-.major-category-tabs button { border: 1px solid #e3e9f1; background: #fff; border-radius: 20px; padding: 8px 18px; font-size: 13px; }
-.major-category-tabs button.active { background: #101f37; color: #fff; border-color: #101f37; }
-.major-search input { border: 1px solid #e3e9f1; border-radius: 20px; padding: 9px 18px; min-width: 280px; }
+.majors-page { padding: 0 0 30px; }
+.major-directory-hero { background: #edf2f8; color: #142744; border-radius: 16px; padding: 50px 50px 36px; margin: 32px 0 0; position: relative; }
+.major-directory-hero .home-mini { font-size: 10px; letter-spacing: 2px; color: #64799a; font-weight: 650; margin-bottom: 9px; }
+.major-directory-hero h1 { font-size: 42px; line-height: 1.45; font-weight: 650; margin: 14px 0; color: #142744; }
+.major-directory-hero p { font-size: 15px; color: #6a7d94; max-width: 600px; line-height: 1.9; }
+.major-hero-foot { display: flex; gap: 28px; margin-top: 26px; font-size: 12px; color: #50749a; }
+.major-directory-tools { padding: 36px 0 24px; }
+.major-section-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; }
+.major-section-heading h2 { font-size: 25px; }
+.major-section-heading p { font-size: 13px; color: #7b899c; margin-top: 8px; }
+.major-heading-tools { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.major-heading-tools .major-school-select { min-width: 180px; }
+.major-search input { font-size: 13px; }
+.major-category-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; border-bottom: 1px solid #e4eaf2; padding-bottom: 19px; }
+.major-category-tabs button { background: transparent; border: 0; color: #647993; font-size: 14px; padding: 9px 21px; border-radius: 8px; cursor: pointer; transition: background .15s, color .15s; }
+.major-category-tabs button:hover { color: #2859df; }
+.major-category-tabs button.active { background: #eaf0fc; color: #2859df; font-weight: 650; }
+.major-results-line { display: flex; justify-content: space-between; margin-top: 20px; font-size: 13px; color: #64758c; }
+.major-results-line small { font-size: 11px; }
+.major-help { margin-top: 42px; padding: 32px; background: #f2f5f9; border-radius: 12px; }
+.major-help h2 { font-size: 21px; }
+.major-help p { font-size: 14px; color: #7a889c; max-width: 760px; margin: 10px 0 18px; }
+.major-help a { font-size: 13px; color: #2859df; cursor: pointer; }
 .major-audience { background: #f6f8fc; border-radius: 10px; padding: 20px; margin-top: 18px; }
 .major-curriculum-item { display: flex; gap: 18px; border: 1px solid #e4eaf1; border-radius: 12px; padding: 20px; margin-bottom: 14px; align-items: flex-start; }
 .major-lesson-number { font-size: 22px; font-weight: 700; color: #c6d3e5; }
@@ -138,21 +154,20 @@
 .template-page__content hr { border: 0; border-top: 1px solid #eef2f6; margin: 24px 0; }
 @media(max-width:1000px){ .ed-featured,.major-grid{grid-template-columns:repeat(2,1fr);} .ed-discover{grid-template-columns:1fr;} }
 @media(max-width:760px){ .ed-container{padding-left:22px;padding-right:22px;} .ed-carousel{height:590px;} .ed-slide__inner{padding:48px 25px 160px;align-items:flex-start;} .ed-copy h1{font-size:37px;} .ed-carousel__bottom{flex-direction:column-reverse;align-items:stretch;padding:0 25px;bottom:24px;} .ed-pagination{max-width:none;} .ed-featured,.major-grid{grid-template-columns:1fr 1fr;gap:12px;} .major-directory-hero{padding:26px 22px;} .template-sheet{padding:26px 22px;margin:24px 16px 40px;} }
-/* 门户顶栏：对齐原型门户首页（白底 84px + 深色导航） */
-.ed-top.home-header { background: #fff !important; border-bottom: 1px solid #e3e9f1; height: 84px; padding: 0 30px; }
-.ed-top .home-header__inner { max-width: none; margin: 0; height: 84px; padding: 0 8px; }
+/* 门户顶栏：对齐原型门户首页（白底 76px + 底部细分割线） */
+.ed-top.home-header { background: #fff !important; border-bottom: 1px solid #e3e9f1; height: 76px; padding: 0 30px; box-shadow: none !important; }
+.ed-top .home-header__inner { max-width: none; margin: 0; height: 76px; padding: 0 8px; }
 .ed-top .home-brand__title { color: #142744; text-shadow: none; font-weight: 800; }
 .ed-top .home-brand__logo { filter: none; height: 40px; }
-.ed-top .home-nav__button, .ed-top .cl-nav .home-nav__button { color: #42546e; font-size: 16px; font-weight: 500; letter-spacing: 1px; padding: 8px 14px; position: relative; transition: color .16s ease; }
+.ed-top .home-nav { gap: 30px; }
+.ed-top .home-nav__button, .ed-top .cl-nav .home-nav__button { color: #202f47; font-size: 14px; font-weight: 500; letter-spacing: .3px; padding: 8px 2px; position: relative; transition: color .16s ease; }
 .ed-top .home-nav__button:hover, .ed-top .home-nav__button:focus-visible,
-.ed-top .cl-nav .home-nav__button:hover, .ed-top .cl-nav .home-nav__button:focus-visible { color: #2859df !important; background: transparent !important; }
-.ed-top .home-nav__button::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 6px; height: 2px; border-radius: 2px; background: #2859df; transform: scaleX(0); transform-origin: left; transition: transform .18s ease; }
-.ed-top .home-nav__button:hover::after, .ed-top .home-nav__button.is-active::after { transform: scaleX(1); }
+.ed-top .cl-nav .home-nav__button:hover, .ed-top .cl-nav .home-nav__button:focus-visible { color: #202f47 !important; background: transparent !important; }
 .ed-top .home-nav__button > span { color: inherit; }
-.ed-top .home-nav__button.is-active { color: #1d4fc4 !important; font-weight: 700; background: transparent !important; border-radius: 0; }
+.ed-top .home-nav__button.is-active { color: #142744 !important; font-weight: 650; background: transparent !important; border-radius: 0; }
 .ed-top .home-login-button { border: 1px solid #e3e9f1; color: #202f47; background: #fff; border-radius: 8px; }
 .ed-top .home-register-button { background: #2859df; border-color: #2859df; color: #fff; border-radius: 8px; }
-@media(max-width:760px){ .ed-top.home-header { height: 72px; padding: 0 18px; } .ed-top .home-header__inner { height: 72px; } }
+@media(max-width:760px){ .ed-top.home-header { height: 64px; padding: 0 18px; } .ed-top .home-header__inner { height: 64px; } }
 .ed-page-head { padding: 14px 0 20px; }
 .ed-page-head h1 { font-size: 36px; margin: 0; letter-spacing: -.5px; color: #142744; }
 .ed-page-head p { color: #64748b; margin: 8px 0 0; }
@@ -232,3 +247,53 @@
 .ed-level-menu__grid button:hover:not(:disabled) { background: #e8effc; color: #1d4fc4; }
 .ed-level-menu__grid button:disabled { opacity: .45; cursor: not-allowed; }
 .ed-level-menu__more { display: block; margin-top: 14px; font-size: 13px; color: #2859df; }
+
+/* 门户顶栏导航：悬停下划线 + 选中强调 */
+.ed-top .home-nav__button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: #2859df;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.18s ease;
+}
+
+.ed-top .home-nav__button:hover::after,
+.ed-top .home-nav__button:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.ed-top .home-nav__button.is-active {
+  color: #142744 !important;
+  font-weight: 700;
+}
+
+.ed-top .home-nav__button.is-active::after {
+  transform: scaleX(1);
+}
+
+/* 微专业卡片：已加入的「继续学习」与课程卡片同样式 */
+.major-cta.is-enrolled {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  border: 1px solid #2859df;
+  border-radius: 8px;
+  background: #fff;
+  color: #2859df !important;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.major-cta.is-enrolled:hover {
+  background: #f3f7ff;
+  border-color: #1846bc;
+  color: #1846bc !important;
+}

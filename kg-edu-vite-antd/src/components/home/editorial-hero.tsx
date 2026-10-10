@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/auth/auth-context";
 
 const SLIDES = [
   {
@@ -42,6 +43,13 @@ const SLIDES = [
 
 export default function EditorialHero() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const profilePath =
+    user?.role === "teacher"
+      ? "/teacher/dashboard/profile"
+      : user?.role === "admin" || user?.role === "super_admin"
+        ? "/admin/dashboard/profile"
+        : "/dashboard/profile";
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   useEffect(() => {
@@ -69,7 +77,7 @@ export default function EditorialHero() {
                 <p>{s.desc}</p>
                 <div className="ed-hero-actions">
                   <a className="ed-cta" onClick={() => navigate(s.to)}>{s.cta}<span>↗</span></a>
-                  <a className="ed-secondary" onClick={() => navigate("/login")}>进入平台 <span>→</span></a>
+                  <a className="ed-secondary" onClick={() => navigate(user ? profilePath : "/login")}>{user ? "个人中心" : "登录"} <span>→</span></a>
                 </div>
               </div>
             </div>

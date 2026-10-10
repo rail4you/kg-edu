@@ -203,6 +203,26 @@
   padding: 48px 40px;
 }
 
+.front-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--front-hero-title, #fff);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.front-back-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
 .front-dashboard-hero__left {
   display: flex;
   flex-direction: column;
@@ -3301,4 +3321,155 @@
 
 .front-dashboard-system-row:hover {
   transform: none !important;
+}
+
+/* ===== 课程概览「体系」卡片：去彩色、对齐、简洁 ===== */
+.front-dashboard-system-stage::before,
+.front-dashboard-system-stage::after,
+.front-dashboard-system-layer::before,
+.front-dashboard-system-layer::after,
+.front-dashboard-system-layer__surface,
+.front-dashboard-system-metric::before {
+  display: none !important;
+}
+
+.front-dashboard-system-layer,
+.front-dashboard-system-layer.is-blue,
+.front-dashboard-system-layer.is-violet,
+.front-dashboard-system-layer.is-green,
+.front-dashboard-system-layer.is-gold {
+  background: #ffffff !important;
+  border: 1px solid #e8edf3 !important;
+  border-radius: 12px !important;
+  clip-path: none !important;
+  box-shadow: 0 1px 2px rgba(16, 32, 64, 0.04) !important;
+  min-height: 72px !important;
+}
+
+.front-dashboard-system-layer:hover {
+  transform: none !important;
+  box-shadow: 0 1px 2px rgba(16, 32, 64, 0.04) !important;
+  border-color: #d9e2ec !important;
+}
+
+.front-dashboard-system-layer__inner {
+  padding: 14px 20px !important;
+  gap: 14px !important;
+}
+
+.front-dashboard-system-layer__title {
+  color: #202f47 !important;
+  font-weight: 650 !important;
+  font-size: 14px !important;
+  text-shadow: none !important;
+  padding-left: 0 !important;
+  min-width: 72px !important;
+}
+
+.front-dashboard-system-layer__nodes {
+  gap: 16px !important;
+  padding-left: 0 !important;
+}
+
+.front-dashboard-system-node,
+.front-dashboard-system-layer.is-violet .front-dashboard-system-node,
+.front-dashboard-system-layer.is-green .front-dashboard-system-node,
+.front-dashboard-system-layer.is-gold .front-dashboard-system-node {
+  color: #64748b !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  text-shadow: none !important;
+}
+
+.front-dashboard-system-node i {
+  width: 5px !important;
+  height: 5px !important;
+  background: #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+.front-dashboard-system-metric {
+  border-left: 1px solid #eef2f6;
+}
+
+.front-dashboard-system-metric strong {
+  color: #202f47 !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+}
+
+.front-dashboard-system-metric span {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+/* ===== 课程概览「体系」列表：无边框、无颜色、等宽对齐 ===== */
+.front-dashboard-system-stage {
+  gap: 0 !important;
+}
+
+.front-dashboard-system-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 96px !important;
+  align-items: center !important;
+  gap: 0 !important;
+  border-bottom: 1px solid #eef2f6 !important;
+}
+
+.front-dashboard-system-row:last-child {
+  border-bottom: 0 !important;
+}
+
+.front-dashboard-system-layer,
+.front-dashboard-system-layer.is-blue,
+.front-dashboard-system-layer.is-violet,
+.front-dashboard-system-layer.is-green,
+.front-dashboard-system-layer.is-gold {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+}
+
+.front-dashboard-system-layer__inner {
+  padding: 16px 0 !important;
+  gap: 16px !important;
+}
+
+.front-dashboard-system-layer__title {
+  min-width: 84px !important;
+}
+
+.front-dashboard-system-node {
+  color: #64748b !important;
+}
+
+.front-dashboard-system-metric {
+  width: auto !important;
+  border-left: 0 !important;
+  padding: 16px 0 !important;
+  text-align: right !important;
+  align-items: flex-end !important;
+}
+
+.front-dashboard-system-metric strong {
+  font-size: 22px !important;
+}
+
+.front-dashboard-system-metric span {
+  white-space: nowrap !important;
+}
+
+.front-dashboard-system-row:hover .front-dashboard-system-layer__title,
+.front-dashboard-system-row:hover .front-dashboard-system-node {
+  color: #202f47 !important;
+}
+
+/* 体系行之间留出更大空白 */
+.front-dashboard-system-stage {
+  gap: 16px !important;
+}
+
+.front-dashboard-system-row {
+  border-bottom: 0 !important;
 }

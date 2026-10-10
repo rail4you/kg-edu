@@ -293,14 +293,9 @@ export default function LoginPage() {
             {user ? (
               <UserMenu role="student" variant="header" />
             ) : (
-              <>
-                <Button className="home-login-button" onClick={() => navigate("/login")}>
-                  登录
-                </Button>
-                <Button className="home-register-button" onClick={() => navigate("/")}>
-                  进入平台
-                </Button>
-              </>
+              <Button className="home-login-button" onClick={() => navigate("/login")}>
+                登录
+              </Button>
             )}
           </div>
         </div>

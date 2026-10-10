@@ -1388,3 +1388,93 @@
     position: static;
   }
 }
+
+/* ---------- 个人中心：我的学习卡片 ---------- */
+.profile-learn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.profile-learn-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  min-height: 84px;
+  border: 1px solid var(--pu-line, #e3e9f1);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.profile-learn-card:hover {
+  border-color: #c7d8fb;
+  box-shadow: 0 6px 18px rgba(40, 89, 223, 0.06);
+  transform: translateY(-2px);
+}
+
+.profile-learn-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-learn-card__title {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--pu-ink, #202f47);
+  line-height: 1.4;
+}
+
+.profile-learn-card__meta {
+  font-size: 12px;
+  color: var(--pu-muted, #64748b);
+}
+
+.profile-learn-card__arrow {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--pu-muted, #94a3b8);
+  transition: color 0.15s, transform 0.15s;
+}
+
+.profile-learn-card:hover .profile-learn-card__arrow {
+  color: var(--pu-blue, #2859df);
+  transform: translateX(2px);
+}
+
+.profile-learn-more {
+  margin-top: 12px;
+  padding: 7px 16px;
+  border: 1px solid var(--pu-line, #e3e9f1);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  color: var(--pu-ink, #202f47);
+  cursor: pointer;
+}
+
+.profile-learn-more:hover {
+  background: #f5f7fa;
+}
+
+/* ---------- 顶栏账户入口（头像 + 名称，无容器） ---------- */
+.user-menu-trigger {
+  transition: opacity 0.15s;
+}
+
+.user-menu-trigger:hover {
+  opacity: 0.82;
+}
+
+.user-menu-trigger:focus-visible {
+  outline: 2px solid var(--pu-blue, #2859df);
+  outline-offset: 2px;
+  border-radius: 8px;
+}

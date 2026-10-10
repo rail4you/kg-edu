@@ -7,7 +7,6 @@ import {
   Card,
   Col,
   Empty,
-  Grid,
   Layout,
   Row,
   Skeleton,
@@ -20,13 +19,9 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
-  ApartmentOutlined,
   ArrowLeftOutlined,
   BookOutlined,
   ClockCircleOutlined,
-  MenuOutlined,
-  ReadOutlined,
-  RightOutlined,
   ScheduleOutlined,
   StarOutlined,
   TeamOutlined,
@@ -38,16 +33,12 @@ import {
   FilePdfOutlined, DownloadOutlined, EyeOutlined,
 } from "@ant-design/icons";
 import GlobalFooter from "@/components/layout/global-footer";
+import PortalHeader from "@/components/layout/portal-header";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
-import { UserMenu } from "@/components/layout/user-menu";
-import { MobileFullMenu } from "@/components/layout/mobile-full-menu";
 import { listMicroMajorEnrollments, myCertificates } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useBranding } from "@/hooks/use-branding";
-import { usePortalNavItems } from "@/hooks/use-portal-config";
-import { themeColors } from "@/styles/theme";
 import {
   useMicroMajorDetail,
   type MicroMajorCourse,
@@ -57,9 +48,8 @@ import "@/styles/home-portal-theme.css";
 import "@/styles/portal-editorial.css";
 import "./micro-major-detail.css";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
-const DEFAULT_MICRO_MAJOR_HERO = "/assets/micro-major-detail-hero-v1.png";
 
 function SectionBlock({ title, icon, children }: { title: string; icon?: React.ReactNode; children?: string | null }) {
   if (!children) return null;
@@ -98,20 +88,13 @@ function TeacherCard({ teacher, role }: { teacher?: MicroMajorTeacher | null; ro
 export default function MicroMajorDetailPage() {
   const { tenant, id } = useParams<{ tenant: string; id: string }>();
   const navigate = useNavigate();
-  const { user, tenant: currentTenant, authenticated } = useAuth();
-  const branding = useBranding();
-  const breakpoint = Grid.useBreakpoint();
-  const isMobile = !breakpoint.md;
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, tenant: currentTenant } = useAuth();
   const studentHeaders = getAuthHeaders(user) as Record<string, string>;
-  // 动态门户导航（固定 2 项（课程/微专业）+ 模板页（上限 6））
-  const navItems = usePortalNavItems();
 
   usePageTitle();
   const effectiveTenant = tenant || currentTenant || "";
 
   const { major, courses, isLoading: majorLoading } = useMicroMajorDetail(effectiveTenant, id || "");
-  const heroCover = major?.coverUrl || DEFAULT_MICRO_MAJOR_HERO;
 
   // Check enrollment / application status for current user
   const { data: userEnrollments = [] } = useQuery({
@@ -258,46 +241,7 @@ export default function MicroMajorDetailPage() {
   if (majorLoading) {
     return (
       <Layout className="home-page cl-page" style={{ overflowX: "hidden" }}>
-        <Header className="home-header ed-top">
-          <div className="home-header__inner">
-            <div className="home-header__left">
-              <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-                <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
-                <div className="home-brand__title">{branding.app_title}</div>
-              </div>
-            </div>
-            <div className="home-header__actions">
-              {isMobile ? (
-                <>
-                  {authenticated && user && (
-                    <UserMenu role="student" variant="header" />
-                  )}
-                  <Button
-                    type="text"
-                    icon={<MenuOutlined style={{ fontSize: 20, color: themeColors.primary }} />}
-                    onClick={() => setMobileMenuOpen(true)}
-                    aria-label="打开菜单"
-                  />
-                </>
-              ) : authenticated && user ? (
-                <UserMenu role="student" variant="header" />
-              ) : (
-                <>
-                  <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
-                  <Button className="home-register-button" onClick={() => navigate("/login")}>进入平台</Button>
-                </>
-              )}
-            </div>
-          </div>
-        </Header>
-
-        <MobileFullMenu
-          open={mobileMenuOpen}
-          onClose={() => setMobileMenuOpen(false)}
-          items={navItems}
-          activeKey="/micro-majors"
-          sectionTitle="导航"
-        />
+        <PortalHeader activeKey="/micro-majors" sectionTitle="导航" />
         <Content>
           <section className="cl-list-section">
             <div className="cl-list-section__inner">
@@ -313,46 +257,7 @@ export default function MicroMajorDetailPage() {
   if (!major) {
     return (
       <Layout className="home-page cl-page" style={{ overflowX: "hidden" }}>
-        <Header className="home-header ed-top">
-          <div className="home-header__inner">
-            <div className="home-header__left">
-              <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-                <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
-                <div className="home-brand__title">{branding.app_title}</div>
-              </div>
-            </div>
-            <div className="home-header__actions">
-              {isMobile ? (
-                <>
-                  {authenticated && user && (
-                    <UserMenu role="student" variant="header" />
-                  )}
-                  <Button
-                    type="text"
-                    icon={<MenuOutlined style={{ fontSize: 18, color: themeColors.textPrimary }} />}
-                    onClick={() => setMobileMenuOpen(true)}
-                    aria-label="打开菜单"
-                  />
-                </>
-              ) : authenticated && user ? (
-                <UserMenu role="student" variant="header" />
-              ) : (
-                <>
-                  <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
-                  <Button className="home-register-button" onClick={() => navigate("/login")}>进入平台</Button>
-                </>
-              )}
-            </div>
-          </div>
-        </Header>
-
-        <MobileFullMenu
-          open={mobileMenuOpen}
-          onClose={() => setMobileMenuOpen(false)}
-          items={navItems}
-          activeKey="/micro-majors"
-          sectionTitle="导航"
-        />
+        <PortalHeader activeKey="/micro-majors" sectionTitle="导航" />
         <Content>
           <section className="cl-list-section">
             <div className="cl-list-section__inner">
@@ -367,60 +272,7 @@ export default function MicroMajorDetailPage() {
 
   return (
     <Layout className="home-page cl-page" style={{ overflowX: "hidden" }}>
-      <Header className="home-header ed-top">
-        <div className="home-header__inner">
-          <div className="home-header__left">
-            <div className="home-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              <img src={branding.logo_dark} alt={branding.app_name} className="home-brand__logo" />
-              <div className="home-brand__title">{branding.app_title}</div>
-            </div>
-            {!isMobile && (
-              <div className="cl-nav">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.key}
-                    type="text"
-                    className={`home-nav__button ${item.key === "/micro-majors" ? "is-active" : ""}`}
-                    onClick={() => navigate(item.key)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="home-header__actions">
-            {isMobile ? (
-              <>
-                {authenticated && user && (
-                  <UserMenu role="student" variant="header" />
-                )}
-                <Button
-                  type="text"
-                  icon={<MenuOutlined style={{ fontSize: 18, color: themeColors.textPrimary }} />}
-                  onClick={() => setMobileMenuOpen(true)}
-                  aria-label="打开菜单"
-                />
-              </>
-            ) : authenticated && user ? (
-              <UserMenu role="student" variant="header" />
-            ) : (
-              <>
-                <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
-                <Button className="home-register-button" onClick={() => navigate("/login")}>进入平台</Button>
-              </>
-            )}
-          </div>
-        </div>
-      </Header>
-
-      <MobileFullMenu
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        items={navItems}
-        activeKey="/micro-majors"
-        sectionTitle="导航"
-      />
+      <PortalHeader activeKey="/micro-majors" sectionTitle="导航" />
 
       <Content>
         <div className="ed-container mm-detail-top">

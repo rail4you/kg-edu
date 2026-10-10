@@ -21,6 +21,7 @@ import {
   EnterOutlined,
   AppstoreOutlined,
   RobotOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { Input, Spin, Modal, Drawer, Grid } from "antd";
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -83,6 +84,7 @@ const navGroups: NavGroup[] = [
       { key: "/dashboard/teacher", label: "教师团队", icon: <TeamOutlined /> },
       { key: "/dashboard/email-qa", label: "邮件问答", icon: <MailOutlined /> },
       { key: "/dashboard/chat", label: "AI 助手", icon: <RobotOutlined /> },
+      { key: "/dashboard/profile", label: "个人中心", icon: <UserOutlined /> },
     ],
   },
   {

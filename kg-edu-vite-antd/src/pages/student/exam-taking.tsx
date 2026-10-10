@@ -65,7 +65,7 @@ interface ExerciseAnswer {
 }
 
 const QUESTION_TYPES = {
-  multiple_choice: { label: '选择题', color: '#52c41a', icon: '📝', required: true },
+  multiple_choice: { label: '选择题', color: '#2859df', icon: '📝', required: true },
   essay: { label: '问答题', color: '#fa8c16', icon: '✍️', required: false },
   fill_blank: { label: '填空题', color: '#722ed1', icon: '✏️', required: true },
   true_false: { label: '判断题', color: colors.primary, icon: '🔍', required: true },
@@ -85,13 +85,14 @@ const MultipleChoiceOptions: React.FC<{
   }
 
   return (
-    <Radio.Group value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <Radio.Group value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} style={{ width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
         {options.map((option, index) => (
           <div
             key={option.id || index}
             onClick={() => !disabled && onChange(option.value)}
             style={{
+              width: '100%',
               padding: '10px 14px',
               borderRadius: 8,
               cursor: disabled ? 'not-allowed' : 'pointer',
@@ -157,14 +158,14 @@ const TrueFalseOptions: React.FC<{
             style={{
               textAlign: 'center',
               cursor: disabled ? 'not-allowed' : 'pointer',
-              borderColor: value === 'true' ? '#52c41a' : '#E0E0E0',
-              backgroundColor: value === 'true' ? '#f6ffed' : '#fff',
+              borderColor: value === 'true' ? '#2859df' : '#E0E0E0',
+              backgroundColor: value === 'true' ? '#eaf0ff' : '#fff',
             }}
             hoverable={!disabled}
           >
             <Radio value="true">
               <Space direction="vertical" size={0}>
-                <Text type={value === 'true' ? 'success' : 'secondary'} style={{ fontSize: 24 }}>
+                <Text style={{ fontSize: 24, color: value === 'true' ? '#2859df' : '#8c8c8c' }}>
                   ✓
                 </Text>
                 <Text strong>正确</Text>
@@ -284,64 +285,19 @@ const QuestionCard: React.FC<{
   return (
     <section
       id={`question-${answer.studentExamAnswerId}`}
-      className="pu-card"
       style={{
-        marginBottom: 14,
-        padding: isMobileCard ? 14 : 20,
-        borderLeft: `3px solid ${isAnswered ? '#52c41a' : typeConfig.color}`,
+        marginBottom: 0,
+        padding: isMobileCard ? "16px 0" : "24px 0",
+        borderBottom: "1px solid var(--pu-line-soft, #edf0f5)",
         scrollMarginTop: 90,
       }}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-        <span style={{
-          fontSize: 12, fontWeight: 700, color: '#fff',
-          background: 'linear-gradient(135deg, #2859df, #1a5cc8)',
-          padding: '2px 10px', borderRadius: 4,
-          lineHeight: '22px',
-        }}>
-          第 {index + 1} 题
-        </span>
-        <span style={{
-          fontSize: 12, fontWeight: 600,
-          backgroundColor: typeConfig.color + '18',
-          color: typeConfig.color,
-          padding: '2px 10px', borderRadius: 4,
-          lineHeight: '22px',
-          border: `1px solid ${typeConfig.color}30`,
-        }}>
-          {typeConfig.icon} {typeConfig.label}
-        </span>
-        <span style={{
-          fontSize: 12, fontWeight: 500,
-          color: '#888',
-          padding: '2px 8px', borderRadius: 4,
-          background: '#f5f7fb',
-          lineHeight: '22px',
-        }}>
-          {answer.points} 分
-        </span>
-        {typeConfig.required && (
-          <span style={{
-            fontSize: 12, fontWeight: 600,
-            color: '#d48806',
-            padding: '2px 8px', borderRadius: 4,
-            background: '#fff7e6',
-            lineHeight: '22px',
-          }}>
-            必答
-          </span>
-        )}
-        {isAnswered && (
-          <span style={{
-            fontSize: 12, fontWeight: 600,
-            color: '#52c41a',
-            padding: '2px 8px', borderRadius: 4,
-            background: '#f6ffed',
-            lineHeight: '22px',
-          }}>
-            ✓ 已作答
-          </span>
-        )}
+      <div style={{ marginBottom: 10, fontSize: 13, color: '#64748b' }}>
+        <span style={{ fontWeight: 650, color: '#202f47' }}>第 {index + 1} 题</span>
+        <span> · {typeConfig.label}</span>
+        <span> · {answer.points} 分</span>
+        {typeConfig.required && <span> · 必答</span>}
+        {isAnswered && <span style={{ color: '#2859df' }}> · 已作答</span>}
       </div>
 
       <div style={{
@@ -349,9 +305,6 @@ const QuestionCard: React.FC<{
         color: '#202f47',
         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
         marginBottom: 14,
-        padding: '12px 16px',
-        background: '#f6f8fb',
-        borderRadius: 10,
       }}>
         {answer.questionContent}
       </div>
@@ -406,60 +359,23 @@ const QuestionNavigator: React.FC<{
         options={[
           {
             value: 'all',
-            label: (
-              <Space>
-                <span>📋</span>
-                <span>全部题目 ({answers.length})</span>
-              </Space>
-            ),
+            label: `全部题目 (${answers.length})`,
           },
           ...questionTypes.map((type) => {
             const config = QUESTION_TYPES[type as QuestionType] || QUESTION_TYPES.text;
             const stat = stats[type] || { total: 0, answered: 0 };
             return {
               value: type,
-              label: (
-                <Space>
-                  <span>{config.icon}</span>
-                  <span>
-                    {config.label} (已答 {stat.answered}/{stat.total})
-                  </span>
-                </Space>
-              ),
+              label: `${config.label} (已答 ${stat.answered}/${stat.total})`,
             };
           }),
         ]}
       />
 
-      <Card
-        size="small"
-        style={{
-          marginBottom: 16,
-          backgroundColor: (activeType === 'all' ? '#757575' : QUESTION_TYPES[activeType as QuestionType]?.color || '#757575') + '10',
-          borderColor: (activeType === 'all' ? '#757575' : QUESTION_TYPES[activeType as QuestionType]?.color || '#757575') + '40',
-        }}
-      >
-        <Space>
-          <span style={{ fontSize: 20 }}>
-            {activeType === 'all' ? '📋' : QUESTION_TYPES[activeType as QuestionType]?.icon}
-          </span>
-          <Text strong style={{ color: activeType === 'all' ? '#757575' : QUESTION_TYPES[activeType as QuestionType]?.color }}>
-            {activeType === 'all'
-              ? `全部题目 (${answers.length})`
-              : (() => {
-                  const config = QUESTION_TYPES[activeType as QuestionType] || QUESTION_TYPES.text;
-                  const stat = stats[activeType] || { total: 0, answered: 0 };
-                  return `${config.label} (已答 ${stat.answered}/${stat.total})`;
-                })()}
-          </Text>
-        </Space>
-      </Card>
-
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
         {answers.map((answer, index) => {
           const isAnswered = !!currentAnswers[answer.studentExamAnswerId]?.trim();
           const isActive = activeType === 'all' || activeType === answer.questionType;
-          const typeConfig = QUESTION_TYPES[answer.questionType as QuestionType] || QUESTION_TYPES.text;
 
           if (!isActive) return null;
 
@@ -472,9 +388,10 @@ const QuestionNavigator: React.FC<{
                   width: 40,
                   height: 40,
                   fontWeight: 600,
-                  backgroundColor: isAnswered ? '#52c41a' : '#edf0f5',
-                  color: isAnswered ? '#fff' : 'inherit',
-                  border: `2px solid ${isAnswered ? '#52c41a' : typeConfig.color}`,
+                  borderRadius: 8,
+                  backgroundColor: isAnswered ? '#2859df' : '#fff',
+                  color: isAnswered ? '#fff' : '#475569',
+                  border: `1px solid ${isAnswered ? '#2859df' : '#d9e1ec'}`,
                 }}
               >
                 {index + 1}
@@ -496,11 +413,15 @@ const QuestionNavigator: React.FC<{
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <Text type="secondary">已作答</Text>
-          <Tag color="success">{Object.values(currentAnswers).filter((v) => v?.trim()).length}</Tag>
+          <Text strong style={{ color: '#2859df' }}>
+            {Object.values(currentAnswers).filter((v) => v?.trim()).length}
+          </Text>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <Text type="secondary">未作答</Text>
-          <Tag color="error">{answers.length - Object.values(currentAnswers).filter((v) => v?.trim()).length}</Tag>
+          <Text strong style={{ color: '#64748b' }}>
+            {answers.length - Object.values(currentAnswers).filter((v) => v?.trim()).length}
+          </Text>
         </div>
       </Space>
 
@@ -514,10 +435,7 @@ const QuestionNavigator: React.FC<{
             const stat = stats[type] || { total: 0, answered: 0 };
             return (
               <div key={type} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Space size={4}>
-                  <span>{config?.icon}</span>
-                  <Text type="secondary">{config?.label}</Text>
-                </Space>
+                <Text type="secondary">{config?.label}</Text>
                 <Text type="secondary">
                   {stat.answered}/{stat.total}
                 </Text>
@@ -1061,8 +979,8 @@ export default function ExamTaking() {
               icon={<CheckCircleOutlined />}
               size={isMobile ? 'small' : 'middle'}
               style={{
-                background: 'linear-gradient(135deg, #52c41a, #389e0d)',
-                borderColor: '#389e0d',
+                background: 'linear-gradient(135deg, #2859df, #1846bc)',
+                borderColor: '#1846bc',
                 borderRadius: 8,
                 fontWeight: 600,
                 boxShadow: '0 2px 8px rgba(82,196,26,0.3)',
@@ -1099,16 +1017,15 @@ export default function ExamTaking() {
           ) : (
             <div style={{ maxWidth: 820, margin: '0 auto' }}>
               {activeType !== 'all' && (
-                <div className="pu-card" style={{ marginBottom: 16, padding: '14px 18px', background: '#eef3fb', borderColor: '#e4ebf4' }}>
+                <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 15, fontWeight: 650, color: '#202f47' }}>
-                    {QUESTION_TYPES[activeType as QuestionType]?.icon}{' '}
                     {QUESTION_TYPES[activeType as QuestionType]?.label}
                   </div>
                   <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>共 {filteredAnswers.length} 题</div>
                 </div>
               )}
 
-              {filteredAnswers.map((answer, index) => (
+              {filteredAnswers.map((answer) => (
                 <QuestionCard
                   key={answer.studentExamAnswerId}
                   answer={answer}
@@ -1118,43 +1035,6 @@ export default function ExamTaking() {
                   disabled={viewMode || submitExamMutation.isPending}
                 />
               ))}
-
-              {!viewMode && (
-                <section className="pu-card" style={{ marginTop: 20, textAlign: 'center', background: '#f6f8fb', padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 }}>
-                    <div className="pu-progress" style={{ flex: 1, maxWidth: 260, margin: 0 }}>
-                      <i style={{ width: `${Math.round(progress)}%`, background: 'linear-gradient(90deg, #2859df, #52c41a)' }} />
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>
-                      {answeredCount}/{exerciseAnswers.length}
-                    </span>
-                  </div>
-                  <Button
-                    type="primary"
-                    size="large"
-                    block={isMobile}
-                    onClick={handleSubmitExam}
-                    loading={isSubmitting || submitExamMutation.isPending}
-                    icon={<CheckCircleOutlined />}
-                    style={{
-                      background: 'linear-gradient(135deg, #52c41a, #389e0d)',
-                      borderColor: '#389e0d',
-                      borderRadius: 8,
-                      height: isMobile ? 42 : 44,
-                      fontWeight: 600,
-                      fontSize: 15,
-                      boxShadow: '0 3px 12px rgba(82,196,26,0.3)',
-                    }}
-                  >
-                    提交考试
-                  </Button>
-                  {answeredCount < exerciseAnswers.length && (
-                    <div style={{ marginTop: 10, fontSize: 12, color: '#64748b' }}>
-                      还有 {exerciseAnswers.length - answeredCount} 题未作答
-                    </div>
-                  )}
-                </section>
-              )}
             </div>
           )}
         </div>
@@ -1172,11 +1052,6 @@ export default function ExamTaking() {
               }}
             >
               <Space size={6}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 24, height: 24, borderRadius: 6,
-                  background: '#2859df10', color: '#2859df', fontSize: 12,
-                }}>📋</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
                   答题进度
                 </span>
@@ -1232,7 +1107,7 @@ export default function ExamTaking() {
             danger={unansweredQuestions.length > 0}
             onClick={confirmSubmit}
             icon={unansweredQuestions.length > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
-            style={unansweredQuestions.length === 0 ? { backgroundColor: '#52c41a', borderColor: '#52c41a' } : {}}
+            style={unansweredQuestions.length === 0 ? { backgroundColor: '#2859df', borderColor: '#2859df' } : {}}
           >
             {unansweredQuestions.length > 0 ? '仍要提交' : '确认提交'}
           </Button>,
