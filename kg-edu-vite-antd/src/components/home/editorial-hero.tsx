@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CatalogCourse } from "@/hooks/use-course-catalog";
 
 const SLIDES = [
   {
-    kicker: "智慧教育 · 易课程",
+    kicker: "易课程 · 智慧教育",
     titleA: "让知识相连，",
     titleB: "让未来展开。",
     desc: "从一门好课程出发，连接知识、思考与实践。在易课程，找到属于你的成长方向。",
@@ -12,9 +11,11 @@ const SLIDES = [
     cta: "探索智慧课程",
     to: "/courses",
     note: "以优质课程，打开学习的新视野",
+    image: "/assets/home-hero/hero-1.png",
+    alt: "阳光照进现代大学图书馆，开阔的空间与层叠书架",
   },
   {
-    kicker: "知识关联 · 图谱导学",
+    kicker: "知识相连 · 图谱导学",
     titleA: "看见知识的联系，",
     titleB: "走出自己的路径。",
     desc: "让零散的知识成为清晰的体系。沿知识图谱探索，在每一次理解中更进一步。",
@@ -22,9 +23,11 @@ const SLIDES = [
     cta: "体验知识图谱",
     to: "/courses",
     note: "从一个知识点，走向完整的理解",
+    image: "/assets/home-hero/hero-2.png",
+    alt: "深蓝空间中相互连接的发光知识节点",
   },
   {
-    kicker: "系统学习 · 能力进阶",
+    kicker: "微专业 · 真实技能",
     titleA: "以热爱为起点，",
     titleB: "让能力更进一步。",
     desc: "围绕真实问题，展开一段系统学习。用微专业课程与项目实践，拓展新的可能。",
@@ -32,10 +35,12 @@ const SLIDES = [
     cta: "发现微专业",
     to: "/micro-majors",
     note: "用一段系统学习，拓展一项能力",
+    image: "/assets/home-hero/hero-3.png",
+    alt: "两位大学生在现代工作室共同研究课程项目",
   },
 ];
 
-export default function EditorialHero({ heroCourses }: { heroCourses: CatalogCourse[] }) {
+export default function EditorialHero() {
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -53,11 +58,9 @@ export default function EditorialHero({ heroCourses }: { heroCourses: CatalogCou
       onMouseLeave={() => setPaused(false)}
     >
       {SLIDES.map((s, i) => {
-        const course = heroCourses[i] ?? heroCourses[0];
-        const bg = course?.imageUrl;
         return (
           <article key={s.tab} className={`ed-slide ${i === index ? "is-active" : ""}`} aria-hidden={i !== index}>
-            {bg && <img className="ed-slide__bg" src={bg} alt="" />}
+            <img className="ed-slide__bg" src={s.image} alt={s.alt} />
             <div className="ed-slide__shade" />
             <div className="ed-slide__inner">
               <div className="ed-copy">

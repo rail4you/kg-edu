@@ -40,6 +40,31 @@ const LEVELS = [
   { key: "secondary_vocational", sub: "兴趣启蒙 · 职业起步" },
 ];
 
+/** 学历层级图标（与交互原型 levelIcon 一致） */
+const LEVEL_ICON_PATHS = [
+  "M4 17h16M7 17V9m10 8V9M9 6l3-3 3 3M5 9h14M10 17v-4h4v4",
+  "m2 8 10-5 10 5-10 5L2 8Zm4 2v6c4 3 8 3 12 0v-6M22 8v7",
+  "m14 4 6 6-4 4-6-6 4-4ZM11 11 4 18l2 2 7-7M4 4l4 1 1 4",
+  "M12 6c-3-2-6-2-10-1v14c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1Zm0 0v14",
+];
+
+function LevelIcon({ index }: { index: number }) {
+  return (
+    <span className="ed-level-icon" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={LEVEL_ICON_PATHS[index % LEVEL_ICON_PATHS.length]} />
+      </svg>
+    </span>
+  );
+}
+
 /** 品牌 Logo + 标题（使用动态配置） */
 function HomeBrandSection() {
   const branding = useBranding();
@@ -206,16 +231,6 @@ export default function HomePage() {
   // 课程类别模块（推荐课程/新开课程等，管理端动态配置）
   const { categories: categorySections } = useCourseCategories();
 
-  // Hero 轮播取「新开课程」类别的前 3 个（未配置时回退到推荐课程前 3 个）
-  const heroCourses = useMemo(() => {
-    const newestSection = categorySections.find((section) => section.category.slug === "newest");
-    const newest = newestSection?.courses ?? [];
-    if (newest.length > 0) {
-      return newest.slice(0, 3);
-    }
-    return recommendedCourses.slice(0, 3);
-  }, [categorySections, recommendedCourses]);
-
   // 动态导航：固定 2 项（课程/微专业）+ 模板页（按顺序，启用项，总数上限 6）
   const navItems = usePortalNavItems();
   // 动态学历层级名称（研究生/本科/高职/中职，可被超级管理员修改）
@@ -352,9 +367,6 @@ export default function HomePage() {
                 <Button className="home-login-button" onClick={() => navigate("/login")}>
                   登录
                 </Button>
-                <Button className="home-register-button" onClick={() => navigate("/login")}>
-                  进入平台
-                </Button>
               </>
             )}
           </div>
@@ -406,18 +418,19 @@ export default function HomePage() {
         ) : (
           <>
             <div className="ed-page">
-            <PortalHero heroCourses={heroCourses} />
+            <PortalHero />
 
             {/* 快捷入口：学历层级（悬停浮现学科菜单，直达带参课程页） */}
             <section className="ed-discover ed-container" aria-label="课程快捷入口">
               <div><h2 style={{fontSize:26,margin:0}}>开启你的学习旅程</h2></div>
               <div className="ed-levels">
-                {LEVELS.map((l) => {
+                {LEVELS.map((l, i) => {
                   const panel = subjectPanels.find((p) => CATEGORY_EDUCATION_LEVEL[p.config.key] === l.key);
                   return (
                     <div key={l.key} className="ed-level-item">
                       <a onClick={() => navigate(`/courses?level=${l.key}`)}>
-                        <span className="ed-level-top">{levelTitleMap[l.key]?.title || panel?.config.title || l.key} ↗</span>
+                        <LevelIcon index={i} />
+                        <span className="ed-level-top">{levelTitleMap[l.key]?.title || panel?.config.title || l.key} <span aria-hidden="true">↗</span></span>
                         <small>{l.sub}</small>
                       </a>
                       {panel && panel.subjects.length > 0 && (
@@ -451,7 +464,7 @@ export default function HomePage() {
             <section className="ed-section ed-container">
               <div className="ed-section__title">
                 <div><h2>好课程，陪伴每一步成长。</h2></div>
-                <a className="ed-text-link" onClick={() => navigate("/courses")}>探索全部课程 →</a>
+                <a className="ed-text-link" onClick={() => navigate("/courses")}>探索全部课程 <span>→</span></a>
               </div>
               <div className="ed-section__intro"><p>从基础原理到真实实践，选择一门课程，打开一个新的世界。</p></div>
               <div className="ed-featured">
@@ -470,15 +483,16 @@ export default function HomePage() {
                           : undefined
                       }
                     >
-                      <span className="ed-course__index">{c.standardSubject.name || "课程"} · 0{i + 1}</span>
+                      <span className="ed-course__index">0{i + 1} / {c.standardSubject.name || "课程"}</span>
                       <strong>{c.title}</strong>
                       <span className="ed-course__sub">{c.orgName}</span>
+                      <span className="ed-course__arrow" aria-hidden="true">↗</span>
                     </a>
                     <div className="ed-course__body">
                       <div className="ed-course__meta"><span>{c.standardSubject.name}</span><small>智慧课程</small></div>
                       <h3><a onClick={() => handleCourseClick(c)}>{c.title}</a></h3>
                       <p title={c.description || c.title}>{c.description && c.description !== c.title ? c.description : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}</p>
-                      <div className="ed-course__footer"><span>{c.teacherName || "教学团队"}</span><a onClick={() => handleCourseClick(c)}>了解课程 →</a></div>
+                      <div className="ed-course__footer"><span>{[c.teacherName || "教学团队", c.major].filter(Boolean).join(" · ")}</span><a onClick={() => handleCourseClick(c)}>了解课程 →</a></div>
                     </div>
                   </article>
                 ))}
@@ -489,7 +503,7 @@ export default function HomePage() {
             <section className="ed-section ed-container">
               <div className="ed-section__title">
                 <div><h2>围绕一个方向，学成一项能力。</h2></div>
-                <a className="ed-text-link" onClick={() => navigate("/micro-majors")}>探索全部微专业 →</a>
+                <a className="ed-text-link" onClick={() => navigate("/micro-majors")}>探索全部微专业 <span>→</span></a>
               </div>
               <div className="ed-section__intro"><p>把相关课程连成路径，让每一门课都朝着同一个目标前进。</p></div>
               <div className="major-grid">
@@ -513,7 +527,6 @@ export default function HomePage() {
                       >
                         <span className="major-code">{m._orgName || "微专业"}</span>
                         <span className="major-cover-title">{m.name}</span>
-                        <span className="major-cover-bottom">{m.learningCycle || "系统学习"}<span aria-hidden="true">↗</span></span>
                       </a>
                       <div className="major-card-content">
                         <div className="major-tags">
@@ -543,7 +556,7 @@ export default function HomePage() {
                             <a className="major-more-courses" onClick={() => handleMajorClick(m)}>了解微专业详情 <span>→</span></a>
                           </div>
                         )}
-                        <div className="major-card-bottom"><span>{m.tuitionFee || m._orgName || "微专业"}</span><a onClick={() => handleMajorClick(m)}>了解微专业 ↗</a></div>
+                        <div className="major-card-bottom"><a onClick={() => handleMajorClick(m)}>了解微专业 ↗</a></div>
                       </div>
                     </article>
                   );

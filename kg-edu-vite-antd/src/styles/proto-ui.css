@@ -1053,14 +1053,27 @@
 }
 
 .pu-login-art {
-  background: #eaf0ff;
+  background: linear-gradient(150deg, #3565e6 0%, #2859df 45%, #173ea8 100%);
   border-radius: 20px;
   padding: 46px 42px 42px;
   min-height: 420px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   overflow: hidden;
+  position: relative;
+}
+
+.pu-login-art::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -140px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
 }
 
 .pu-login-art__img {
@@ -1078,15 +1091,19 @@
   font-weight: 650;
   line-height: 1.4;
   letter-spacing: -0.5px;
-  color: var(--pu-ink);
+  color: #fff;
   margin: 0;
 }
 
 .pu-login-art p {
   margin-top: 22px;
-  color: #5c7291;
+  color: rgba(255, 255, 255, 0.86);
   font-size: 15px;
   line-height: 1.9;
+}
+
+.pu-login-art .pu-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .pu-role-option {

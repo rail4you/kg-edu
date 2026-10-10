@@ -321,12 +321,6 @@ export default function LoginPage() {
                 ? roleConfig.subtitle + "。在易课程，连接课程、知识与实践，开启更清晰的学习旅程。"
                 : "在易课程，连接课程、知识与实践，开启更清晰的教学与学习旅程。"}
             </p>
-            <img
-              className="pu-login-art__img"
-              src="/assets/login-hero.png"
-              alt=""
-              aria-hidden="true"
-            />
           </div>
 
           {/* 右侧表单/角色选择 */}

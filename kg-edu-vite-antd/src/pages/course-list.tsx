@@ -9,15 +9,9 @@ import {
   Select,
   Skeleton,
   Switch,
-  Tag,
   Typography,
 } from "antd";
 import {
-  AppstoreOutlined,
-  BankOutlined,
-  BarChartOutlined,
-  EyeOutlined,
-  FireOutlined,
   MenuOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
@@ -32,13 +26,11 @@ import { usePortalNavItems, useLevelTitleMap } from "@/hooks/use-portal-config";
 import { useCourseCategories } from "@/hooks/use-course-categories";
 import { themeColors } from "@/styles/theme";
 import { setCurrentTenant } from "@/lib/tenant";
-import CourseCoverArt from "@/components/course-cover-art";
-import { ProtoTag } from "@/components/proto";
 import "@/styles/home-portal-theme.css";
 import "@/styles/portal-editorial.css";
 
 const { Header, Content } = Layout;
-const { Paragraph, Text, Title } = Typography;
+const { Text } = Typography;
 
 const COURSES_PER_PAGE = 12;
 
@@ -63,56 +55,60 @@ function useDynamicLevelOptions() {
 
 function CourseCard({
   course,
+  index,
   onClick,
 }: {
   course: CatalogCourse;
+  index: number;
   onClick: (course: CatalogCourse) => void;
 }) {
-  const isPlaceholder = !course.imageUrl;
-  const studyCount = course.enrolledCount ?? course.browseCount ?? 0;
-  const artVariant = (course.id.charCodeAt(0) + course.title.length) % 3 + 1;
+  const hasImage = Boolean(course.imageUrl);
+  const artVariant = ((course.id.charCodeAt(0) + course.title.length) % 3);
+  const variantClass = ["", "alt", "third"][artVariant];
 
   return (
-    <article className={`ed-course${course.isEnrolled ? " is-enrolled" : ""}`}>
+    <article className={`cl-cc${course.isEnrolled ? " is-enrolled" : ""}`}>
       <a
-        className={`ed-course__art v${artVariant}`}
+        className={`cl-cc__cover ${variantClass}`}
         onClick={() => onClick(course)}
-        style={isPlaceholder ? undefined : { backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${course.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={
+          hasImage
+            ? {
+                backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${course.imageUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                color: "#fff",
+              }
+            : undefined
+        }
       >
-        <span className="ed-course__index">{course.standardSubject.name?.toUpperCase() || "COURSE"}</span>
-        <strong>{course.title}</strong>
-        <span className="ed-course__sub">{course.orgName}</span>
+        <small>COURSE {String(index + 1).padStart(2, "0")}</small>
+        <b>{course.title}</b>
       </a>
-      <div className="ed-course__body">
-        <div className="ed-course__meta">
-          <span>{course.standardSubject.name}</span>
-          {course.isEnrolled ? <ProtoTag tone="blue">学习中</ProtoTag> : <small>智慧课程</small>}
-        </div>
-        <h3><a onClick={() => onClick(course)}>{course.title}</a></h3>
-        <p title={course.description || course.title}>
-          {course.description && course.description !== course.title
-            ? course.description
-            : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
-        </p>
-        {course.isEnrolled ? (
-          <Button
-            type="primary"
-            block
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClick(course);
-            }}
-            style={{ marginTop: 12, height: 40, fontWeight: 600 }}
-          >
-            继续学习 →
-          </Button>
-        ) : (
-          <div className="ed-course__footer">
-            <span>{course.teacherName ? `教师：${course.teacherName}` : course.orgName}</span>
-            <span>{studyCount}人学习 →</span>
-          </div>
-        )}
+      <h3><a onClick={() => onClick(course)}>{course.title}</a></h3>
+      <div className="cl-cc__meta">
+        {[course.teacherName, course.major].filter(Boolean).join(" · ") || course.orgName}
+      </div>
+      <p title={course.description || course.title}>
+        {course.description && course.description !== course.title
+          ? course.description
+          : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}
+      </p>
+      <div className="cl-cc__row">
+        <span className={`cl-cc__tag${course.isEnrolled ? " is-enrolled" : ""}`}>
+          {course.isEnrolled ? "学习中" : "已发布"}
+        </span>
+        <button
+          type="button"
+          className="cl-cc__btn"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick(course);
+          }}
+        >
+          {course.isEnrolled ? "继续学习 →" : "查看课程 →"}
+        </button>
       </div>
     </article>
   );
@@ -152,6 +148,13 @@ export default function CourseListPage() {
     [categorySections]
   );
 
+  // 各分类课程数（用于左侧分类列表）
+  const tabCounts = useMemo(() => {
+    const map: Record<string, number> = { all: courses.length };
+    categorySections.forEach((s) => { map[s.category.id] = s.courses.length; });
+    return map;
+  }, [courses, categorySections]);
+
   const activeTab = searchParams.get("tab") || "all";
   const selectedSubject = searchParams.get("subject") || "all";
   const selectedOrg = searchParams.get("org") || "all";
@@ -164,6 +167,13 @@ export default function CourseListPage() {
   // Local search state to avoid URL-sync issues during typing
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // 从首页选层级进入时，定位到左侧列表中的对应层级项
+  const activeLevelRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (isMobile) return;
+    activeLevelRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedLevel, isMobile]);
 
   // Sync local state when URL changes externally (e.g. browser back/forward)
   useEffect(() => {
@@ -313,7 +323,6 @@ export default function CourseListPage() {
             ) : (
               <>
                 <Button className="home-login-button" onClick={() => navigate("/login")}>登录</Button>
-                <Button className="home-register-button" onClick={() => navigate("/login")}>进入平台</Button>
               </>
             )}
           </div>
@@ -335,215 +344,246 @@ export default function CourseListPage() {
 
       <Content>
         <div className="ed-container">
-        {/* 原型课程页顶部：标题 + 描述 */}
-        <div className="ed-page-head">
-          <h1>探索课程</h1>
-          <p>找到适合自己的学习方向。</p>
-        </div>
-        {/* 移动端：紧凑筛选条 - 下拉框选择器 */}
-        {isMobile ? (
-          <section className="cl-filter-bar cl-filter-bar--mobile" style={{ padding: "8px 14px", background: "#fff" }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <Select
-                style={{ flex: 1, minWidth: 0 }}
-                placeholder="选择层级"
-                value={selectedLevel !== "all" ? selectedLevel : undefined}
-                onChange={(val) => updateSearchParams({ level: val || undefined, subject: undefined })}
-                allowClear
-                options={levelOptions}
-              />
-              <Select
-                style={{ flex: 1, minWidth: 0 }}
-                placeholder="选择学校"
-                value={selectedOrg !== "all" ? selectedOrg : undefined}
-                onChange={(val) => updateSearchParams({ org: val || undefined })}
-                allowClear
-                options={organizations
-                  .filter(o => o.schemaName)
-                  .map(org => ({ label: org.name, value: org.schemaName! }))}
-              />
-              <Select
-                style={{ flex: 1, minWidth: 0 }}
-                placeholder="选择学科"
-                value={selectedSubject !== "all" ? selectedSubject : undefined}
-                onChange={(val) => updateSearchParams({ subject: val || undefined })}
-                allowClear
-                options={visibleSubjects
-                  .map(s => ({ label: `${s.name} (${s.count})`, value: s.code }))}
-              />
-            </div>
-          </section>
-        ) : (
-          /* 桌面端：完整筛选区 */
-          <section className="cl-filter-bar">
-            <div className="cl-filter-bar__inner">
-              <div className="cl-filter-bar__row">
-                <span className="cl-filter-bar__label">层级</span>
-                <div className="cl-filter-bar__content">
-                  <button
-                    type="button"
-                    className={`cl-filter-tag ${selectedLevel === "all" ? "is-active" : ""}`}
-                    onClick={() => updateSearchParams({ level: undefined, subject: undefined })}
-                  >
-                    全部层级
-                  </button>
-                  {levelOptions.map((level) => {
-                    const levelCount = courses.filter((c) => c.educationLevel === level.value).length;
-                    return (
+          {/* 原型课程页顶部：标题 + 描述 */}
+          <div className="ed-page-head">
+            <h1>探索课程</h1>
+            <p>找到适合自己的学习方向。</p>
+          </div>
+
+          {/* 移动端：紧凑筛选条 - 下拉框选择器 */}
+          {isMobile && (
+            <section className="cl-filter-bar cl-filter-bar--mobile" style={{ padding: "8px 14px", background: "#fff" }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Select
+                  style={{ flex: 1, minWidth: 0 }}
+                  placeholder="选择层级"
+                  value={selectedLevel !== "all" ? selectedLevel : undefined}
+                  onChange={(val) => updateSearchParams({ level: val || undefined, subject: undefined })}
+                  allowClear
+                  options={levelOptions}
+                />
+                <Select
+                  style={{ flex: 1, minWidth: 0 }}
+                  placeholder="选择学校"
+                  value={selectedOrg !== "all" ? selectedOrg : undefined}
+                  onChange={(val) => updateSearchParams({ org: val || undefined })}
+                  allowClear
+                  options={organizations
+                    .filter(o => o.schemaName)
+                    .map(org => ({ label: org.name, value: org.schemaName! }))}
+                />
+                <Select
+                  style={{ flex: 1, minWidth: 0 }}
+                  placeholder="选择学科"
+                  value={selectedSubject !== "all" ? selectedSubject : undefined}
+                  onChange={(val) => updateSearchParams({ subject: val || undefined })}
+                  allowClear
+                  options={visibleSubjects
+                    .map(s => ({ label: `${s.name} (${s.count})`, value: s.code }))}
+                />
+              </div>
+            </section>
+          )}
+
+          <div className="cl-layout">
+            {/* 桌面端：左侧筛选列表（层级 / 学校 / 学科） */}
+            {!isMobile && (
+              <aside className="cl-sidebar">
+                <div className="cl-side-group">
+                  <div className="cl-side-group__title">学历层级</div>
+                  <div className="cl-side-list">
+                    <button
+                      type="button"
+                      ref={selectedLevel === "all" ? activeLevelRef : null}
+                      className={`cl-side-link${selectedLevel === "all" ? " is-active" : ""}`}
+                      onClick={() => updateSearchParams({ level: undefined, subject: undefined })}
+                    >
+                      全部层级
+                    </button>
+                    {levelOptions.map((level) => {
+                      const levelCount = courses.filter((c) => c.educationLevel === level.value).length;
+                      const active = selectedLevel === level.value;
+                      return (
+                        <button
+                          key={level.value}
+                          type="button"
+                          ref={active ? activeLevelRef : null}
+                          className={`cl-side-link${active ? " is-active" : ""}`}
+                          onClick={() => updateSearchParams({ level: level.value, subject: undefined })}
+                        >
+                          {level.label}
+                          {levelCount > 0 && <span className="cl-side-link__count">{levelCount}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="cl-side-group">
+                  <div className="cl-side-group__title">学校</div>
+                  <div className="cl-side-list cl-side-list--scroll">
+                    <button
+                      type="button"
+                      className={`cl-side-link${selectedOrg === "all" ? " is-active" : ""}`}
+                      onClick={() => updateSearchParams({ org: undefined })}
+                    >
+                      全部学校
+                    </button>
+                    {organizations.map((org) => (
                       <button
-                        key={level.value}
+                        key={org.schemaName}
                         type="button"
-                        className={`cl-filter-tag ${selectedLevel === level.value ? "is-active" : ""}`}
-                        onClick={() => updateSearchParams({ level: level.value, subject: undefined })}
+                        className={`cl-side-link${selectedOrg === org.schemaName ? " is-active" : ""}`}
+                        onClick={() => updateSearchParams({ org: org.schemaName })}
                       >
-                        {level.label}
-                        {levelCount > 0 && <span className="cl-filter-tag__count">{levelCount}</span>}
+                        {org.name}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="cl-filter-bar__row">
-                <span className="cl-filter-bar__label">学校</span>
-                <div className="cl-filter-bar__content">
-                  <button
-                    type="button"
-                    className={`cl-filter-tag ${selectedOrg === "all" ? "is-active" : ""}`}
-                    onClick={() => updateSearchParams({ org: undefined })}
-                  >
-                    全部学校
-                  </button>
-                  {organizations.map((org) => (
+
+                <div className="cl-side-group">
+                  <div className="cl-side-group__title">学科</div>
+                  <div className="cl-side-list cl-side-list--scroll">
                     <button
-                      key={org.schemaName}
                       type="button"
-                      className={`cl-filter-tag ${selectedOrg === org.schemaName ? "is-active" : ""}`}
-                      onClick={() => updateSearchParams({ org: org.schemaName })}
+                      className={`cl-side-link${selectedSubject === "all" ? " is-active" : ""}`}
+                      onClick={() => updateSearchParams({ subject: undefined })}
                     >
-                      {org.name}
+                      全部学科
                     </button>
-                  ))}
+                    {visibleSubjects.map((subject) => (
+                      <button
+                        key={subject.code}
+                        type="button"
+                        className={`cl-side-link${selectedSubject === subject.code ? " is-active" : ""}${subject.count === 0 ? " is-empty" : ""}`}
+                        onClick={() => updateSearchParams({ subject: subject.code })}
+                      >
+                        {subject.name}
+                        {subject.count > 0 && <span className="cl-side-link__count">{subject.count}</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="cl-side-toggle">
+                    <Switch
+                      size="small"
+                      checked={onlyWithCourses}
+                      onChange={(checked) => updateSearchParams({ hasCourses: checked ? undefined : "0" })}
+                    />
+                    <Text className="cl-side-toggle__text">仅显示有课学科</Text>
+                  </label>
                 </div>
-              </div>
-              <div className="cl-filter-bar__row">
-                <span className="cl-filter-bar__label">学科</span>
-                <div className="cl-filter-bar__content cl-filter-bar__content--wrap">
-                  <button
-                    type="button"
-                    className={`cl-filter-tag ${selectedSubject === "all" ? "is-active" : ""}`}
-                    onClick={() => updateSearchParams({ subject: undefined })}
-                  >
-                    全部学科
-                  </button>
-                  {visibleSubjects.map((subject) => (
-                    <button
-                      key={subject.code}
-                      type="button"
-                      className={`cl-filter-tag ${selectedSubject === subject.code ? "is-active" : ""} ${subject.count === 0 ? "is-empty" : ""}`}
-                      onClick={() => updateSearchParams({ subject: subject.code })}
-                    >
-                      {subject.name}
-                      {subject.count > 0 && <span className="cl-filter-tag__count">{subject.count}</span>}
-                    </button>
-                  ))}
-                </div>
-                <div className="cl-filter-bar__toggle">
-                  <Switch
-                    size="small"
-                    checked={onlyWithCourses}
-                    onChange={(checked) => updateSearchParams({ hasCourses: checked ? undefined : "0" })}
-                  />
-                  <Text className="cl-filter-bar__toggle-text">仅显示有课学科</Text>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+              </aside>
+            )}
 
-        {/* Search + Tabs + Course List */}
-        <section className="cl-list-section">
-          <div className="cl-list-section__inner">
-            {/* Search bar */}
-            <div className="cl-search-bar" style={isMobile ? { padding: "4px 14px" } : undefined}>
-              <Input
-                placeholder={isMobile ? "搜索课程" : "搜索课程名、老师名或学校名称"}
-                prefix={<SearchOutlined />}
-                allowClear
-                size={isMobile ? "middle" : "large"}
-                value={localSearch}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onPressEnter={(e) => {
-                  if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-                  const value = (e.target as HTMLInputElement).value;
-                  const next = new URLSearchParams(searchParams);
-                  if (!value) next.delete("q");
-                  else next.set("q", value);
-                  setPage(1);
-                  setSearchParams(next);
-                }}
-                className="cl-search-input"
-              />
-            </div>
-
-            {/* Tabs */}
-            <div className="cl-tabs" style={isMobile ? { padding: "4px 14px 8px", gap: 0, borderBottom: "1px solid #edf3ff", marginBottom: 0 } : undefined}>
-              <div style={isMobile ? { display: "flex", gap: 5, flex: 1, minWidth: 0 } : undefined}>
-                {categoryTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    className={`cl-tabs__item ${activeTab === tab.key ? "is-active" : ""}`}
-                    onClick={() => updateSearchParams({ tab: tab.key === "all" ? undefined : tab.key, subject: undefined })}
-                    style={isMobile ? { flex: 1, justifyContent: "center", padding: "7px 4px", fontSize: 13, borderRadius: 8, minWidth: 0 } : undefined}
-                  >
-                    <span>{isMobile ? tab.label.replace("课程", "") : tab.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="cl-tabs__stat" style={isMobile ? { fontSize: 12, flexShrink: 0, marginLeft: 8, padding: "7px 0 7px 8px", borderLeft: "1px solid #edf3ff" } : undefined}>
-                <strong>{filteredCourses.length}</strong>{isMobile ? "门" : ` 共 ${filteredCourses.length} 门课程`}
-              </div>
-            </div>
-
-            {isLoading ? (
-              <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
-                {Array.from({ length: isMobile ? 6 : 12 }).map((_, index) => (
-                  <div key={index} className="ed-course">
-                    <Skeleton.Image active style={{ width: "100%", height: 200 }} />
-                    <div style={{ padding: 16 }}>
-                      <Skeleton active paragraph={{ rows: 3 }} title={{ width: "80%" }} />
+            <div className="cl-main">
+              {/* Search + Tabs + Course List */}
+              <section className="cl-list-section">
+                <div className="cl-list-section__inner">
+                  {/* Search bar + 分类列表 */}
+                  <div className="cl-search-bar" style={isMobile ? { padding: "4px 14px" } : undefined}>
+                    <div className="cl-search-row">
+                      <Input
+                        placeholder={isMobile ? "搜索课程" : "搜索课程名、老师名或学校名称"}
+                        prefix={<SearchOutlined />}
+                        allowClear
+                        size={isMobile ? "middle" : "large"}
+                        value={localSearch}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        onPressEnter={(e) => {
+                          if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                          const value = (e.target as HTMLInputElement).value;
+                          const next = new URLSearchParams(searchParams);
+                          if (!value) next.delete("q");
+                          else next.set("q", value);
+                          setPage(1);
+                          setSearchParams(next);
+                        }}
+                        className="cl-search-input"
+                      />
+                      {!isMobile && (
+                        <div className="cl-cat-list" role="tablist" aria-label="课程分类">
+                          {categoryTabs.map((tab) => (
+                            <button
+                              key={tab.key}
+                              type="button"
+                              role="tab"
+                              aria-selected={activeTab === tab.key}
+                              className={`cl-cat-item${activeTab === tab.key ? " is-active" : ""}`}
+                              onClick={() => updateSearchParams({ tab: tab.key === "all" ? undefined : tab.key, subject: undefined })}
+                            >
+                              {tab.label}
+                              <span className="cl-cat-item__count">{tabCounts[tab.key] ?? 0}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : paginatedCourses.length > 0 ? (
-              <>
-                <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
-                  {paginatedCourses.map((course) => (
-                    <CourseCard key={`${course.id}_${course.orgSchemaName}`} course={course} onClick={handleCourseClick} />
-                  ))}
+
+                  {/* Tabs（仅移动端；桌面端分类见左侧列表） */}
+                  {isMobile && (
+                    <div className="cl-tabs" style={{ padding: "4px 14px 8px", gap: 0, borderBottom: "1px solid #edf3ff", marginBottom: 0 }}>
+                      <div style={{ display: "flex", gap: 5, flex: 1, minWidth: 0 }}>
+                        {categoryTabs.map((tab) => (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            className={`cl-tabs__item ${activeTab === tab.key ? "is-active" : ""}`}
+                            onClick={() => updateSearchParams({ tab: tab.key === "all" ? undefined : tab.key, subject: undefined })}
+                            style={{ flex: 1, justifyContent: "center", padding: "7px 4px", fontSize: 13, borderRadius: 8, minWidth: 0 }}
+                          >
+                            <span>{tab.label.replace("课程", "")}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="cl-tabs__stat" style={{ fontSize: 12, flexShrink: 0, marginLeft: 8, padding: "7px 0 7px 8px", borderLeft: "1px solid #edf3ff" }}>
+                        <strong>{filteredCourses.length}</strong>门
+                      </div>
+                    </div>
+                  )}
+
+                  {isLoading ? (
+                    <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
+                      {Array.from({ length: isMobile ? 6 : 12 }).map((_, index) => (
+                        <div key={index} className="cl-cc">
+                          <Skeleton.Image active style={{ width: "100%", height: 125 }} />
+                          <div style={{ padding: "14px 4px" }}>
+                            <Skeleton active paragraph={{ rows: 3 }} title={{ width: "80%" }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : paginatedCourses.length > 0 ? (
+                    <>
+                      <div className="ed-featured" style={isMobile ? { display: "grid", gridTemplateColumns: "1fr", gap: 12, padding: "0 14px" } : undefined}>
+                        {paginatedCourses.map((course, index) => (
+                          <CourseCard key={`${course.id}_${course.orgSchemaName}`} course={course} index={index} onClick={handleCourseClick} />
+                        ))}
+                      </div>
+                      <div className="cl-pagination" style={isMobile ? { padding: "16px 14px 8px" } : undefined}>
+                        <Pagination
+                          current={currentPage}
+                          pageSize={COURSES_PER_PAGE}
+                          total={filteredCourses.length}
+                          onChange={setPage}
+                          showSizeChanger={false}
+                          showTotal={isMobile ? undefined : (total) => `共 ${total} 门课程`}
+                          size={isMobile ? "small" : "default"}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <Empty
+                      className="home-empty"
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="当前筛选条件下暂无课程"
+                    />
+                  )}
                 </div>
-                <div className="cl-pagination" style={isMobile ? { padding: "16px 14px 8px" } : undefined}>
-                  <Pagination
-                    current={currentPage}
-                    pageSize={COURSES_PER_PAGE}
-                    total={filteredCourses.length}
-                    onChange={setPage}
-                    showSizeChanger={false}
-                    showTotal={isMobile ? undefined : (total) => `共 ${total} 门课程`}
-                    size={isMobile ? "small" : "default"}
-                  />
-                </div>
-              </>
-            ) : (
-              <Empty
-                className="home-empty"
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="当前筛选条件下暂无课程"
-              />
-            )}
+              </section>
+            </div>
           </div>
-        </section>
         </div>
       </Content>
 
