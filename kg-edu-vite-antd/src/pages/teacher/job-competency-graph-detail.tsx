@@ -10,7 +10,7 @@ import {
 import type { TableColumnsType } from "antd";
 import {
   ArrowLeftOutlined, EditOutlined, DeleteOutlined, PlusOutlined, ApartmentOutlined,
-  BookOutlined, FileSearchOutlined, AimOutlined, ApartmentOutlined as ApartmentIcon,
+  BookOutlined, FileSearchOutlined, AimOutlined,
   SearchOutlined, FolderOutlined, FileTextOutlined, ReloadOutlined,
 } from "@ant-design/icons";
 import KnowledgeResourcePanel from "@/components/KnowledgeResourcePanel";
@@ -28,8 +28,9 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const LEVEL_OPTIONS = [
@@ -856,8 +857,8 @@ export default function TeacherJobCompetencyGraphDetail() {
     },
   ];
 
-  if (graphLoading) return <div style={{ padding: 80, textAlign: "center" }}><Spin size="large" /></div>;
-  if (!graph) return <div style={{ padding: 80, textAlign: "center" }}><Empty description="图谱不存在或加载失败" /></div>;
+  if (graphLoading) return <AppPage><div style={{ padding: 80, textAlign: "center" }}><Spin size="large" /></div></AppPage>;
+  if (!graph) return <AppPage><div style={{ padding: 80, textAlign: "center" }}><Empty description="图谱不存在或加载失败" /></div></AppPage>;
 
   const statsInline = (
     <Space size="large" style={{ marginBottom: 12 }}>
@@ -869,31 +870,26 @@ export default function TeacherJobCompetencyGraphDetail() {
   );
 
   return (
-    <div style={{ padding: "20px 24px" }}>
-      <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate("/teacher/dashboard/job-competency-graphs")} style={{ padding: "4px 0", marginBottom: 12 }}>返回图谱列表</Button>
-
+    <AppPage
+      title={graph.name}
+      description={graph.description || "暂无描述"}
+      actions={
+        <>
+          <Button type="text" className="teacher-page-back-btn" icon={<ArrowLeftOutlined />} onClick={() => navigate("/teacher/dashboard/job-competency-graphs")} />
+          <Button type="primary" ghost icon={<ApartmentOutlined />} onClick={() => { setAiModalOpen(true); setAiTaskCount(5); }} style={canEdit ? undefined : { display: "none" }}>AI 生成</Button>
+          <ReadonlyActionButton icon={<EditOutlined />} onClick={() => { setEditingGraph({ name: graph.name, description: graph.description || "", isActive: graph.isActive, version: graph.version }); setEditGraphOpen(true); }}>编辑</ReadonlyActionButton>
+          <Popconfirm title="确定删除该图谱？将级联删除所有任务/能力/知识点关联。" onConfirm={() => deleteGraphMutation.mutate()}>
+            <ReadonlyActionButton danger icon={<DeleteOutlined />}>删除</ReadonlyActionButton>
+          </Popconfirm>
+        </>
+      }
+    >
       <Card style={{ marginBottom: 16 }}>
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Space>
-              <ApartmentIcon style={{ fontSize: 22, color: "#C0392B" }} />
-              <Title level={4} style={{ margin: 0 }}>{graph.name}</Title>
-              {graph.isActive ? <Tag color="green">激活</Tag> : <Tag>未激活</Tag>}
-              <Tag>v{graph.version || 1}</Tag>
-            </Space>
-            <div style={{ marginTop: 6, color: "#666" }}>{graph.description || "暂无描述"}</div>
-            <div style={{ marginTop: 8 }}>{statsInline}</div>
-          </Col>
-          <Col>
-            <Space>
-              <Button type="primary" ghost icon={<ApartmentOutlined />} onClick={() => { setAiModalOpen(true); setAiTaskCount(5); }} style={canEdit ? undefined : { display: "none" }}>AI 生成</Button>
-              <ReadonlyActionButton icon={<EditOutlined />} onClick={() => { setEditingGraph({ name: graph.name, description: graph.description || "", isActive: graph.isActive, version: graph.version }); setEditGraphOpen(true); }}>编辑</ReadonlyActionButton>
-              <Popconfirm title="确定删除该图谱？将级联删除所有任务/能力/知识点关联。" onConfirm={() => deleteGraphMutation.mutate()}>
-                <ReadonlyActionButton danger icon={<DeleteOutlined />}>删除</ReadonlyActionButton>
-              </Popconfirm>
-            </Space>
-          </Col>
-        </Row>
+        <Space>
+          {graph.isActive ? <Tag color="green">激活</Tag> : <Tag>未激活</Tag>}
+          <Tag>v{graph.version || 1}</Tag>
+        </Space>
+        <div style={{ marginTop: 8 }}>{statsInline}</div>
       </Card>
 
       <Card>
@@ -1447,6 +1443,6 @@ export default function TeacherJobCompetencyGraphDetail() {
           </Descriptions>
         )}
       </Drawer>
-    </div>
+    </AppPage>
   );
 }

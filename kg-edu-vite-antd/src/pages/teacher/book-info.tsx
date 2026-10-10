@@ -43,6 +43,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -676,30 +677,19 @@ export default function BookInfoPage() {
   }
 
   return (
-    <div className="book-page-wrap" style={{ padding: 24 }}>
-      <style>{`@media(max-width:768px){.book-mobile-hide{display:none!important}.book-page-wrap{padding:12px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <BookOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-      <Button
-                  className="teacher-page-back-btn"
-                  type="text"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate("/teacher/dashboard")}
-                  style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                />
-                          <Title level={4} style={{ margin: 0 }}>
-          教材管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="教材管理"
+      description="管理课程教材与附件资料"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
+      <style>{`@media(max-width:768px){.book-mobile-hide{display:none!important}}`}</style>
       {coursesLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
           <Spin size="large" />
@@ -814,6 +804,6 @@ export default function BookInfoPage() {
       >
         {renderFormFields()}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

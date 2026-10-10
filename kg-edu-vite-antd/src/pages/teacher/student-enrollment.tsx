@@ -18,7 +18,6 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import EmptyState from "@/components/EmptyState";
 import {
-  TeamOutlined,
   DeleteOutlined,
   SearchOutlined,
   UnorderedListOutlined,
@@ -40,8 +39,9 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useNavigate } from "react-router-dom";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Student {
   id: string;
@@ -357,13 +357,22 @@ export default function StudentEnrollmentPage() {
   ];
 
   return (
-    <div className="enroll-page-wrap" style={{ padding: 24 }}>
+    <AppPage
+      title="学生选课管理"
+      description="管理课程选课学生名单"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       <style>{`
         @media (max-width: 768px) {
-          .enroll-page-wrap { padding: 12px !important; }
           .enroll-mobile-hide { display: none !important; }
           .enroll-mobile-hide-in-modal { display: none !important; }
-          .enroll-page-wrap .ant-table-cell { padding: 6px 4px !important; }
           .ant-table-thead .enroll-actions-col,
           .ant-table-tbody .enroll-actions-col {
             padding: 4px 2px !important;
@@ -371,37 +380,10 @@ export default function StudentEnrollmentPage() {
             min-width: 36px !important;
             text-align: center !important;
           }
-
-          .enroll-back-btn { display: inline-flex !important; }
-        }
-        @media (min-width: 769px) {
-          .enroll-back-btn { display: none !important; }
         }
       `}</style>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <Button
-          className="enroll-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-        />
-        <TeamOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>
-          学生选课管理
-        </Title>
-      </div>
-
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <Space wrap>
           <Text strong>选择课程：</Text>
           <Select
@@ -564,6 +546,6 @@ export default function StudentEnrollmentPage() {
           ]}
         />
       </Modal>
-    </div>
+    </AppPage>
   );
 }

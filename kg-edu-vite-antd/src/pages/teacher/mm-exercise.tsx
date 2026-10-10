@@ -8,7 +8,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Col,
   Empty,
   Form,
   Input,
@@ -18,10 +17,8 @@ import {
   Popconfirm,
   Popover,
   Radio,
-  Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tabs,
   Tag,
@@ -54,6 +51,7 @@ import {
 extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { StatGrid } from "@/components/proto";
 
 interface MMExerciseManagerProps {
   tenant: string;
@@ -651,7 +649,7 @@ export default function MMExerciseManager({ tenant, courseId, headers }: MMExerc
   ];
 
   return (
-    <div>
+    <div className="pu-app">
       <Card style={{ boxShadow: "0 1px 3px rgba(16, 24, 40, 0.1)" }}>
         <Tabs
           activeKey={answersTab}
@@ -710,28 +708,15 @@ export default function MMExerciseManager({ tenant, courseId, headers }: MMExerc
                   ) : (
                     <>
                       {/* Overview stats */}
-                      <Row gutter={isMobile ? 6 : 16} style={{ marginBottom: isMobile ? 10 : 16 }}>
-                        <Col span={isMobile ? 6 : 6}>
-                          <Card size="small" bodyStyle={isMobile ? { padding: "6px 4px" } : undefined} style={{ textAlign: "center" }}>
-                            <Statistic title={<span style={{ fontSize: isMobile ? 10 : 13 }}>总习题</span>} value={exercises.length} prefix={<FileTextOutlined style={{ fontSize: isMobile ? 14 : 18 }} />} valueStyle={{ color: "#722ed1", fontSize: isMobile ? 16 : 24 }} />
-                          </Card>
-                        </Col>
-                        <Col span={isMobile ? 6 : 6}>
-                          <Card size="small" bodyStyle={isMobile ? { padding: "6px 4px" } : undefined} style={{ textAlign: "center" }}>
-                            <Statistic title={<span style={{ fontSize: isMobile ? 10 : 13 }}>答题学生</span>} value={studentSet.size} prefix={<TeamOutlined style={{ fontSize: isMobile ? 14 : 18 }} />} valueStyle={{ color: "#1890ff", fontSize: isMobile ? 16 : 24 }} />
-                          </Card>
-                        </Col>
-                        <Col span={isMobile ? 6 : 6}>
-                          <Card size="small" bodyStyle={isMobile ? { padding: "6px 4px" } : undefined} style={{ textAlign: "center" }}>
-                            <Statistic title={<span style={{ fontSize: isMobile ? 10 : 13 }}>提交次数</span>} value={answersData.length} prefix={<FileTextOutlined style={{ fontSize: isMobile ? 14 : 18 }} />} valueStyle={{ color: "#13c2c2", fontSize: isMobile ? 16 : 24 }} />
-                          </Card>
-                        </Col>
-                        <Col span={isMobile ? 6 : 6}>
-                          <Card size="small" bodyStyle={isMobile ? { padding: "6px 4px" } : undefined} style={{ textAlign: "center" }}>
-                            <Statistic title={<span style={{ fontSize: isMobile ? 10 : 13 }}>正确率</span>} value={avgCorrectRate} suffix="%" prefix={<CheckCircleOutlined style={{ fontSize: isMobile ? 14 : 18 }} />} valueStyle={{ color: avgCorrectRate >= 60 ? "#3f8600" : "#faad14", fontSize: isMobile ? 16 : 24 }} />
-                          </Card>
-                        </Col>
-                      </Row>
+                      <StatGrid
+                        columns={4}
+                        items={[
+                          { label: "总习题", value: exercises.length, icon: <FileTextOutlined /> },
+                          { label: "答题学生", value: studentSet.size, icon: <TeamOutlined /> },
+                          { label: "提交次数", value: answersData.length, icon: <FileTextOutlined /> },
+                          { label: "正确率", value: avgCorrectRate, unit: "%", icon: <CheckCircleOutlined /> },
+                        ]}
+                      />
                       {/* Answers table */}
                       <Table
                         dataSource={answersData}

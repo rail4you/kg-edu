@@ -4,18 +4,19 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card, Table, Button, Typography, Modal, Input, Space, message, Popconfirm,
-  Select, Row, Col, InputNumber,
+  Select, InputNumber,
 } from "antd";
 import type { TableColumnsType } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, SwapOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getGroupsByCourse, createGroup, updateGroup, deleteGroup, listEnrollmentsByCourse, addMembers, removeMember, listUsers } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Student {
   id: string;
@@ -254,27 +255,26 @@ export default function GroupManagement() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <AppPage
+      title="分组管理"
+      description="按课程创建与管理学习小组"
+      actions={
+        <>
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId} onChange={setSelectedCourseId}
+            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
+          <Button type="primary" icon={<PlusOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}
+            onClick={() => { setEditingGroup(null); setFormData({ name: "", description: "", maxMembers: undefined, memberIds: [] }); setDialogOpen(true); }}>创建小组</Button>
+          <Button icon={<SwapOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}>随机分组</Button>
+        </>
+      }
+    >
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>        <Button
-                    className="teacher-page-back-btn"
-                    type="text"
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => navigate("/teacher/dashboard")}
-                    style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                  />
-                    <Title level={4} style={{ margin: 0 }}><TeamOutlined /> 分组管理</Title></Col>
-          <Col>
-            <Space>
-              <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId} onChange={setSelectedCourseId}
-                options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
-              <Button type="primary" icon={<PlusOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}
-                onClick={() => { setEditingGroup(null); setFormData({ name: "", description: "", maxMembers: undefined, memberIds: [] }); setDialogOpen(true); }}>创建小组</Button>
-              <Button icon={<SwapOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}>随机分组</Button>
-            </Space>
-          </Col>
-        </Row>
         <Table
             columns={columns} dataSource={groups} rowKey="id" loading={isLoading} locale={{ emptyText: selectedCourseId ? "暂无小组" : "请先选择课程" }} />
       </Card>
@@ -304,6 +304,6 @@ export default function GroupManagement() {
           </div>
         </Space>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

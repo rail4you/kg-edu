@@ -31,6 +31,7 @@ import {
   listExperimentAbilities,
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -218,15 +219,15 @@ export default function ExperimentDetail() {
 
   if (!user) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="实验详情">
         <Alert message="用户未登录，请登录以访问实验管理。" type="error" />
-      </div>
+      </AppPage>
     );
   }
 
   if (!experiment) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="实验详情">
         <Alert message="实验不存在或已被删除。" type="info" />
         <Button
           style={{ marginTop: 16 }}
@@ -234,7 +235,7 @@ export default function ExperimentDetail() {
         >
           返回实验列表
         </Button>
-      </div>
+      </AppPage>
     );
   }
 
@@ -307,86 +308,50 @@ export default function ExperimentDetail() {
       .filter((a): a is SubAbility => Boolean(a)) as SubAbility[]) || [];
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#f5f5f5",
-      }}
-    >
-      <div
-        style={{
-          padding: 24,
-          backgroundColor: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+    <AppPage
+      title={expData.title}
+      description={expData.description}
+      actions={
+        <>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/teacher/dashboard/experiment-management")}
           >
             返回
           </Button>
-          <div style={{ flexGrow: 1 }}>
-            <Title
-              level={3}
-              style={{ margin: 0, fontWeight: 700, color: "#333" }}
-            >
-              {expData.title}
-            </Title>
-            {expData.description && (
-              <Text type="secondary" style={{ display: "block", marginTop: 4 }}>
-                {expData.description}
-              </Text>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24, overflow: "auto" }}>
-        <div
-          style={{
-            maxWidth: 1000,
-            margin: "0 auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: 24,
-          }}
-        >
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/teacher/dashboard/experiment-form/${id}`)}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            编辑
+          </Button>
+          <Popconfirm
+            title="确定要删除这个实验吗？此操作不可撤销。"
+            onConfirm={handleDelete}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button danger icon={<DeleteOutlined />} style={canEdit ? undefined : { display: "none" }}>
+              删除
+            </Button>
+          </Popconfirm>
+        </>
+      }
+    >
+      <div
+        style={{
+          maxWidth: 1000,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 24,
+        }}
+      >
           <Card>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Title level={5} style={{ margin: 0, fontWeight: 600 }}>
-                实验状态
-              </Title>
-              <Space>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/teacher/dashboard/experiment-form/${id}`)}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  编辑
-                </Button>
-                <Popconfirm
-                  title="确定要删除这个实验吗？此操作不可撤销。"
-                  onConfirm={handleDelete}
-                  okText="确定"
-                  cancelText="取消"
-                >
-                  <Button danger icon={<DeleteOutlined />} style={canEdit ? undefined : { display: "none" }}>
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
-            </div>
+            <Title level={5} style={{ marginBottom: 16, fontWeight: 600 }}>
+              实验状态
+            </Title>
             <Space size={[8, 8]} wrap>
               <Tag
                 color="blue"
@@ -620,8 +585,7 @@ export default function ExperimentDetail() {
               />
             )}
           </Card>
-        </div>
       </div>
-    </div>
+    </AppPage>
   );
 }

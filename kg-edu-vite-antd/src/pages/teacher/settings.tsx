@@ -29,8 +29,9 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { changePasswordDirect } from "@/lib/ash_rpc";
 import { useTranslate } from "@/locales/use-locales";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface AppSettings {
   language: string;
@@ -193,124 +194,38 @@ export default function TeacherSettingsPage() {
   };
 
   return (
-    <div
-      style={{
-        padding: 24,
-        maxWidth: 1280,
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
-          padding: 24,
-          borderRadius: 24,
-          background:
-            "linear-gradient(135deg, #f8fbff 0%, #eef6ff 48%, #f7fafc 100%)",
-          border: "1px solid #dbe7f3",
-        }}
-      >
-        <div style={{ maxWidth: 720 }}>
+    <AppPage
+      title={t("pages.settings.title")}
+      description="维护应用偏好与账户安全"
+      actions={
+        <>
           <Tag
-            color="blue"
             style={{
-              marginBottom: 12,
               borderRadius: 999,
               paddingInline: 10,
-              lineHeight: "24px",
+              lineHeight: "26px",
               fontSize: 12,
-              fontWeight: 600,
+              borderColor: hasChanges ? "#faad14" : "#b7eb8f",
+              color: hasChanges ? "#ad6800" : "#237804",
+              background: hasChanges ? "#fff7e6" : "#f6ffed",
             }}
           >
-            教师工作台设置
+            {hasChanges ? "存在未保存更改" : "当前配置已同步"}
           </Tag>
-          <Title level={3} style={{ margin: 0, marginBottom: 6, color: "#0f172a" }}>
-            {t("pages.settings.title")}
-          </Title>
-          <Text type="secondary" style={{ fontSize: 15, lineHeight: "24px" }}>
-            {t("pages.settings.description")} 统一维护应用偏好、AI 工作参数和账户安全信息。
-          </Text>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              flexWrap: "wrap",
-              marginTop: 16,
-            }}
+          <Button
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            onClick={handleSaveSettings}
+            disabled={!hasChanges}
+            size="large"
+            style={{ height: 42, borderRadius: 12, fontWeight: 600 }}
           >
-            <Tag
-              style={{
-                borderRadius: 999,
-                paddingInline: 10,
-                lineHeight: "26px",
-                fontSize: 12,
-                borderColor: hasChanges ? "#faad14" : "#b7eb8f",
-                color: hasChanges ? "#ad6800" : "#237804",
-                background: hasChanges ? "#fff7e6" : "#f6ffed",
-              }}
-            >
-              {hasChanges ? "存在未保存更改" : "当前配置已同步"}
-            </Tag>
-            <Tag
-              style={{
-                borderRadius: 999,
-                paddingInline: 10,
-                lineHeight: "26px",
-                fontSize: 12,
-                color: "#1d4ed8",
-                borderColor: "#bfdbfe",
-                background: "#eff6ff",
-              }}
-            >
-              账户角色：{user?.role || t("pages.settings.teacher")}
-            </Tag>
-          </div>
-        </div>
-        <div
-          style={{
-            minWidth: 260,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            alignItems: "stretch",
-          }}
-        >
-          <Card
-            styles={{ body: { padding: 16 } }}
-            style={{
-              borderRadius: 18,
-              border: "1px solid #dbe7f3",
-              background: "rgba(255,255,255,0.82)",
-            }}
-          >
-            <Text strong style={{ display: "block", marginBottom: 4, color: "#0f172a" }}>
-              配置状态
-            </Text>
-            <Text type="secondary" style={{ display: "block", marginBottom: 14 }}>
-              保存后会写入本地偏好，并立即用于教师端界面与 AI 调用配置。
-            </Text>
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={handleSaveSettings}
-              disabled={!hasChanges}
-              block
-              size="large"
-              style={{ height: 42, borderRadius: 12, fontWeight: 600 }}
-            >
-              {t("pages.settings.saveButton")}
-            </Button>
-          </Card>
-        </div>
-      </div>
-
+            {t("pages.settings.saveButton")}
+          </Button>
+        </>
+      }
+    >
+      <div className="pu-stack">
       <Card style={surfaceStyle} styles={{ body: { padding: 0 } }}>
         <div
           style={{
@@ -613,6 +528,7 @@ export default function TeacherSettingsPage() {
           </Row>
         </div>
       </Card>
+      </div>
 
       <Modal
         title={t("pages.settings.passwordDialog.title")}
@@ -702,6 +618,6 @@ export default function TeacherSettingsPage() {
           </Space>
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

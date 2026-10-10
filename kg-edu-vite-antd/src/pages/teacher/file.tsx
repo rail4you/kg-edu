@@ -7,7 +7,6 @@ import {
   Table,
   Button,
   Modal,
-  Input,
   Select,
   Tag,
   Alert,
@@ -18,7 +17,6 @@ import {
   Progress,
   Form,
   Popconfirm,
-  Spin,
 } from "antd";
 import type { TableProps } from "antd";
 import {
@@ -48,6 +46,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -60,7 +59,7 @@ import {
 import FilePreview from "@/components/FilePreview";
 import type { UploadProgress } from "@/lib/oss-upload";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const FILE_FIELDS: ListFilesFields = [
   "id",
@@ -228,7 +227,7 @@ export default function FileManagement() {
   const [isUploading, setIsUploading] = useState(false);
   const [currentUploadingFile, setCurrentUploadingFile] = useState<string>("");
   const [currentAbortController, setCurrentAbortController] = useState<AbortController | null>(null);
-  const [isUploadCancelled, setIsUploadCancelled] = useState(false);
+  const [, setIsUploadCancelled] = useState(false);
   const cancelRef = useRef(false);
   const [completedUploads, setCompletedUploads] = useState<string[]>([]);
   const [failedUploads, setFailedUploads] = useState<
@@ -1043,30 +1042,18 @@ export default function FileManagement() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          marginBottom: 16,
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <FileTextOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-      <Button
-                  className="teacher-page-back-btn"
-                  type="text"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate("/teacher/dashboard")}
-                  style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                />
-                          <Title level={4} style={{ margin: 0 }}>
-          资源管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="资源管理"
+      description="管理课程资源文件与上传"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       {/* 课程选择独立一行 */}
       <div style={{ marginBottom: 16 }}>
         <Space>
@@ -1579,6 +1566,6 @@ export default function FileManagement() {
         }}
         file={previewFile || { url: "", name: "", type: "" }}
       />
-    </div>
+    </AppPage>
   );
 }

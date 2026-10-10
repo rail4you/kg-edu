@@ -16,8 +16,9 @@ import {
   createMicroMajorCourse, updateMicroMajorCourse, deleteMicroMajorCourse,
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const COURSE_TYPE_OPTIONS = [
   { value: "required", label: "必修" },
@@ -213,58 +214,39 @@ export default function MicroMajorCourses() {
 
   if (majorLoading) {
     return (
-      <div style={{ padding: 24, textAlign: "center", marginTop: 80 }}>
+      <AppPage title="课程配置">
         <Spin size="large" />
-      </div>
+      </AppPage>
     );
   }
 
   if (!microMajor) {
     return (
-      <div className="micro-major-courses-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.micro-major-courses-wrap{padding:12px!important}.micro-major-courses-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <AppPage title="课程配置">
         <Empty description="微专业不存在" />
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div className="micro-major-courses-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.micro-major-courses-wrap{padding:12px!important}.micro-major-courses-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          size={isMobile ? "small" : "middle"}
-          onClick={() => navigate("/teacher/dashboard/micro-major-list")}
-        >
-          返回
-        </Button>
-      </div>
-
-      <Card style={{ marginBottom: 12 }} bodyStyle={isMobile ? { padding: 16 } : undefined}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 8, minWidth: 0, flex: 1 }}>
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/micro-major/dashboard")}
-              style={{ color: "#1890ff", padding: "4px 6px", fontSize: isMobile ? 14 : 16, flexShrink: 0 }}
-            />
-            <div style={{ minWidth: 0 }}>
-              <Title level={isMobile ? 5 : 4} style={{ margin: 0, fontSize: isMobile ? 15 : undefined }}>
-                {microMajor.name} - 课程配置
-              </Title>
-              <Text type="secondary" style={{ fontSize: isMobile ? 12 : 14 }}>
-                {microMajor.learningCycle && `学习周期: ${microMajor.learningCycle}`}
-              </Text>
-            </div>
-          </div>
+    <AppPage
+      title={`${microMajor.name} - 课程配置`}
+      description={microMajor.learningCycle ? `学习周期: ${microMajor.learningCycle}` : undefined}
+      actions={
+        <>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            size={isMobile ? "small" : "middle"}
+            onClick={() => navigate("/teacher/dashboard/micro-major-list")}
+          >
+            返回
+          </Button>
           <Button type="primary" icon={<PlusOutlined />} size={isMobile ? "small" : "middle"} onClick={handleAddCourse} style={canEdit ? undefined : { display: "none" }}>
             {isMobile ? "添加" : "添加课程"}
           </Button>
-        </div>
-      </Card>
-
+        </>
+      }
+    >
       <Card
         title={<span style={{ fontSize: isMobile ? 14 : 16 }}>{`课程列表 (${mmCourses.length})`}</span>}
         bodyStyle={isMobile ? { padding: 12 } : undefined}
@@ -379,6 +361,6 @@ export default function MicroMajorCourses() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

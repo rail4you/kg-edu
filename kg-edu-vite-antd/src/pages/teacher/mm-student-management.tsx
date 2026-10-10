@@ -30,6 +30,7 @@ import ScanTemplateEditor from "@/components/certificate/ScanTemplateEditor";
 import { DEFAULT_NAME_FIELD, DEFAULT_CERT_NO_FIELD, type NameFieldConfig } from "@/components/certificate/name-field";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 // 把证书模板记录转成 NameFieldConfig（处理 Decimal 字符串 → number）
 function templateToNameField(t: any): NameFieldConfig {
@@ -908,20 +909,20 @@ export default function MicroMajorStudentManagement() {
   ];
 
   return (
-    <div className="mm-student-management-wrap" style={{ padding: 24 }}>
+    <AppPage
+      className="mm-student-management-wrap"
+      title="微专业学生管理"
+      description="管理报名、结业与证书"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/micro-major/dashboard")}
+        />
+      }
+    >
 <style>{`@media(max-width:768px){.mm-student-management-wrap{padding:12px!important}.mm-student-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-        <TeamOutlined style={{ fontSize: 24, color: "#722ed1" }} />
-                  <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>微专业学生管理</Title>
-      </div>
-
       <ContextSelector />
 
       {!mmId ? (
@@ -1352,6 +1353,6 @@ export default function MicroMajorStudentManagement() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

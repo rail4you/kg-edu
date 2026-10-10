@@ -48,6 +48,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import {
   getSTSToken,
   uploadFileToOSS,
@@ -59,7 +60,7 @@ import type {
   CourseResourceSchema,
 } from "@/lib/ash_rpc";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 interface CourseVideoFormData {
@@ -362,40 +363,44 @@ export default function CourseVideoManagementPage() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 400,
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="课程媒体管理">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 400,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (!user) {
     return (
-      <div style={{ padding: 24, textAlign: "center" }}>
-        <Alert message="请先登录" type="warning" showIcon />
-        <Button type="primary" href="/login" style={{ marginTop: 16 }}>
-          登录
-        </Button>
-      </div>
+      <AppPage title="课程媒体管理">
+        <div style={{ textAlign: "center" }}>
+          <Alert message="请先登录" type="warning" showIcon />
+          <Button type="primary" href="/login" style={{ marginTop: 16 }}>
+            登录
+          </Button>
+        </div>
+      </AppPage>
     );
   }
 
   if (!currentTenant?.schemaName) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="课程媒体管理">
         <Alert
           message="未选择租户"
           description="请先选择一个组织"
           type="warning"
           showIcon
         />
-      </div>
+      </AppPage>
     );
   }
 
@@ -772,30 +777,18 @@ export default function CourseVideoManagementPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
+    <AppPage
+      title="课程媒体管理"
+      description="管理课程视频与图片媒体资源"
+      actions={
         <Button
           className="teacher-page-back-btn"
           type="text"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
         />
-        <PlayCircleOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>
-          课程媒体管理
-        </Title>
-        <Tag color="blue" style={{ marginLeft: 8 }}>支持视频与图片</Tag>
-      </div>
-
+      }
+    >
       {/* 课程选择 */}
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <Space>
@@ -1165,6 +1158,6 @@ export default function CourseVideoManagementPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

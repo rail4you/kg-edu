@@ -45,8 +45,9 @@ import {
 import KnowledgeResourcePanel from "@/components/KnowledgeResourcePanel";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface MainAbility {
@@ -824,24 +825,10 @@ export default function CompetencyManagement() {
   ];
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#f5f5f5",
-      }}
-    >
-      <div
-        style={{
-          padding: 24,
-          backgroundColor: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <Title level={4} style={{ marginBottom: 16, color: "#333" }}>
-          能力图谱管理
-        </Title>
+    <AppPage
+      title="能力图谱管理"
+      description="维护课程主能力、子能力及其知识点关联"
+      actions={
         <Space size="middle">
           <Select
             style={{ minWidth: 300 }}
@@ -869,9 +856,9 @@ export default function CompetencyManagement() {
             </Button>
           )}
         </Space>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24 }}>
+      }
+    >
+      <div style={{ flexGrow: 1 }}>
         <Card
           style={{ height: "100%" }}
           styles={{
@@ -1157,6 +1144,6 @@ export default function CompetencyManagement() {
         onClose={handleCloseKnowledgePanel}
         knowledge={viewingKnowledge}
       />
-    </div>
+    </AppPage>
   );
 }

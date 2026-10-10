@@ -4,14 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Table, Button, Typography, Tag, Modal, Input, Space, message, Popconfirm, Descriptions } from "antd";
 import type { TableColumnsType } from "antd";
-import { PlusOutlined, DeleteOutlined, EyeOutlined, TeamOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { PlusOutlined, DeleteOutlined, EyeOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getPositionsByMajor, createJobPosition, deleteJobPosition } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function MajorJobs() {
   const { majorId } = useParams<{ majorId: string }>();
@@ -59,13 +60,17 @@ export default function MajorJobs() {
     )},
   ];
 
-  return (<div style={{ padding: 24 }}>
-    <Button icon={<ArrowLeftOutlined />} style={{ marginBottom: 16 }} onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)}>返回专业管理</Button>
+  return (<AppPage
+    title="岗位管理"
+    description="管理专业相关岗位信息"
+    actions={
+      <>
+        <Button icon={<ArrowLeftOutlined />} className="teacher-page-back-btn" type="text" onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)} />
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => { setFormData({ title: "", description: "", requirements: "", salaryRange: "", source: "" }); setDialogOpen(true); }} style={canEdit ? undefined : { display: "none" }}>添加岗位</Button>
+      </>
+    }
+  >
     <Card>
-    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-      <Title level={4} style={{ margin: 0 }}><TeamOutlined /> 岗位管理</Title>
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => { setFormData({ title: "", description: "", requirements: "", salaryRange: "", source: "" }); setDialogOpen(true); }} style={canEdit ? undefined : { display: "none" }}>添加岗位</Button>
-    </div>
     <Table columns={columns} dataSource={jobs || []} rowKey="id" loading={isLoading} />
   </Card>
   <Modal title="添加岗位" open={dialogOpen} onCancel={() => setDialogOpen(false)} onOk={() => createMutation.mutate()} confirmLoading={createMutation.isPending}>
@@ -84,5 +89,5 @@ export default function MajorJobs() {
       <Descriptions.Item label="薪资">{selectedJob.salaryRange || "-"}</Descriptions.Item>
     </Descriptions>)}
   </Modal>
-  </div>);
+  </AppPage>);
 }

@@ -53,6 +53,7 @@ import { useEditPermission } from "@/hooks/use-edit-permission";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
+import { AppPage, StatGrid } from "@/components/proto";
 import * as XLSX from "xlsx";
 
 const { Text, Title, Paragraph } = Typography;
@@ -1431,9 +1432,11 @@ export default function TeacherKnowledgeResource() {
 
   if (!user) {
     return (
-      <div style={{ padding: 24, textAlign: "center" }}>
-        <Text>请先登录</Text>
-      </div>
+      <AppPage title="知识点管理">
+        <div style={{ padding: 24, textAlign: "center" }}>
+          <Text>请先登录</Text>
+        </div>
+      </AppPage>
     );
   }
 
@@ -1449,20 +1452,64 @@ export default function TeacherKnowledgeResource() {
         .tree-row-level-4 { background-color: #ffffff; border-left: 3px solid #faad14; }
         .tree-row-level-4:hover > td { background-color: #fffbe6 !important; }
       `}</style>
-      <div className="kr-page-wrap" style={{ width: "100%", padding: 16 }}>
+      <AppPage
+        title="知识点管理"
+        description="维护课程知识点层级与认知标注"
+        actions={
+          <>
+            <Button
+              className="teacher-page-back-btn"
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/teacher/dashboard")}
+            />
+            <Space wrap>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadTemplate}
+              >
+                下载模板
+              </Button>
+              <Button
+                icon={<UploadOutlined />}
+                onClick={() => setImportModalOpen(true)}
+                disabled={!selectedCourseId}
+                style={canEdit ? undefined : { display: "none" }}
+              >
+                导入知识
+              </Button>
+              <Button
+                icon={<RobotOutlined />}
+                onClick={() => setAiImportModalOpen(true)}
+                disabled={!selectedCourseId}
+                style={canEdit ? undefined : { display: "none" }}
+              >
+                AI导入
+              </Button>
+              <Button
+                danger
+                icon={<DeleteColumnOutlined />}
+                onClick={() => setDeleteAllModalOpen(true)}
+                disabled={!selectedCourseId || processedRows.length === 0}
+                style={canEdit ? undefined : { display: "none" }}
+              >
+                删除所有
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreateSubject}
+                disabled={!selectedCourseId}
+                style={canEdit ? undefined : { display: "none" }}
+              >
+                创建主题
+              </Button>
+            </Space>
+          </>
+        }
+      >
         <style>{`@media(max-width:768px){.kr-page-wrap{padding:8px!important}.kr-page-wrap .ant-table-cell{padding:6px 4px!important}.kr-page-wrap .kr-filter-row{flex-direction:column!important;align-items:stretch!important}.kr-page-wrap .kr-filter-row .ant-select{width:100%!important;margin-bottom:8px}}`}</style>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-          <Title level={4} style={{ margin: 0 }}>
-            知识点管理
-          </Title>
-        </div>
+        <div className="kr-page-wrap" style={{ width: "100%" }}>
 
           <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             {coursesLoading ? (
@@ -1515,118 +1562,32 @@ export default function TeacherKnowledgeResource() {
           </div>
 
           {selectedCourseId && (
-            <div style={{ 
-              marginBottom: 16, 
-              display: "flex", 
-              gap: 12, 
-              flexWrap: "wrap",
-              alignItems: "center"
-            }}>
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 6,
-                padding: "6px 16px",
-                backgroundColor: "#e6f7ff",
-                borderRadius: 4,
-                minWidth: 140
-              }}>
-                <BookOutlined style={{ fontSize: 16, color: "#1890ff" }} />
-                <span style={{ fontSize: 13, color: "#595959" }}>主题</span>
-                <span style={{ fontSize: 16, fontWeight: "bold", color: "#1890ff", marginLeft: "auto" }}>
-                  {filteredRows.filter((r) => r.knowledgeType === "subject").length}
-                </span>
-              </div>
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 6,
-                padding: "6px 16px",
-                backgroundColor: "#f9f0ff",
-                borderRadius: 4,
-                minWidth: 140
-              }}>
-                <FolderOutlined style={{ fontSize: 16, color: "#722ed1" }} />
-                <span style={{ fontSize: 13, color: "#595959" }}>知识单元</span>
-                <span style={{ fontSize: 16, fontWeight: "bold", color: "#722ed1", marginLeft: "auto" }}>
-                  {filteredRows.filter((r) => r.knowledgeType === "knowledge_unit").length}
-                </span>
-              </div>
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 6,
-                padding: "6px 16px",
-                backgroundColor: "#f6ffed",
-                borderRadius: 4,
-                minWidth: 140
-              }}>
-                <FileTextOutlined style={{ fontSize: 16, color: "#52c41a" }} />
-                <span style={{ fontSize: 13, color: "#595959" }}>知识点</span>
-                <span style={{ fontSize: 16, fontWeight: "bold", color: "#52c41a", marginLeft: "auto" }}>
-                  {filteredRows.filter((r) => r.knowledgeType === "knowledge_cell").length}
-                </span>
-              </div>
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 6,
-                padding: "6px 16px",
-                backgroundColor: "#fffbe6",
-                borderRadius: 4,
-                minWidth: 140
-              }}>
-                <AppstoreOutlined style={{ fontSize: 16, color: "#faad14" }} />
-                <span style={{ fontSize: 13, color: "#595959" }}>总计</span>
-                <span style={{ fontSize: 16, fontWeight: "bold", color: "#faad14", marginLeft: "auto" }}>
-                  {filteredRows.length}
-                </span>
-              </div>
-            </div>
+            <StatGrid
+              columns={4}
+              items={[
+                {
+                  label: "主题",
+                  value: filteredRows.filter((r) => r.knowledgeType === "subject").length,
+                  icon: <BookOutlined />,
+                },
+                {
+                  label: "知识单元",
+                  value: filteredRows.filter((r) => r.knowledgeType === "knowledge_unit").length,
+                  icon: <FolderOutlined />,
+                },
+                {
+                  label: "知识点",
+                  value: filteredRows.filter((r) => r.knowledgeType === "knowledge_cell").length,
+                  icon: <FileTextOutlined />,
+                },
+                {
+                  label: "总计",
+                  value: filteredRows.length,
+                  icon: <AppstoreOutlined />,
+                },
+              ]}
+            />
           )}
-
-          <Space wrap>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleDownloadTemplate}
-            >
-              下载模板
-            </Button>
-            <Button
-              icon={<UploadOutlined />}
-              onClick={() => setImportModalOpen(true)}
-              disabled={!selectedCourseId}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              导入知识
-            </Button>
-            <Button
-              icon={<RobotOutlined />}
-              onClick={() => setAiImportModalOpen(true)}
-              disabled={!selectedCourseId}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              AI导入
-            </Button>
-            <Button
-              danger
-              icon={<DeleteColumnOutlined />}
-              onClick={() => setDeleteAllModalOpen(true)}
-              disabled={!selectedCourseId || processedRows.length === 0}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              删除所有
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateSubject}
-              disabled={!selectedCourseId}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              创建主题
-            </Button>
-          </Space>
 
         <Card>
           {!selectedCourseId ? (
@@ -2377,7 +2338,8 @@ export default function TeacherKnowledgeResource() {
             </Form.Item>
           </Form>
         </Modal>
-      </div>
+        </div>
+      </AppPage>
     </>
   );
 }

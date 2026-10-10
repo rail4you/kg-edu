@@ -51,6 +51,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData, getHeaders } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -474,13 +475,13 @@ export default function AiExercisePage() {
 
   if (!currentTenant?.schemaName) {
     return (
-      <div style={{ padding: 24, flexGrow: 1 }}>
+      <AppPage title="AI 练习生成器" description="按课程知识点生成AI练习题">
         <Alert
           type="warning"
           message="请先选择租户才能使用AI练习生成器"
           style={{ marginBottom: 16 }}
         />
-      </div>
+      </AppPage>
     );
   }
 
@@ -846,36 +847,24 @@ export default function AiExercisePage() {
   };
 
   return (
-    <div className="ai-exercise-wrap" style={{ flexGrow: 1, padding: 24 }}>
-<style>{`@media(max-width:768px){.ai-exercise-wrap{padding:12px!important}.ai-exercise-wrap>div:last-child{flex-direction:column!important;height:auto!important}.ai-exercise-wrap .ant-card{height:auto!important;min-height:auto!important}.ai-exercise-wrap .ant-select{width:100%!important}.ai-exercise-wrap .exercise-title-row{flex-direction:column!important;align-items:stretch!important;gap:8px!important}.ai-exercise-wrap .exercise-title-row .ant-btn{font-size:12px!important;padding:2px 8px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-        />
-        <Title
-          level={4}
-          style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}
-        >
-          <StarOutlined />
-          AI 练习生成器
-        </Title>
-        <Tag color="blue">
-          当前组织: {currentTenant.name}
-        </Tag>
-      </div>
-
-      <div style={{ display: "flex", gap: 24, height: "calc(100vh - 160px)" }}>
+    <AppPage
+      title="AI 练习生成器"
+      description="按课程知识点生成AI练习题"
+      actions={
+        <>
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
+          />
+          <Tag color="blue">当前组织: {currentTenant.name}</Tag>
+        </>
+      }
+    >
+      <style>{`@media(max-width:768px){.ai-exercise-wrap{padding:12px!important}.ai-exercise-wrap>div:last-child{flex-direction:column!important;height:auto!important}.ai-exercise-wrap .ant-card{height:auto!important;min-height:auto!important}.ai-exercise-wrap .ant-select{width:100%!important}.ai-exercise-wrap .exercise-title-row{flex-direction:column!important;align-items:stretch!important;gap:8px!important}.ai-exercise-wrap .exercise-title-row .ant-btn{font-size:12px!important;padding:2px 8px!important}}`}</style>
+      <div className="ai-exercise-wrap" style={{ display: "flex", gap: 24, height: "calc(100vh - 160px)" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Card
             style={{ height: "100%", display: "flex", flexDirection: "column" }}
@@ -1416,6 +1405,6 @@ export default function AiExercisePage() {
       >
         {renderEditForm()}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

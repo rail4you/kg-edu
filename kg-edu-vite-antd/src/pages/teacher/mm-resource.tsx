@@ -399,7 +399,7 @@ export default function MMResourceManager({ tenant, courseId, headers }: MMResou
   ];
 
   return (
-    <div>
+    <div className="pu-app">
       <Card style={{ boxShadow: "0 1px 3px rgba(16, 24, 40, 0.1)" }}>
         {isLoading ? (
           <Table columns={columns} dataSource={[]} rowKey="id" loading pagination={false} size="middle" />

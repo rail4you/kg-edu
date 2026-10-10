@@ -18,9 +18,6 @@ import {
   message,
   Popconfirm,
   Empty,
-  Statistic,
-  Row,
-  Col,
   Dropdown,
   Tooltip,
 } from "antd";
@@ -55,6 +52,7 @@ import { useAuth } from "@/auth/auth-context";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -874,112 +872,76 @@ export default function ExamExercises() {
   }));
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "#f5f5f5",
-      }}
+    <AppPage
+      title={
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+          习题管理
+          {(examData as any)?.data && (
+            <Tag color="blue">{(examData as any).data.title}</Tag>
+          )}
+        </span>
+      }
+      description="维护考试题目与分值"
+      actions={
+        <Space>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard/exam-management")}
+          />
+          <Button
+            icon={<StarFilled style={{ color: "#9c27b0" }} />}
+            onClick={async () => {
+              const courseId = (examData as any)?.data?.courseId;
+              if (!courseId) {
+                message.warning("考试未关联课程，无法使用智能组卷");
+                return;
+              }
+              await fetchExerciseTypeStats(courseId);
+              setAutoComposeOpen(true);
+            }}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            智能组卷
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setSelectedExercisesMap(new Map());
+              setSelectedQuestionType("all");
+              setCurrentPage(0);
+              setSearchQuery("");
+              setAddDialogOpen(true);
+            }}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            添加习题
+          </Button>
+        </Space>
+      }
     >
-      <div
-        style={{
-          padding: 24,
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
+      <StatGrid
+        columns={3}
+        items={[
+          { label: "已添加习题", value: examExercisesResult?.length || 0 },
+          { label: "总分", value: (examData as any)?.data?.totalScore || 0 },
+          { label: "及格分", value: (examData as any)?.data?.passingScore || 0 },
+        ]}
+      />
+
+      <Card
+        style={{ height: "100%" }}
+        styles={{
+          body: {
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+          },
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <Space>
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard/exam-management")} // 保持原路径
-            />
-            <Title level={3} style={{ margin: 0 }}>
-              习题管理
-            </Title>
-            {(examData as any)?.data && (
-              <Tag color="blue">{(examData as any).data.title}</Tag>
-            )}
-          </Space>
-          <Space>
-            <Button
-              icon={<StarFilled style={{ color: "#9c27b0" }} />}
-              onClick={async () => {
-                const courseId = (examData as any)?.data?.courseId;
-                if (!courseId) {
-                  message.warning("考试未关联课程，无法使用智能组卷");
-                  return;
-                }
-                await fetchExerciseTypeStats(courseId);
-                setAutoComposeOpen(true);
-              }}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              智能组卷
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setSelectedExercisesMap(new Map());
-                setSelectedQuestionType("all");
-                setCurrentPage(0);
-                setSearchQuery("");
-                setAddDialogOpen(true);
-              }}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              添加习题
-            </Button>
-          </Space>
-        </div>
-
-        <Row gutter={24}>
-          <Col span={8}>
-            <Statistic
-              title="已添加习题"
-              value={examExercisesResult?.length || 0}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic
-              title="总分"
-              value={(examData as any)?.data?.totalScore || 0}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic
-              title="及格分"
-              value={(examData as any)?.data?.passingScore || 0}
-              valueStyle={{ color: "#faad14" }}
-            />
-          </Col>
-        </Row>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24 }}>
-        <Card
-          style={{ height: "100%" }}
-          styles={{
-            body: {
-              padding: 0,
-              display: "flex",
-              flexDirection: "column",
-              height: "100%",
-            },
-          }}
-        >
           <div
             style={{
               padding: 16,
@@ -1061,7 +1023,6 @@ export default function ExamExercises() {
             />
           )}
         </Card>
-      </div>
 
       <Modal
         title={
@@ -1810,6 +1771,6 @@ export default function ExamExercises() {
           </Space>
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

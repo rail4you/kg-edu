@@ -16,9 +16,6 @@ import {
   Empty,
   Avatar,
   Rate,
-  Statistic,
-  Row,
-  Col,
 } from "antd";
 import {
   DeleteOutlined,
@@ -39,8 +36,9 @@ import type { DiscussionResourceSchema } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { Option } = Select;
 
 export default function CourseEvaluationPage() {
@@ -247,68 +245,40 @@ export default function CourseEvaluationPage() {
 
   if (!user) {
     return (
-      <div style={{ padding: 24, textAlign: "center" }}>
+      <AppPage title="课程评价管理">
         <Text>请先登录</Text>
-      </div>
+      </AppPage>
     );
   }
 
   if (!currentTenant?.schemaName) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="课程评价管理">
         <Text>未选择租户，请先选择组织</Text>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
+    <AppPage
+      title="课程评价管理"
+      description="查看与管理学生课程评价"
+      actions={
         <Button
           className="teacher-page-back-btn"
           type="text"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
         />
-        <MessageOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>
-          课程评价管理
-        </Title>
-      </div>
-
-      {/* 统计卡片 */}
-      <Row gutter={16} style={{ marginTop: 24, marginBottom: 24 }}>
-        <Col span={12}>
-          <Card>
-            <Statistic
-              title="当前课程评价次数"
-              value={stats.totalCount}
-              prefix={<MessageOutlined />}
-              suffix="次"
-            />
-          </Card>
-        </Col>
-        <Col span={12}>
-          <Card>
-            <Statistic
-              title="当前课程平均评分"
-              value={stats.averageRating}
-              precision={1}
-              prefix={<StarOutlined />}
-              suffix="分"
-            />
-          </Card>
-        </Col>
-      </Row>
+      }
+    >
+      <StatGrid
+        columns={2}
+        items={[
+          { label: "当前课程评价次数", value: stats.totalCount, unit: "次", icon: <MessageOutlined /> },
+          { label: "当前课程平均评分", value: stats.averageRating.toFixed(1), unit: "分", icon: <StarOutlined /> },
+        ]}
+      />
 
       {/* 筛选和列表 */}
       <div style={{ marginBottom: 16 }}>
@@ -436,6 +406,6 @@ export default function CourseEvaluationPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

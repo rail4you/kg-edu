@@ -847,9 +847,9 @@ export default function ExperimentForm() {
 
   if (!user) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="实验管理">
         <Alert message="用户未登录，请登录以访问实验管理。" type="error" />
-      </div>
+      </AppPage>
     );
   }
 
@@ -879,38 +879,18 @@ export default function ExperimentForm() {
   }
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "#f5f5f5",
-      }}
+    <AppPage
+      title={isEditMode ? "编辑实验" : "创建实验"}
+      description="填写实验基本信息、详情与关联内容"
+      actions={
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard/experiment-management")}
+        >
+          返回
+        </Button>
+      }
     >
-      <div
-        style={{
-          padding: 24,
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard/experiment-management")}
-          >
-            返回
-          </Button>
-          <Title
-            level={3}
-            style={{ margin: 0, fontWeight: 700, color: "#333" }}
-          >
-            {isEditMode ? "编辑实验" : "创建实验"}
-          </Title>
-        </div>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24, overflow: "auto" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <Card style={{ padding: 24 }}>
             <Title level={5} style={{ marginBottom: 16, fontWeight: 600 }}>
@@ -1367,7 +1347,6 @@ export default function ExperimentForm() {
             </div>
           </Card>
         </div>
-      </div>
-    </div>
+    </AppPage>
   );
 }

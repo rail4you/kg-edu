@@ -451,7 +451,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 16, marginTop: 16 }}>
+    <div className="pu-app" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 16, marginTop: 16 }}>
       {/* Left panel: chapter tree */}
       <Card
         title="章节列表"

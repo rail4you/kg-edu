@@ -3,14 +3,15 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Table, Button, Typography, Tag, Modal, message, Popconfirm, Space, Empty } from "antd";
-import { DeleteOutlined, FileTextOutlined, RobotOutlined, EyeOutlined } from "@ant-design/icons";
+import { DeleteOutlined, RobotOutlined, EyeOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getReportsByMajor, deleteReport, generateReport } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const TYPE_OPTIONS = [{ value: "job_analysis", label: "岗位分析" }, { value: "competency", label: "能力图谱" }, { value: "curriculum", label: "课程体系" }, { value: "comprehensive", label: "综合分析" }];
 
 export default function MajorReport() {
@@ -50,11 +51,14 @@ export default function MajorReport() {
     )},
   ];
 
-  return (<div style={{ padding: 24 }}><Card>
-    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-      <Title level={4} style={{ margin: 0 }}><FileTextOutlined /> 分析报告</Title>
+  return (<AppPage
+    title="分析报告"
+    description="AI 生成专业分析报告"
+    actions={
       <Button type="primary" icon={<RobotOutlined />} onClick={() => setGenerateVisible(true)} style={canEdit ? undefined : { display: "none" }}>AI 生成报告</Button>
-    </div>
+    }
+  >
+  <Card>
     <Table columns={columns} dataSource={reports || []} rowKey="id" loading={isLoading} locale={{ emptyText: <Empty description="暂无报告，点击上方按钮 AI 生成" /> }} />
   </Card>
   <Modal title="AI 生成报告" open={generateVisible} onCancel={() => setGenerateVisible(false)} onOk={() => generateMutation.mutate()} confirmLoading={generateMutation.isPending}>
@@ -64,5 +68,5 @@ export default function MajorReport() {
   </Modal>
   <Modal title={selectedReport?.title || "报告预览"} open={previewVisible} onCancel={() => setPreviewVisible(false)} footer={null} width={800}>
     {selectedReport?.content ? <div style={{ background: "#f5f5f5", padding: 24, borderRadius: 8, whiteSpace: "pre-wrap", lineHeight: 1.8 }}>{selectedReport.content}</div> : <Empty description="暂无内容" />}
-  </Modal></div>);
+  </Modal></AppPage>);
 }

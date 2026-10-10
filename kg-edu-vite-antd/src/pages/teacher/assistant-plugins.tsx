@@ -14,8 +14,9 @@ import {
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface BuiltinPlugin {
   name: string;
@@ -158,20 +159,22 @@ export default function AssistantPlugins() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
+      <AppPage title="AI 助教插件" description="大模型能力与插件应用池">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
+    <AppPage
+      title="AI 助教插件"
+      description="大模型能力与插件应用池"
+      actions={
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>AI 助教插件</Title>
-      </div>
-
-      <div style={{ padding: 24 }}>
+      }
+    >
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
             <Card title="大模型能力开关">
@@ -269,7 +272,6 @@ export default function AssistantPlugins() {
             </Card>
           </Col>
         </Row>
-      </div>
-    </div>
+    </AppPage>
   );
 }

@@ -2,7 +2,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as echarts from "echarts";
 import { useRef, useEffect } from "react";
-import { Card, Row, Col, Typography, Spin, Statistic, Empty, Button, Tabs, Table, Tag } from "antd";
+import { Card, Row, Col, Typography, Spin, Empty, Button, Tabs, Table, Tag } from "antd";
 import {
   BarChartOutlined,
   RiseOutlined,
@@ -15,6 +15,7 @@ import { useParams , useNavigate } from "react-router-dom";
 import { getStudentExamsByExam, getExamAnalysis } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -201,39 +202,43 @@ export default function ExamStatistics() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="考试统计分析" description="考试成绩概览与试卷分析">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 80,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="考试统计分析" description="考试成绩概览与试卷分析">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 80,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (!statsData) {
     return (
-      <div style={{ padding: 24, minHeight: "100vh", background: "#f5f5f5" }}>
+      <AppPage title="考试统计分析" description="考试成绩概览与试卷分析">
         <Empty description="暂无数据" />
-      </div>
+      </AppPage>
     );
   }
 
@@ -361,86 +366,57 @@ export default function ExamStatistics() {
   };
 
   return (
-    <div
-      style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}
+    <AppPage
+      title="考试统计分析"
+      description="考试成绩概览与试卷分析"
+      className="exam-statistics-wrap"
+      actions={
+        <>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <Button onClick={() => navigate("/teacher/dashboard/exam-management")}>
+            回到考试
+          </Button>
+          <Button type="primary" onClick={() => navigate(`/teacher/dashboard/exam-print/${examId}`)}>
+            打印试卷
+          </Button>
+        </>
+      }
     >
-      <div
-        style={{
-          padding: 24,
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-        />
-        <Title level={4} style={{ margin: 0, fontWeight: 700, color: "#333" }}>
-          考试统计分析
-        </Title>
-        <div style={{ flex: 1 }} />
-        <Button onClick={() => navigate("/teacher/dashboard/exam-management")}>
-          回到考试
-        </Button>
-        <Button type="primary" onClick={() => navigate(`/teacher/dashboard/exam-print/${examId}`)}>
-          打印试卷
-        </Button>
-      </div>
+      <style>{`@media(max-width:768px){.exam-statistics-wrap{padding:12px!important}.exam-statistics-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <StatGrid
+        items={[
+          {
+            label: "参考人数",
+            value: statsData.summary.submittedCount,
+            unit: `/ ${statsData.summary.totalStudents}`,
+            icon: <BarChartOutlined />,
+          },
+          {
+            label: "平均分",
+            value: statsData.summary.avgScore,
+            icon: <LineChartOutlined />,
+          },
+          {
+            label: "及格率",
+            value: statsData.summary.passRate,
+            unit: "%",
+            icon: <RiseOutlined />,
+          },
+          {
+            label: "优秀率",
+            value: statsData.summary.excellentRate,
+            unit: "%",
+            icon: <RiseOutlined />,
+          },
+        ]}
+      />
 
-      <div className="exam-statistics-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.exam-statistics-wrap{padding:12px!important}.exam-statistics-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="参考人数"
-                value={statsData.summary.submittedCount}
-                suffix={`/ ${statsData.summary.totalStudents}`}
-                prefix={<BarChartOutlined style={{ color: "#1890ff" }} />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="平均分"
-                value={statsData.summary.avgScore}
-                valueStyle={{ color: "#1890ff" }}
-                prefix={<LineChartOutlined style={{ color: "#1890ff" }} />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="及格率"
-                value={statsData.summary.passRate}
-                suffix="%"
-                valueStyle={{ color: "#52c41a" }}
-                prefix={<RiseOutlined style={{ color: "#52c41a" }} />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="优秀率"
-                value={statsData.summary.excellentRate}
-                suffix="%"
-                valueStyle={{ color: "#faad14" }}
-                prefix={<RiseOutlined style={{ color: "#faad14" }} />}
-              />
-            </Card>
-          </Col>
-        </Row>
-
-        <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]}>
           <Col xs={24} md={16}>
             <Card style={{ padding: 24 }}>
               <Title level={5} style={{ marginBottom: 16 }}>
@@ -540,7 +516,6 @@ export default function ExamStatistics() {
           </Card>
         )}
         {renderAnalysis()}
-      </div>
-    </div>
+    </AppPage>
   );
 }

@@ -47,6 +47,7 @@ import { TenantLayout } from "@/components/admin/tenant-layout";
 import { fetchAcrossTenants } from "@/lib/tenant-query";
 import { MobileTableCard } from "@/components/admin/mobile-table-card";
 import { useResponsive } from "@/hooks/use-responsive";
+import { AppPage } from "@/components/proto";
 import type { IUserItem } from "@/types/user";
 
 const { Text } = Typography;
@@ -507,14 +508,16 @@ export default function TeacherManagement() {
 
   if (!isSuperAdmin && !hasTenant()) {
     return (
-      <Card>
-        <Alert
-          message="请先选择组织"
-          description="教师管理需要在特定组织/租户下进行。请先选择一个组织。"
-          type="warning"
-          showIcon
-        />
-      </Card>
+      <AppPage title="教师管理" description="管理组织内的教师账户">
+        <Card>
+          <Alert
+            message="请先选择组织"
+            description="教师管理需要在特定组织/租户下进行。请先选择一个组织。"
+            type="warning"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -524,7 +527,7 @@ export default function TeacherManagement() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage title="教师管理" description="管理组织内的教师账户">
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
         {/* 移动端工具栏 */}
         {isMobile && (
@@ -807,7 +810,7 @@ export default function TeacherManagement() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }

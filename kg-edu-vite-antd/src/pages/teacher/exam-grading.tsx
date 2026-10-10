@@ -13,9 +13,6 @@ import {
   Progress,
   Alert,
   Space,
-  Statistic,
-  Row,
-  Col,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -36,8 +33,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useAuth } from "@/auth/auth-context";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface StudentExam {
   id: string;
@@ -656,133 +654,82 @@ export default function ExamGrading() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="智能批改" description="AI 辅助批改学生答卷">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 80,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "#f5f5f5",
-      }}
+    <AppPage
+      title="智能批改"
+      description="AI 辅助批改学生答卷"
+      actions={
+        <Space>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <ReadonlyActionButton
+            type="primary"
+            icon={<RobotOutlined />}
+            onClick={handleAutoGrade}
+            loading={autoGrading}
+            style={{ backgroundColor: "#722ed1", borderColor: "#722ed1" }}
+          >
+            {autoGrading ? "AI批改中..." : "AI自动批改"}
+          </ReadonlyActionButton>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard/exam-management")}
+          >
+            返回列表
+          </Button>
+        </Space>
+      }
     >
-      <div
-        style={{
-          padding: 24,
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Button
-              className="teacher-page-back-btn"
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard")}
-              style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-            />
-            <div>
-              <Title level={4} style={{ margin: 0 }}>
-                智能批改
-              </Title>
-              <Text type="secondary">考试ID: {examId}</Text>
-            </div>
+      <StatGrid
+        items={[
+          { label: "总答卷数", value: studentExamsResult?.length || 0 },
+          { label: "已批改", value: gradedCount },
+          { label: "待批改", value: submittedCount },
+          { label: "平均分", value: avgScore },
+        ]}
+      />
+
+      <Card>
+        {isLoading ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 48,
+            }}
+          >
+            <Spin size="large" />
           </div>
-          <Space>
-            <ReadonlyActionButton
-              type="primary"
-              icon={<RobotOutlined />}
-              onClick={handleAutoGrade}
-              loading={autoGrading}
-              style={{ backgroundColor: "#722ed1", borderColor: "#722ed1" }}
-            >
-              {autoGrading ? "AI批改中..." : "AI自动批改"}
-            </ReadonlyActionButton>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard/exam-management")}
-            >
-              返回列表
-            </Button>
-          </Space>
-        </div>
-
-        <Row gutter={24}>
-          <Col>
-            <Statistic
-              title="总答卷数"
-              value={studentExamsResult?.length || 0}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Col>
-          <Col>
-            <Statistic
-              title="已批改"
-              value={gradedCount}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Col>
-          <Col>
-            <Statistic
-              title="待批改"
-              value={submittedCount}
-              valueStyle={{ color: "#faad14" }}
-            />
-          </Col>
-          <Col>
-            <Statistic
-              title="平均分"
-              value={avgScore}
-              valueStyle={{ color: "#722ed1" }}
-            />
-          </Col>
-        </Row>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24 }}>
-        <Card style={{ height: "100%" }}>
-          {isLoading ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100%",
-              }}
-            >
-              <Spin size="large" />
-            </div>
-          ) : (
-            <Table
-              columns={columns}
-              dataSource={studentExamsResult || []}
-              rowKey="id"
-              rowSelection={rowSelection}
-              pagination={{ pageSize: 10 }}
-            />
-          )}
-        </Card>
-      </div>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={studentExamsResult || []}
+            rowKey="id"
+            rowSelection={rowSelection}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
+      </Card>
 
       <Modal
         open={aiGradingOpen}
@@ -863,6 +810,6 @@ export default function ExamGrading() {
             </Card>
           )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

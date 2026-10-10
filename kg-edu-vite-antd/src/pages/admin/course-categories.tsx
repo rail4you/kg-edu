@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Empty,
-  Form,
   Input,
   Popconfirm,
   Select,
@@ -27,12 +26,12 @@ import {
   fetchCourseCategoriesAdmin,
   saveCourseCategories,
   type CourseCategory,
-  type CategoryCourseItem,
 } from "@/lib/course-categories";
 import { getAllCourses, listOrganizations } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface OrgOption {
   id: string;
@@ -89,8 +88,8 @@ export default function CourseCategoriesPage() {
       );
       setOrganizations(orgOptions);
       return cats;
-    } catch (e: any) {
-      message.error(e?.message || "加载失败");
+    } catch (e) {
+      message.error((e as Error)?.message || "加载失败");
       return [];
     } finally {
       setLoading(false);
@@ -264,29 +263,25 @@ export default function CourseCategoriesPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: 80 }}>
-        <Spin size="large" tip="加载课程类别..." />
-      </div>
+      <AppPage title="门户课程类别" description="维护首页与课程列表页的动态类别">
+        <div style={{ textAlign: "center", padding: 80 }}>
+          <Spin size="large" tip="加载课程类别..." />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <AppPage
+      title="门户课程类别"
+      description="维护首页与课程列表页的动态类别"
+      actions={
+        <Button icon={<PlusOutlined />} onClick={addCategory} disabled={!isSuperAdmin}>
+          新增类别
+        </Button>
+      }
+    >
       <Card>
-        <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-          <div>
-            <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-              门户课程类别
-            </Title>
-            <Text type="secondary">
-              首页「推荐课程 / 新开课程」等模块与课程列表页 Tab（「全部课程」之外）均由这里的类别动态生成。
-              每个类别可按租户挑选课程，未选课程时对应模块/ Tab 不展示课程
-            </Text>
-          </div>
-          <Button icon={<PlusOutlined />} onClick={addCategory} disabled={!isSuperAdmin}>
-            新增类别
-          </Button>
-        </div>
 
         {categories.length === 0 ? (
           <Empty description="暂无课程类别，点击「新增类别」创建" style={{ padding: 40 }} />
@@ -452,6 +447,6 @@ export default function CourseCategoriesPage() {
           </Button>
         </div>
       </Card>
-    </div>
+    </AppPage>
   );
 }

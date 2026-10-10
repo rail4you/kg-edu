@@ -4,8 +4,9 @@ import { SaveOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { fetchSiteContent, saveSiteContent } from "@/lib/site-content";
 import { getAuthHeaders } from "@/lib/auth";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface SiteContentForm {
@@ -71,24 +72,17 @@ export default function SiteContentConfigPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: 80 }}>
-        <Spin size="large" tip="加载配置..." />
-      </div>
+      <AppPage title="站点内容" description="配置首页页脚的简介与联系方式">
+        <div style={{ textAlign: "center", padding: 80 }}>
+          <Spin size="large" tip="加载配置..." />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <AppPage title="站点内容" description="配置首页页脚的简介与联系方式">
       <Card>
-        <div style={{ marginBottom: 20 }}>
-          <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-            站点内容配置
-          </Title>
-          <Text type="secondary">
-            配置首页 footer 的「平台简介 / 联系我们 / 隐私条款」展示文案
-          </Text>
-        </div>
-
         <Form<SiteContentForm> form={form} layout="vertical" disabled={!isSuperAdmin}>
           <Form.Item
             name="aboutIntro"
@@ -129,6 +123,6 @@ export default function SiteContentConfigPage() {
           </div>
         </Form>
       </Card>
-    </div>
+    </AppPage>
   );
 }

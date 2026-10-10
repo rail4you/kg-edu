@@ -13,8 +13,6 @@ import {
   Input,
   List,
   Empty,
-  Row,
-  Col,
   Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -40,8 +38,9 @@ import {
 import { useCourses } from "@/hooks/use-courses";
 import ActionDropdown from "@/components/ActionDropdown";
 import { useEditPermission } from "@/hooks/use-edit-permission";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Experiment {
   id: string;
@@ -197,10 +196,10 @@ export default function ExperimentManagement() {
 
   if (!user) {
     return (
-      <div className="experiment-management-wrap" style={{ padding: 24 }}>
+      <AppPage className="experiment-management-wrap" title="实验管理">
 <style>{`@media(max-width:768px){.experiment-management-wrap{padding:12px!important}.experiment-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
         <Text type="danger">用户未登录，请登录以访问实验管理。</Text>
-      </div>
+      </AppPage>
     );
   }
 
@@ -401,112 +400,30 @@ export default function ExperimentManagement() {
   ];
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#f5f5f5",
-      }}
+    <AppPage
+      title="实验管理"
+      description="管理各课程的实验内容与指导书"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
     >
-      <div
-        style={{
-          padding: "16px 24px",
-          backgroundColor: "white",
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <ExperimentOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-                    <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-            实验管理
-          </Title>
-        </div>
+      {selectedCourse && (
+        <StatGrid
+          columns={3}
+          items={[
+            { label: "总实验数", value: stats.total, icon: <ExperimentOutlined /> },
+            { label: "已发布", value: stats.published, icon: <CloudOutlined /> },
+            { label: "草稿", value: stats.draft, icon: <ExperimentOutlined /> },
+          ]}
+        />
+      )}
 
-        {selectedCourse && (
-        <Row gutter={[16, 16]}>
-          <Col span={8}>
-            <Card size="small" style={{ borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 36, 
-                  height: 36, 
-                  borderRadius: 6, 
-                  background: 'linear-gradient(135deg, #1890ff 0%, #69c0ff 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <ExperimentOutlined style={{ fontSize: 18, color: '#fff' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>总实验数</div>
-                  <div style={{ fontSize: 20, fontWeight: 600, color: '#1890ff' }}>{stats.total}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" style={{ borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 36, 
-                  height: 36, 
-                  borderRadius: 6, 
-                  background: 'linear-gradient(135deg, #52c41a 0%, #95de64 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <CloudOutlined style={{ fontSize: 18, color: '#fff' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>已发布</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, color: '#52c41a' }}>{stats.published}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" style={{ borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 36, 
-                  height: 36, 
-                  borderRadius: 6, 
-                  background: 'linear-gradient(135deg, #faad14 0%, #ffe58f 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <ExperimentOutlined style={{ fontSize: 18, color: '#fff' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>草稿</div>
-                  <div style={{ fontSize: 20, fontWeight: 600, color: '#faad14' }}>{stats.draft}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-        )}
-      </div>
-
-      <div style={{ flexGrow: 1, display: "flex", padding: 24, gap: 24 }}>
+      <div style={{ display: "flex", gap: 24 }}>
         {/* 左侧课程列表 */}
         <Card
           style={{ width: 280, flexShrink: 0 }}
@@ -652,6 +569,6 @@ export default function ExperimentManagement() {
           )}
         </Card>
       </div>
-    </div>
+    </AppPage>
   );
 }

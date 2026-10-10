@@ -9,8 +9,9 @@ import { useAuth } from "@/auth/auth-context";
 import { useNavigate } from "react-router-dom";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 interface Voice {
@@ -153,21 +154,22 @@ export default function TtsSynthesis() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
+      <AppPage title="AI 语音合成" description="文字转多音色多语言语音">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
+    <AppPage
+      title="AI 语音合成（听力题 / 口语测评）"
+      description="文字转多音色多语言语音"
+      actions={
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>AI 语音合成（听力题 / 口语测评）</Title>
-        <Text type="secondary" style={{ marginLeft: 8 }}>文字 → 多音色多语言语音</Text>
-      </div>
-
-      <div style={{ padding: 24 }}>
+      }
+    >
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
             <Card title="1. 输入合成文本">
@@ -283,7 +285,6 @@ export default function TtsSynthesis() {
             )}
           </Col>
         </Row>
-      </div>
-    </div>
+    </AppPage>
   );
 }

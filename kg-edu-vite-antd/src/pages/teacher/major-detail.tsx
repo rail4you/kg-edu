@@ -3,12 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, Row, Col, Typography, Spin, Descriptions, Tag, Empty, Button } from "antd";
 import {
-  ApartmentOutlined, TeamOutlined, TrophyOutlined, BookOutlined,
+  TeamOutlined, TrophyOutlined, BookOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getMajor } from "@/lib/ash_rpc";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -33,18 +34,24 @@ export default function MajorDetail() {
     { title: "课程体系设计", desc: "AI 生成课程体系文档，支持预览、编辑、发布", icon: <BookOutlined />, path: `/teacher/dashboard/major-curriculum/${id}`, color: "#722ed1" },
   ];
 
-  if (isLoading) return <div style={{ textAlign: "center", padding: 80 }}><Spin size="large" /></div>;
-  if (!major) return <Empty description="专业不存在" />;
+  if (isLoading) return <AppPage><div style={{ textAlign: "center", padding: 80 }}><Spin size="large" /></div></AppPage>;
+  if (!major) return <AppPage><Empty description="专业不存在" /></AppPage>;
 
   return (
-    <div style={{ padding: 24 }}>
-      <Button
-        icon={<ArrowLeftOutlined />}
-        style={{ marginBottom: 16 }}
-        onClick={() => navigate("/teacher/dashboard/major-list")}
-      >返回专业列表</Button>
+    <AppPage
+      title={major.name}
+      description="专业信息与建设模块"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard/major-list")}
+        />
+      }
+    >
       <Card style={{ marginBottom: 16 }}>
-        <Descriptions title={<><ApartmentOutlined /> {major.name}</>} column={3}>
+        <Descriptions column={3}>
           <Descriptions.Item label="专业代码">{major.code || "-"}</Descriptions.Item>
           <Descriptions.Item label="所属学院">{major.college || "-"}</Descriptions.Item>
           <Descriptions.Item label="学位类型">{DEGREE_MAP[major.degreeType] || major.degreeType || "-"}</Descriptions.Item>
@@ -67,6 +74,6 @@ export default function MajorDetail() {
           </Col>
         ))}
       </Row>
-    </div>
+    </AppPage>
   );
 }

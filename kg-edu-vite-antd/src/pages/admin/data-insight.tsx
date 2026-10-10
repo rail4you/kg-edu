@@ -41,6 +41,7 @@ import {
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -82,18 +83,6 @@ const DATASET_LABELS: Record<string, string> = {
   user: "用户",
 };
 const datasetLabel = (d?: string) => (d ? DATASET_LABELS[d] || d : "");
-
-const KPI_COLORS = [
-  "#1890ff",
-  "#722ed1",
-  "#eb2f96",
-  "#13c2c2",
-  "#fa8c16",
-  "#52c41a",
-  "#2f54eb",
-  "#f5222d",
-  "#a0d911",
-];
 
 function ChartBlock({ option }: { option: any }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -659,14 +648,34 @@ export default function AdminDataInsight() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
+      <AppPage title="数据智能" description="按院系统计教学运行数据并导出">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
+    <AppPage
+      title="数据智能"
+      description="按院系统计教学运行数据并导出"
+      actions={
+        <Space>
+          <Text strong>院系（租户）：</Text>
+          <Select
+            style={{ minWidth: 220 }}
+            placeholder="选择院系"
+            value={tenant || undefined}
+            loading={!orgs}
+            onChange={setTenant}
+            showSearch
+            optionFilterProp="label"
+            options={(orgs || []).map((o: any) => ({ value: o.schemaName, label: o.name || o.schemaName }))}
+          />
+        </Space>
+      }
+    >
       <style>{`
         @media print {
           html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
@@ -688,27 +697,8 @@ export default function AdminDataInsight() {
           @page { size: A4; margin: 12mm; }
         }
       `}</style>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <Title level={4} style={{ margin: 0 }}>数据智能</Title>
-        <Text type="secondary">基于教学运行数据的 AI 问答与统计报告</Text>
-        <div style={{ flex: 1 }} />
-        <Space>
-          <Text strong>院系（租户）：</Text>
-          <Select
-            style={{ minWidth: 220 }}
-            placeholder="选择院系"
-            value={tenant || undefined}
-            loading={!orgs}
-            onChange={setTenant}
-            showSearch
-            optionFilterProp="label"
-            options={(orgs || []).map((o: any) => ({ value: o.schemaName, label: o.name || o.schemaName }))}
-          />
-        </Space>
-      </div>
 
-      <div style={{ padding: 24 }}>
-        <Tabs
+      <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
@@ -726,19 +716,9 @@ export default function AdminDataInsight() {
           }
         >
           {overviewSummary && <Paragraph style={{ marginBottom: 16 }}>{overviewSummary}</Paragraph>}
-          <Row gutter={[12, 12]}>
-            {kpis.map((k, i) => (
-              <Col xs={8} sm={6} md={4} key={k.label || i}>
-                <div style={{ border: "1px solid #f0f0f0", borderRadius: 10, padding: "14px 10px", textAlign: "center", background: "#fafafa" }}>
-                  <div style={{ fontSize: 30, fontWeight: 700, color: KPI_COLORS[i % KPI_COLORS.length] }}>
-                    {k.value}
-                    <span style={{ fontSize: 13, fontWeight: 400, color: "#999", marginLeft: 2 }}>{k.suffix}</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>{k.label}</div>
-                </div>
-              </Col>
-            ))}
-          </Row>
+          <StatGrid
+            items={kpis.map((k) => ({ label: k.label, value: k.value, unit: k.suffix }))}
+          />
           {overviewInsight && (
             <Card size="small" title="AI 解读" style={{ marginTop: 16, background: "#f6f0ff" }}>
               <Paragraph style={{ margin: 0 }}>{overviewInsight}</Paragraph>
@@ -1082,7 +1062,6 @@ export default function AdminDataInsight() {
             },
           ]}
         />
-      </div>
 
       {/* 报告大纲调整 */}
       <Modal
@@ -1168,6 +1147,6 @@ export default function AdminDataInsight() {
         </div>
       </Modal>
 
-    </div>
+    </AppPage>
   );
 }

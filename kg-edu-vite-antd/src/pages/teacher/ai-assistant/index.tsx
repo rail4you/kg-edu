@@ -12,6 +12,7 @@ import AssistantChat from "@/components/assistant-ui/AssistantChat";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage } from "@/components/proto";
 import { listCommands, createConversation as rpcCreateConversation, listConversations as rpcListConversations, deleteConversation as rpcDeleteConversation } from "@/lib/ash_rpc";
 
 const { useToken } = theme;
@@ -322,8 +323,9 @@ export default function AIAssistantPage() {
   };
 
   return (
-    <div className="ai-assistant-wrap" style={{ display: "flex", height: "calc(100vh - 64px)", width: "100%" }}>
+    <AppPage fill className="ai-assistant-wrap" style={{ padding: 0 }}>
       <style>{`@media(max-width:768px){.ai-assistant-wrap{height:calc(100vh-56px)!important}.ai-assistant-sidebar{display:none!important}.ai-assistant-chat-header{display:flex!important}}@media(min-width:769px){.ai-assistant-chat-header{display:none!important}}`}</style>
+      <div style={{ display: "flex", flex: 1, minHeight: 0, width: "100%" }}>
       {/* 移动端 Drawer 会话列表 */}
       <Drawer
         title="会话列表"
@@ -523,6 +525,7 @@ export default function AIAssistantPage() {
           </div>
         )}
       </div>
+      </div>
 
       {/* 选择知识点弹窗 */}
       <Modal
@@ -561,6 +564,6 @@ export default function AIAssistantPage() {
 
       {/* 资源面板 */}
       <KnowledgeResourcePanel open={resourceDrawerOpen} onClose={() => setResourceDrawerOpen(false)} knowledge={selectedKnowledge} />
-    </div>
+    </AppPage>
   );
 }

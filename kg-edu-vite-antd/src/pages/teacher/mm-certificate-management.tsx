@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Button, Card, Empty, message, Space, Typography, Modal, Upload, Input, Row, Col, Spin, Popconfirm,
+  Button, Card, Empty, message, Space, Typography, Modal, Upload, Input, Spin, Popconfirm,
 } from "antd";
 import {
   ArrowLeftOutlined, PlusOutlined, DeleteOutlined,
-  UploadOutlined, SettingOutlined, FilePdfOutlined,
+  UploadOutlined, SettingOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
@@ -20,8 +20,9 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // ─── Types ───
 
@@ -282,7 +283,11 @@ export default function MMCertificateManagement() {
   // ─── Tables ───
 
   if (!microMajorId) return (
-    <div style={{ padding: 48, textAlign: "center" }}>
+    <AppPage
+      className="mm-certificate-management-wrap"
+      title="证书管理"
+      description="设计证书模板并管理证书"
+    >
       <ContextSelector />
       <Empty description={
         <span>
@@ -290,44 +295,32 @@ export default function MMCertificateManagement() {
           <Text type="secondary">选择微专业后即可设计证书模板和管理证书</Text>
         </span>
       } />
-    </div>
+    </AppPage>
   );
 
   return (
-    <div className="mm-certificate-management-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.mm-certificate-management-wrap{padding:12px!important}.mm-certificate-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Button icon={<ArrowLeftOutlined />} style={{ marginBottom: 16 }}
-        onClick={() => navigate("/micro-major/dashboard")}>
-        返回
-      </Button>
-
-      <ContextSelector />
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Space>
-              <FilePdfOutlined style={{ fontSize: 20, color: "#722ed1" }} />
-                        <Button
+    <AppPage
+      className="mm-certificate-management-wrap"
+      title={`${microMajor?.name || "微专业"} - 证书管理`}
+      description="设计证书模板并管理证书"
+      actions={
+        <>
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={4} style={{ margin: 0 }}>
-                {microMajor?.name || "微专业"} - 证书管理
-              </Title>
-            </Space>
-          </Col>
-          <Col>
-            <Space>
-              <Button icon={<SettingOutlined />} onClick={openTemplateEditor} style={canEdit ? undefined : { display: "none" }}>
-                {template ? "编辑证书模板" : "设计证书模板"}
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+          <Button icon={<SettingOutlined />} onClick={openTemplateEditor} style={canEdit ? undefined : { display: "none" }}>
+            {template ? "编辑证书模板" : "设计证书模板"}
+          </Button>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.mm-certificate-management-wrap{padding:12px!important}.mm-certificate-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 
+      <ContextSelector />
+      <Card>
         <div>
           {templateLoading ? (
             <Spin />
@@ -409,7 +402,7 @@ export default function MMCertificateManagement() {
           />
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }
 

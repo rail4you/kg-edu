@@ -28,6 +28,42 @@ export function PageHead({ title, description, actions, eyebrow }: PageHeadProps
   );
 }
 
+/* ---------------- 页面容器（.pu-page + 标准页头） ---------------- */
+
+export interface AppPageProps {
+  title?: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+  eyebrow?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  fill?: boolean;
+}
+
+export function AppPage({
+  title,
+  description,
+  actions,
+  eyebrow,
+  children,
+  className = "",
+  style,
+  fill,
+}: AppPageProps) {
+  return (
+    <div
+      className={`${fill ? "pu-page-fill" : "pu-page"}${className ? ` ${className}` : ""}`}
+      style={style}
+    >
+      {title !== undefined && (
+        <PageHead title={title} description={description} actions={actions} eyebrow={eyebrow} />
+      )}
+      {children}
+    </div>
+  );
+}
+
 /* ---------------- 卡片 ---------------- */
 
 export interface ProtoCardProps {

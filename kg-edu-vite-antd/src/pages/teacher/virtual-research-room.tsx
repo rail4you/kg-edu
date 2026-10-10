@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -595,42 +596,38 @@ export default function VirtualResearchRoom() {
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 300,
-        }}
-      >
-        <Spin size="large" tip={t("pages.virtualResearchRoom.loading")}>
-          <div style={{ padding: 50 }} />
-        </Spin>
-      </div>
+      <AppPage title={t("pages.virtualResearchRoom.title")}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 300,
+          }}
+        >
+          <Spin size="large" tip={t("pages.virtualResearchRoom.loading")}>
+            <div style={{ padding: 50 }} />
+          </Spin>
+        </div>
+      </AppPage>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title={t("pages.virtualResearchRoom.title")}>
         <Text type="danger">{t("pages.virtualResearchRoom.loadError")}</Text>
-      </div>
+      </AppPage>
     );
   }
 
   const courses = coursesData || [];
 
   return (
-    <div style={{ padding: 24, minHeight: "calc(100vh - 56px)" }}>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={4} style={{ marginBottom: 4, fontWeight: 700 }}>
-          {t("pages.virtualResearchRoom.title")}
-        </Title>
-        <Text type="secondary" style={{ fontSize: 14 }}>
-          {t("pages.virtualResearchRoom.subtitle")}
-        </Text>
-      </div>
-
+    <AppPage
+      title={t("pages.virtualResearchRoom.title")}
+      description={t("pages.virtualResearchRoom.subtitle")}
+    >
       {courses.length === 0 ? (
         <Card style={{ borderRadius: 12 }}>
           <Empty
@@ -650,6 +647,6 @@ export default function VirtualResearchRoom() {
           ))}
         </div>
       )}
-    </div>
+    </AppPage>
   );
 }

@@ -117,8 +117,9 @@ type ResourceData = FileData | ExerciseData | HomeworkData | VideoData;
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
+import { AppPage } from "@/components/proto";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 interface KnowledgeResource extends ResourceResourceSchema {
   children?: KnowledgeResource[];
@@ -2884,55 +2885,27 @@ export default function KnowledgeFilePage() {
   ];
 
   return (
-    <div className="kf-page-wrap" style={{
-      display: "flex",
-      flexDirection: "column",
-      height: "100vh",
-      background: "#f5f7fa"
-    }}>
+    <AppPage
+      fill
+      title="知识资源管理"
+      description="为知识点关联文件、练习、作业、视频与链接"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       <style>{`@media(max-width:768px){.kf-page-wrap{height:auto!important}.kf-page-wrap .kf-header{padding:12px 16px!important}.kf-page-wrap .kf-body{flex-direction:column!important;padding:12px!important}.kf-page-wrap .kf-sidebar{width:100%!important;min-width:100%!important;height:auto!important;max-height:300px!important}.kf-page-wrap .kf-course-select{padding:8px 16px!important}.kf-page-wrap .kf-course-select .ant-space{display:flex!important;flex-direction:column!important;width:100%!important}.kf-page-wrap .kf-course-select .ant-select{min-width:0!important;width:100%!important}}`}</style>
-      {/* 顶部标题区域 */}
-      <div className="kf-header" style={{
-        padding: "24px 32px",
-        background: "#ffffff",
-        borderBottom: "1px solid #e8ecf0",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.05)"
+      <div className="kf-page-wrap" style={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
       }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Button
-              className="teacher-page-back-btn"
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard")}
-              style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-            />
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 8,
-              background: "linear-gradient(135deg, #0056D2 0%, #4080e0 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}>
-              <BookOutlined style={{ color: "#ffffff", fontSize: 20 }} />
-            </div>
-            <Title level={4} style={{ margin: 0 }}>
-              知识资源管理
-            </Title>
-          </div>
-        </div>
-
-        <div className="kf-course-select" style={{ padding: "16px 24px" }}>
+        <div className="kf-course-select" style={{ padding: "12px 0" }}>
           <Space>
             <Text strong style={{ fontSize: 16, lineHeight: "24px" }}>课程选择：</Text>
             <Select
@@ -2950,7 +2923,6 @@ export default function KnowledgeFilePage() {
             />
           </Space>
         </div>
-      </div>
 
       <div className="kf-body" style={{ display: "flex", flex: 1, overflow: "hidden", padding: "24px", gap: 16 }}>
         {/* 左侧知识树 */}
@@ -3149,6 +3121,7 @@ export default function KnowledgeFilePage() {
         onLinkSuccess={handleLinkSuccess}
         initialTab={tabValue}
       />
-    </div>
+      </div>
+    </AppPage>
   );
 }

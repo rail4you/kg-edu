@@ -15,8 +15,6 @@ import {
   Alert,
   message,
   Badge,
-  Row,
-  Col,
   DatePicker,
   Select,
   Popover,
@@ -28,6 +26,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { listEmailMessages, replyEmail, markAsRead } from "@/lib/ash_rpc";
+import { AppPage, StatGrid } from "@/components/proto";
 
 // 解析 API 错误消息，转换为友好文本
 const parseErrorMessage = (error: any): string => {
@@ -78,7 +77,7 @@ const parseErrorMessage = (error: any): string => {
 };
 import dayjs from "dayjs";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 const colors = {
@@ -612,151 +611,69 @@ export default function EmailMessagesList() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="邮件消息列表" description="管理与回复学生邮件">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (!user) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="邮件消息列表" description="管理与回复学生邮件">
         <Alert
           type="error"
           message="用户未登录"
           description="请登录以访问邮件消息列表。"
           showIcon
         />
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", backgroundColor: "#F8F9FA" }}>
-      <div style={{ backgroundColor: "white", borderBottom: "1px solid #e0e0e0", padding: "16px 24px" }}>
-        <Title level={2} style={{ fontWeight: 700, color: "#333", marginBottom: 16 }}>
-          邮件消息列表
-        </Title>
-        <Row gutter={16}>
-          <Col xs={24} sm={8}>
-            <Card
-              size="small"
-              style={{
-                background: "linear-gradient(135deg, rgba(0, 86, 210, 0.08) 0%, #fff 100%)",
-                border: "1px solid rgba(0, 86, 210, 0.15)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 8,
-                  background: "rgba(0, 86, 210, 0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <MailOutlined style={{ fontSize: 18, color: "#0056D2" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: "#0056D2", lineHeight: 1.2 }}>
-                    {totalMessages}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#5E5E5E" }}>邮件总数</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card
-              size="small"
-              style={{
-                background: "linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, #fff 100%)",
-                border: "1px solid rgba(255, 77, 79, 0.15)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 8,
-                  background: "rgba(255, 77, 79, 0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <Badge color="red" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: "#ff4d4f", lineHeight: 1.2 }}>
-                    {unreadCount}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#5E5E5E" }}>未读邮件</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card
-              size="small"
-              style={{
-                background: "linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, #fff 100%)",
-                border: "1px solid rgba(82, 196, 26, 0.15)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 8,
-                  background: "rgba(82, 196, 26, 0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <CheckCircleOutlined style={{ fontSize: 18, color: "#52c41a" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: "#52c41a", lineHeight: 1.2 }}>
-                    {successCount}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#5E5E5E" }}>发送成功</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-        {unreadCount > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={async () => {
-                const unreadMessages = messagesResult?.filter(
-                  (msg: EmailMessage) => msg.readStatus === "unread" && !msg.parentMessageId
-                ) || [];
-                for (const msg of unreadMessages) {
-                  await markAsReadMutation.mutateAsync(msg.id);
-                }
-                message.success(`已标记 ${unreadMessages.length} 封邮件为已读`);
-              }}
-              loading={markAsReadMutation.isPending}
-            >
-              一键已读 ({unreadCount})
-            </Button>
-          </div>
-        )}
-      </div>
+    <AppPage
+      title="邮件消息列表"
+      description="管理与回复学生邮件"
+      actions={
+        unreadCount > 0 ? (
+          <Button
+            type="primary"
+            icon={<CheckOutlined />}
+            onClick={async () => {
+              const unreadMessages = messagesResult?.filter(
+                (msg: EmailMessage) => msg.readStatus === "unread" && !msg.parentMessageId
+              ) || [];
+              for (const msg of unreadMessages) {
+                await markAsReadMutation.mutateAsync(msg.id);
+              }
+              message.success(`已标记 ${unreadMessages.length} 封邮件为已读`);
+            }}
+            loading={markAsReadMutation.isPending}
+          >
+            一键已读 ({unreadCount})
+          </Button>
+        ) : null
+      }
+    >
+      <StatGrid
+        columns={3}
+        items={[
+          { label: "邮件总数", value: totalMessages, icon: <MailOutlined /> },
+          { label: "未读邮件", value: unreadCount, icon: <Badge color="red" /> },
+          { label: "发送成功", value: successCount, icon: <CheckCircleOutlined /> },
+        ]}
+      />
 
-      <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
-        <Card styles={{ body: { padding: 16 } }}>
+      <Card styles={{ body: { padding: 16 } }}>
           <div style={{ marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Text type="secondary">状态:</Text>
@@ -867,7 +784,6 @@ export default function EmailMessagesList() {
             />
           )}
         </Card>
-      </div>
 
       <Modal
         title="回复邮件"
@@ -924,6 +840,6 @@ export default function EmailMessagesList() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

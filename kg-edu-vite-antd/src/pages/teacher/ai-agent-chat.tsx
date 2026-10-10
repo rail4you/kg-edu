@@ -25,6 +25,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import {
   listFiles,
   listCommands,
@@ -469,33 +470,34 @@ export default function AIAgentChat() {
   );
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "calc(100vh - 100px)",
-        backgroundColor: "#ffffff",
-      }}
-    >
+    <AppPage title="AI 智能体" description="与 AI 助手对话并调用已配置的指令模板">
+      <div
+        style={{
+          display: "flex",
+          height: "calc(100vh - 170px)",
+          border: "1px solid var(--pu-line)",
+          borderRadius: "var(--pu-radius)",
+          overflow: "hidden",
+        }}
+      >
       {/* 左侧会话列表 */}
       <div
         style={{
           width: 280,
-          borderRight: "1px solid #e5e7eb",
+          borderRight: "1px solid var(--pu-line)",
           display: "flex",
           flexDirection: "column",
           backgroundColor: "#f9fafb",
         }}
       >
         {/* 新建会话按钮 */}
-        <div style={{ padding: 16, borderBottom: "1px solid #e5e7eb" }}>
+        <div style={{ padding: 16, borderBottom: "1px solid var(--pu-line)" }}>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             block
             onClick={() => setNewConversationOpen(true)}
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              borderColor: "transparent",
               ...(canEdit ? {} : { display: "none" }),
             }}
           >
@@ -522,10 +524,10 @@ export default function AIAgentChat() {
                   borderRadius: 8,
                   cursor: "pointer",
                   backgroundColor:
-                    conv.id === currentConversationId ? "#e0e7ff" : "transparent",
+                    conv.id === currentConversationId ? "var(--pu-blue-soft)" : "transparent",
                   border:
                     conv.id === currentConversationId
-                      ? "1px solid #667eea"
+                      ? "1px solid var(--pu-blue)"
                       : "1px solid transparent",
                   transition: "all 0.2s",
                 }}
@@ -565,7 +567,7 @@ export default function AIAgentChat() {
         </div>
 
         {/* 文件和命令面板 */}
-        <div style={{ borderTop: "1px solid #e5e7eb", padding: 12 }}>
+        <div style={{ borderTop: "1px solid var(--pu-line)", padding: 12 }}>
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4 }}>
               <FileTextOutlined /> 已加载 {files.length} 个文件
@@ -620,7 +622,7 @@ export default function AIAgentChat() {
                 {msg.role === "assistant" && (
                   <Avatar
                     style={{
-                      backgroundColor: "#667eea",
+                      backgroundColor: "var(--pu-blue)",
                       marginRight: 8,
                     }}
                     icon={<RobotOutlined />}
@@ -631,7 +633,7 @@ export default function AIAgentChat() {
                     maxWidth: "70%",
                     padding: "12px 16px",
                     borderRadius: 12,
-                    backgroundColor: msg.role === "user" ? "#667eea" : "#f3f4f6",
+                    backgroundColor: msg.role === "user" ? "var(--pu-blue)" : "#f3f4f6",
                     color: msg.role === "user" ? "#fff" : "#374151",
                   }}
                 >
@@ -677,7 +679,7 @@ export default function AIAgentChat() {
                 {msg.role === "user" && (
                   <Avatar
                     style={{
-                      backgroundColor: "#10b981",
+                      backgroundColor: "var(--pu-green)",
                       marginLeft: 8,
                     }}
                     icon={<UserOutlined />}
@@ -693,7 +695,7 @@ export default function AIAgentChat() {
         <div
           style={{
             padding: 16,
-            borderTop: "1px solid #e5e7eb",
+            borderTop: "1px solid var(--pu-line)",
             backgroundColor: "#fff",
           }}
         >
@@ -758,8 +760,6 @@ export default function AIAgentChat() {
               onClick={handleSend}
               loading={isLoading}
               style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                borderColor: "transparent",
                 ...(canEdit ? {} : { display: "none" }),
               }}
             >
@@ -783,8 +783,6 @@ export default function AIAgentChat() {
             block
             onClick={() => createConversation()}
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              borderColor: "transparent",
               height: 48,
             }}
           >
@@ -837,6 +835,7 @@ export default function AIAgentChat() {
           </div>
         )}
       </Card>
-    </div>
+      </div>
+    </AppPage>
   );
 }

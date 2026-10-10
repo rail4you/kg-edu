@@ -18,7 +18,6 @@ import {
 import {
   UserAddOutlined,
   DeleteOutlined,
-  TeamOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons";
 import {
@@ -35,8 +34,9 @@ import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useTranslate } from "@/locales/use-locales";
 import type { ColumnsType } from "antd/es/table";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface User {
   id: string;
@@ -273,28 +273,24 @@ export default function TeacherAssignCoursePage() {
   ];
 
   return (
-    <div className="asgn-page-wrap" style={{ padding: 24 }}>
-      <style>{`@media(max-width:768px){.asgn-mobile-hide{display:none!important}.asgn-page-wrap{padding:12px!important}}`}</style>
-      {/* 标题区域 */}
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <TeamOutlined style={{ fontSize: 24, color: "#1890ff" }} />
+    <AppPage
+      title="课程分配管理"
+      description="管理教师与课程的分配关系"
+      actions={
+        <>
           <Button
-                      className="teacher-page-back-btn"
-                      type="text"
-                      icon={<ArrowLeftOutlined />}
-                      onClick={() => navigate("/teacher/dashboard")}
-                      style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                    />
-                                  <Title level={4} style={{ margin: 0 }}>课程分配管理</Title>
-          </div>
-          <Text type="secondary">管理教师与课程的分配关系</Text>
-        </div>
-        <Button type="primary" icon={<UserAddOutlined />} onClick={() => setAssignDialogOpen(true)} style={canEdit ? undefined : { display: "none" }}>
-          分配课程
-        </Button>
-      </div>
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <Button type="primary" icon={<UserAddOutlined />} onClick={() => setAssignDialogOpen(true)} style={canEdit ? undefined : { display: "none" }}>
+            分配课程
+          </Button>
+        </>
+      }
+    >
+      <style>{`@media(max-width:768px){.asgn-mobile-hide{display:none!important}}`}</style>
 
       {/* 表格 */}
       <Card style={{ borderRadius: 8 }}>
@@ -362,6 +358,6 @@ export default function TeacherAssignCoursePage() {
           </div>
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

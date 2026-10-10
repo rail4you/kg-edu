@@ -44,9 +44,10 @@ import {
 import { extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import "./major-courses.css";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface MajorCourse {
   id: string;
@@ -310,53 +311,41 @@ export default function MajorCourses() {
 
   if (majorLoading) {
     return (
-      <div className="major-courses-page">
+      <AppPage title="课程配置">
         <div className="loading">
           <Spin size="large" />
           <Text>加载中...</Text>
         </div>
-      </div>
+      </AppPage>
     );
   }
 
   if (!major) {
     return (
-      <div className="major-courses-page">
+      <AppPage title="课程配置">
         <Empty description="微专业不存在" />
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div className="major-courses-page">
-      <Card className="page-header">
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Title level={4} style={{ margin: 0 }}>
-              {major.name || "微专业"} - 课程配置
-            </Title>
-            <Text type="secondary">
-              {major.college && `${major.college} | `}
-              {major.credit && `${major.credit} 学分 | `}
-              {major.period && `${major.period} 学时`}
-            </Text>
-          </Col>
-          <Col>
-            <Space>
-              <Button onClick={() => navigate(-1)}>返回</Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAddCourse}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                添加课程
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-
+    <AppPage
+      title={`${major.name || "微专业"} - 课程配置`}
+      description={`${major.college ? `${major.college} | ` : ""}${major.credit ? `${major.credit} 学分 | ` : ""}${major.period ? `${major.period} 学时` : ""}`}
+      actions={
+        <>
+          <Button onClick={() => navigate(-1)}>返回</Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddCourse}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            添加课程
+          </Button>
+        </>
+      }
+    >
       <Card className="courses-list" title={`课程列表 (${majorCourses.length})`}>
         {coursesLoading ? (
           <div className="loading">
@@ -484,6 +473,6 @@ export default function MajorCourses() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

@@ -7,7 +7,6 @@ import {
   Typography,
   Spin,
   Tag,
-  Statistic,
   Empty,
   Space,
   Modal,
@@ -30,7 +29,6 @@ import {
   ClockCircleOutlined,
   EditOutlined,
   RightCircleOutlined,
-  FireOutlined,
   TeamOutlined,
   ThunderboltOutlined,
   BarChartOutlined,
@@ -41,8 +39,9 @@ import { listActivityLogsByTimeRange, listUsers } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import * as echarts from "echarts";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const COLORS = {
   primary: "#1890ff",
@@ -395,58 +394,62 @@ export default function ActivitySummaryPage() {
   };
 
   if (authLoading) {
-    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}><Spin size="large" /></div>;
+    return (
+      <AppPage className="activity-summary-wrap" title="学生活动总览" description="查看学生活动记录">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}><Spin size="large" /></div>
+      </AppPage>
+    );
   }
   if (!user || !tenant) {
-    return <div className="activity-summary-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.activity-summary-wrap{padding:12px!important}.activity-summary-wrap .ant-table-cell{padding:6px 4px!important}}`}</style><Text type="danger">用户未登录或未选择组织。</Text></div>;
+    return (
+      <AppPage className="activity-summary-wrap" title="学生活动总览" description="查看学生活动记录">
+<style>{`@media(max-width:768px){.activity-summary-wrap{padding:12px!important}.activity-summary-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+        <Text type="danger">用户未登录或未选择组织。</Text>
+      </AppPage>
+    );
   }
 
   return (
-    <div className="activity-summary-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.activity-summary-wrap{padding:12px!important}.activity-summary-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      {/* ── Header ── */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Button
-              className="teacher-page-back-btn"
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard")}
-              style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-            />
-            <Title level={3} style={{ margin: 0 }}><FireOutlined style={{ color: COLORS.primary, marginRight: 8 }} />学生活动总览</Title>
-            <Text type="secondary" style={{ fontSize: 13 }}>{selectedStudentId ? "查看选定学生的活动记录" : "查看所有学生的活动记录"}</Text>
-          </div>
-          <Space>
-            {selectedDate && (
-              <Tag closable onClose={() => setSelectedDate(null)} color="blue" style={{ fontSize: 13, padding: "2px 10px" }}>
-                <CalendarOutlined /> {selectedDate}
-              </Tag>
-            )}
-            <Tooltip title="刷新数据">
-              <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={logsLoading} />
-            </Tooltip>
-          </Space>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16 }}>
-          <Text strong style={{ fontSize: 14, whiteSpace: "nowrap" }}>学生：</Text>
-          <Select
-            style={{ width: 260 }}
-            placeholder="全部学生"
-            value={selectedStudentId}
-            onChange={setSelectedStudentId}
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            size="middle"
-            options={(students || []).map((s: any) => ({ label: s.name || s.email || s.id, value: s.id }))}
+    <AppPage
+      className="activity-summary-wrap"
+      title="学生活动总览"
+      description={selectedStudentId ? "查看选定学生的活动记录" : "查看所有学生的活动记录"}
+      actions={
+        <>
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
           />
-          {selectedStudentId && (
-            <Button size="small" onClick={() => setSelectedStudentId(null)}>清除筛选</Button>
+          {selectedDate && (
+            <Tag closable onClose={() => setSelectedDate(null)} color="blue" style={{ fontSize: 13, padding: "2px 10px" }}>
+              <CalendarOutlined /> {selectedDate}
+            </Tag>
           )}
-        </div>
+          <Tooltip title="刷新数据">
+            <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={logsLoading} />
+          </Tooltip>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.activity-summary-wrap{padding:12px!important}.activity-summary-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+        <Text strong style={{ fontSize: 14, whiteSpace: "nowrap" }}>学生：</Text>
+        <Select
+          style={{ width: 260 }}
+          placeholder="全部学生"
+          value={selectedStudentId}
+          onChange={setSelectedStudentId}
+          allowClear
+          showSearch
+          optionFilterProp="label"
+          size="middle"
+          options={(students || []).map((s: any) => ({ label: s.name || s.email || s.id, value: s.id }))}
+        />
+        {selectedStudentId && (
+          <Button size="small" onClick={() => setSelectedStudentId(null)}>清除筛选</Button>
+        )}
       </div>
 
       {/* ── Daily Activity Bar Chart + Date Range Selector ── */}
@@ -488,22 +491,17 @@ export default function ActivitySummaryPage() {
       </Card>
 
       {/* ── Stats Row ── */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
-        {[
-          { title: "总活动数", value: stats.total, color: COLORS.primary, icon: <ThunderboltOutlined /> },
-          { title: "活跃学生", value: stats.studentCount, color: COLORS.purple, icon: <TeamOutlined /> },
-          { title: "文件查看", value: stats.fileViews, color: COLORS.primary, icon: <EyeOutlined /> },
-          { title: "视频观看", value: stats.videoViews, color: COLORS.info, icon: <PlayCircleOutlined /> },
-          { title: "练习提交", value: stats.exercises, color: COLORS.warning, icon: <EditOutlined /> },
-          { title: "作业提交", value: stats.homeworks, color: COLORS.success, icon: <CheckSquareOutlined /> },
-        ].map(item => (
-          <Col xs={12} sm={8} md={4} key={item.title}>
-            <Card size="small" style={{ textAlign: "center", borderRadius: 10 }} bodyStyle={{ padding: "12px 8px" }}>
-              <Statistic title={item.title} value={item.value} prefix={item.icon} valueStyle={{ color: item.color, fontSize: 22 }} />
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <StatGrid
+        columns={6}
+        items={[
+          { label: "总活动数", value: stats.total, icon: <ThunderboltOutlined /> },
+          { label: "活跃学生", value: stats.studentCount, icon: <TeamOutlined /> },
+          { label: "文件查看", value: stats.fileViews, icon: <EyeOutlined /> },
+          { label: "视频观看", value: stats.videoViews, icon: <PlayCircleOutlined /> },
+          { label: "练习提交", value: stats.exercises, icon: <EditOutlined /> },
+          { label: "作业提交", value: stats.homeworks, icon: <CheckSquareOutlined /> },
+        ]}
+      />
 
       {/* ── Timeline ── */}
       <Card
@@ -689,7 +687,7 @@ export default function ActivitySummaryPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }
 

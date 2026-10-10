@@ -44,6 +44,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { useCourses } from "@/hooks/use-courses";
+import { AppPage } from "@/components/proto";
 
 const { Text, Title } = Typography;
 
@@ -631,36 +632,26 @@ export default function KnowledgeCognitiveGoals() {
 
   if (coursesLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: 400,
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="知识点认知维度管理">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 400,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ width: "100%", padding: 16 }}>
-      <div
-        style={{
-          marginBottom: 16,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          知识点认知维度管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="知识点认知维度管理"
+      description="按布鲁姆认知层级为知识点设置维度"
+    >
       {/* 课程选择独立一行 */}
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <Space>
@@ -1120,6 +1111,6 @@ export default function KnowledgeCognitiveGoals() {
           )}
         </>
       )}
-    </div>
+    </AppPage>
   );
 }

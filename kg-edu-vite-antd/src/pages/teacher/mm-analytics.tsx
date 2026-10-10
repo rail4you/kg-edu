@@ -11,14 +11,12 @@ import {
   Select,
   Space,
   Spin,
-  Statistic,
   Table,
   Tag,
   Typography,
   Tooltip,
 } from "antd";
 import {
-  ApartmentOutlined,
   BookOutlined,
   TeamOutlined,
   VideoCameraOutlined,
@@ -42,8 +40,9 @@ import {
   listMmHomeworkSubmissionsByCourse,
 } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function MMAnalyticsPage() {
   const navigate = useNavigate();
@@ -283,19 +282,20 @@ export default function MMAnalyticsPage() {
   }, [courses, videoLogs, exerciseLogs, downloadLogs, isSingleCourse, selectedCourseId]);
 
   return (
-    <div className="mm-analytics-wrap" style={{ padding: isMobile ? 12 : 24 }}>
+    <AppPage
+      className="mm-analytics-wrap"
+      title="微专业运营分析"
+      description="微专业学习与运营数据"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/micro-major/dashboard")}
+        />
+      }
+    >
 <style>{`@media(max-width:768px){.mm-analytics-wrap{padding:12px!important}.mm-analytics-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-                <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={isMobile ? 5 : 4} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: isMobile ? 16 : 24 }}>
-        <ApartmentOutlined style={{ color: "#722ed1" }} />
-        微专业运营分析
-      </Title>
 
       {/* Filters */}
       <Card size="small" style={{ marginBottom: 12 }} bodyStyle={isMobile ? { padding: 12 } : undefined}>
@@ -345,61 +345,16 @@ export default function MMAnalyticsPage() {
       ) : (
         <>
           {/* Summary Cards */}
-          <Row gutter={[isMobile ? 6 : 12, isMobile ? 6 : 12]} style={{ marginBottom: isMobile ? 12 : 24 }}>
-            <Col xs={isMobile ? 8 : 12} sm={8} md={6} lg={4}>
-              <Card size="small" bodyStyle={isMobile ? { padding: "8px 10px" } : undefined}>
-                <Statistic
-                  title={<span style={{ fontSize: isMobile ? 11 : 13 }}>选课人数</span>}
-                  value={activeEnrollments.length}
-                  valueStyle={{ fontSize: isMobile ? 18 : 24 }}
-                  prefix={<TeamOutlined style={{ color: "#722ed1", fontSize: isMobile ? 14 : 18 }} />}
-                />
-              </Card>
-            </Col>
-            <Col xs={isMobile ? 8 : 12} sm={8} md={6} lg={4}>
-              <Card size="small" bodyStyle={isMobile ? { padding: "8px 10px" } : undefined}>
-                <Statistic
-                  title={<span style={{ fontSize: isMobile ? 11 : 13 }}>视频观看</span>}
-                  value={videoLogs.length}
-                  valueStyle={{ fontSize: isMobile ? 18 : 24 }}
-                  prefix={<EyeOutlined style={{ color: "#1890ff", fontSize: isMobile ? 14 : 18 }} />}
-                  suffix={!isMobile && <Text type="secondary" style={{ fontSize: 12 }}>{uniqueViewers} 人</Text>}
-                />
-              </Card>
-            </Col>
-            <Col xs={isMobile ? 8 : 12} sm={8} md={6} lg={4}>
-              <Card size="small" bodyStyle={isMobile ? { padding: "8px 10px" } : undefined}>
-                <Statistic
-                  title={<span style={{ fontSize: isMobile ? 11 : 13 }}>习题</span>}
-                  value={exerciseLogs.length}
-                  valueStyle={{ fontSize: isMobile ? 18 : 24 }}
-                  prefix={<FileTextOutlined style={{ color: "#52c41a", fontSize: isMobile ? 14 : 18 }} />}
-                />
-              </Card>
-            </Col>
-            <Col xs={isMobile ? 12 : 12} sm={8} md={6} lg={4}>
-              <Card size="small" bodyStyle={isMobile ? { padding: "8px 10px" } : undefined}>
-                <Statistic
-                  title={<span style={{ fontSize: isMobile ? 11 : 13 }}>下载</span>}
-                  value={downloadLogs.length}
-                  valueStyle={{ fontSize: isMobile ? 18 : 24 }}
-                  prefix={<DownloadOutlined style={{ color: "#fa8c16", fontSize: isMobile ? 14 : 18 }} />}
-                  suffix={!isMobile && <Text type="secondary" style={{ fontSize: 12 }}>{uniqueDownloaders} 人</Text>}
-                />
-              </Card>
-            </Col>
-            <Col xs={isMobile ? 12 : 12} sm={8} md={6} lg={4}>
-              <Card size="small" bodyStyle={isMobile ? { padding: "8px 10px" } : undefined}>
-                <Statistic
-                  title={<span style={{ fontSize: isMobile ? 11 : 13 }}>作业</span>}
-                  value={totalHomeworkSubmissions}
-                  valueStyle={{ fontSize: isMobile ? 18 : 24 }}
-                  prefix={<EditOutlined style={{ color: "#eb2f96", fontSize: isMobile ? 14 : 18 }} />}
-                  suffix={!isMobile && gradedCount > 0 ? <Text type="secondary" style={{ fontSize: 12 }}>平均{avgScore}分</Text> : undefined}
-                />
-              </Card>
-            </Col>
-          </Row>
+          <StatGrid
+            columns={5}
+            items={[
+              { label: "选课人数", value: activeEnrollments.length, icon: <TeamOutlined /> },
+              { label: "视频观看", value: videoLogs.length, icon: <EyeOutlined />, desc: !isMobile ? `${uniqueViewers} 人` : undefined },
+              { label: "习题", value: exerciseLogs.length, icon: <FileTextOutlined /> },
+              { label: "下载", value: downloadLogs.length, icon: <DownloadOutlined />, desc: !isMobile ? `${uniqueDownloaders} 人` : undefined },
+              { label: "作业", value: totalHomeworkSubmissions, icon: <EditOutlined />, desc: !isMobile && gradedCount > 0 ? `平均${avgScore}分` : undefined },
+            ]}
+          />
 
           {/* Per-Course Stats Table */}
           <Card title={isSingleCourse ? `「${selectedCourseObj?.title || "该课程"}」数据` : "各课程数据"} size="small" style={{ marginBottom: 12 }} bodyStyle={isMobile ? { padding: 8 } : undefined}>
@@ -541,6 +496,6 @@ export default function MMAnalyticsPage() {
           </Card>
         </>
       )}
-    </div>
+    </AppPage>
   );
 }

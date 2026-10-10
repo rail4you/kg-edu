@@ -14,7 +14,6 @@ import {
   Space,
   Table,
   Dropdown,
-  Popconfirm,
   Empty,
   Spin,
   Form,
@@ -32,7 +31,6 @@ import {
   VideoCameraOutlined,
   FolderOutlined,
   CheckOutlined,
-  HolderOutlined,
   UploadOutlined,
   DownloadOutlined,
   ArrowLeftOutlined,
@@ -48,7 +46,6 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -71,6 +68,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import * as XLSX from "xlsx";
@@ -204,7 +202,7 @@ export default function ChapterManagement() {
     errors?: string[];
   } | null>(null);
 
-  const { courses: coursesData, loading: coursesLoading } = useCourses({
+  const { courses: coursesData } = useCourses({
     fields: ["id", "title", "description"],
   });
 
@@ -660,7 +658,6 @@ export default function ChapterManagement() {
       const siblings = flatList.filter(
         (c) => c.parentChapterId === activeChapter.parentChapterId
       );
-      const oldIndex = siblings.findIndex((c) => c.id === active.id);
       const newSiblingIndex = siblings.findIndex((c) => c.id === over.id);
 
       // 计算新索引（在同一父级下的位置）
@@ -904,29 +901,18 @@ export default function ChapterManagement() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <FolderOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-      <Button
-                  className="teacher-page-back-btn"
-                  type="text"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate("/teacher/dashboard")}
-                  style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                />
-                          <Title level={4} style={{ margin: 0 }}>
-          章节管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="章节管理"
+      description="维护课程章节层级与视频关联"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <Space>
           <Text strong>选择课程：</Text>
@@ -1375,6 +1361,6 @@ export default function ChapterManagement() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

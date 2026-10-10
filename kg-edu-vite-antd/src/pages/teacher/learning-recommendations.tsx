@@ -18,14 +18,12 @@ import {
   Modal,
   Badge,
   Spin,
-  Statistic,
   Select,
 } from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
   UserOutlined,
-  BulbOutlined,
   CheckCircleOutlined,
   CloseOutlined,
   MinusCircleOutlined,
@@ -38,6 +36,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { listUsers, listEnrollmentsByStudent, listCourses } from "@/lib/ash_rpc";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -550,117 +549,59 @@ export default function TeacherLearningRecommendations() {
 
   if (isLoadingStudents) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 400,
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="学生学习推荐分析" description="查看和管理班级学生的学习推荐情况">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 400,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (studentsError) {
     return (
-      <div className="learning-recommendations-wrap" style={{ padding: 24 }}>
+      <AppPage title="学生学习推荐分析" description="查看和管理班级学生的学习推荐情况">
+        <div className="learning-recommendations-wrap">
 <style>{`@media(max-width:768px){.learning-recommendations-wrap{padding:12px!important}.learning-recommendations-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-        <Alert
-          type="error"
-          message={`加载学生数据失败: ${(studentsError as Error).message}`}
-        />
-      </div>
+          <Alert
+            type="error"
+            message={`加载学生数据失败: ${(studentsError as Error).message}`}
+          />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <Card style={{ marginBottom: 24 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Space>
-            <BulbOutlined style={{ fontSize: 40, color: "#1890ff" }} />
-            <div>
-                        <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-                学生学习推荐分析
-              </Title>
-              <Text type="secondary">查看和管理班级学生的学习推荐情况</Text>
-            </div>
-          </Space>
-        </div>
-
-        <Row gutter={12} style={{ marginTop: 16 }}>
-          <Col xs={12} sm={4}>
-            <Card size="small" style={{ textAlign: "center" }}>
-              <Statistic
-                title="学生总数"
-                value={stats.totalStudents}
-                valueStyle={{ color: "#1890ff", fontWeight: "bold", fontSize: 20 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={4}>
-            <Card size="small" style={{ textAlign: "center" }}>
-              <Statistic
-                title="待学习推荐"
-                value={stats.totalPending}
-                valueStyle={{ color: "#faad14", fontWeight: "bold", fontSize: 20 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={4}>
-            <Card size="small" style={{ textAlign: "center" }}>
-              <Statistic
-                title="已完成推荐"
-                value={stats.totalCompleted}
-                valueStyle={{ color: "#52c41a", fontWeight: "bold", fontSize: 20 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={4}>
-            <Card size="small" style={{ textAlign: "center" }}>
-              <Statistic
-                title="进行中推荐"
-                value={stats.totalInProgress}
-                valueStyle={{ color: "#1890ff", fontWeight: "bold", fontSize: 20 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={4}>
-            <Card size="small" style={{ textAlign: "center" }}>
-              <Statistic
-                title="已忽略推荐"
-                value={stats.totalDismissed}
-                valueStyle={{ color: "#8c8c8c", fontWeight: "bold", fontSize: 20 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={4}>
-            <Card size="small" style={{ textAlign: "center" }}>
-              <Statistic
-                title="有待学习学生"
-                value={stats.studentsWithPending}
-                valueStyle={{ color: "#ff4d4f", fontWeight: "bold", fontSize: 20 }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      </Card>
+    <AppPage
+      title="学生学习推荐分析"
+      description="查看和管理班级学生的学习推荐情况"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
+      <StatGrid
+        columns={6}
+        items={[
+          { label: "学生总数", value: stats.totalStudents },
+          { label: "待学习推荐", value: stats.totalPending },
+          { label: "已完成推荐", value: stats.totalCompleted },
+          { label: "进行中推荐", value: stats.totalInProgress },
+          { label: "已忽略推荐", value: stats.totalDismissed },
+          { label: "有待学习学生", value: stats.studentsWithPending },
+        ]}
+      />
 
       <Title level={5} style={{ marginBottom: 16 }}>
         学生推荐列表
@@ -898,7 +839,6 @@ export default function TeacherLearningRecommendations() {
           </div>
         )}
       </Modal>
-      </div>
-    </div>
+    </AppPage>
   );
 }

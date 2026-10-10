@@ -12,8 +12,9 @@ import { logFaceCheck, listFaceChecks } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { uploadFileViaServer } from "@/lib/oss-upload";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 type Scene = "entry" | "video_start" | "video_playing" | "video_resume" | "video_end" | "timed" | "random";
 const SCENES: Array<{ value: Scene; label: string }> = [
@@ -135,30 +136,38 @@ export default function FaceCheck() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
+      <AppPage className="face-check-wrap" title="人脸识别与抓拍演示" description="加载中">
+        <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>人脸识别与抓拍演示</Title>
-      </div>
-
-      <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-        {blocked && (
-          <Alert
-            type="error"
-            showIcon
-            message="当前处于阻止学习状态（识别失败 + 不允许学习模式）"
-            action={<Button size="small" onClick={() => { setBlocked(false); capture("entry"); }}>重新验证</Button>}
-            style={{ marginBottom: 16 }}
-          />
-        )}
-        <Row gutter={[16, 16]}>
+    <AppPage
+      className="face-check-wrap"
+      title="人脸识别与抓拍演示"
+      description="摄像头抓拍与识别策略演示"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate(-1)}
+        />
+      }
+    >
+      {blocked && (
+        <Alert
+          type="error"
+          showIcon
+          message="当前处于阻止学习状态（识别失败 + 不允许学习模式）"
+          action={<Button size="small" onClick={() => { setBlocked(false); capture("entry"); }}>重新验证</Button>}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
             <Card title="实时画面">
               <video ref={videoRef} style={{ width: "100%", borderRadius: 8, background: "#000" }} muted playsInline />
@@ -224,7 +233,6 @@ export default function FaceCheck() {
             </Card>
           </Col>
         </Row>
-      </div>
-    </div>
+    </AppPage>
   );
 }

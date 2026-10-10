@@ -8,16 +8,15 @@ import {
   FileTextOutlined,
   FileOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Space, Spin, Tabs, Typography } from "antd";
+import { Button, Card, Spin, Tabs } from "antd";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getMicroMajorCourse } from "@/lib/ash_rpc";
+import { AppPage } from "@/components/proto";
 import MMChapterManager from "./mm-chapter";
 import MMVideoManager from "./mm-video";
 import MMExerciseManager from "./mm-exercise";
 import MMResourceManager from "./mm-resource";
-
-const { Title } = Typography;
 
 export default function MicroMajorCourseDetail() {
   const { microMajorId, courseId } = useParams<{
@@ -56,16 +55,18 @@ export default function MicroMajorCourseDetail() {
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: 400,
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="课程管理" description="管理课程章节、视频、习题与资源">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 400,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
@@ -133,17 +134,12 @@ export default function MicroMajorCourseDetail() {
   ];
 
   return (
-    <div className="mm-course-detail-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.mm-course-detail-wrap{padding:12px!important}.mm-course-detail-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <Space>
+    <AppPage
+      className="mm-course-detail-wrap"
+      title={course?.title || "课程管理"}
+      description="管理课程章节、视频、习题与资源"
+      actions={
+        <>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() =>
@@ -152,18 +148,16 @@ export default function MicroMajorCourseDetail() {
           >
             返回课程列表
           </Button>
-                    <Button
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={4} style={{ margin: 0 }}>
-            {course?.title || "课程管理"}
-          </Title>
-        </Space>
-      </div>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.mm-course-detail-wrap{padding:12px!important}.mm-course-detail-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 
       <Card>
         <Tabs
@@ -176,6 +170,6 @@ export default function MicroMajorCourseDetail() {
           size="large"
         />
       </Card>
-    </div>
+    </AppPage>
   );
 }

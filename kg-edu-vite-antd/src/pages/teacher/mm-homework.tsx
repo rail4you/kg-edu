@@ -48,6 +48,7 @@ import {
 import { extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { StatGrid } from "@/components/proto";
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
@@ -504,26 +505,14 @@ export default function MMHomeworkManager({
     return (
       <div>
         {/* Stats summary */}
-        <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
-          <Card size="small" style={{ flex: 1, textAlign: "center" }}>
-            <Text type="secondary">待评分</Text>
-            <div style={{ fontSize: 28, fontWeight: 600, color: "#faad14" }}>
-              {pendingGrading.length}
-            </div>
-          </Card>
-          <Card size="small" style={{ flex: 1, textAlign: "center" }}>
-            <Text type="secondary">已评分</Text>
-            <div style={{ fontSize: 28, fontWeight: 600, color: "#52c41a" }}>
-              {graded.length}
-            </div>
-          </Card>
-          <Card size="small" style={{ flex: 1, textAlign: "center" }}>
-            <Text type="secondary">平均分</Text>
-            <div style={{ fontSize: 28, fontWeight: 600, color: "#722ed1" }}>
-              {graded.length > 0 ? avgScore : "-"}
-            </div>
-          </Card>
-        </div>
+        <StatGrid
+          columns={3}
+          items={[
+            { label: "待评分", value: pendingGrading.length },
+            { label: "已评分", value: graded.length },
+            { label: "平均分", value: graded.length > 0 ? avgScore : "-" },
+          ]}
+        />
 
         <Card title="全部提交记录" size="small">
           <Table
@@ -553,7 +542,7 @@ export default function MMHomeworkManager({
   ];
 
   return (
-    <div>
+    <div className="pu-app">
       <Tabs items={tabItems} />
 
       {/* Create Modal */}

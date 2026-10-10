@@ -24,9 +24,6 @@ import {
   DeleteOutlined,
   UploadOutlined,
   DownloadOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  ReadOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons";
 import {
@@ -36,14 +33,13 @@ import {
   destroyHomework,
   importHomeworkFromXlsx,
   getFileTemplateBySection,
-  moveHomeworkUp,
-  moveHomeworkDown,
   bulkDestroyHomeworks,
   type HomeworkResourceSchema,
 } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -283,52 +279,6 @@ export default function HomeworkManagementPage() {
     },
   });
 
-  const moveUpMutation = useMutation({
-    mutationFn: async (homeworkId: string) => {
-      const result = await moveHomeworkUp({
-        primaryKey: homeworkId,
-        fields: ["id", "position"],
-        tenant: tenant || "",
-        headers: getAuthHeaders(user) as Record<string, string>,
-      });
-      if (result.success) {
-        return result.data;
-      }
-      throw new Error("Failed to move homework up");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["homeworks", tenant, selectedCourse],
-      });
-    },
-    onError: (error: any) => {
-      message.error(error?.message || "上移失败");
-    },
-  });
-
-  const moveDownMutation = useMutation({
-    mutationFn: async (homeworkId: string) => {
-      const result = await moveHomeworkDown({
-        primaryKey: homeworkId,
-        fields: ["id", "position"],
-        tenant: tenant || "",
-        headers: getAuthHeaders(user) as Record<string, string>,
-      });
-      if (result.success) {
-        return result.data;
-      }
-      throw new Error("Failed to move homework down");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["homeworks", tenant, selectedCourse],
-      });
-    },
-    onError: (error: any) => {
-      message.error(error?.message || "下移失败");
-    },
-  });
-
   const bulkDeleteMutation = useMutation({
     mutationFn: async (homeworkIds: string[]) => {
       const result = await bulkDestroyHomeworks({
@@ -497,7 +447,7 @@ export default function HomeworkManagementPage() {
           event.target.value = "";
         },
       });
-    } catch (error) {
+    } catch {
       message.error("文件读取失败，请重试");
       event.target.value = "";
     } finally {
@@ -531,7 +481,7 @@ export default function HomeworkManagementPage() {
       } else {
         message.error("下载模板失败，请稍后重试");
       }
-    } catch (error) {
+    } catch {
       message.error("下载模板失败，请稍后重试");
     }
   };
@@ -654,29 +604,18 @@ export default function HomeworkManagementPage() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <ReadOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-      <Button
-                  className="teacher-page-back-btn"
-                  type="text"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate("/teacher/dashboard")}
-                  style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                />
-                          <Title level={4} style={{ margin: 0 }}>
-          作业管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="作业管理"
+      description="管理课程作业与批改"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <Space>
           <Text strong>选择课程：</Text>
@@ -1133,6 +1072,6 @@ export default function HomeworkManagementPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

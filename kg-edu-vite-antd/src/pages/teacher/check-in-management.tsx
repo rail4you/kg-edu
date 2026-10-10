@@ -16,8 +16,6 @@ import {
   Popconfirm,
   Tooltip,
   QRCode,
-  Row,
-  Col,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
@@ -41,6 +39,7 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -243,19 +242,19 @@ export default function CheckInManagement() {
 
   if (!user) {
     return (
-      <div className="check-in-management-wrap" style={{ padding: 24 }}>
+      <AppPage className="check-in-management-wrap" title="签到管理">
 <style>{`@media(max-width:768px){.check-in-management-wrap{padding:12px!important}.check-in-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
         <Text type="danger">用户未登录，请登录以访问签到管理。</Text>
-      </div>
+      </AppPage>
     );
   }
 
   if (!tenant) {
     return (
-      <div className="check-in-management-wrap" style={{ padding: 24 }}>
+      <AppPage className="check-in-management-wrap" title="签到管理">
 <style>{`@media(max-width:768px){.check-in-management-wrap{padding:12px!important}.check-in-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
         <Text type="danger">未选择组织，请重新登录并选择组织。</Text>
-      </div>
+      </AppPage>
     );
   }
 
@@ -409,138 +408,54 @@ export default function CheckInManagement() {
   );
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "#f5f5f5",
-      }}
+    <AppPage
+      title="签到管理"
+      description="发起课堂签到并查看签到记录"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
     >
-      <div
-        style={{
-          padding: "16px 24px",
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: 16,
-            gap: 12,
+      <StatGrid
+        columns={3}
+        items={[
+          { label: "进行中", value: activeCount, icon: <PlayCircleOutlined /> },
+          { label: "已关闭", value: closedCount, icon: <CheckCircleOutlined /> },
+          { label: "总签到人次", value: totalCheckIns, icon: <TeamOutlined /> },
+        ]}
+      />
+
+      <Card>
+        <Table
+          className="theme-table"
+          columns={columns}
+          dataSource={sessions}
+          rowKey="id"
+          loading={isLoading}
+          title={() => (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setDialogOpen(true)}
+                  style={canEdit ? undefined : { display: "none" }}
+                >
+                  发起签到
+                </Button>
+              </Space>
+            </div>
+          )}
+          pagination={{
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条`,
           }}
-        >
-          <PlayCircleOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-                    <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-            签到管理
-          </Title>
-        </div>
-
-        <Row gutter={[16, 16]}>
-          <Col xs={8}>
-            <Card size="small" style={{ borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: 8, 
-                  background: 'linear-gradient(135deg, #1890ff 0%, #69c0ff 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <PlayCircleOutlined style={{ fontSize: 20, color: '#fff' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>进行中</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, color: '#1890ff' }}>{activeCount}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={8}>
-            <Card size="small" style={{ borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: 8, 
-                  background: 'linear-gradient(135deg, #8c8c8c 0%, #bfbfbf 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <CheckCircleOutlined style={{ fontSize: 20, color: '#fff' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>已关闭</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, color: '#666' }}>{closedCount}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={8}>
-            <Card size="small" style={{ borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: 8, 
-                  background: 'linear-gradient(135deg, #52c41a 0%, #95de64 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <TeamOutlined style={{ fontSize: 20, color: '#fff' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>总签到人次</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, color: '#52c41a' }}>{totalCheckIns}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24 }}>
-        <Card style={{ height: "100%" }}>
-          <Table
-            className="theme-table"
-            columns={columns}
-            dataSource={sessions}
-            rowKey="id"
-            loading={isLoading}
-            title={() => (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => setDialogOpen(true)}
-                    style={canEdit ? undefined : { display: "none" }}
-                  >
-                    发起签到
-                  </Button>
-                </Space>
-              </div>
-            )}
-            pagination={{
-              showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 条`,
-            }}
-          />
-        </Card>
-      </div>
+        />
+      </Card>
 
       <Modal
         title="发起签到"
@@ -703,6 +618,6 @@ export default function CheckInManagement() {
           )}
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

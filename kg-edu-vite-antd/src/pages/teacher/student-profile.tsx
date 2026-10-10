@@ -9,7 +9,6 @@ import {
   Typography,
   Select,
   Spin,
-  Statistic,
   Empty,
   Progress,
   Table,
@@ -21,7 +20,6 @@ import type { TabsProps } from "antd";
 import {
   BookOutlined,
   TrophyOutlined,
-  UserOutlined,
   RiseOutlined,
   TeamOutlined,
   ClockCircleOutlined,
@@ -47,8 +45,9 @@ import {
   getStudentExamsByStudent,
   listActivityLogsByTimeRange,
 } from "@/lib/ash_rpc";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // ── Robust ECharts wrapper ──
 function EChartsChart({ options, height = 350 }: { options: any; height?: number }) {
@@ -496,38 +495,17 @@ export default function StudentProfile() {
           </Row>
 
           <Card title={<Space><TrophyOutlined style={{ color: "#722ed1" }} /><span>考试/测验成绩</span></Space>} style={{ marginBottom: 16 }}>
-            <Row gutter={16} style={{ marginBottom: 16 }}>
-              <Col span={4}>
-                <Card size="small" style={{ textAlign: "center" }}>
-                  <Statistic title="考试平均分" value={examAvg ?? "-"} suffix={examAvg != null ? "分" : ""} prefix={<TrophyOutlined />} valueStyle={{ color: "#722ed1", fontSize: 24 }} />
-                </Card>
-              </Col>
-              <Col span={4}>
-                <Card size="small" style={{ textAlign: "center" }}>
-                  <Statistic title="最高分" value={examHigh ?? "-"} suffix={examHigh != null ? "分" : ""} prefix={<CheckCircleOutlined />} valueStyle={{ color: "#52c41a", fontSize: 24 }} />
-                </Card>
-              </Col>
-              <Col span={4}>
-                <Card size="small" style={{ textAlign: "center" }}>
-                  <Statistic title="最低分" value={examLow ?? "-"} suffix={examLow != null ? "分" : ""} prefix={<ExperimentOutlined />} valueStyle={{ color: "#ff4d4f", fontSize: 24 }} />
-                </Card>
-              </Col>
-              <Col span={4}>
-                <Card size="small" style={{ textAlign: "center" }}>
-                  <Statistic title="考试次数" value={totalExams ?? (examScores?.length || 0)} suffix="次" prefix={<FileTextOutlined />} valueStyle={{ color: "#1890ff", fontSize: 24 }} />
-                </Card>
-              </Col>
-              <Col span={4}>
-                <Card size="small" style={{ textAlign: "center" }}>
-                  <Statistic title="通过率" value={passRate ?? "-"} suffix={passRate != null ? "%" : ""} prefix={<CheckCircleOutlined />} valueStyle={{ color: passRate != null && passRate >= 60 ? "#3f8600" : "#faad14", fontSize: 24 }} />
-                </Card>
-              </Col>
-              <Col span={4}>
-                <Card size="small" style={{ textAlign: "center" }}>
-                  <Statistic title="学习活跃度" value={activityIndex ?? "-"} suffix={activityIndex != null ? "/ 100" : ""} prefix={<RiseOutlined />} valueStyle={{ color: "#1890ff", fontSize: 24 }} />
-                </Card>
-              </Col>
-            </Row>
+            <StatGrid
+              columns={6}
+              items={[
+                { label: "考试平均分", value: examAvg ?? "-", unit: examAvg != null ? "分" : "", icon: <TrophyOutlined /> },
+                { label: "最高分", value: examHigh ?? "-", unit: examHigh != null ? "分" : "", icon: <CheckCircleOutlined /> },
+                { label: "最低分", value: examLow ?? "-", unit: examLow != null ? "分" : "", icon: <ExperimentOutlined /> },
+                { label: "考试次数", value: totalExams ?? (examScores?.length || 0), unit: "次", icon: <FileTextOutlined /> },
+                { label: "通过率", value: passRate ?? "-", unit: passRate != null ? "%" : "", icon: <CheckCircleOutlined /> },
+                { label: "学习活跃度", value: activityIndex ?? "-", unit: activityIndex != null ? "/ 100" : "", icon: <RiseOutlined /> },
+              ]}
+            />
             {examBarOptions ? (
               <EChartsChart options={examBarOptions} height={280} />
             ) : (<Empty description="暂无考试记录" />)}
@@ -544,58 +522,47 @@ export default function StudentProfile() {
       label: <Space><TeamOutlined /><span>分组任务表现</span></Space>,
       children: (
         <>
-          <Row gutter={16} align="stretch" style={{ marginBottom: 16 }}>
-            <Col span={6}>
-              <Card size="small" style={{ textAlign: "center", height: "100%" }}>
-                <Statistic title="分组任务数" value={groupTaskStats?.summary?.totalTasks ?? "-"} prefix={<TeamOutlined />} valueStyle={{ color: "#1890ff" }} />
-                {groupTaskStats?.summary?.totalTasks != null ? (
-                  <Text type="secondary">已提交 {groupTaskStats.summary.submittedCount || 0} / {groupTaskStats.summary.totalTasks}</Text>
-                ) : (
-                  <Text type="secondary">暂无分组任务</Text>
-                )}
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small" style={{ textAlign: "center", height: "100%" }}>
-                <Statistic title="任务平均分" value={groupTaskStats?.summary?.averageScore ?? "-"} prefix={<TrophyOutlined />}
-                  suffix={groupTaskStats?.summary?.averageScore != null ? "/ 100" : ""}
-                  valueStyle={{ color: (groupTaskStats?.summary?.averageScore ?? 0) >= 70 ? "#3f8600" : "#722ed1" }}
-                />
-                {groupTaskStats?.summary?.classAverageScore != null ? (
-                  <Text type="secondary">班级平均: {groupTaskStats.summary.classAverageScore}</Text>
-                ) : (
-                  <Text type="secondary">暂无评分数据</Text>
-                )}
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small" style={{ textAlign: "center", height: "100%" }}>
-                <Statistic title="所属小组" value={groupTaskStats?.summary?.group?.groupName || "未加入小组"} prefix={<TeamOutlined />} valueStyle={{ color: "#13c2c2", fontSize: 20 }} />
-                {groupTaskStats?.summary?.group?.groupName ? (
-                  <Text type="secondary">已评分 {groupTaskStats.summary.gradedCount || 0} 个任务</Text>
-                ) : (
-                  <Text type="secondary">该学生未加入任何小组</Text>
-                )}
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small" style={{ textAlign: "center", height: "100%" }}>
-                <Statistic
-                  title="平均分差距"
-                  value={(() => {
-                    const my = groupTaskStats?.summary?.averageScore;
-                    const cls = groupTaskStats?.summary?.classAverageScore;
-                    if (my != null && cls != null) return (my - cls) > 0 ? `+${(my - cls).toFixed(1)}` : (my - cls).toFixed(1);
-                    return "-";
-                  })()}
-                  prefix={<ArrowUpOutlined />}
-                  valueStyle={{ color: groupTaskStats?.summary?.averageScore != null &&
-                    (groupTaskStats.summary.averageScore > (groupTaskStats.summary.classAverageScore || 0)) ? "#3f8600" : "#ff4d4f", fontSize: 24 }}
-                />
-                <Text type="secondary">vs 班级平均</Text>
-              </Card>
-            </Col>
-          </Row>
+          <StatGrid
+            columns={4}
+            items={[
+              {
+                label: "分组任务数",
+                value: groupTaskStats?.summary?.totalTasks ?? "-",
+                icon: <TeamOutlined />,
+                desc: groupTaskStats?.summary?.totalTasks != null
+                  ? `已提交 ${groupTaskStats.summary.submittedCount || 0} / ${groupTaskStats.summary.totalTasks}`
+                  : "暂无分组任务",
+              },
+              {
+                label: "任务平均分",
+                value: groupTaskStats?.summary?.averageScore ?? "-",
+                unit: groupTaskStats?.summary?.averageScore != null ? "/ 100" : "",
+                icon: <TrophyOutlined />,
+                desc: groupTaskStats?.summary?.classAverageScore != null
+                  ? `班级平均: ${groupTaskStats.summary.classAverageScore}`
+                  : "暂无评分数据",
+              },
+              {
+                label: "所属小组",
+                value: groupTaskStats?.summary?.group?.groupName || "未加入小组",
+                icon: <TeamOutlined />,
+                desc: groupTaskStats?.summary?.group?.groupName
+                  ? `已评分 ${groupTaskStats.summary.gradedCount || 0} 个任务`
+                  : "该学生未加入任何小组",
+              },
+              {
+                label: "平均分差距",
+                value: (() => {
+                  const my = groupTaskStats?.summary?.averageScore;
+                  const cls = groupTaskStats?.summary?.classAverageScore;
+                  if (my != null && cls != null) return (my - cls) > 0 ? `+${(my - cls).toFixed(1)}` : (my - cls).toFixed(1);
+                  return "-";
+                })(),
+                icon: <ArrowUpOutlined />,
+                desc: "vs 班级平均",
+              },
+            ]}
+          />
 
           <Card title={<Space><BarChartOutlined style={{ color: "#5B8FF9" }} /><span>分组任务得分对比</span></Space>} style={{ marginBottom: 16 }}>
             {groupTaskBarOptions ? (
@@ -615,34 +582,35 @@ export default function StudentProfile() {
   ];
 
   if (!user || !tenant) {
-    return <div style={{ padding: 24 }}><Text type="danger">用户未登录或未选择组织。</Text></div>;
+    return (
+      <AppPage title="学生学情画像" description="查看学生知识与活跃情况">
+        <Card><Text type="danger">用户未登录或未选择组织。</Text></Card>
+      </AppPage>
+    );
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Row justify="space-between" align="middle">
-          <Col>        <Button
-                    className="teacher-page-back-btn"
-                    type="text"
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => navigate("/teacher/dashboard")}
-                    style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                  />
-                    <Title level={4} style={{ margin: 0 }}><UserOutlined /> 学生学情画像</Title></Col>
-          <Col>
-            <Space>
-              <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId}
-                onChange={(v) => { setSelectedCourseId(v); setSelectedStudentId(null); }}
-                options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
-              <Select style={{ width: 200 }} placeholder="选择学生" showSearch optionFilterProp="label"
-                value={selectedStudentId} onChange={setSelectedStudentId}
-                options={students.map((s: any) => ({ label: s.name || s.email || s.id, value: s.id }))}
-                disabled={!selectedCourseId} />
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+    <AppPage
+      title="学生学情画像"
+      description="查看学生知识与活跃情况"
+      actions={
+        <>
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId}
+            onChange={(v) => { setSelectedCourseId(v); setSelectedStudentId(null); }}
+            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
+          <Select style={{ width: 200 }} placeholder="选择学生" showSearch optionFilterProp="label"
+            value={selectedStudentId} onChange={setSelectedStudentId}
+            options={students.map((s: any) => ({ label: s.name || s.email || s.id, value: s.id }))}
+            disabled={!selectedCourseId} />
+        </>
+      }
+    >
 
       {noStudent ? (
         <Card><Empty description="请选择课程和学生查看学情画像" /></Card>
@@ -650,32 +618,35 @@ export default function StudentProfile() {
         <div style={{ textAlign: "center", padding: 80 }}><Spin size="large" /></div>
       ) : (
         <>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={8}>
-              <Card size="small">
-                <Statistic title="知识掌握度" value={mastery ?? "-"} suffix={mastery != null ? "%" : ""}
-                  prefix={<BookOutlined />}
-                  valueStyle={{ color: (mastery ?? 0) >= 70 ? "#3f8600" : "#cf1322" }} />
-                {mastery != null && <Progress percent={mastery} showInfo={false} size="small" />}
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card size="small">
-                <Statistic title="学习活跃度" value={activityIndex ?? "-"} suffix={activityIndex != null ? "/ 100" : ""} prefix={<RiseOutlined />} valueStyle={{ color: "#1890ff" }} />
-                <Text type="secondary">共 {totalActivities ?? 0} 次活动</Text>
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card size="small">
-                <Statistic title="考试平均分" value={examAvg ?? "-"} prefix={<TrophyOutlined />} valueStyle={{ color: "#722ed1" }} />
-                <Text type="secondary">共 {totalExams ?? 0} 次考试</Text>
-              </Card>
-            </Col>
-          </Row>
+          <StatGrid
+            columns={3}
+            items={[
+              {
+                label: "知识掌握度",
+                value: mastery ?? "-",
+                unit: mastery != null ? "%" : "",
+                icon: <BookOutlined />,
+                desc: mastery != null ? <Progress percent={mastery} showInfo={false} size="small" /> : undefined,
+              },
+              {
+                label: "学习活跃度",
+                value: activityIndex ?? "-",
+                unit: activityIndex != null ? "/ 100" : "",
+                icon: <RiseOutlined />,
+                desc: `共 ${totalActivities ?? 0} 次活动`,
+              },
+              {
+                label: "考试平均分",
+                value: examAvg ?? "-",
+                icon: <TrophyOutlined />,
+                desc: `共 ${totalExams ?? 0} 次考试`,
+              },
+            ]}
+          />
 
           <Tabs defaultActiveKey="behavior" items={tabItems} />
         </>
       )}
-    </div>
+    </AppPage>
   );
 }

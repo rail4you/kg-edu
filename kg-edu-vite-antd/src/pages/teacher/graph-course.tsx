@@ -1,19 +1,17 @@
-import { Space, Spin, Empty, Select, Typography } from "antd";
+import { Space, Spin, Empty, Select } from "antd";
 import {
   ApartmentOutlined,
   SyncOutlined,
   ApiOutlined,
   QuestionCircleOutlined,
-  ApiTwoTone,
 } from "@ant-design/icons";
 import TeacherGraphKnowledge from "./graph-knowledge";
 import TeacherGraphTree from "./graph-tree";
 import TeacherGraphCircle from "./graph-circle";
 import TeacherGraphQuestion from "./graph-question";
+import { PageHead } from "@/components/proto";
 import { useCourses } from "@/hooks/use-courses";
 import { useGraphCourse, type GraphTabType } from "@/hooks/use-graph-course";
-
-const { Title } = Typography;
 
 function CourseSelectorWrapper() {
   const { courses, loading, retryCount, maxRetry } = useCourses({
@@ -129,23 +127,11 @@ function GraphCourseContent() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)" }}>
-      <div
-        style={{
-          padding: "12px 16px",
-          flexShrink: 0,
-          background: "#fff",
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <Space size="middle" align="center">
-          <ApiTwoTone style={{ fontSize: 24 }} />
-          <Title level={4} style={{ margin: 0 }}>
-            知识图谱
-          </Title>
-          <div style={{ width: 1, height: 20, background: "#d9d9d9" }} />
-          <CourseSelectorWrapper />
-        </Space>
-      </div>
+      <PageHead
+        title="知识图谱"
+        description="可视化课程知识结构、能力与问题关联"
+        actions={<CourseSelectorWrapper />}
+      />
       {selectedCourseId ? (
         <GraphTabs />
       ) : (

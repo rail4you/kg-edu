@@ -1,10 +1,9 @@
 import { useSearchParams , useNavigate } from "react-router-dom";
 import { Typography, Empty, Button } from "antd";
-import { SettingOutlined , ArrowLeftOutlined
+import { ArrowLeftOutlined
 } from "@ant-design/icons";
 import ContextSelector from "@/components/micro-major/context-selector";
-
-const { Title } = Typography;
+import { AppPage } from "@/components/proto";
 
 export default function MMSettingsPage() {
   const navigate = useNavigate();
@@ -12,20 +11,20 @@ export default function MMSettingsPage() {
   const mmId = searchParams.get("mmId");
 
   return (
-    <div className="mm-settings-page-wrap" style={{ padding: 24 }}>
+    <AppPage
+      className="mm-settings-page-wrap"
+      title="基本设置"
+      description="配置微专业基础信息"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/micro-major/dashboard")}
+        />
+      }
+    >
 <style>{`@media(max-width:768px){.mm-settings-page-wrap{padding:12px!important}.mm-settings-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-        <SettingOutlined style={{ fontSize: 24, color: "#722ed1" }} />
-                  <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>基本设置</Title>
-      </div>
-
       <ContextSelector />
 
       {mmId ? (
@@ -33,7 +32,7 @@ export default function MMSettingsPage() {
       ) : (
         <Empty description="请在上方选择一个微专业" />
       )}
-    </div>
+    </AppPage>
   );
 }
 

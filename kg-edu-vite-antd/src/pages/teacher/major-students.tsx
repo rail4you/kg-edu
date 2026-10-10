@@ -1,17 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Card, Col, Empty, message, Popconfirm, Row, Select, Space, Table, Tag, Typography, Modal, Input, Tabs } from "antd";
+import { Button, Card, Empty, message, Popconfirm, Select, Space, Table, Tag, Modal, Input, Tabs } from "antd";
 import type { TableColumnsType } from "antd";
-import { ArrowLeftOutlined, DeleteOutlined, TeamOutlined, UserAddOutlined, SearchOutlined, UnorderedListOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, DeleteOutlined, UserAddOutlined, SearchOutlined, UnorderedListOutlined, AppstoreOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
 import { listUsers, listClasses, listMajorEnrollmentsByMajor, removeMajorStudent, bulkAssignMajorStudents } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-
-const { Title, Text } = Typography;
+import { AppPage } from "@/components/proto";
 
 interface Student {
   id: string;
@@ -278,38 +277,35 @@ export default function MajorStudents() {
     },
   ];
 
-  if (!majorId) return <Empty description="微专业不存在" />;
+  if (!majorId)
+    return (
+      <AppPage title="学生管理">
+        <Empty description="微专业不存在" />
+      </AppPage>
+    );
 
   return (
-    <div style={{ padding: 24 }}>
-      <Button icon={<ArrowLeftOutlined />} style={{ marginBottom: 16 }} onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)}>
-        返回微专业详情
-      </Button>
-
+    <AppPage
+      title="学生管理"
+      description="为学生分配微专业"
+      actions={
+        <>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)}>
+            返回微专业详情
+          </Button>
+          <Button
+            type="primary"
+            icon={<UserAddOutlined />}
+            onClick={openAddModal}
+            disabled={studentsLoading || availableStudents.length === 0}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            添加学生
+          </Button>
+        </>
+      }
+    >
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Space>
-              <TeamOutlined style={{ fontSize: 20, color: "#1890ff" }} />
-              <Title level={4} style={{ margin: 0 }}>学生管理</Title>
-            </Space>
-            <div style={{ marginTop: 4 }}>
-              <Text type="secondary">由教师端为学生分配微专业，学生端只展示已分配的微专业。</Text>
-            </div>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<UserAddOutlined />}
-              onClick={openAddModal}
-              disabled={studentsLoading || availableStudents.length === 0}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              添加学生
-            </Button>
-          </Col>
-        </Row>
-
         <Table
           rowKey="id"
           columns={columns}
@@ -432,6 +428,6 @@ export default function MajorStudents() {
           ]}
         />
       </Modal>
-    </div>
+    </AppPage>
   );
 }

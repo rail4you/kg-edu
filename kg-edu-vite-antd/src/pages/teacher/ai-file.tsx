@@ -45,8 +45,9 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useCourses } from "@/hooks/use-courses";
 import FilePreview from "@/components/FilePreview";
+import { AppPage } from "@/components/proto";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 type FileData = {
   id: string;
@@ -265,33 +266,20 @@ export default function AIFilePage() {
   } | null>(null);
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      height: "100vh",
-      background: "#f5f7fa"
-    }}>
-      {/* 顶部标题区域 */}
-      <div style={{
-        padding: "16px 24px",
-        background: "#ffffff",
-        borderBottom: "1px solid #e8ecf0",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <FolderOutlined style={{ color: "#0056D2", fontSize: 24 }} />
-          <div>
-                      <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>AI 生成文件</Title>
-          </div>
-        </div>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+    <AppPage
+      title="AI 生成文件"
+      description="管理课程AI生成的文件"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
+        />
+      }
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
           <Select
             style={{ width: 280 }}
             placeholder="请选择课程"
@@ -330,10 +318,9 @@ export default function AIFilePage() {
             </Button>
           </Space.Compact>
         </div>
-      </div>
 
       {/* 内容区域 */}
-      <div style={{ flex: 1, overflow: "auto", padding: "24px" }}>
+      <div style={{ flex: 1, overflow: "auto" }}>
         {coursesLoading ? (
           <div
             style={{
@@ -652,6 +639,6 @@ export default function AIFilePage() {
           }
         }}
       />
-    </div>
+    </AppPage>
   );
 }

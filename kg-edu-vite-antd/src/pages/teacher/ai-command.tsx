@@ -24,7 +24,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   CodeOutlined,
-  RobotOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
   ArrowLeftOutlined
@@ -45,10 +44,11 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import TemplateSelector from "@/components/ai-command-templates/TemplateSelector";
 import type { AITemplate } from "@/config/aiCommandTemplates";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 const commandFormSchema = z.object({
@@ -263,11 +263,12 @@ export default function AiCommand() {
   };
 
   return (
-    <div className="ai-cmd-wrap" style={{ padding: 24, minHeight: "100vh" }}>
-      <style>{`@media(max-width:768px){.ai-cmd-wrap{padding:12px!important}.ai-cmd-wrap .ant-table-cell{padding:6px 4px!important}.ai-cmd-wrap .cmd-action-text{display:none!important}}`}</style>
-      {/* 标题区域 */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+    <AppPage
+      className="ai-cmd-wrap"
+      title={t("pages.aiCommand.title")}
+      description={t("pages.aiCommand.description")}
+      actions={
+        <>
           <Button
             className="teacher-page-back-btn"
             type="text"
@@ -275,22 +276,19 @@ export default function AiCommand() {
             onClick={() => navigate("/teacher/dashboard")}
             style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-          <RobotOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-          <Title level={4} style={{ margin: 0 }}>{t("pages.aiCommand.title")}</Title>
-        </div>
-        <Text type="secondary">{t("pages.aiCommand.description")}</Text>
-      </div>
-
-      {/* 工具栏 */}
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <Space>
           <Button icon={<AppstoreOutlined />} onClick={() => setTemplateSelectorOpen(true)} style={canEdit ? undefined : { display: "none" }}>
             {t("pages.aiCommand.useTemplate")}
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={canEdit ? undefined : { display: "none" }}>
             {t("pages.aiCommand.createNew")}
           </Button>
-        </Space>
+        </>
+      }
+    >
+      <style>{`@media(max-width:768px){.ai-cmd-wrap{padding:12px!important}.ai-cmd-wrap .ant-table-cell{padding:6px 4px!important}.ai-cmd-wrap .cmd-action-text{display:none!important}}`}</style>
+
+      {/* 工具栏 */}
+      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 12 }}>
         <Space.Compact>
           <Button
             type={viewMode === "card" ? "primary" : "default"}
@@ -501,6 +499,6 @@ export default function AiCommand() {
         onClose={() => setTemplateSelectorOpen(false)}
         onSelect={handleTemplateSelect}
       />
-    </div>
+    </AppPage>
   );
 }

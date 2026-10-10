@@ -28,6 +28,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { listFileTemplates } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import FilePreview from "@/components/FilePreview";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -162,33 +163,38 @@ export default function TeacherManualPage() {
 
   if (!currentTenant || !user) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f8fa", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <BookOutlined style={{ fontSize: 48, color: "#bbb", marginBottom: 16 }} />
-        <Title level={4} style={{ color: "#999" }}>请先登录</Title>
-      </div>
+      <AppPage title="教师使用手册">
+        <div style={{ minHeight: "40vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <BookOutlined style={{ fontSize: 48, color: "#bbb", marginBottom: 16 }} />
+          <Title level={4} style={{ color: "#999" }}>请先登录</Title>
+        </div>
+      </AppPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f8fa", display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-        <Spin size="large" />
-        <Text type="secondary">加载中...</Text>
-      </div>
+      <AppPage title="教师使用手册">
+        <div style={{ minHeight: "40vh", display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <Spin size="large" />
+          <Text type="secondary">加载中...</Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f8fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Empty description="加载失败，请稍后重试" />
-      </div>
+      <AppPage title="教师使用手册">
+        <div style={{ minHeight: "40vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Empty description="加载失败，请稍后重试" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ background: "#f7f8fa", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 32px 40px" }}>
+    <AppPage title="教师使用手册" description="教学平台使用指南与文档">
         {/* Main content card */}
         <div style={{
           background: "#fff", borderRadius: 16,
@@ -340,7 +346,6 @@ export default function TeacherManualPage() {
             </Text>
           </div>
         </div>
-      </div>
 
       {/* Preview Modal */}
       {previewFile && (
@@ -359,6 +364,6 @@ export default function TeacherManualPage() {
           }}
         />
       )}
-    </div>
+    </AppPage>
   );
 }

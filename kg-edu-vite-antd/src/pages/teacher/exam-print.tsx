@@ -23,6 +23,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getExamContent } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -86,17 +87,19 @@ export default function ExamPrint() {
 
   if (authLoading || isLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
+      <AppPage title="试卷自定义导出" description="自定义版式并导出试卷">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: 80 }}>
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (!examData) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="试卷自定义导出" description="自定义版式并导出试卷">
         <Empty description="试卷不存在" />
-      </div>
+      </AppPage>
     );
   }
 
@@ -172,7 +175,27 @@ export default function ExamPrint() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
+    <AppPage
+      title="试卷自定义导出"
+      description="自定义版式并导出试卷"
+      style={{ maxWidth: 1200 }}
+      actions={
+        <>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
+          />
+          <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
+            打印
+          </Button>
+          <Button type="primary" icon={<FilePdfOutlined />} loading={exporting} onClick={exportPdf}>
+            导出 PDF
+          </Button>
+        </>
+      }
+    >
       <style>{`
         @media print {
           html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
@@ -199,19 +222,8 @@ export default function ExamPrint() {
         }
       `}</style>
 
-      <div className="exam-print-header" style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>试卷自定义导出</Title>
-        <div style={{ flex: 1 }} />
-        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
-          打印
-        </Button>
-        <Button type="primary" icon={<FilePdfOutlined />} loading={exporting} onClick={exportPdf}>
-          导出 PDF
-        </Button>
-      </div>
+      <div>
 
-      <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
         <Card className="exam-print-config" title="模板配置" style={{ marginBottom: 16 }}>
           <Form layout="inline" style={{ rowGap: 12 }}>
             <Form.Item label="版式">
@@ -328,6 +340,6 @@ export default function ExamPrint() {
           )}
         </div>
       </div>
-    </div>
+    </AppPage>
   );
 }

@@ -54,6 +54,7 @@ import type { UploadProgress } from "@/lib/oss-upload";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -110,7 +111,7 @@ export default function VideoManagementPage() {
   const isUploadCancelledRef = useRef(false);
   const [isUploadCancelled, setIsUploadCancelled] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText] = useState<string>("");
   const [chapterSearchText, setChapterSearchText] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,7 +187,7 @@ export default function VideoManagementPage() {
   });
 
   // 使用统一的课程获取 hook
-  const { courses: coursesData, loading: coursesLoading } = useCourses({
+  const { courses: coursesData } = useCourses({
     fields: ["id", "title"],
   });
 
@@ -1299,29 +1300,18 @@ export default function VideoManagementPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <PlayCircleOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-      <Button
-                  className="teacher-page-back-btn"
-                  type="text"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate("/teacher/dashboard")}
-                  style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-                />
-                          <Title level={4} style={{ margin: 0 }}>
-          视频管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="视频管理"
+      description="管理课程视频与AI解析"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <Space>
           <Text strong>选择课程：</Text>
@@ -1462,6 +1452,6 @@ export default function VideoManagementPage() {
           headers={getAuthHeaders(user) as Record<string, string>}
         />
       )}
-    </div>
+    </AppPage>
   );
 }

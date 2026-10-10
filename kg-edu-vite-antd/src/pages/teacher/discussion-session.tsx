@@ -53,8 +53,9 @@ import type { DiscussionSessionResourceSchema } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 function EChartsChart({ options, height = 280 }: { options: any; height?: number }) {
@@ -565,80 +566,24 @@ export default function DiscussionSessionManagement() {
       children: (
         <div>
           {/* 统计卡片 */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
-            <div style={{
-              padding: 20,
-              borderRadius: 8,
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10,
-                  background: "linear-gradient(135deg, #0056D2 0%, #69c0ff 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <FileTextOutlined style={{ fontSize: 22, color: "#fff" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: "#0056D2", lineHeight: 1.2 }}>
-                    {detailDiscussions.length}
-                  </div>
-                  <div style={{ fontSize: 13, color: "#5E5E5E" }}>总帖子数</div>
-                </div>
-              </div>
-            </div>
-            <div style={{
-              padding: 20,
-              borderRadius: 8,
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10,
-                  background: "linear-gradient(135deg, #18842C 0%, #73d13d 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <TeamOutlined style={{ fontSize: 22, color: "#fff" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: "#18842C", lineHeight: 1.2 }}>
-                    {studentStats.filter((s) => s.postCount > 0).length}
-                    <span style={{ fontSize: 14, fontWeight: 400, color: "#8c8c8c" }}> / {detailMembers.length}</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: "#5E5E5E" }}>参与学生</div>
-                </div>
-              </div>
-            </div>
-            <div style={{
-              padding: 20,
-              borderRadius: 8,
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10,
-                  background: "linear-gradient(135deg, #722ed1 0%, #b37feb 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <BarChartOutlined style={{ fontSize: 22, color: "#fff" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: "#722ed1", lineHeight: 1.2 }}>
-                    {detailMembers.length > 0
-                      ? Math.round((studentStats.filter((s) => s.postCount > 0).length / detailMembers.length) * 100)
-                      : 0}%
-                  </div>
-                  <div style={{ fontSize: 13, color: "#5E5E5E" }}>参与率</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatGrid
+            columns={3}
+            items={[
+              { label: "总帖子数", value: detailDiscussions.length, icon: <FileTextOutlined /> },
+              {
+                label: "参与学生",
+                value: `${studentStats.filter((s) => s.postCount > 0).length} / ${detailMembers.length}`,
+                icon: <TeamOutlined />,
+              },
+              {
+                label: "参与率",
+                value: `${detailMembers.length > 0
+                  ? Math.round((studentStats.filter((s) => s.postCount > 0).length / detailMembers.length) * 100)
+                  : 0}%`,
+                icon: <BarChartOutlined />,
+              },
+            ]}
+          />
 
           {/* 参与率进度条 */}
           {detailMembers.length > 0 && (
@@ -1013,72 +958,58 @@ export default function DiscussionSessionManagement() {
 
   if (!user) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="实时课程讨论">
         <Text type="danger">用户未登录，请登录以访问实时课程讨论管理。</Text>
-      </div>
+      </AppPage>
     );
   }
 
   if (!tenant) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="实时课程讨论">
         <Text type="danger">未选择组织，请重新登录并选择组织。</Text>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <MessageOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>
-          实时课程讨论
-        </Title>
-      </div>
-
-      <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
-        <Card>
-          <Table
-            className="theme-table"
-            columns={columns}
-            dataSource={sessions}
-            rowKey="id"
-            loading={isLoading}
-            title={() => (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => setDialogOpen(true)}
-                    style={canEdit ? undefined : { display: "none" }}
-                  >
-                    新建讨论会话
-                  </Button>
-                </Space>
-              </div>
-            )}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 个实时讨论`,
-            }}
-            locale={{
-              emptyText: (
-                <Empty description="暂无实时课程讨论" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              ),
-            }}
-          />
-        </Card>
-      </div>
+    <AppPage
+      title="实时课程讨论"
+      description="创建实时讨论会话并查看学生参与情况"
+    >
+      <Card>
+        <Table
+          className="theme-table"
+          columns={columns}
+          dataSource={sessions}
+          rowKey="id"
+          loading={isLoading}
+          title={() => (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setDialogOpen(true)}
+                  style={canEdit ? undefined : { display: "none" }}
+                >
+                  新建讨论会话
+                </Button>
+              </Space>
+            </div>
+          )}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 个实时讨论`,
+          }}
+          locale={{
+            emptyText: (
+              <Empty description="暂无实时课程讨论" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ),
+          }}
+        />
+      </Card>
 
       <Modal
         title="新建讨论会话"
@@ -1189,6 +1120,6 @@ export default function DiscussionSessionManagement() {
           <Tabs items={detailTabItems} />
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

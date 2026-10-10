@@ -23,6 +23,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -523,32 +524,34 @@ export default function ExamGradeDetail() {
 
   if (!studentExamId) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="批改答卷">
         <Alert type="error" message="学生考试ID缺失" />
-      </div>
+      </AppPage>
     );
   }
 
   if (isLoadingExam || isLoadingAnswers) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Spin size="large" />
-      </div>
+      <AppPage title="批改答卷">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 80,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   if (!studentExamData?.success || !studentExamData.data) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="批改答卷">
         <Alert type="error" message="加载学生考试失败" />
-      </div>
+      </AppPage>
     );
   }
 
@@ -645,71 +648,18 @@ export default function ExamGradeDetail() {
   );
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "#f5f5f5",
-      }}
-    >
-      <div
-        style={{
-          padding: 24,
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(-1)}
-              title="返回"
-            />
-            <div>
-              <Title
-                level={4}
-                style={{ margin: 0, fontWeight: 700, color: "#333" }}
-              >
-                批改答卷
-              </Title>
-              <Text type="secondary">
-                学生: {studentExam.student?.name || "Unknown"} | 考试:{" "}
-                {studentExam.exam?.title || "Unknown"}
-              </Text>
-            </div>
-          </div>
-
-          <Space size={24}>
-            <div style={{ textAlign: "center" }}>
-              <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
-                {totalScore}
-              </Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                当前得分
-              </Text>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <Title level={3} style={{ margin: 0, color: "#999" }}>
-                {maxTotalScore}
-              </Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                满分
-              </Text>
-            </div>
-          </Space>
-        </div>
-
-        <Space size={8}>
+    <AppPage
+      title="批改答卷"
+      description={`学生: ${studentExam.student?.name || "Unknown"}`}
+      actions={
+        <Space size={8} wrap>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
+            title="返回"
+          />
           <Tag
             icon={
               studentExam.status === "graded" ? (
@@ -733,10 +683,17 @@ export default function ExamGradeDetail() {
             自动批改选择题
           </ReadonlyActionButton>
         </Space>
-      </div>
+      }
+    >
+      <StatGrid
+        columns={2}
+        items={[
+          { label: "当前得分", value: totalScore },
+          { label: "满分", value: maxTotalScore },
+        ]}
+      />
 
-      <div style={{ flexGrow: 1, padding: 24, overflow: "auto" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
           {answers.length === 0 ? (
             <Card>
               <div style={{ padding: 32, textAlign: "center" }}>
@@ -1102,13 +1059,13 @@ export default function ExamGradeDetail() {
               ))
           )}
         </div>
-      </div>
 
       <div
         style={{
           padding: 24,
           background: "white",
           borderTop: "1px solid #e0e0e0",
+          marginTop: 16,
         }}
       >
         <div
@@ -1131,6 +1088,6 @@ export default function ExamGradeDetail() {
           </ReadonlyActionButton>
         </div>
       </div>
-    </div>
+    </AppPage>
   );
 }

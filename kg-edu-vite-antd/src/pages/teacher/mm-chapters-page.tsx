@@ -1,13 +1,12 @@
 import { useSearchParams , useNavigate } from "react-router-dom";
-import { Button, Typography, Empty } from "antd";
-import { BookOutlined , ArrowLeftOutlined
+import { Button, Empty } from "antd";
+import { ArrowLeftOutlined
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import ContextSelector from "@/components/micro-major/context-selector";
+import { AppPage } from "@/components/proto";
 import MMChapterManager from "./mm-chapter";
-
-const { Title } = Typography;
 
 export default function MMChaptersPage() {
   const navigate = useNavigate();
@@ -18,19 +17,20 @@ export default function MMChaptersPage() {
   const headers = getAuthHeaders(user) as Record<string, string>;
 
   return (
-    <div className="mm-chapters-page-wrap" style={{ padding: 24 }}>
+    <AppPage
+      className="mm-chapters-page-wrap"
+      title="章节管理"
+      description="管理课程章节结构"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/micro-major/dashboard")}
+        />
+      }
+    >
 <style>{`@media(max-width:768px){.mm-chapters-page-wrap{padding:12px!important}.mm-chapters-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-        <BookOutlined style={{ fontSize: 24, color: "#722ed1" }} />
-                  <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>章节管理</Title>
-      </div>
 
       <ContextSelector showCourse />
 
@@ -39,6 +39,6 @@ export default function MMChaptersPage() {
       ) : (
         <Empty description="请在上方选择微专业和课程" />
       )}
-    </div>
+    </AppPage>
   );
 }

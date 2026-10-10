@@ -1,11 +1,10 @@
 import { useMemo } from "react";
-import { Row, Col, Typography, Table, Card } from "antd";
+import { Table, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   UserOutlined,
   TeamOutlined,
   ClusterOutlined,
-  ArrowRightOutlined,
   BankOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -16,8 +15,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAdminDashboardItems } from "@/layouts/admin-menu-config";
 import { useResponsive } from "@/hooks/use-responsive";
+import { PageHead, StatGrid, ProtoCard } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface TenantUser {
   id: string;
@@ -42,8 +42,6 @@ interface TenantUserCount {
 interface StatConfig {
   label: string;
   value: number;
-  color: string;
-  bgColor: string;
   icon?: React.ReactNode;
 }
 
@@ -132,26 +130,20 @@ export default function AdminDashboard() {
   /* ── 统计数据 ── */
   const statCards: StatConfig[] = isSuperAdmin
     ? [
-        {
-          label: "总用户",
-          value: globalTotals.total,
-          color: "#1677ff",
-          bgColor: "#EEF2FF",
-          icon: <UserOutlined />,
-        },
-        { label: "管理员", value: globalTotals.admin, color: "#eb2f96", bgColor: "#FDF2F8", icon: <UserOutlined /> },
-        { label: "教师", value: globalTotals.teacher, color: "#1890ff", bgColor: "#EFF6FF", icon: <TeamOutlined /> },
-        { label: "学生", value: globalTotals.student, color: "#52c41a", bgColor: "#F0FDF4", icon: <UserOutlined /> },
-        { label: "超级管理员", value: globalTotals.super_admin, color: "#722ed1", bgColor: "#FAF5FF", icon: <BankOutlined /> },
-        { label: "租户", value: tenantCount, color: "#13c2c2", bgColor: "#E6FFFB", icon: <ClusterOutlined /> },
+        { label: "总用户", value: globalTotals.total, icon: <UserOutlined /> },
+        { label: "管理员", value: globalTotals.admin, icon: <UserOutlined /> },
+        { label: "教师", value: globalTotals.teacher, icon: <TeamOutlined /> },
+        { label: "学生", value: globalTotals.student, icon: <UserOutlined /> },
+        { label: "超级管理员", value: globalTotals.super_admin, icon: <BankOutlined /> },
+        { label: "租户", value: tenantCount, icon: <ClusterOutlined /> },
       ]
     : [
-        { label: "总用户", value: users.length, color: "#1677ff", bgColor: "#EEF2FF", icon: <UserOutlined /> },
-        { label: "管理员", value: adminCount, color: "#eb2f96", bgColor: "#FDF2F8", icon: <UserOutlined /> },
-        { label: "教师", value: teacherCount, color: "#1890ff", bgColor: "#EFF6FF", icon: <TeamOutlined /> },
-        { label: "学生", value: studentCount, color: "#52c41a", bgColor: "#F0FDF4", icon: <UserOutlined /> },
-        { label: "超级管理员", value: superAdminCount, color: "#722ed1", bgColor: "#FAF5FF", icon: <BankOutlined /> },
-        { label: "班级", value: classes.length, color: "#faad14", bgColor: "#FFFBE6", icon: <ClusterOutlined /> },
+        { label: "总用户", value: users.length, icon: <UserOutlined /> },
+        { label: "管理员", value: adminCount, icon: <UserOutlined /> },
+        { label: "教师", value: teacherCount, icon: <TeamOutlined /> },
+        { label: "学生", value: studentCount, icon: <UserOutlined /> },
+        { label: "超级管理员", value: superAdminCount, icon: <BankOutlined /> },
+        { label: "班级", value: classes.length, icon: <ClusterOutlined /> },
       ];
 
   const tenantColumns: ColumnsType<TenantUserCount> = [
@@ -159,9 +151,7 @@ export default function AdminDashboard() {
       title: "租户",
       dataIndex: "name",
       key: "name",
-      render: (name, record) => (
-        <Text strong>{name || record.schema_name}</Text>
-      ),
+      render: (name, record) => <Text strong>{name || record.schema_name}</Text>,
     },
     {
       title: "管理员",
@@ -197,281 +187,145 @@ export default function AdminDashboard() {
       key: "total",
       width: 100,
       align: "center",
-      render: (total) => <Text strong style={{ color: "#1677ff" }}>{total}</Text>,
+      render: (total) => <Text strong style={{ color: "#2859df" }}>{total}</Text>,
     },
   ];
 
   return (
-    <div style={{ padding: isMobile ? 0 : 24 }}>
-      {/* ── 统计面板 ── */}
-      <Row
-        gutter={[isMobile ? 8 : 16, isMobile ? 8 : 16]}
-        style={{ marginBottom: isMobile ? 16 : 28 }}
-        align="stretch"
+    <div style={{ padding: isMobile ? 12 : "20px 24px 40px" }}>
+      <PageHead
+        title="管理控制台"
+        description="查看管理员常用入口和系统概览"
+      />
+
+      <StatGrid
+        columns={isMobile ? 2 : 3}
+        items={statCards.map((s) => ({ label: s.label, value: s.value, icon: s.icon }))}
+      />
+
+      {isSuperAdmin && (
+        <ProtoCard
+          title="各租户用户汇总"
+          extra={<Text type="secondary" style={{ fontSize: 12 }}>全局总用户: {globalTotals.total}</Text>}
+          className="pu-card--flush"
+          style={{ marginBottom: 24 }}
+        >
+          <div className="pu-table-wrap" style={{ padding: "0 24px 8px" }}>
+            <Table<TenantUserCount>
+              columns={tenantColumns}
+              dataSource={tenantCounts}
+              rowKey="schema_name"
+              loading={countsLoading}
+              size={isMobile ? "small" : "middle"}
+              pagination={false}
+              scroll={{ x: 480 }}
+              summary={() => (
+                <Table.Summary.Row style={{ background: "#f6f8fc" }}>
+                  <Table.Summary.Cell index={0}>
+                    <Text strong>合计</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="center">
+                    <Text strong>{globalTotals.admin}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="center">
+                    <Text strong>{globalTotals.teacher}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={3} align="center">
+                    <Text strong>{globalTotals.student}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={4} align="center">
+                    <Text strong>{globalTotals.super_admin}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={5} align="center">
+                    <Text strong style={{ color: "#2859df" }}>{globalTotals.total}</Text>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              )}
+            />
+          </div>
+        </ProtoCard>
+      )}
+
+      <div className="pu-section-title" style={{ marginBottom: 16 }}>功能模块</div>
+
+      <div
+        className="pu-grid"
+        style={{
+          gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 150 : 260}px, 1fr))`,
+          gap: isMobile ? 10 : 16,
+        }}
       >
-        {statCards.map((stat) => (
-          <Col xs={12} sm={12} md={8} key={stat.label} style={{ display: "flex" }}>
+        {menuItems.map((item) => (
+          <div
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className="pu-card"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              padding: isMobile ? "12px 14px" : "16px 18px",
+              cursor: "pointer",
+              transition: "border-color 0.2s, transform 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#c7d8fb";
+              e.currentTarget.style.transform = "translateY(-2px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--pu-line)";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
             <div
               style={{
-                background: stat.bgColor,
-                borderRadius: isMobile ? 8 : 12,
-                padding: isMobile ? "10px 12px" : "18px 20px",
+                width: isMobile ? 36 : 48,
+                height: isMobile ? 36 : 48,
+                borderRadius: 11,
+                background: "#edf2ff",
+                color: "var(--pu-blue)",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
-                border: "1px solid rgba(0,0,0,0.04)",
-                width: "100%",
+                justifyContent: "center",
+                flexShrink: 0,
+                fontSize: isMobile ? 16 : 22,
               }}
             >
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: isMobile ? 11 : 12,
-                    color: "#666",
-                    marginBottom: isMobile ? 2 : 4,
-                    fontWeight: 500,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {stat.label}
-                </div>
-                <div
-                  style={{
-                    fontSize: isMobile ? 22 : 28,
-                    fontWeight: 700,
-                    color: stat.color,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {stat.value}
-                </div>
+              {item.icon}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--pu-ink)",
+                  lineHeight: 1.3,
+                  marginBottom: 2,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {item.name}
               </div>
               {!isMobile && (
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    background: stat.color,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 20,
-                    color: "#fff",
-                    flexShrink: 0,
-                    opacity: 0.9,
-                  }}
-                >
-                  {stat.icon}
-                </div>
-              )}
-            </div>
-          </Col>
-        ))}
-      </Row>
-
-      {/* ── 租户用户汇总 (仅超管) ── */}
-      {isSuperAdmin && (
-        <Card
-          size={isMobile ? "small" : "default"}
-          style={{ marginBottom: isMobile ? 16 : 28, borderRadius: 12 }}
-          title={
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <BankOutlined style={{ color: "#722ed1" }} />
-              <Text strong>各租户用户汇总</Text>
-            </div>
-          }
-          extra={<Text type="secondary" style={{ fontSize: 12 }}>全局总用户: {globalTotals.total}</Text>}
-        >
-          <Table<TenantUserCount>
-            columns={tenantColumns}
-            dataSource={tenantCounts}
-            rowKey="schema_name"
-            loading={countsLoading}
-            size={isMobile ? "small" : "middle"}
-            pagination={false}
-            scroll={{ x: 480 }}
-            summary={() => (
-              <Table.Summary.Row style={{ background: "#fafafa" }}>
-                <Table.Summary.Cell index={0}>
-                  <Text strong>合计</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1} align="center">
-                  <Text strong>{globalTotals.admin}</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={2} align="center">
-                  <Text strong>{globalTotals.teacher}</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="center">
-                  <Text strong>{globalTotals.student}</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={4} align="center">
-                  <Text strong>{globalTotals.super_admin}</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align="center">
-                  <Text strong style={{ color: "#1677ff" }}>{globalTotals.total}</Text>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            )}
-          />
-        </Card>
-      )}
-
-      {/* ── 功能模块标题 ── */}
-      <Title
-        level={isMobile ? 5 : 4}
-        style={{
-          marginBottom: isMobile ? 10 : 20,
-          fontSize: isMobile ? 15 : undefined,
-        }}
-      >
-        功能模块
-      </Title>
-
-      {/* ── 功能模块卡片 ── */}
-      <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 16]}>
-        {menuItems.map((item) => (
-          <Col xs={12} sm={12} md={8} lg={6} key={item.path}>
-            {isMobile ? (
-              /* 移动端：紧凑卡片 */
-              <div
-                onClick={() => navigate(item.path)}
-                style={{
-                  background: "#fff",
-                  borderRadius: 8,
-                  padding: "10px 10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  cursor: "pointer",
-                  border: "1px solid #f0f0f0",
-                  transition: "all 0.15s",
-                  minHeight: 48,
-                }}
-              >
-                <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 6,
-                    background: `${item.color}15`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    fontSize: 14,
-                    color: item.color,
-                  }}
-                >
-                  {item.icon}
-                </div>
-                <span
-                  style={{
-                    flex: 1,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: "#333",
+                    fontSize: 12,
+                    color: "var(--pu-muted)",
+                    lineHeight: 1.4,
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
-                    lineHeight: 1.2,
                   }}
                 >
-                  {item.name}
-                </span>
-              </div>
-            ) : (
-              /* 桌面端：水平卡片 */
-              <div
-                onClick={() => navigate(item.path)}
-                style={{
-                  background: "#fff",
-                  borderRadius: 10,
-                  padding: "16px 18px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  cursor: "pointer",
-                  border: "1px solid #f0f0f0",
-                  transition: "all 0.2s ease, transform 0.15s ease",
-                  height: "100%",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = item.color;
-                  e.currentTarget.style.boxShadow = `0 4px 12px ${item.color}10`;
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  const icon = e.currentTarget.querySelector(".dash-mod-icon") as HTMLElement;
-                  if (icon) icon.style.transform = "scale(1.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#f0f0f0";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.transform = "translateY(0)";
-                  const icon = e.currentTarget.querySelector(".dash-mod-icon") as HTMLElement;
-                  if (icon) icon.style.transform = "scale(1)";
-                }}
-              >
-                <div
-                  className="dash-mod-icon"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 10,
-                    background: `${item.color}12`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    transition: "transform 0.2s ease",
-                    fontSize: 24,
-                    color: item.color,
-                  }}
-                >
-                  {item.icon}
+                  {item.description}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: "#1a1a1a",
-                      lineHeight: 1.3,
-                      marginBottom: 2,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {item.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#999",
-                      lineHeight: 1.4,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {item.description}
-                  </div>
-                </div>
-                <ArrowRightOutlined
-                  style={{
-                    color: "#d9d9d9",
-                    fontSize: 14,
-                    flexShrink: 0,
-                  }}
-                />
-              </div>
-            )}
-          </Col>
+              )}
+            </div>
+          </div>
         ))}
-      </Row>
+      </div>
     </div>
   );
 }

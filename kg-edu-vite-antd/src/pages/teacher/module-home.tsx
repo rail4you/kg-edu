@@ -1,6 +1,5 @@
-import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { Row, Col, Typography } from "antd";
+import { Row, Col } from "antd";
 import {
   ReadOutlined,
   ApartmentOutlined,
@@ -14,14 +13,12 @@ import {
   VideoCameraOutlined,
   StarOutlined,
   ArrowRightOutlined,
-  AppstoreAddOutlined,
 } from "@ant-design/icons";
 import GlobalFooter from "@/components/layout/global-footer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useBranding } from "@/hooks/use-branding";
+import { PageHead, ProtoCard, ProtoTag } from "@/components/proto";
 import "./module-home.css";
-
-const { Title, Text } = Typography;
 
 const MODULES = [
   {
@@ -106,17 +103,13 @@ export default function ModuleHome() {
         <div className="module-home-backdrop" />
 
         <section className="module-home-content">
+          <PageHead
+            eyebrow="教学业务入口"
+            title="选择要进入的管理模块"
+            description="从课程建设到微专业运营，在同一平台完成教学内容、资源与学习过程管理。"
+          />
+
           <div className="module-home-portal">
-            <div className="module-home-intro-card">
-              <div className="module-home-intro-icon">
-                <AppstoreAddOutlined />
-              </div>
-              <div className="module-home-intro-body">
-                <span className="module-home-intro-tag">教学业务入口</span>
-                <Title level={2}>选择要进入的管理模块</Title>
-                <Text>从课程建设到微专业运营，在同一平台完成教学内容、资源与学习过程管理。</Text>
-              </div>
-            </div>
             <aside className={`module-home-side-panel ${SIDE_PANELS[0].className}`}>
               <img src={SIDE_PANELS[0].image} alt="" />
               <div className="module-home-side-copy">
@@ -128,52 +121,83 @@ export default function ModuleHome() {
             <Row gutter={[28, 28]} justify="center" className="module-home-grid">
               {MODULES.map((mod) => (
                 <Col key={mod.key} xs={24} md={12}>
-                  <button
-                    type="button"
-                    className="module-home-card"
-                    style={
-                      {
-                        "--module-accent": mod.accent,
-                        "--module-dark": mod.dark,
-                        "--module-soft": mod.soft,
-                        "--module-border": mod.border,
-                      } as CSSProperties
-                    }
+                  <ProtoCard
                     onClick={() => navigate(mod.path)}
+                    style={{ height: "100%", cursor: "pointer" }}
+                    title={
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+                        <span
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 10,
+                            background: "var(--pu-blue-soft)",
+                            color: mod.accent,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 24,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {mod.icon}
+                        </span>
+                        <span>
+                          <span
+                            style={{
+                              display: "block",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              letterSpacing: 1,
+                              color: "var(--pu-muted)",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {mod.eyebrow}
+                          </span>
+                          {mod.title}
+                        </span>
+                      </span>
+                    }
                   >
-                    <div className="module-home-card-head">
-                      <div className="module-home-card-icon">{mod.icon}</div>
-                      <div>
-                        <span className="module-home-card-eyebrow">{mod.eyebrow}</span>
-                        <Title level={3}>{mod.title}</Title>
-                      </div>
-                    </div>
+                    <p style={{ color: "var(--pu-muted)", lineHeight: 1.8, marginBottom: 18 }}>
+                      {mod.description}
+                    </p>
 
-                    <Text className="module-home-card-desc">{mod.description}</Text>
-
-                    <div className="module-home-card-stats">
+                    <div className="pu-tags" style={{ marginBottom: 16 }}>
                       {mod.stats.map((stat) => (
-                        <span key={stat}>
-                          <StarOutlined />
+                        <ProtoTag key={stat} tone="blue">
+                          <StarOutlined style={{ marginRight: 4 }} />
                           {stat}
-                        </span>
+                        </ProtoTag>
                       ))}
                     </div>
 
-                    <div className="module-home-feature-list">
+                    <div className="pu-tags">
                       {mod.features.map((feature) => (
-                        <span key={feature.label}>
+                        <ProtoTag key={feature.label} tone="gray">
                           {feature.icon}
-                          {feature.label}
-                        </span>
+                          <span style={{ marginLeft: 4 }}>{feature.label}</span>
+                        </ProtoTag>
                       ))}
                     </div>
 
-                    <div className="module-home-card-action">
+                    <div
+                      style={{
+                        marginTop: 22,
+                        paddingTop: 16,
+                        borderTop: "1px solid var(--pu-line-soft)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        color: "var(--pu-blue)",
+                        fontWeight: 650,
+                      }}
+                    >
                       <span>进入模块</span>
                       <ArrowRightOutlined />
                     </div>
-                  </button>
+                  </ProtoCard>
                 </Col>
               ))}
             </Row>

@@ -15,7 +15,6 @@ import {
   Space,
   Tooltip,
   Alert,
-  Statistic,
 } from "antd";
 import type { TabsProps, TableProps } from "antd";
 import {
@@ -39,6 +38,7 @@ import {
   ThunderboltOutlined,
   DashboardOutlined,
 } from "@ant-design/icons";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -583,75 +583,38 @@ export default function ApiManagementPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <Title level={3} style={{ margin: 0, marginBottom: 4 }}>
-            API 管理
-          </Title>
-          <Text type="secondary">管理和监控教师工作台的 API 接口使用情况</Text>
-        </div>
-        <Space>
+    <AppPage
+      title="API 管理"
+      description="管理接口与调用监控"
+      actions={
+        <>
           <Button icon={<DownloadOutlined />}>导出文档</Button>
           <Button type="primary" icon={<PlusOutlined />} style={canEdit ? undefined : { display: "none" }}>
             生成 API Key
           </Button>
-        </Space>
-      </div>
-
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="API 端点"
-              value={endpoints.length}
-              prefix={<ApiOutlined style={{ color: "#1890ff" }} />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="API Keys"
-              value={apiKeys.length}
-              prefix={<KeyOutlined style={{ color: "#52c41a" }} />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="总调用次数"
-              value={endpoints.reduce((sum, ep) => sum + ep.callCount, 0)}
-              prefix={<ThunderboltOutlined style={{ color: "#faad14" }} />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="平均响应时间"
-              value={Math.round(
-                endpoints.reduce((sum, ep) => sum + ep.avgResponseTime, 0) /
-                  endpoints.length,
-              )}
-              suffix="ms"
-              prefix={<DashboardOutlined style={{ color: "#722ed1" }} />}
-            />
-          </Card>
-        </Col>
-      </Row>
+        </>
+      }
+    >
+      <StatGrid
+        items={[
+          { label: "API 端点", value: endpoints.length, icon: <ApiOutlined /> },
+          { label: "API Keys", value: apiKeys.length, icon: <KeyOutlined /> },
+          { label: "总调用次数", value: endpoints.reduce((sum, ep) => sum + ep.callCount, 0), icon: <ThunderboltOutlined /> },
+          {
+            label: "平均响应时间",
+            value: Math.round(
+              endpoints.reduce((sum, ep) => sum + ep.avgResponseTime, 0) /
+                endpoints.length,
+            ),
+            unit: "ms",
+            icon: <DashboardOutlined />,
+          },
+        ]}
+      />
 
       <Card>
         <Tabs items={tabItems} />
       </Card>
-    </div>
+    </AppPage>
   );
 }

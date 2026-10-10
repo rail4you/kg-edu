@@ -17,6 +17,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { listFileTemplates } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import FilePreview from "@/components/FilePreview";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -52,7 +53,7 @@ export default function AdminManualPage() {
   const manuals = manualsData?.success
     ? Array.isArray(manualsData.data)
       ? manualsData.data
-      : (manualsData.data as any)?.results || []
+      : (manualsData.data as { results?: FileTemplate[] })?.results || []
     : [];
 
   const getFileName = (filePath: string) => {
@@ -123,33 +124,42 @@ export default function AdminManualPage() {
 
   if (!currentTenant || !user) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f8fa", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <BookOutlined style={{ fontSize: 48, color: "#bbb", marginBottom: 16 }} />
-        <Title level={4} style={{ color: "#999" }}>请先登录</Title>
-      </div>
+      <AppPage title="使用手册" description="下载或在线预览平台使用手册">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0" }}>
+          <BookOutlined style={{ fontSize: 48, color: "#bbb", marginBottom: 16 }} />
+          <Title level={4} style={{ color: "#999" }}>请先登录</Title>
+        </div>
+      </AppPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f8fa", display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-        <Spin size="large" />
-        <Text type="secondary">加载中...</Text>
-      </div>
+      <AppPage title="使用手册" description="下载或在线预览平台使用手册">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "80px 0" }}>
+          <Spin size="large" />
+          <Text type="secondary">加载中...</Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f8fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Empty description="加载失败，请稍后重试" />
-      </div>
+      <AppPage title="使用手册" description="下载或在线预览平台使用手册">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0" }}>
+          <Empty description="加载失败，请稍后重试" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ background: "#f7f8fa", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 32px 40px" }}>
+    <AppPage
+      title={isSuperAdmin ? "超级管理员使用手册" : "管理平台使用手册"}
+      description="下载或在线预览平台使用手册"
+    >
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{
           background: "#fff", borderRadius: 16,
           border: "1px solid #e8e8e8",
@@ -157,9 +167,6 @@ export default function AdminManualPage() {
           overflow: "hidden",
         }}>
           <div style={{ padding: "36px 40px 28px", borderBottom: "1px solid #f0f0f0" }}>
-            <Title level={3} style={{ margin: "0 0 12px", color: "#1a1a1a", fontWeight: 600, letterSpacing: "0.5px" }}>
-              {isSuperAdmin ? "超级管理员使用手册" : "管理平台使用手册"}
-            </Title>
             <Text style={{ fontSize: 15, lineHeight: 2, color: "#595959", display: "block" }}>
               {isSuperAdmin
                 ? "本手册将帮助您快速了解平台级管理功能，包括租户管理、API Key 配置以及系统全局设置等。你可以在下方下载完整的使用手册文档，也可以在线预览。建议先下载到本地，方便随时查阅。"
@@ -251,6 +258,6 @@ export default function AdminManualPage() {
           }}
         />
       )}
-    </div>
+    </AppPage>
   );
 }

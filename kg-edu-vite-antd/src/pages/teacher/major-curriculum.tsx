@@ -19,8 +19,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { listCurriculumDesigns, updateCurriculumDesign, deleteCurriculumDesign, publishCurriculum as publishCurriculumRpc } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface CurriculumDesign {
@@ -377,20 +378,18 @@ export default function MajorCurriculum() {
   );
 
   return (
-    <div style={{ padding: "20px 24px" }}>
-      {/* Top bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)}>
-          返回专业管理
-        </Button>
-        <Button type="primary" icon={<ThunderboltOutlined />} onClick={() => setGenerateModalVisible(true)} disabled={!!activeJobId} style={canEdit ? undefined : { display: "none" }}>
-          AI 生成课程体系
-        </Button>
-      </div>
-
-      <Title level={4} style={{ marginBottom: 8 }}>课程体系文档</Title>
-      <Text type="secondary">管理专业下的课程体系文档，支持 AI 生成、上传、发布给学生查看</Text>
-
+    <AppPage
+      title="课程体系文档"
+      description="管理并 AI 生成专业课程体系文档"
+      actions={
+        <>
+          <Button type="text" className="teacher-page-back-btn" icon={<ArrowLeftOutlined />} onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)} />
+          <Button type="primary" icon={<ThunderboltOutlined />} onClick={() => setGenerateModalVisible(true)} disabled={!!activeJobId} style={canEdit ? undefined : { display: "none" }}>
+            AI 生成课程体系
+          </Button>
+        </>
+      }
+    >
       {/* Generating status */}
       {isGenerating && <GeneratingStatus />}
 
@@ -647,6 +646,6 @@ export default function MajorCurriculum() {
           <Spin />
         )}
       </Drawer>
-    </div>
+    </AppPage>
   );
 }

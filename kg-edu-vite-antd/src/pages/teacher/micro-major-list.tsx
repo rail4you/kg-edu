@@ -6,7 +6,7 @@ import {
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
-  PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, BookOutlined, TeamOutlined, UploadOutlined, SendOutlined,
+  PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, TeamOutlined, UploadOutlined, SendOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
@@ -19,8 +19,9 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   draft: { color: "default", label: "草稿" },
@@ -559,38 +560,32 @@ export default function MicroMajorList() {
   };
 
   return (
-    <div className="micro-major-list-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.micro-major-list-wrap{padding:12px!important}.micro-major-list-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Space>
-              <ApartmentOutlined style={{ fontSize: 20, color: "#1890ff" }} />
-                        <Button
+    <AppPage
+      title="微专业管理"
+      description="创建与维护微专业"
+      actions={
+        <>
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={4} style={{ margin: 0 }}>微专业管理</Title>
-            </Space>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setFormData(EMPTY_FORM);
-                setDialogOpen(true);
-              }}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              创建微专业
-            </Button>
-          </Col>
-        </Row>
-
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setFormData(EMPTY_FORM);
+              setDialogOpen(true);
+            }}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            创建微专业
+          </Button>
+        </>
+      }
+    >
+      <Card>
         <Table
           columns={columns}
           dataSource={microMajors}
@@ -629,6 +624,6 @@ export default function MicroMajorList() {
           {renderFormContent(true)}
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

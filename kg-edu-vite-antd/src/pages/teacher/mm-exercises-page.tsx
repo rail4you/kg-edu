@@ -1,13 +1,12 @@
 import { useSearchParams , useNavigate } from "react-router-dom";
-import { Button, Grid, Typography, Empty } from "antd";
-import { FileTextOutlined , ArrowLeftOutlined
+import { Button, Grid, Empty } from "antd";
+import { ArrowLeftOutlined
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import ContextSelector from "@/components/micro-major/context-selector";
+import { AppPage } from "@/components/proto";
 import MMExerciseManager from "./mm-exercise";
-
-const { Title } = Typography;
 
 export default function MMExercisesPage() {
   const navigate = useNavigate();
@@ -18,19 +17,20 @@ export default function MMExercisesPage() {
   const headers = getAuthHeaders(user) as Record<string, string>;
 
   return (
-    <div className="mm-exercises-page-wrap" style={{ padding: 24 }}>
+    <AppPage
+      className="mm-exercises-page-wrap"
+      title="习题管理"
+      description="管理课程习题"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/micro-major/dashboard")}
+        />
+      }
+    >
 <style>{`@media(max-width:768px){.mm-exercises-page-wrap{padding:12px!important}.mm-exercises-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-        <FileTextOutlined style={{ fontSize: 24, color: "#722ed1" }} />
-                  <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>习题管理</Title>
-      </div>
 
       <ContextSelector showCourse />
 
@@ -39,6 +39,6 @@ export default function MMExercisesPage() {
       ) : (
         <Empty description="请在上方选择微专业和课程" />
       )}
-    </div>
+    </AppPage>
   );
 }

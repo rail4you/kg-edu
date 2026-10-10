@@ -29,6 +29,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -143,39 +144,43 @@ export default function RelationTypeManagementPage() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Spin size="large" />
-        <Text style={{ marginLeft: 12 }}>正在检查认证状态...</Text>
-      </div>
+      <AppPage title="关系类型管理">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 400,
+          }}
+        >
+          <Spin size="large" />
+          <Text style={{ marginLeft: 12 }}>正在检查认证状态...</Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (!user) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Title level={3} style={{ marginBottom: 12, color: "#ff4d4f" }}>
-          用户未登录
-        </Title>
-        <Text style={{ marginBottom: 16 }}>请登录以访问关系类型管理。</Text>
-        <Button type="primary" href="/auth/jwt/sign-in">
-          登录
-        </Button>
-      </div>
+      <AppPage title="关系类型管理">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 400,
+          }}
+        >
+          <Title level={3} style={{ marginBottom: 12, color: "#ff4d4f" }}>
+            用户未登录
+          </Title>
+          <Text style={{ marginBottom: 16 }}>请登录以访问关系类型管理。</Text>
+          <Button type="primary" href="/auth/jwt/sign-in">
+            登录
+          </Button>
+        </div>
+      </AppPage>
     );
   }
 
@@ -262,18 +267,10 @@ export default function RelationTypeManagementPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
-          关系类型管理
-        </Title>
+    <AppPage
+      title="关系类型管理"
+      description="维护知识点之间关系的类型定义"
+      actions={
         <Space>
           <Input
             placeholder="搜索关系类型..."
@@ -294,8 +291,8 @@ export default function RelationTypeManagementPage() {
             创建关系类型
           </Button>
         </Space>
-      </div>
-
+      }
+    >
       <Card>
         <div style={{ marginBottom: 16 }}>
           <Text strong style={{ fontSize: 16 }}>
@@ -396,6 +393,6 @@ export default function RelationTypeManagementPage() {
           />
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

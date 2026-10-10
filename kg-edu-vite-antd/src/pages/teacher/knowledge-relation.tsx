@@ -22,7 +22,6 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { TreeDataNode } from "antd";
 import {
-  PartitionOutlined,
   PlusOutlined,
   DeleteOutlined,
   BookOutlined,
@@ -45,6 +44,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -543,30 +543,50 @@ export default function KnowledgeRelationPage() {
 
   if (!user)
     return (
-      <div style={{ padding: 24, textAlign: "center" }}>
-        <Text>请先登录</Text>
-      </div>
+      <AppPage title="知识关系管理">
+        <div style={{ padding: 24, textAlign: "center" }}>
+          <Text>请先登录</Text>
+        </div>
+      </AppPage>
     );
 
   return (
-    <div className="kr-page-wrap" style={{ padding: 24, maxWidth: 1800, margin: "0 auto" }}>
+    <AppPage
+      title="知识关系管理"
+      description="管理知识点之间的关联关系"
+      actions={
+        <Space>
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalOpen(true)}
+            disabled={!filterCourseId}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            添加关系
+          </Button>
+          {(filterCourseId || filterRelationTypeId) && (
+            <Button
+              onClick={() => {
+                setFilterCourseId("");
+                setFilterRelationTypeId("");
+              }}
+            >
+              清除过滤
+            </Button>
+          )}
+        </Space>
+      }
+    >
       <style>{`@media(max-width:768px){.kr-mobile-hide{display:none!important}.kr-action-text{display:none!important}.kr-page-wrap{padding:12px!important}.kr-page-wrap .ant-table-cell{padding:6px 4px!important}.kr-filter-bar{flex-direction:column;align-items:stretch!important}.kr-filter-bar .ant-select{width:100%!important;margin-bottom:8px}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-        />
-        <PartitionOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>
-          知识关系管理
-        </Title>
-      </div>
-      <Text type="secondary">管理知识点之间的关联关系</Text>
-
-      <Card style={{ marginTop: 20 }}>
+      <div className="kr-page-wrap">
+      <Card>
         <div className="kr-filter-bar" style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Title level={5} style={{ margin: 0, marginBottom: 12 }}>
             关系列表 ({relations.length})
@@ -589,25 +609,6 @@ export default function KnowledgeRelationPage() {
               allowClear
               options={relationTypes.map((t: any) => ({ value: t.id, label: t.displayName || t.name }))}
             />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateModalOpen(true)}
-              disabled={!filterCourseId}
-              style={canEdit ? undefined : { display: "none" }}
-            >
-              添加关系
-            </Button>
-            {(filterCourseId || filterRelationTypeId) && (
-              <Button 
-                onClick={() => {
-                  setFilterCourseId("");
-                  setFilterRelationTypeId("");
-                }}
-              >
-                清除过滤
-              </Button>
-            )}
           </Space>
         </div>
         <Table
@@ -677,6 +678,7 @@ export default function KnowledgeRelationPage() {
           </Row>
         </Form>
       </Modal>
-    </div>
+      </div>
+    </AppPage>
   );
 }

@@ -19,7 +19,6 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { useNavigate } from "react-router-dom";
 import {
-  ScheduleOutlined,
   PlusOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -41,8 +40,9 @@ import { useCourses } from "@/hooks/use-courses";
 import dayjs from "dayjs";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface Exam {
@@ -506,30 +506,20 @@ export default function ExamManagementPage() {
   };
 
   return (
-    <div className="exam-management-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.exam-management-wrap{padding:12px!important}.exam-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <ScheduleOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-                  <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-          试卷管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="试卷管理"
+      description="创建与管理考试试卷"
+      className="exam-management-wrap"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
+      <style>{`@media(max-width:768px){.exam-management-wrap{padding:12px!important}.exam-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <Space wrap>
           <Text strong>选择课程：</Text>
@@ -618,6 +608,6 @@ export default function ExamManagementPage() {
       >
         {renderForm()}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

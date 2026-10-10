@@ -23,7 +23,8 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { evaluateFormula } from "@/lib/practice";
 import dayjs, { Dayjs } from "dayjs";
-const { Title, Text } = Typography;
+import { AppPage } from "@/components/proto";
+const { Text } = Typography;
 
 const FIELD_TYPES = [
   { value: "text", label: "单行文本" },
@@ -484,21 +485,23 @@ export default function CustomForm() {
 
   if (authLoading || formsQuery.isLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spin size="large" />
-      </div>
+      <AppPage title="自定义表单" description="自定义表单模板与分配">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+          <Spin size="large" />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
+    <AppPage
+      title="自定义表单"
+      description="自定义表单模板与分配"
+      actions={
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>自定义表单</Title>
-      </div>
-
-      <div style={{ padding: 24 }}>
-        <Tabs
+      }
+    >
+      <Tabs
           defaultActiveKey="templates"
           items={[
             {
@@ -719,7 +722,6 @@ export default function CustomForm() {
             },
           ]}
         />
-      </div>
 
       <Modal
         title={`分配表单：${assignFormTitle}`}
@@ -930,6 +932,6 @@ export default function CustomForm() {
           <Button onClick={closeBuilder}>取消</Button>
         </Space>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

@@ -6,8 +6,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { DEFAULT_BRANDING, fetchBranding, saveBranding, type BrandingConfig } from "@/config/branding";
 import { useBrandingContext } from "@/hooks/use-branding";
 import { uploadFileViaServer } from "@/lib/oss-upload";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface BrandingForm {
@@ -147,24 +148,17 @@ export default function BrandingConfigPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: 80 }}>
-        <Spin size="large" tip="加载品牌配置..." />
-      </div>
+      <AppPage title="品牌配置" description="配置全站 Logo、名称与页脚版权">
+        <div style={{ textAlign: "center", padding: 80 }}>
+          <Spin size="large" tip="加载品牌配置..." />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <AppPage title="品牌配置" description="配置全站 Logo、名称与页脚版权">
       <Card style={{ width: "100%" }}>
-        <div style={{ marginBottom: 20 }}>
-          <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-            品牌配置
-          </Title>
-          <Text type="secondary">
-            配置全站 Logo、应用名称与页脚版权（超级管理员专属，保存后全站实时生效）
-          </Text>
-        </div>
-
         <Form<BrandingForm> form={form} layout="vertical" disabled={!isSuperAdmin} onValuesChange={handleValuesChange}>
           <Divider orientation="left" orientationMargin={0}>应用名称</Divider>
 
@@ -295,6 +289,6 @@ export default function BrandingConfigPage() {
           </div>
         </Form>
       </Card>
-    </div>
+    </AppPage>
   );
 }

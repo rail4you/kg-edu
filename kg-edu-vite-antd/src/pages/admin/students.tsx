@@ -35,6 +35,7 @@ import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useTenantFilter, ALL_TENANTS } from "@/hooks/use-tenant-filter";
 import { TenantLayout } from "@/components/admin/tenant-layout";
 import { fetchAcrossTenants } from "@/lib/tenant-query";
+import { AppPage } from "@/components/proto";
 
 import { useResponsive } from "@/hooks/use-responsive";
 
@@ -330,14 +331,16 @@ export default function StudentManagement() {
 
   if (!isSuperAdmin && !hasTenant()) {
     return (
-      <Card>
-        <Alert
-          message="请先选择组织"
-          description="学生管理需要在特定组织/租户下进行。请先选择一个组织。"
-          type="warning"
-          showIcon
-        />
-      </Card>
+      <AppPage title="学生管理" description="管理组织内的学生账户">
+        <Card>
+          <Alert
+            message="请先选择组织"
+            description="学生管理需要在特定组织/租户下进行。请先选择一个组织。"
+            type="warning"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -347,7 +350,7 @@ export default function StudentManagement() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage title="学生管理" description="管理组织内的学生账户">
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
         {/* 移动端工具栏 */}
         {isMobile && (
@@ -535,7 +538,7 @@ export default function StudentManagement() {
         role="user"
         tenant={editTenant as string}
       />
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }

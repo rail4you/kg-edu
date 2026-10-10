@@ -6,7 +6,6 @@ import {
   Typography,
   Progress,
   Tag,
-  Table,
   Button,
   Space,
   List,
@@ -20,8 +19,8 @@ import {
   ApiOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
 import { useResponsive } from "@/hooks/use-responsive";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -146,20 +145,23 @@ export default function SystemStatus() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: 80 }}>
-        <Spin size="large" tip="加载系统信息..." />
-      </div>
+      <AppPage title="系统状态监控" description="实时监控服务器运行状态">
+        <div style={{ textAlign: "center", padding: 80 }}>
+          <Spin size="large" tip="加载系统信息..." />
+        </div>
+      </AppPage>
     );
   }
 
   if (error || !info) {
     return (
-      <Card>
-        <Title level={4}>系统状态监控</Title>
-        <Text type="danger">加载失败: {error || "未知错误"}</Text>
-        <br />
-        <Button onClick={fetchInfo} style={{ marginTop: 16 }}>重试</Button>
-      </Card>
+      <AppPage title="系统状态监控" description="实时监控服务器运行状态">
+        <Card>
+          <Text type="danger">加载失败: {error || "未知错误"}</Text>
+          <br />
+          <Button onClick={fetchInfo} style={{ marginTop: 16 }}>重试</Button>
+        </Card>
+      </AppPage>
     );
   }
 
@@ -169,43 +171,21 @@ export default function SystemStatus() {
   const diskPct = info.disk.capacity ? diskCapacity(info.disk.capacity) : 0;
 
   return (
-    <div>
-      {/* 顶部工具行：更新时间 + 刷新控制 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 8,
-          marginBottom: 16,
-        }}
-      >
-        {isMobile ? (
-          <>
-            <div style={{ fontSize: 12, color: "#999" }}>
-              更新: {lastUpdate.toLocaleTimeString()}
-            </div>
-            <Button onClick={() => setAutoRefresh(!autoRefresh)} size="small">
-              {autoRefresh ? "停止自动刷新" : "自动刷新"}
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={fetchInfo} size="small">
-              刷新
-            </Button>
-          </>
-        ) : (
-          <Space wrap>
-            <Text type="secondary">更新: {lastUpdate.toLocaleTimeString()}</Text>
-            <Button onClick={() => setAutoRefresh(!autoRefresh)} size="small">
-              {autoRefresh ? "停止自动刷新" : "自动刷新"}
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={fetchInfo}>
-              刷新
-            </Button>
-          </Space>
-        )}
-      </div>
-
+    <AppPage
+      title="系统状态监控"
+      description="实时监控服务器运行状态"
+      actions={
+        <>
+          <Text type="secondary">更新: {lastUpdate.toLocaleTimeString()}</Text>
+          <Button onClick={() => setAutoRefresh(!autoRefresh)} size="small">
+            {autoRefresh ? "停止自动刷新" : "自动刷新"}
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={fetchInfo}>
+            刷新
+          </Button>
+        </>
+      }
+    >
       {/* Metrics cards */}
       <Row gutter={[12, 12]} style={{ marginBottom: isMobile ? 16 : 24 }}>
         <Col xs={12} sm={12} lg={6}>
@@ -356,6 +336,6 @@ export default function SystemStatus() {
           </Card>
         </Col>
       </Row>
-    </div>
+    </AppPage>
   );
 }

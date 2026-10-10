@@ -44,6 +44,7 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -1142,60 +1143,33 @@ export default function IdeologicalManagement() {
   ];
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "#f5f5f5",
-      }}
-    >
-      <div
-        style={{
-          padding: 24,
-          background: "white",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <Title
-          level={3}
-          style={{ fontWeight: 700, marginBottom: 16, color: "#333" }}
-        >
-          思政图谱管理
-        </Title>
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
+    <AppPage
+      title="思政图谱管理"
+      description="管理课程思政知识点、案例与知识关系"
+      actions={
+        <>
           <Tag color="blue" style={{ fontWeight: 500 }}>
             思政知识点管理
           </Tag>
           <Tag color="purple" style={{ fontWeight: 500 }}>
             思政案例管理
           </Tag>
-
           <Select
             value={selectedCourseId || undefined}
             placeholder="选择课程"
-            style={{ minWidth: 200, marginLeft: "auto" }}
+            style={{ minWidth: 200 }}
             onChange={(value) => setSelectedCourseId(value)}
             options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
               label: course.title,
               value: course.id,
             }))}
           />
-        </div>
-      </div>
-
-      <div style={{ flexGrow: 1, padding: 24 }}>
-        <Card style={{ height: "100%" }}>
-          <Tabs activeKey={tabValue} onChange={setTabValue} items={tabItems} />
-        </Card>
-      </div>
+        </>
+      }
+    >
+      <Card style={{ height: "100%" }}>
+        <Tabs activeKey={tabValue} onChange={setTabValue} items={tabItems} />
+      </Card>
 
       <Modal
         title={
@@ -1591,6 +1565,6 @@ export default function IdeologicalManagement() {
           {selectedRelation?.targetKnowledgeName}" 吗？此操作无法撤销。
         </p>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

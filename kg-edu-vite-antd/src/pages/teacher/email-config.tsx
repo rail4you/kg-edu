@@ -21,7 +21,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  MailOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useAuth } from "@/auth/auth-context";
@@ -36,8 +35,9 @@ import {
   listEmailConfigs,
   getEmailConfigByUser,
 } from "@/lib/ash_rpc";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Teacher {
   id: string;
@@ -351,80 +351,52 @@ export default function EmailConfigManagement() {
 
   if (!user) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="邮箱配置管理" description="为教师配置邮箱发送设置">
         <Alert
           type="error"
           message="用户未登录"
           description="请登录以访问邮箱配置管理。"
           showIcon
         />
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <div
-        style={{
-          padding: 24,
-          borderBottom: "1px solid #f0f0f0",
-          backgroundColor: "#fff",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <MailOutlined
-              style={{ marginRight: 12, fontSize: 32, color: "#1890ff" }}
-            />
-            <Title level={3} style={{ margin: 0 }}>
-              邮箱配置管理
-            </Title>
-          </div>
-        </div>
-        <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-          为组织内的教师配置发送邮件所需的邮箱设置。每个教师只能配置一个邮箱。
+    <AppPage
+      title="邮箱配置管理"
+      description="为教师配置邮箱发送设置"
+      actions={
+        <Text type="secondary">
+          已配置: {userConfigMap.size} / {teachersWithConfigs.length} 位教师
         </Text>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <Text type="secondary">
-            已配置: {userConfigMap.size} / {teachersWithConfigs.length} 位教师
-          </Text>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
-        <Card style={{ height: "100%" }}>
-          {teachersLoading ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: 300,
-              }}
-            >
-              <Spin size="large" />
-            </div>
-          ) : (
-            <Table
-              columns={columns}
-              dataSource={teachersWithConfigs}
-              rowKey="id"
-              pagination={{
-                showSizeChanger: true,
-                showTotal: (total) => `共 ${total} 条`,
-                defaultPageSize: 10,
-              }}
-            />
-          )}
-        </Card>
-      </div>
+      }
+    >
+      <Card>
+        {teachersLoading ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: 300,
+            }}
+          >
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={teachersWithConfigs}
+            rowKey="id"
+            pagination={{
+              showSizeChanger: true,
+              showTotal: (total) => `共 ${total} 条`,
+              defaultPageSize: 10,
+            }}
+          />
+        )}
+      </Card>
 
       <Modal
         title={
@@ -482,6 +454,6 @@ export default function EmailConfigManagement() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

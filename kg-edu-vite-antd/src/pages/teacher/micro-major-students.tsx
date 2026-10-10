@@ -2,11 +2,11 @@ import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Button, Card, Col, Empty, message, Popconfirm, Row, Select, Space, Table, Tag, Typography, Modal, Input, Tabs, Badge,
+  Button, Card, Empty, message, Popconfirm, Select, Space, Table, Tag, Typography, Modal, Input, Tabs, Badge,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
-  ArrowLeftOutlined, DeleteOutlined, TeamOutlined, UserAddOutlined, SearchOutlined,
+  ArrowLeftOutlined, DeleteOutlined, UserAddOutlined, SearchOutlined,
   UnorderedListOutlined, AppstoreOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined,
   TrophyOutlined, FilePdfOutlined, UndoOutlined,
 } from "@ant-design/icons";
@@ -22,8 +22,9 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Student {
   id: string;
@@ -565,42 +566,30 @@ export default function MicroMajorStudents() {
     },
   ];
 
-  if (!microMajorId) return <Empty description="微专业不存在" />;
+  if (!microMajorId)
+    return (
+      <AppPage title="学生管理">
+        <Empty description="微专业不存在" />
+      </AppPage>
+    );
 
   return (
-    <div className="micro-major-students-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.micro-major-students-wrap{padding:12px!important}.micro-major-students-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Button icon={<ArrowLeftOutlined />} style={{ marginBottom: 16 }}
-        onClick={() => navigate("/micro-major/dashboard")}>
-        返回微专业列表
-      </Button>
-
+    <AppPage
+      title={`${microMajor?.name || "微专业"} - 学生管理`}
+      description={
+        <>
+          已通过 {activeEnrollments.length} 名学生，
+          <Text style={{ color: "#faad14" }}>待审核 {pendingEnrollments.length} 名</Text>，
+          已拒绝 {rejectedEnrollments.length} 名
+        </>
+      }
+      actions={
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/micro-major/dashboard")}>
+          返回微专业列表
+        </Button>
+      }
+    >
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Space>
-              <TeamOutlined style={{ fontSize: 20, color: "#1890ff" }} />
-                        <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-                {microMajor?.name || "微专业"} - 学生管理
-              </Title>
-            </Space>
-            <div style={{ marginTop: 4 }}>
-              <Text type="secondary">
-                已通过 {activeEnrollments.length} 名学生，
-                <Text style={{ color: "#faad14" }}>待审核 {pendingEnrollments.length} 名</Text>，
-                <Text type="secondary">已拒绝 {rejectedEnrollments.length} 名</Text>
-              </Text>
-            </div>
-          </Col>
-        </Row>
-
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -818,6 +807,6 @@ export default function MicroMajorStudents() {
           />
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

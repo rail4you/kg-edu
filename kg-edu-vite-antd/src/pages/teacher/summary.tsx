@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Card, Row, Col, Typography, Spin, Tag, Statistic } from "antd";
+import { Card, Row, Col, Typography, Spin, Tag } from "antd";
 import {
   ReadOutlined,
   VideoCameraOutlined,
@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -232,36 +233,40 @@ export default function SummaryPage() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Spin size="large" />
-        <Text style={{ marginLeft: 16 }}>正在检查认证状态...</Text>
-      </div>
+      <AppPage title="教学概览" description="实时查看教学资源和学习活动统计">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <Spin size="large" />
+          <Text style={{ marginLeft: 16 }}>正在检查认证状态...</Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (!user) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Title level={4} style={{ marginBottom: 16, color: "#ff4d4f" }}>
-          用户未登录
-        </Title>
-        <Text style={{ marginBottom: 24 }}>请登录以访问概览页面。</Text>
-      </div>
+      <AppPage title="教学概览" description="实时查看教学资源和学习活动统计">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <Title level={4} style={{ marginBottom: 16, color: "#ff4d4f" }}>
+            用户未登录
+          </Title>
+          <Text style={{ marginBottom: 24 }}>请登录以访问概览页面。</Text>
+        </div>
+      </AppPage>
     );
   }
 
@@ -377,189 +382,58 @@ export default function SummaryPage() {
 
   if (hasError) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          padding: 32,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <Title level={5} style={{ marginBottom: 16, color: "#ff4d4f" }}>
-            加载数据时出错
-          </Title>
-          <Text style={{ color: "#999" }}>请刷新页面重试</Text>
+      <AppPage title="教学概览" description="实时查看教学资源和学习活动统计">
+        <div
+          style={{
+            minHeight: "60vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <Title level={5} style={{ marginBottom: 16, color: "#ff4d4f" }}>
+              加载数据时出错
+            </Title>
+            <Text style={{ color: "#999" }}>请刷新页面重试</Text>
+          </div>
         </div>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <Title
-          level={3}
-          style={{ fontWeight: "bold", marginBottom: 8, color: "#1890ff" }}
-        >
-          教学概览
-        </Title>
-        <Text style={{ color: "#999", marginBottom: 32, display: "block" }}>
-          实时查看您的教学资源和学习活动统计
-        </Text>
+    <AppPage title="教学概览" description="实时查看教学资源和学习活动统计">
+      <StatGrid
+        items={[
+          {
+            label: "课程",
+            value: totalCourses,
+            icon: <ReadOutlined />,
+            desc: `章节: ${totalChapters} · 知识点: ${totalResources}`,
+          },
+          {
+            label: "视频",
+            value: totalVideos,
+            icon: <VideoCameraOutlined />,
+            desc: `文件: ${totalMediaFiles} · 总时长: ${formatDuration(totalVideoDuration)}`,
+          },
+          {
+            label: "学习任务",
+            value: totalHomeworks + totalExercises,
+            icon: <BarChartOutlined />,
+            desc: `作业: ${totalHomeworks} · 练习: ${totalExercises}`,
+          },
+          {
+            label: "AI应用",
+            value: totalCommands + totalAiExercises,
+            icon: <BulbOutlined />,
+            desc: `命令: ${totalCommands} · AI练习: ${totalAiExercises}`,
+          },
+        ]}
+      />
 
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <ReadOutlined
-                  style={{ fontSize: 40, color: "#1890ff", marginRight: 16 }}
-                />
-                <div>
-                  <Statistic
-                    value={totalCourses}
-                    valueStyle={{ fontSize: 28, fontWeight: "bold" }}
-                  />
-                  <Text style={{ color: "#999" }}>课程</Text>
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 8,
-                }}
-              >
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  章节: {totalChapters}
-                </Text>
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  知识点: {totalResources}
-                </Text>
-              </div>
-            </Card>
-          </Col>
-
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <VideoCameraOutlined
-                  style={{ fontSize: 40, color: "#722ed1", marginRight: 16 }}
-                />
-                <div>
-                  <Statistic
-                    value={totalVideos}
-                    valueStyle={{ fontSize: 28, fontWeight: "bold" }}
-                  />
-                  <Text style={{ color: "#999" }}>视频</Text>
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 8,
-                }}
-              >
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  文件: {totalMediaFiles}
-                </Text>
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  总时长: {formatDuration(totalVideoDuration)}
-                </Text>
-              </div>
-            </Card>
-          </Col>
-
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <BarChartOutlined
-                  style={{ fontSize: 40, color: "#faad14", marginRight: 16 }}
-                />
-                <div>
-                  <Statistic
-                    value={totalHomeworks + totalExercises}
-                    valueStyle={{ fontSize: 28, fontWeight: "bold" }}
-                  />
-                  <Text style={{ color: "#999" }}>学习任务</Text>
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 8,
-                }}
-              >
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  作业: {totalHomeworks}
-                </Text>
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  练习: {totalExercises}
-                </Text>
-              </div>
-            </Card>
-          </Col>
-
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <BulbOutlined
-                  style={{ fontSize: 40, color: "#52c41a", marginRight: 16 }}
-                />
-                <div>
-                  <Statistic
-                    value={totalCommands + totalAiExercises}
-                    valueStyle={{ fontSize: 28, fontWeight: "bold" }}
-                  />
-                  <Text style={{ color: "#999" }}>AI应用</Text>
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 8,
-                }}
-              >
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  命令: {totalCommands}
-                </Text>
-                <Text style={{ fontSize: 12, color: "#999" }}>
-                  AI练习: {totalAiExercises}
-                </Text>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
             <Card style={{ height: "100%" }}>
               <div
@@ -780,7 +654,6 @@ export default function SummaryPage() {
             </Card>
           </Col>
         </Row>
-      </div>
-    </div>
+    </AppPage>
   );
 }

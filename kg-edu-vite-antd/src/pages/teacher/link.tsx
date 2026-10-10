@@ -38,8 +38,9 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const LINK_FIELDS: ListLinksFields = [
   "id",
@@ -284,31 +285,21 @@ export default function LinkPage() {
   }
 
   return (
-    <div className="link-page-wrap" style={{ padding: 24 }}>
-      <style>{`@media(max-width:768px){.link-page-wrap{padding:12px!important}.link-page-wrap .link-course-select{flex-direction:column!important;width:100%!important}.link-page-wrap .link-course-select .ant-select{width:100%!important}.link-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
+    <AppPage
+      title="链接管理"
+      description="管理课程相关外部资源链接"
+      actions={
         <Button
           className="teacher-page-back-btn"
           type="text"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
         />
-        <LinkOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>
-          链接管理
-        </Title>
-      </div>
+      }
+    >
+      <style>{`@media(max-width:768px){.link-course-select{flex-direction:column!important;width:100%!important}.link-course-select .ant-select{width:100%!important}}`}</style>
 
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <Space className="link-course-select">
           <Text strong>选择课程：</Text>
           <Select
@@ -486,6 +477,6 @@ export default function LinkPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

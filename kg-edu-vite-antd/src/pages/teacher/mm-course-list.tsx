@@ -45,8 +45,9 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 interface MicroMajorCourse {
@@ -371,9 +372,11 @@ export default function MicroMajorCourseList({ mmId, standalone = true }: MicroM
 
   if (!user) {
     return (
-      <div style={{ padding: 24, textAlign: "center" }}>
-        <Text>请先登录</Text>
-      </div>
+      <AppPage title="课程管理" description="管理微专业下的课程">
+        <div style={{ padding: 24, textAlign: "center" }}>
+          <Text>请先登录</Text>
+        </div>
+      </AppPage>
     );
   }
 
@@ -382,27 +385,8 @@ export default function MicroMajorCourseList({ mmId, standalone = true }: MicroM
     return null;
   }
 
-  return (
-    <div style={{ padding: standalone ? 24 : 0 }}>
-      {/* 标题区域 (only in standalone mode) */}
-      {standalone && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <ReadOutlined style={{ fontSize: 24, color: "#722ed1" }} />
-                      <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-              {microMajor?.name || "微专业"} — 课程管理
-            </Title>
-          </div>
-        </div>
-      )}
-
+  const pageBody = (
+    <>
       {/* 工具栏 */}
       <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <Button type="primary" icon={<PlusOutlined />} size={isMobile ? "small" : "middle"} onClick={() => { form.resetFields(); setCreateModalOpen(true); }} style={canEdit ? undefined : { display: "none" }}>
@@ -525,6 +509,27 @@ export default function MicroMajorCourseList({ mmId, standalone = true }: MicroM
       <Modal open={editModalOpen} onCancel={() => { setEditModalOpen(false); setEditingCourse(null); }} title="编辑课程" width={600} onOk={() => form.submit()} confirmLoading={updateMutation.isPending}>
         {renderForm()}
       </Modal>
-    </div>
+    </>
   );
+
+  if (standalone) {
+    return (
+      <AppPage
+        title={`${microMajor?.name || "微专业"} — 课程管理`}
+        description="管理微专业下的课程"
+        actions={
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/micro-major/dashboard")}
+          />
+        }
+      >
+        {pageBody}
+      </AppPage>
+    );
+  }
+
+  return <div>{pageBody}</div>;
 }

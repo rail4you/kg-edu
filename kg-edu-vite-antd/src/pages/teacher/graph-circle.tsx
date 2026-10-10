@@ -495,7 +495,7 @@ export default function TeacherGraphCircleView({ courseId: propCourseId }: { cou
   return (
     <div style={{ display: "flex", height: "100%", backgroundColor: "#fff" }}>
       <div style={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ minHeight: isMobile ? 36 : 48, padding: isMobile ? "3px 6px" : "4px 16px", display: "flex", alignItems: "center", gap: isMobile ? 4 : 12, backgroundColor: "#fff", borderBottom: "1px solid #e5e7eb", flexShrink: 0, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+        <div style={{ minHeight: isMobile ? 36 : 48, padding: isMobile ? "3px 6px" : "4px 16px", display: "flex", alignItems: "center", gap: isMobile ? 4 : 12, backgroundColor: "#fff", borderBottom: "1px solid var(--pu-line)", flexShrink: 0, flexWrap: isMobile ? "wrap" : "nowrap" }}>
           <Input placeholder="搜索..." prefix={<SearchOutlined style={{ color: "#999" }} />}
             style={{ flex: isMobile ? "1 1 auto" : undefined, width: isMobile ? undefined : 220, minWidth: isMobile ? 80 : undefined, maxWidth: isMobile ? undefined : 220 }}
             value={appliedFilters.name}
@@ -517,7 +517,7 @@ export default function TeacherGraphCircleView({ courseId: propCourseId }: { cou
                     applyZoom(zoomLevelRef.current + 0.15);
                   }
                 }}
-                style={{ background: "#f5f5f5", border: "1px solid #d9d9d9", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}
+                style={{ background: "#fff", border: "1px solid var(--pu-line)", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}
               >
                 {label as string}
               </button>

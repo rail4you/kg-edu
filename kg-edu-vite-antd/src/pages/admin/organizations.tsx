@@ -16,7 +16,6 @@ import {
   Form,
   Upload,
   Spin,
-  Statistic,
   Tag,
   Divider,
   Empty,
@@ -45,6 +44,7 @@ import {
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { MobileTableCard } from "@/components/admin/mobile-table-card";
+import { AppPage, StatGrid } from "@/components/proto";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useResponsive } from "@/hooks/use-responsive";
@@ -339,19 +339,36 @@ export default function AdminOrganizations() {
 
   if (!isSuperAdmin) {
     return (
-      <Card>
-        <Alert
-          message="权限不足"
-          description="仅超级管理员(super_admin)可以管理租户。"
-          type="error"
-          showIcon
-        />
-      </Card>
+      <AppPage title="租户管理" description="管理租户信息、启停状态和接入配置">
+        <Card>
+          <Alert
+            message="权限不足"
+            description="仅超级管理员(super_admin)可以管理租户。"
+            type="error"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
   return (
-    <div>
+    <AppPage
+      title="租户管理"
+      description="管理租户信息、启停状态和接入配置"
+      actions={
+        !isMobile ? (
+          <Space wrap>
+            <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)} style={canEdit ? undefined : { display: "none" }}>
+              导入租户
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={canEdit ? undefined : { display: "none" }}>
+              创建租户
+            </Button>
+          </Space>
+        ) : undefined
+      }
+    >
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
         {/* 移动端工具栏 */}
         {isMobile && (
@@ -409,14 +426,6 @@ export default function AdminOrganizations() {
                     style={{ width: 250 }}
                     allowClear
                   />
-                </Space>
-                <Space wrap>
-                  <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)} style={canEdit ? undefined : { display: "none" }}>
-                    导入租户
-                  </Button>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={canEdit ? undefined : { display: "none" }}>
-                    创建租户
-                  </Button>
                 </Space>
               </div>
             )}
@@ -565,30 +574,28 @@ export default function AdminOrganizations() {
                   业务统计
                 </Divider>
 
-                <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-                  <Statistic title="用户" value={orgSummary.users?.total ?? 0} valueStyle={{ color: "#1677ff" }} />
-                  <Statistic title="课程" value={orgSummary.courses?.total ?? 0} valueStyle={{ color: "#722ed1" }} />
-                  <Statistic title="资源" value={orgSummary.knowledge_resources?.total ?? 0} valueStyle={{ color: "#fa8c16" }} />
-                  <Statistic title="习题" value={orgSummary.exercises?.total ?? 0} valueStyle={{ color: "#eb2f96" }} />
-                  <Statistic title="文件" value={orgSummary.files?.total ?? 0} valueStyle={{ color: "#13c2c2" }} />
-                </div>
+                <StatGrid
+                  columns={isMobile ? 2 : 3}
+                  items={[
+                    { label: "用户", value: orgSummary.users?.total ?? 0 },
+                    { label: "课程", value: orgSummary.courses?.total ?? 0 },
+                    { label: "资源", value: orgSummary.knowledge_resources?.total ?? 0 },
+                    { label: "习题", value: orgSummary.exercises?.total ?? 0 },
+                    { label: "文件", value: orgSummary.files?.total ?? 0 },
+                  ]}
+                />
 
                 <Divider orientation="left" style={{ fontSize: 14, margin: "12px 0" }}>
                   数据库统计
                 </Divider>
 
-                <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-                  <Statistic
-                    title="业务表数量"
-                    value={orgSummary.database?.table_count ?? 0}
-                    valueStyle={{ color: "#1677ff" }}
-                  />
-                  <Statistic
-                    title="总数据行数"
-                    value={orgSummary.database?.total_rows ?? 0}
-                    valueStyle={{ color: "#52c41a" }}
-                  />
-                </div>
+                <StatGrid
+                  columns={2}
+                  items={[
+                    { label: "业务表数量", value: orgSummary.database?.table_count ?? 0 },
+                    { label: "总数据行数", value: orgSummary.database?.total_rows ?? 0 },
+                  ]}
+                />
 
               </>
             ) : (
@@ -599,6 +606,6 @@ export default function AdminOrganizations() {
           </Spin>
         )}
       </Drawer>
-    </div>
+    </AppPage>
   );
 }

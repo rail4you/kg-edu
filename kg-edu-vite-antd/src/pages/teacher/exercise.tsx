@@ -22,7 +22,6 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
-  FileTextOutlined,
   PlusOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -44,11 +43,12 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { updateAnswerExplanation } from "@/lib/agent_api";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface Exercise {
@@ -441,7 +441,7 @@ export default function ExercisePage() {
       }
       setSelectedRowKeys([]);
       message.success(`成功删除 ${selectedRowKeys.length} 道习题`);
-    } catch (error) {
+    } catch {
       message.error("批量删除失败");
     }
   };
@@ -574,7 +574,7 @@ export default function ExercisePage() {
         setImporting(false);
       };
       reader.readAsDataURL(file);
-    } catch (error) {
+    } catch {
       message.error("导入失败");
       setImporting(false);
     }
@@ -851,20 +851,19 @@ export default function ExercisePage() {
     );
 
   return (
-    <div className="exercise-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.exercise-wrap{padding:12px!important}.exercise-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-                <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={3} style={{ marginBottom: 8 }}>
-        <FileTextOutlined style={{ marginRight: 8 }} />
-        习题管理
-      </Title>
-      <Text type="secondary">管理课程习题</Text>
+    <AppPage
+      title="习题管理"
+      description="管理课程习题"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
+      <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
       <Card style={{ marginTop: 24, marginBottom: 24 }}>
         <Space>
@@ -1017,6 +1016,6 @@ export default function ExercisePage() {
           )}
         </div>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

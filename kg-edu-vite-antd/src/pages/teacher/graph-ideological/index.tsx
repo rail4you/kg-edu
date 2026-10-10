@@ -56,7 +56,6 @@ import {
   KnowledgeResource,
 } from "./types";
 import { knowledgeTypeMap } from "./constants";
-import { themeColors as colors } from "@/styles/theme";
 
 const { Title, Text } = Typography;
 
@@ -768,7 +767,7 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
     >
       {/* 课程选择独立一行 */}
       {!hideManagement && (
-        <div style={{ padding: isMobile ? "8px 8px" : "12px 24px", backgroundColor: "white", borderBottom: "1px solid #e0e0e0" }}>
+        <div style={{ padding: isMobile ? "8px 8px" : "12px 24px", backgroundColor: "white", borderBottom: "1px solid var(--pu-line)" }}>
           <Space direction={isMobile ? "vertical" : "horizontal"} style={{ width: isMobile ? "100%" : "auto" }}>
             <Text strong style={{ fontSize: isMobile ? 13 : 14 }}>课程选择：</Text>
             <Select
@@ -793,7 +792,7 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
         gap: 0,
         flexShrink: 0,
         background: "#fff",
-        borderBottom: "1px solid #e5e7eb",
+        borderBottom: "1px solid var(--pu-line)",
         paddingLeft: isMobile ? 8 : 24,
         paddingRight: isMobile ? 8 : 24,
       }}>
@@ -810,9 +809,9 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
             style={{
               padding: "10px 16px",
               border: "none",
-              borderBottom: activeTab === tab.key ? `2px solid ${colors.primary}` : "2px solid transparent",
+              borderBottom: activeTab === tab.key ? `2px solid var(--pu-blue)` : "2px solid transparent",
               background: "transparent",
-              color: activeTab === tab.key ? colors.primary : "#5A5D66",
+              color: activeTab === tab.key ? "var(--pu-blue)" : "var(--pu-muted)",
               fontWeight: activeTab === tab.key ? 600 : 400,
               fontSize: 14,
               cursor: "pointer",

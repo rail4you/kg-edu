@@ -59,8 +59,9 @@ import {
   destroyAbilityRelation,
 } from "@/lib/ash_rpc";
 import KnowledgeResourcePanel from "@/components/KnowledgeResourcePanel";
+import { AppPage, PageHead } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 const knowledgeTypeMap: Record<string, string> = {
@@ -2182,44 +2183,48 @@ export default function TeacherGraphCompetencyView() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
-        <Spin size="large" />
-        <Text type="secondary">正在检查认证状态...</Text>
-      </div>
+      <AppPage title="能力图谱">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 400,
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <Spin size="large" />
+          <Text type="secondary">正在检查认证状态...</Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (!user) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
-        <Alert
-          type="error"
-          message="用户未登录，请登录以访问能力图谱。"
+      <AppPage title="能力图谱">
+        <div
           style={{
-            borderRadius: 12,
-            backgroundColor: "rgba(239, 68, 68, 0.05)",
-            border: "1px solid rgba(239, 68, 68, 0.2)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 400,
+            flexDirection: "column",
+            gap: 16,
           }}
-        />
-      </div>
+        >
+          <Alert
+            type="error"
+            message="用户未登录，请登录以访问能力图谱。"
+            style={{
+              borderRadius: 12,
+              backgroundColor: "rgba(239, 68, 68, 0.05)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+            }}
+          />
+        </div>
+      </AppPage>
     );
   }
 
@@ -2695,7 +2700,6 @@ export default function TeacherGraphCompetencyView() {
       style={{
         display: "flex",
         height: "100vh",
-        backgroundColor: "#f5f5f5",
       }}
     >
       <div
@@ -2705,71 +2709,19 @@ export default function TeacherGraphCompetencyView() {
           flexDirection: "column",
         }}
       >
-        <div
-          style={{
-            padding: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderBottom: "1px solid #e0e0e0",
-            backgroundColor: "white",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            <Title
-              level={4}
-              style={{ margin: 0, fontWeight: 700, color: "#333" }}
-            >
-              能力图谱
-            </Title>
-            <Tag
-              style={{
-                backgroundColor: "#e3f2fd",
-                color: "#1976d2",
-                border: "none",
-              }}
-            >
-              能力节点构建
-            </Tag>
-            <Tag
-              style={{
-                backgroundColor: "#e8f5e9",
-                color: "#2e7d32",
-                border: "none",
-              }}
-            >
-              能力关系配置
-            </Tag>
-            <Tag
-              style={{
-                backgroundColor: "#fff3e0",
-                color: "#f57c00",
-                border: "none",
-              }}
-            >
-              能力图谱展示
-            </Tag>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            {activeTab === "graph" && (
+        <PageHead
+          title="能力图谱"
+          description="构建课程能力节点与能力关系"
+          actions={
+            activeTab === "graph" ? (
               <Button
                 type="text"
                 icon={<FilterOutlined />}
                 onClick={() => setShowPanel(!showPanel)}
               />
-            )}
-          </div>
-        </div>
+            ) : undefined
+          }
+        />
 
         {/* 课程选择独立一行 */}
         <div style={{ padding: "12px 24px", backgroundColor: "white", borderBottom: "1px solid #e0e0e0" }}>

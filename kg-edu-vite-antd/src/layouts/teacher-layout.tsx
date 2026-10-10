@@ -1,12 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ProLayout } from "@ant-design/pro-components";
-import { Alert, Badge, Input } from "antd";
+import { Alert, Badge, Input, Drawer, Modal } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import {
   HomeOutlined,
   BookOutlined,
-  ReadOutlined,
   FileTextOutlined,
   ScheduleOutlined,
   TeamOutlined,
@@ -29,35 +27,120 @@ import {
   MacCommandOutlined,
   StarOutlined,
   StarFilled,
-  ClockCircleOutlined,
   LockOutlined,
   SearchOutlined,
   SafetyCertificateOutlined,
   EnterOutlined,
   AudioOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { UserMenu } from "@/components/layout/user-menu";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { UserManualModal } from "@/components/layout/user-manual-modal";
+import GlobalFooter from "@/components/layout/global-footer";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { useBranding } from "@/hooks/use-branding";
+import { useResponsive } from "@/hooks/use-responsive";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { listEmailMessages } from "@/lib/ash_rpc";
-import { useTranslate } from "@/locales/use-locales";
-import { themeColors as colors } from "@/styles/theme";
-import { usePageTitle } from "@/hooks/use-page-title";
-import { useBranding } from "@/hooks/use-branding";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-import type { MenuDataItem } from "@ant-design/pro-components";
+import { themeColors as colors } from "@/styles/theme";
 
 interface RecentItem {
   path: string;
-  nameKey: string;
   timestamp: number;
 }
 
 const FAVORITES_KEY = "teacher-favorites";
 const RECENT_VIEWS_KEY = "teacher-recent-views";
 const MAX_RECENT_VIEWS = 15;
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+  group: string;
+}
+
+// 参照「易课程-完整交互原型」教师端导航分组
+const NAV_ITEMS: NavItem[] = [
+  { path: "/teacher/dashboard", label: "教师工作台", icon: <HomeOutlined />, group: "工作空间" },
+  { path: "/teacher/dashboard/virtual-research-room", label: "虚拟教研室", icon: <ExperimentOutlined />, group: "工作空间" },
+
+  { path: "/teacher/dashboard/ai-assistant", label: "AI智能体助手", icon: <RobotOutlined />, group: "AI 工作台" },
+  { path: "/teacher/dashboard/ai-exercise", label: "AI生成试题", icon: <EditOutlined />, group: "AI 工作台" },
+  { path: "/teacher/dashboard/ai-file", label: "AI文件", icon: <FileOutlined />, group: "AI 工作台" },
+  { path: "/teacher/dashboard/ai-command", label: "AI命令中心", icon: <MacCommandOutlined />, group: "AI 工作台" },
+
+  { path: "/teacher/dashboard/course", label: "课程管理", icon: <BookOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/course-category", label: "学科分类", icon: <FolderOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/assign-course", label: "分配课程", icon: <UserOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/student-enrollment", label: "学生选课", icon: <TeamOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/course-info", label: "课程信息", icon: <FileTextOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/book-info", label: "教材管理", icon: <BookOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/link", label: "链接管理", icon: <LinkOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/course-video", label: "课程视频", icon: <VideoCameraOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/course-evaluation", label: "课程评价管理", icon: <CommentOutlined />, group: "课程建设" },
+  { path: "/teacher/dashboard/discussion-session", label: "实时课程讨论", icon: <TeamOutlined />, group: "课程建设" },
+
+  { path: "/teacher/dashboard/knowledge-resource", label: "知识点管理", icon: <BookOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/knowledge-relation", label: "知识关系管理", icon: <PartitionOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/knowledge-cognitive-goals", label: "认知目标管理", icon: <TrophyOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/knowledge-file", label: "知识点课程资源", icon: <FileOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/graph-course", label: "课程图谱", icon: <ApartmentOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/graph-ideological", label: "思政图谱", icon: <BookOutlined />, group: "知识体系" },
+  { path: "/teacher/dashboard/graph-competency", label: "能力图谱", icon: <TrophyOutlined />, group: "知识体系" },
+
+  { path: "/teacher/dashboard/chapter", label: "章节管理", icon: <BookOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/file", label: "资源管理", icon: <FileOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/video", label: "视频管理", icon: <VideoCameraOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/exercise", label: "题库管理", icon: <FileTextOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/question", label: "问题管理", icon: <FileTextOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/homework", label: "作业管理", icon: <CheckSquareOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/exam-management", label: "考试管理", icon: <ScheduleOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/face-check", label: "人脸抓拍", icon: <SafetyCertificateOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/group-management", label: "分组管理", icon: <TeamOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/group-task", label: "分组任务", icon: <ScheduleOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/check-in-management", label: "签到管理", icon: <CheckSquareOutlined />, group: "教学运行" },
+  { path: "/teacher/dashboard/experiment-management", label: "实验管理", icon: <ExperimentOutlined />, group: "教学运行" },
+
+  { path: "/teacher/dashboard/course-statistics", label: "课程数据统计", icon: <BarChartOutlined />, group: "统计分析" },
+  { path: "/teacher/dashboard/learning-statistics", label: "学习数据统计", icon: <BarChartOutlined />, group: "统计分析" },
+  { path: "/teacher/dashboard/student-profile", label: "学生学情画像", icon: <UserOutlined />, group: "统计分析" },
+  { path: "/teacher/dashboard/learning-recommendations", label: "学习推荐分析", icon: <TrophyOutlined />, group: "统计分析" },
+  { path: "/teacher/dashboard/activity-summary", label: "活动总结", icon: <BarChartOutlined />, group: "统计分析" },
+
+  { path: "/teacher/dashboard/job-list", label: "岗位管理", icon: <TeamOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/job-competency-graphs", label: "课程能力图谱", icon: <ApartmentOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/email-config", label: "邮件配置", icon: <SettingOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/email-messages", label: "邮件消息", icon: <MailOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/ai-practice", label: "AI 实践", icon: <RobotOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/custom-form", label: "自定义表单", icon: <FileTextOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/assistant-plugins", label: "助教插件", icon: <MacCommandOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/research-track", label: "学术追踪", icon: <SearchOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/tts", label: "AI 语音合成", icon: <AudioOutlined />, group: "专业与服务" },
+  { path: "/teacher/dashboard/settings", label: "系统设置", icon: <SettingOutlined />, group: "专业与服务" },
+];
+
+const GROUP_ORDER = [
+  "工作空间",
+  "AI 工作台",
+  "课程建设",
+  "知识体系",
+  "教学运行",
+  "统计分析",
+  "专业与服务",
+];
+
+const LABEL_BY_PATH: Record<string, string> = NAV_ITEMS.reduce(
+  (acc, it) => {
+    acc[it.path] = it.label;
+    return acc;
+  },
+  {} as Record<string, string>
+);
 
 const getFavorites = (): string[] => {
   try {
@@ -93,409 +176,6 @@ const saveRecentViews = (recentViews: RecentItem[]) => {
   }
 };
 
-const flattenMenuRoutes = (routes: MenuDataItem[]): MenuDataItem[] => {
-  const result: MenuDataItem[] = [];
-  const traverse = (items: MenuDataItem[]) => {
-    items.forEach((item) => {
-      if (item.path && !item.routes) {
-        result.push(item);
-      }
-      if (item.routes) {
-        traverse(item.routes as MenuDataItem[]);
-      }
-    });
-  };
-  traverse(routes);
-  return result;
-};
-
-const getMenuData = (t: (key: string) => string): MenuDataItem[] => [
-  { path: "/teacher/dashboard", name: t("menu.teacherDashboard"), icon: <HomeOutlined /> },
-  {
-    path: "/teacher/personal",
-    name: t("menu.personal"),
-    icon: <UserOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/virtual-research-room",
-        name: t("menu.virtualResearchRoom"),
-        icon: <ExperimentOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/ai-workspace",
-    name: t("menu.aiWorkspace"),
-    icon: <RobotOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/ai-assistant",
-        name: t("menu.aiAssistant"),
-        icon: <RobotOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/ai-exercise",
-        name: `${t("menu.aiExercise")} ★`,
-        icon: <EditOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/ai-file",
-        name: t("menu.aiFile"),
-        icon: <FileOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/ai-command",
-        name: t("menu.aiCommand"),
-        icon: <MacCommandOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/course",
-    name: t("menu.courseManagement"),
-    icon: <FolderOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/course",
-        name: t("menu.courseManagement"),
-        icon: <ReadOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/course-category",
-        name: t("menu.courseCategory"),
-        icon: <FolderOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/assign-course",
-        name: t("menu.assignCourse"),
-        icon: <UserOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/student-enrollment",
-        name: t("menu.studentEnrollment"),
-        icon: <TeamOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/course-info",
-        name: t("menu.courseInfo"),
-        icon: <FileTextOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/book-info",
-        name: t("menu.bookInfo"),
-        icon: <BookOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/link",
-        name: t("menu.link"),
-        icon: <LinkOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/course-video",
-        name: `${t("menu.courseVideo")} ★`,
-        icon: <VideoCameraOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/course-evaluation",
-        name: t("menu.discussionManagement"),
-        icon: <CommentOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/discussion-session",
-        name: t("menu.discussionSession"),
-        icon: <TeamOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/knowledge",
-    name: t("menu.knowledgeManagement"),
-    icon: <BookOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/knowledge-resource",
-        name: t("menu.knowledgeManagement"),
-        icon: <BookOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/knowledge-relation",
-        name: t("menu.knowledgeRelation"),
-        icon: <PartitionOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/knowledge-cognitive-goals",
-        name: t("menu.knowledgeCognitiveGoals"),
-        icon: <TrophyOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/knowledge-file",
-        name: t("menu.knowledgeFile"),
-        icon: <FileOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/graph",
-    name: t("menu.graphManagement"),
-    icon: <ApartmentOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/graph-course",
-        name: t("menu.graphCourse"),
-        icon: <ApartmentOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/graph-ideological",
-        name: t("menu.graphIdeological"),
-        icon: <BookOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/graph-competency",
-        name: t("menu.graphCompetency"),
-        icon: <TrophyOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/resource",
-    name: t("menu.teachingResource"),
-    icon: <EditOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/chapter",
-        name: `${t("menu.chapter")} ★`,
-        icon: <BookOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/file",
-        name: t("menu.file"),
-        icon: <FileOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/video",
-        name: `${t("menu.video")} ★`,
-        icon: <VideoCameraOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/exercise",
-        name: t("menu.exercise"),
-        icon: <FileTextOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/question",
-        name: t("menu.question"),
-        icon: <FileTextOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/homework",
-        name: t("menu.homework"),
-        icon: <CheckSquareOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/exam-management",
-        name: `${t("menu.examManagement")} ★`,
-        icon: <ScheduleOutlined />,
-        routes: [
-          {
-            path: "/teacher/dashboard/exam-management",
-            name: t("menu.examManagement"),
-            icon: <ScheduleOutlined />,
-          },
-          {
-            path: "/teacher/dashboard/face-check",
-            name: "人脸抓拍 ★",
-            icon: <SafetyCertificateOutlined />,
-          },
-        ],
-      },
-      {
-        path: "/teacher/dashboard/group-management",
-        name: t("menu.groupManagement"),
-        icon: <TeamOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/group-task",
-        name: t("menu.groupTask"),
-        icon: <ScheduleOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/check-in-management",
-        name: t("menu.checkInManagement"),
-        icon: <CheckSquareOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/experiment-management",
-        name: t("menu.experimentManagement"),
-        icon: <ExperimentOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/statistics",
-    name: t("menu.statistics"),
-    icon: <BarChartOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/course-statistics",
-        name: t("menu.courseStatistics"),
-        icon: <BarChartOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/learning-statistics",
-        name: t("menu.learningStatistics"),
-        icon: <BarChartOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/student-profile",
-        name: t("menu.studentProfile"),
-        icon: <UserOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/learning-recommendations",
-        name: t("menu.learningRecommendations"),
-        icon: <TrophyOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/activity-summary",
-        name: t("menu.activitySummary"),
-        icon: <BarChartOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/email",
-    name: t("menu.emailManagement"),
-    icon: <MailOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/email-config",
-        name: t("menu.emailConfig"),
-        icon: <SettingOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/email-messages",
-        name: t("menu.emailMessages"),
-        icon: <MailOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/major",
-    name: "专业",
-    icon: <ApartmentOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/job-list",
-        name: "岗位管理",
-        icon: <TeamOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/job-competency-graphs",
-        name: "课程能力图谱",
-        icon: <ApartmentOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/demo",
-    name: "智慧课程演示",
-    icon: <StarFilled style={{ color: "#faad14" }} />,
-    routes: [
-      {
-        path: "/teacher/dashboard/ai-practice",
-        name: "AI 实践 ★",
-        icon: <RobotOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/custom-form",
-        name: "自定义表单 ★",
-        icon: <FileTextOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/assistant-plugins",
-        name: "助教插件 ★",
-        icon: <MacCommandOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/research-track",
-        name: "学术追踪 ★",
-        icon: <SearchOutlined />,
-      },
-      {
-        path: "/teacher/dashboard/tts",
-        name: "AI 语音合成 ★",
-        icon: <AudioOutlined />,
-      },
-    ],
-  },
-  {
-    path: "/teacher/system",
-    name: t("menu.systemSettings"),
-    icon: <SettingOutlined />,
-    routes: [
-      {
-        path: "/teacher/dashboard/settings",
-        name: t("menu.systemSettings"),
-        icon: <SettingOutlined />,
-      },
-    ],
-  },
-] as unknown as MenuDataItem[];
-
-const PATH_TO_KEY: Record<string, string> = {
-  "/teacher/dashboard": "menu.teacherDashboard",
-  "/teacher/dashboard/virtual-research-room": "menu.virtualResearchRoom",
-  "/teacher/dashboard/ai-assistant": "menu.aiAssistant",
-  "/teacher/dashboard/ai-exercise": "menu.aiExercise",
-  "/teacher/dashboard/ai-file": "menu.aiFile",
-  "/teacher/dashboard/ai-command": "menu.aiCommand",
-  "/teacher/dashboard/course": "menu.courseManagement",
-  "/teacher/dashboard/course-category": "menu.courseCategory",
-  "/teacher/dashboard/assign-course": "menu.assignCourse",
-  "/teacher/dashboard/student-enrollment": "menu.studentEnrollment",
-  "/teacher/dashboard/course-info": "menu.courseInfo",
-  "/teacher/dashboard/book-info": "menu.bookInfo",
-  "/teacher/dashboard/link": "menu.link",
-  "/teacher/dashboard/course-video": "menu.courseVideo",
-  "/teacher/dashboard/course-evaluation": "menu.discussionManagement",
-  "/teacher/dashboard/discussion-session": "menu.discussionSession",
-  "/teacher/dashboard/knowledge-resource": "menu.knowledgeManagement",
-  "/teacher/dashboard/knowledge-relation": "menu.knowledgeRelation",
-  "/teacher/dashboard/knowledge-cognitive-goals": "menu.knowledgeCognitiveGoals",
-  "/teacher/dashboard/knowledge-file": "menu.knowledgeFile",
-  "/teacher/dashboard/graph-course": "menu.graphCourse",
-  "/teacher/dashboard/graph-ideological": "menu.graphIdeological",
-  "/teacher/dashboard/graph-competency": "menu.graphCompetency",
-  "/teacher/dashboard/chapter": "menu.chapter",
-  "/teacher/dashboard/file": "menu.file",
-  "/teacher/dashboard/video": "menu.video ★",
-  "/teacher/dashboard/exercise": "menu.exercise",
-  "/teacher/dashboard/question": "menu.question",
-  "/teacher/dashboard/homework": "menu.homework",
-  "/teacher/dashboard/exam-management": "menu.examManagement",
-  "/teacher/dashboard/group-management": "menu.groupManagement",
-  "/teacher/dashboard/group-task": "menu.groupTask",
-  "/teacher/dashboard/check-in-management": "menu.checkInManagement",
-  "/teacher/dashboard/experiment-management": "menu.experimentManagement",
-  "/teacher/dashboard/course-statistics": "menu.courseStatistics",
-  "/teacher/dashboard/learning-statistics": "menu.learningStatistics",
-  "/teacher/dashboard/student-profile": "menu.studentProfile",
-  "/teacher/dashboard/learning-recommendations": "menu.learningRecommendations",
-  "/teacher/dashboard/activity-summary": "menu.activitySummary",
-  "/teacher/dashboard/email-config": "menu.emailConfig",
-  "/teacher/dashboard/email-messages": "menu.emailMessages",
-  "/teacher/dashboard/job-list": "岗位管理",
-  "/teacher/dashboard/job-competency-graphs": "课程能力图谱",
-  "/teacher/dashboard/job-competency-graphs/": "课程能力图谱",
-  "/teacher/dashboard/settings": "menu.systemSettings",
-  "/teacher/dashboard/ai-practice": "AI 实践 ★",
-  "/teacher/dashboard/face-check": "人脸抓拍 ★",
-  "/teacher/dashboard/custom-form": "自定义表单 ★",
-  "/teacher/dashboard/assistant-plugins": "助教插件 ★",
-  "/teacher/dashboard/research-track": "学术追踪 ★",
-  "/teacher/dashboard/tts": "AI 语音合成 ★",
-};
-
 export default function TeacherLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -503,7 +183,7 @@ export default function TeacherLayout() {
   const editPermission = useEditPermission();
   const currentTenant = getCurrentTenant();
   const branding = useBranding();
-  const { t } = useTranslate("teacher");
+  const { isMobile } = useResponsive();
   usePageTitle();
 
   // 挂载时刷新当前用户，使已登录教师能立即感知编辑权限（无需重新登录）
@@ -511,217 +191,89 @@ export default function TeacherLayout() {
     refreshCurrentUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const [collapsed, setCollapsed] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
+
+  const [navSearch, setNavSearch] = useState("");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => getFavorites());
   const [recentViews, setRecentViews] = useState<RecentItem[]>(() => getRecentViews());
-  const [searchInputVisible, setSearchInputVisible] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const [openKeys, setOpenKeys] = useState<string[]>(() => {
-    // 从 localStorage 恢复上次打开的菜单分组，避免切换模块/刷新后回到初始状态
-    try {
-      const saved = localStorage.getItem("teacher-open-keys");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [
-      "/teacher/personal",
-      "/teacher/ai-workspace",
-      "/teacher/course",
-      "/teacher/knowledge",
-      "/teacher/major",
-      "/teacher/graph",
-      "/teacher/resource",
-      "/teacher/statistics",
-      "/teacher/email",
-      "/teacher/system",
-    ];
-  });
-
-  // 持久化菜单分组展开状态
-  useEffect(() => {
-    try {
-      localStorage.setItem("teacher-open-keys", JSON.stringify(openKeys));
-    } catch {}
-  }, [openKeys]);
+  const [commandVisible, setCommandVisible] = useState(false);
+  const [commandSearch, setCommandSearch] = useState("");
+  const [commandIndex, setCommandIndex] = useState(0);
 
   const tenant = currentTenant?.schemaName || "";
   const headers = getAuthHeaders(user) as Record<string, string>;
 
-  const menuData = useMemo(() => getMenuData(t), [t]);
-  const menuDataRef = useRef(menuData);
-  menuDataRef.current = menuData;
-
-  // 由当前路径推导菜单选中项（支持带参数子路由的前缀匹配）——必须在 menuData 之后
-  const menuFlatRoutes = useMemo(() => flattenMenuRoutes(menuData), [menuData]);
-  const selectedKeys = useMemo(() => {
-    const p = location.pathname;
-    const exact = menuFlatRoutes.find((r) => r.path === p);
-    if (exact?.path) return [exact.path];
-    const byPrefix = menuFlatRoutes
-      .filter((r) => r.path && p.startsWith(r.path + "/"))
-      .sort((a, b) => (b.path?.length || 0) - (a.path?.length || 0));
-    return byPrefix[0]?.path ? [byPrefix[0].path] : [];
-  }, [location.pathname, menuFlatRoutes]);
-
-  // 当前页面所属的一级分组：切换页面时自动展开对应菜单，同步页面状态
-  const currentGroupPath = useMemo(() => {
-    const sel = selectedKeys[0];
-    if (!sel) return null;
-    return (
-      menuData.find((g) => g.routes?.some((r) => r.path === sel))?.path || null
-    );
-  }, [selectedKeys, menuData]);
-
-  useEffect(() => {
-    if (currentGroupPath) {
-      setOpenKeys((prev) =>
-        prev.includes(currentGroupPath) ? prev : [...prev, currentGroupPath]
-      );
-    }
-  }, [currentGroupPath]);
-
-  const updateRecentViews = useCallback((path: string) => {
-    const nameKey = PATH_TO_KEY[path];
-    if (nameKey) {
-      const flatRoutes = flattenMenuRoutes(menuDataRef.current);
-      const currentRoute = flatRoutes.find((r) => r.path === path);
-      
-      if (currentRoute) {
-        const newRecent: RecentItem = {
-          path: path,
-          nameKey: nameKey,
-          timestamp: Date.now(),
-        };
-        
-        setRecentViews((prev) => {
-          const filtered = prev.filter((item) => item.path !== path);
-          const updated = [newRecent, ...filtered].slice(0, MAX_RECENT_VIEWS);
-          saveRecentViews(updated);
-          return updated;
-        });
-      }
-    }
+  // 组装分组
+  const navGroups = useMemo(() => {
+    return GROUP_ORDER.map((label) => ({
+      label,
+      items: NAV_ITEMS.filter((it) => it.group === label),
+    })).filter((g) => g.items.length > 0);
   }, []);
 
+  // 记录最近访问
   useEffect(() => {
-    updateRecentViews(location.pathname);
-  }, [location.pathname, updateRecentViews]);
+    const path = location.pathname;
+    if (!LABEL_BY_PATH[path]) return;
+    setRecentViews((prev) => {
+      const filtered = prev.filter((item) => item.path !== path);
+      const updated = [{ path, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENT_VIEWS);
+      saveRecentViews(updated);
+      return updated;
+    });
+  }, [location.pathname]);
 
   const toggleFavorite = useCallback((path: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setFavorites((prev) => {
-      const newFavorites = prev.includes(path)
-        ? prev.filter((p) => p !== path)
-        : [...prev, path];
-      saveFavorites(newFavorites);
-      return newFavorites;
+      const next = prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path];
+      saveFavorites(next);
+      return next;
     });
   }, []);
 
-  const flatRoutes = useMemo(() => flattenMenuRoutes(menuData), [menuData]);
+  const favoriteItems = useMemo(
+    () => favorites.map((p) => NAV_ITEMS.find((it) => it.path === p)).filter((x): x is NavItem => Boolean(x)),
+    [favorites]
+  );
 
-  const favoriteRoutes = useMemo(() => {
-    return flatRoutes.filter((r) => favorites.includes(r.path || ""));
-  }, [favorites, flatRoutes]);
+  const recentItems = useMemo(
+    () =>
+      recentViews
+        .map((r) => NAV_ITEMS.find((it) => it.path === r.path))
+        .filter((x): x is NavItem => Boolean(x)),
+    [recentViews]
+  );
 
-  const recentRouteItems = useMemo(() => {
-    return recentViews
-      .filter((r) => flatRoutes.some((fr) => fr.path === r.path))
-      .map((r) => {
-        const route = flatRoutes.find((fr) => fr.path === r.path);
-        return route ? { ...route, name: t(r.nameKey) } : null;
-      })
-      .filter((r): r is MenuDataItem => r !== null);
-  }, [recentViews, flatRoutes, t]);
+  const visibleGroups = useMemo(() => {
+    const kw = navSearch.trim().toLowerCase();
+    if (!kw) return navGroups;
+    return navGroups
+      .map((g) => ({ ...g, items: g.items.filter((it) => it.label.toLowerCase().includes(kw)) }))
+      .filter((g) => g.items.length > 0);
+  }, [navGroups, navSearch]);
 
-  const searchResults = useMemo(() => {
-    if (!searchValue.trim()) return [];
-    const keyword = searchValue.toLowerCase();
-    return flatRoutes.filter(
-      (r) =>
-        r.name?.toLowerCase().includes(keyword) ||
-        r.path?.toLowerCase().includes(keyword)
-    ).slice(0, 10);
-  }, [searchValue, flatRoutes]);
-
-  interface SearchOption {
-    key: string;
-    item: MenuDataItem;
-    category: "favorite" | "recent" | "search";
-    categoryName: string;
-  }
-
-  const allSearchOptions = useMemo((): SearchOption[] => {
-    const options: SearchOption[] = [];
-    
-    if (!searchValue.trim()) {
-      favoriteRoutes.forEach((r) => {
-        options.push({
-          key: `fav-${r.path}`,
-          item: r,
-          category: "favorite",
-          categoryName: t("menu.favorites"),
-        });
-      });
-      
-      recentRouteItems.slice(0, 5).forEach((r) => {
-        options.push({
-          key: `recent-${r.path}`,
-          item: r,
-          category: "recent",
-          categoryName: t("menu.recentViews"),
-        });
-      });
-    } else {
-      searchResults.forEach((r) => {
-        const isFav = favorites.includes(r.path || "");
-        options.push({
-          key: `search-${r.path}`,
-          item: r,
-          category: "search",
-          categoryName: isFav ? t("menu.favorites") : t("menu.searchResult"),
-        });
-      });
-    }
-    
-    return options;
-  }, [searchValue, favoriteRoutes, recentRouteItems, searchResults, favorites, t]);
+  // Command palette 结果
+  const commandItems = useMemo(() => {
+    const kw = commandSearch.trim().toLowerCase();
+    const base = kw ? NAV_ITEMS.filter((it) => it.label.toLowerCase().includes(kw)) : NAV_ITEMS;
+    return base;
+  }, [commandSearch]);
 
   useEffect(() => {
-    if (searchInputVisible) {
-      setSelectedIndex(0);
-    }
-  }, [searchInputVisible]);
+    setCommandIndex(0);
+  }, [commandSearch]);
 
-  const dynamicMenuData: MenuDataItem[] = useMemo(() => {
-    const result: MenuDataItem[] = [];
-
-    if (favoriteRoutes.length > 0) {
-      result.push({
-        key: "__favorites__",
-        path: "/teacher/favorites",
-        name: t("menu.favorites"),
-        icon: <StarOutlined />,
-        routes: favoriteRoutes.map((r) => ({ ...r, key: `fav-${r.path}` })),
-      } as MenuDataItem);
-    }
-
-    if (recentRouteItems.length > 0) {
-      result.push({
-        key: "__recent__",
-        path: "/teacher/recent",
-        name: t("menu.recentViews"),
-        icon: <ClockCircleOutlined />,
-        routes: recentRouteItems.map((r) => ({ ...r, key: `recent-${r.path}` })),
-      } as MenuDataItem);
-    }
-
-    return [...result, ...(menuData as MenuDataItem[])] as MenuDataItem[];
-  }, [favoriteRoutes, recentRouteItems, menuData, t]);
+  const handleCommandSelect = useCallback(
+    (path: string) => {
+      navigate(path);
+      setCommandVisible(false);
+      setCommandSearch("");
+      setCommandIndex(0);
+    },
+    [navigate]
+  );
 
   const { data: unreadData } = useQuery({
     queryKey: ["email-messages-unread-count", user?.id],
@@ -729,7 +281,6 @@ export default function TeacherLayout() {
       const result = await listEmailMessages({
         tenant,
         fields: ["id", "parentMessageId"],
-        // 只统计当前教师接收的未读消息，不受租户内其他教师未读影响
         filter: {
           and: [
             { readStatus: { eq: "unread" } },
@@ -749,272 +300,238 @@ export default function TeacherLayout() {
 
   const unreadCount = unreadData || 0;
 
-  const handleSearch = useCallback((path: string) => {
-    navigate(path);
-    setSearchValue("");
-    setSearchInputVisible(false);
-  }, [navigate]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex((prev) => Math.min(prev + 1, allSearchOptions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === "Enter" && allSearchOptions.length > 0) {
-      e.preventDefault();
-      handleSearch(allSearchOptions[selectedIndex].item.path!);
-    }
-  }, [allSearchOptions, selectedIndex, handleSearch]);
-
-  const renderMenuItem = (item: MenuDataItem, dom: React.ReactNode) => {
-    const isEmailMessages = item.path === "/teacher/dashboard/email-messages";
-    const isFav = favorites.includes(item.path || "");
-    
-    if (item.path?.startsWith("/teacher/favorites") || item.path?.startsWith("/teacher/recent")) {
-      return (
-        <div style={{ display: "flex", alignItems: "center", fontWeight: 500 }}>
-          {dom}
-        </div>
-      );
-    }
-
-    const handleClick = () => {
-      if (item.path) {
-        navigate(item.path);
+  // Cmd+K / Ctrl+K 快捷键
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCommandVisible((v) => !v);
+        setCommandSearch("");
+        setCommandIndex(0);
+      }
+      if (e.key === "Escape" && commandVisible) {
+        setCommandVisible(false);
+        setCommandSearch("");
       }
     };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [commandVisible]);
 
+  const isActive = (path: string) => {
+    if (path === "/teacher/dashboard") {
+      return location.pathname === "/teacher/dashboard" || location.pathname === "/teacher/dashboard/";
+    }
+    return location.pathname === path || location.pathname.startsWith(path + "/");
+  };
+
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    setMobileNavOpen(false);
+  };
+
+  const renderNavLink = (item: NavItem, showFav = true) => {
+    const active = isActive(item.path);
+    const isFav = favorites.includes(item.path);
     return (
-      <div 
-        onClick={handleClick}
-        style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "space-between",
-          paddingRight: 8,
-          width: "100%",
-          cursor: "pointer",
-        }}
+      <button
+        key={item.path}
+        type="button"
+        className={`pu-nav-link${active ? " active" : ""}`}
+        onClick={() => handleNavClick(item.path)}
       >
-        <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
-          {dom}
-          {isEmailMessages && unreadCount > 0 && (
-            <Badge
-              count={unreadCount}
-              style={{
-                marginLeft: 8,
-                fontSize: 10,
-                minWidth: 16,
-                height: 16,
-                lineHeight: "16px",
-                padding: "0 4px",
-              }}
-              overflowCount={99}
-            />
-          )}
-        </div>
-        {item.path && !item.routes && (
+        <span className="pu-nav-icon">{item.icon}</span>
+        <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {item.label}
+        </span>
+        {item.path === "/teacher/dashboard/email-messages" && unreadCount > 0 && (
+          <Badge count={unreadCount} overflowCount={99} size="small" />
+        )}
+        {showFav && (
           <span
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite(item.path!, e);
-            }}
+            onClick={(e) => toggleFavorite(item.path, e)}
             style={{
               cursor: "pointer",
-              color: isFav ? "#faad14" : "#d9d9d9",
-              fontSize: 14,
-              padding: "2px 6px",
-              transition: "color 0.2s",
+              color: isFav ? "#faad14" : "#c9d2df",
+              fontSize: 13,
+              lineHeight: 1,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#faad14")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = isFav ? "#faad14" : "#d9d9d9")}
+            title={isFav ? "取消收藏" : "收藏"}
           >
             {isFav ? <StarFilled /> : <StarOutlined />}
           </span>
         )}
-      </div>
+      </button>
     );
   };
 
-  // 修正侧边栏位置：从 header 下方开始
-  useEffect(() => {
-    const styleId = "teacher-layout-sider-fix";
-    let style = document.getElementById(styleId) as HTMLStyleElement;
-    if (!style) {
-      style = document.createElement("style");
-      style.id = styleId;
-      document.head.appendChild(style);
-    }
-    style.textContent = `
-      .ant-pro-layout .ant-layout-sider {
-        top: 56px !important;
-        height: calc(100vh - 56px) !important;
-      }
-      .ant-pro-layout .ant-layout-sider .ant-layout-sider-children {
-        height: calc(100vh - 56px) !important;
-      }
+  const renderNav = () => (
+    <aside className="pu-aside">
+      <div className="pu-scope">
+        <small>当前机构</small>
+        <b title={currentTenant?.name || tenant || "未选择机构"}>
+          {currentTenant?.name || tenant || "未选择机构"}
+        </b>
+      </div>
 
-      @media (max-width: 768px) {
-        .teacher-layout-header {
-          padding: 0 16px !important;
-          height: 54px !important;
-        }
-        .teacher-layout-brand {
-          gap: 8px !important;
-        }
-        .teacher-layout-brand-text {
-          font-size: 15px !important;
-        }
-        .teacher-layout-actions {
-          gap: 6px !important;
-        }
-        .teacher-layout-search-input {
-          width: 140px !important;
-        }
-      }
+      <Input
+        className="pu-nav-search"
+        prefix={<SearchOutlined style={{ color: "#9aa7ba" }} />}
+        placeholder="查找功能页面"
+        value={navSearch}
+        onChange={(e) => setNavSearch(e.target.value)}
+        allowClear
+      />
 
-      @media (max-width: 480px) {
-        .teacher-layout-header {
-          padding: 0 10px !important;
-          height: 50px !important;
-        }
-        .teacher-layout-brand {
-          gap: 6px !important;
-        }
-        .teacher-layout-brand-text {
-          display: none !important;
-        }
-        .teacher-layout-actions {
-          gap: 4px !important;
-        }
-        .teacher-layout-search-input {
-          width: 100px !important;
-        }
-      }
+      {!navSearch.trim() && favoriteItems.length > 0 && (
+        <div>
+          <div className="pu-nav-group">收藏</div>
+          {favoriteItems.map((item) => renderNavLink(item))}
+        </div>
+      )}
 
-      /* 教师页面所有表格宽度填满容器 */
-      .ant-table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .ant-table-wrapper .ant-table-thead > tr > th,
-      .ant-table-wrapper .ant-table-tbody > tr > td {
-        white-space: nowrap;
-      }
-      .ant-table-wrapper .ant-table-container {
-        width: 100%;
-      }
-      .ant-table-wrapper .ant-table-container table {
-        width: 100% !important;
-        table-layout: fixed !important;
-      }
+      {!navSearch.trim() && recentItems.length > 0 && (
+        <div>
+          <div className="pu-nav-group">最近访问</div>
+          {recentItems.slice(0, 5).map((item) => renderNavLink(item))}
+        </div>
+      )}
 
-      /* 移动端返回按钮通用样式 */
-      @media (max-width: 768px) {
-        .teacher-page-back-btn {
-          display: inline-flex !important;
-        }
-      }
-      @media (min-width: 769px) {
-        .teacher-page-back-btn {
-          display: none !important;
-        }
-      }
-    `;
-    return () => {
-      style.remove();
-    };
-  }, []);
+      {visibleGroups.map((group) => (
+        <div key={group.label}>
+          <div className="pu-nav-group">{group.label}</div>
+          {group.items.map((item) => renderNavLink(item))}
+        </div>
+      ))}
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchInputVisible(true);
-      }
-      if (e.key === "Escape") {
-        setSearchInputVisible(false);
-        setSearchValue("");
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const searchPlaceholder = t("layout.searchPlaceholder");
-  const searchHint = t("layout.searchHint");
-  const noResults = t("layout.noResults");
-  const navigateText = t("layout.navigate");
-  const confirmText = t("layout.confirm");
-  const closeText = t("layout.close");
+      {visibleGroups.length === 0 && (
+        <div style={{ padding: "16px 12px", color: colors.textSecondary, fontSize: 13 }}>
+          没有匹配的功能页面
+        </div>
+      )}
+    </aside>
+  );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* 全宽顶部栏 - 白底风格 */}
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--pu-bg, #f5f7fb)",
+      }}
+    >
+      {/* 顶部栏 */}
       <div
         className="teacher-layout-header"
         style={{
-          height: 60,
-          flexShrink: 0,
-          background: "#FFFFFF",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 40px",
+          position: "sticky",
+          top: 0,
           zIndex: 1000,
-          position: "relative",
+          background: "#FFFFFF",
           boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
         }}
       >
         <div
-          className="teacher-layout-brand"
-          style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 12 }}
-          onClick={() => navigate("/teacher/module-home")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: isMobile ? "0 12px" : "0 40px",
+            minHeight: isMobile ? 54 : 60,
+            gap: 8,
+          }}
         >
-          <img
-            src={branding.logo_dark}
-            alt={branding.app_name}
-            style={{ height: 44, objectFit: "contain" }}
-          />
-          <span className="teacher-layout-brand-text" style={{
-            fontSize: 19,
-            fontWeight: 700,
-            fontFamily: "'Manrope', sans-serif",
-            color: colors.textPrimary,
-            letterSpacing: "-0.01em",
-            whiteSpace: "nowrap",
-          }}>
-            {branding.app_title} · 教师端
-          </span>
-        </div>
-        <div className="teacher-layout-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div className="teacher-layout-search-wrap">
-            <Input
-              prefix={<SearchOutlined style={{ color: "#8c8c8c" }} />}
-              placeholder={searchPlaceholder}
-              readOnly
-              onClick={() => setSearchInputVisible(true)}
-              className="teacher-layout-search-input"
+          <div
+            className="teacher-layout-brand"
+            style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 12, flexShrink: 0 }}
+            onClick={() => navigate("/teacher/dashboard")}
+          >
+            <img
+              src={branding.logo_dark}
+              alt={branding.app_name}
+              style={{ height: isMobile ? 36 : 44, objectFit: "contain" }}
+            />
+            <span
+              className="teacher-layout-brand-text"
               style={{
-                width: 200,
-                cursor: "pointer",
+                fontSize: 19,
+                fontWeight: 700,
+                fontFamily: "'Manrope', sans-serif",
+                color: colors.textPrimary,
+                letterSpacing: "-0.01em",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {branding.app_title} · 教师端
+            </span>
+          </div>
+
+          <div
+            className="teacher-layout-actions"
+            style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 12, flexShrink: 0 }}
+          >
+            <div
+              onClick={() => {
+                setCommandVisible(true);
+                setCommandSearch("");
+                setCommandIndex(0);
+              }}
+              style={{
+                display: isMobile ? "none" : "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                padding: "6px 12px",
+                borderRadius: 8,
                 background: "#F3F4F6",
                 border: "1px solid transparent",
-                borderRadius: 8,
-                color: "#8c8c8c",
-                height: 34,
+                cursor: "pointer",
+                height: 36,
               }}
-            />
+            >
+              <SearchOutlined style={{ color: colors.textSecondary, fontSize: 15 }} />
+              <span style={{ color: colors.textSecondary, fontSize: 14, fontWeight: 500 }}>搜索</span>
+              <kbd
+                style={{
+                  background: "#FFFFFF",
+                  padding: "1px 5px",
+                  borderRadius: 4,
+                  border: "1px solid #E1E3E4",
+                  fontSize: 11,
+                  fontFamily: "monospace",
+                  color: colors.textSecondary,
+                }}
+              >
+                ⌘K
+              </kbd>
+            </div>
+            {!isMobile && <NotificationBell />}
+            {!isMobile && <UserManualModal role="teacher" />}
+            <UserMenu role="teacher" compact={isMobile} />
+            {isMobile && (
+              <div
+                onClick={() => setMobileNavOpen(true)}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 8,
+                  background: "#F3F4F6",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: colors.textPrimary,
+                }}
+              >
+                <MenuOutlined style={{ fontSize: 16 }} />
+              </div>
+            )}
           </div>
-          <UserMenu role="teacher" />
-          <UserManualModal role="teacher" />
         </div>
       </div>
 
-      <div data-scroll-container style={{ flex: 1, overflow: "auto" }}>
+      {/* 只读横幅 */}
       {!editPermission.canEdit && (
         <Alert
           banner
@@ -1025,169 +542,103 @@ export default function TeacherLayout() {
           style={{ borderRadius: 0 }}
         />
       )}
-      <ProLayout
-        title={false}
-        logo={false}
-        layout="side"
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        location={{ pathname: location.pathname }}
-        route={{ path: "/", routes: dynamicMenuData }}
-        menuProps={{
-          selectedKeys,
-          openKeys,
-          onOpenChange: (keys) => setOpenKeys(keys as string[]),
-        }}
-        menuItemRender={(item, dom) => renderMenuItem(item, dom)}
-        headerRender={false}
-        menuHeaderRender={false}
-        token={{
-          sider: {
-            colorMenuBackground: "#fff",
-            colorTextMenu: "#333",
-            colorTextMenuActive: "#0A2463",
-            colorTextMenuSelected: "#0A2463",
-          },
-        }}
-        fixSiderbar
-        style={{ height: "100%" }}
-        contentStyle={{ padding: 0, height: "100%", overflow: "auto" }}
-        footerRender={false}
-      >
-      {searchInputVisible && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.4)",
-            zIndex: 999,
-            display: "flex",
-            justifyContent: "center",
-            paddingTop: 80,
-          }}
-          onClick={() => {
-            setSearchInputVisible(false);
-            setSearchValue("");
-          }}
-        >
+
+      {/* 主体：左侧导航 + 工作区 */}
+      <div className="pu-shell">
+        {!isMobile && renderNav()}
+
+        <main className="pu-workspace">
           <div
-            style={{
-              width: 560,
-              background: "#fff",
-              borderRadius: 12,
-              overflow: "hidden",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-            }}
-            onClick={(e) => e.stopPropagation()}
+            data-scroll-container
+            style={{ flex: 1, minHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}
           >
-            <Input
-              autoFocus
-              prefix={<SearchOutlined style={{ color: "#1890ff", fontSize: 18 }} />}
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => {
-                setSearchValue(e.target.value);
-                setSelectedIndex(0);
-              }}
-              onKeyDown={handleKeyDown}
-              style={{ height: 56, fontSize: 16, border: "none", borderBottom: "1px solid #f0f0f0" }}
-              bordered={false}
-            />
-            <div style={{ maxHeight: 420, overflow: "auto" }}>
-              {allSearchOptions.length === 0 ? (
-                <div style={{ padding: 32, color: "#999", textAlign: "center" }}>
-                  {searchValue.trim() === "" ? searchHint : noResults}
-                </div>
-              ) : (
-                <div>
-                  {[t("menu.favorites"), t("menu.recentViews"), t("menu.searchResult")].map((cat) => {
-                    const optionsInCat = allSearchOptions.filter((o) => o.categoryName === cat);
-                    if (optionsInCat.length === 0) return null;
-                    
-                    return (
-                      <div key={cat}>
-                        <div
-                          style={{
-                            padding: "8px 16px",
-                            fontSize: 12,
-                            color: "#999",
-                            background: "#fafafa",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {cat}
-                        </div>
-                        {optionsInCat.map((opt) => {
-                          const globalIdx = allSearchOptions.indexOf(opt);
-                          const isSelected = globalIdx === selectedIndex;
-                          
-                          return (
-                            <div
-                              key={opt.key}
-                              onClick={() => handleSearch(opt.item.path!)}
-                              onMouseEnter={() => setSelectedIndex(globalIdx)}
-                              style={{
-                                padding: "12px 16px",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                background: isSelected ? "#e6f7ff" : "transparent",
-                                borderBottom: "1px solid #f5f5f5",
-                                transition: "background 0.15s",
-                              }}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-                                <span style={{ fontSize: 16, color: "#1890ff" }}>{opt.item.icon}</span>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 500, color: "#333" }}>{opt.item.name}</div>
-                                </div>
-                                {opt.category === "favorite" && (
-                                  <StarFilled style={{ color: "#faad14", fontSize: 14 }} />
-                                )}
-                              </div>
-                              {isSelected && (
-                                <EnterOutlined style={{ fontSize: 16, color: "#1890ff" }} />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div
-              style={{
-                padding: "8px 16px",
-                borderTop: "1px solid #f0f0f0",
-                background: "#fafafa",
-                fontSize: 12,
-                color: "#999",
-                display: "flex",
-                gap: 16,
-              }}
-            >
-              <span>
-                <kbd style={{ background: "#fff", padding: "1px 5px", borderRadius: 3, border: "1px solid #d9d9d9" }}>↑↓</kbd> {navigateText}
-              </span>
-              <span>
-                <kbd style={{ background: "#fff", padding: "1px 5px", borderRadius: 3, border: "1px solid #d9d9d9" }}><EnterOutlined /></kbd> {confirmText}
-              </span>
-              <span>
-                <kbd style={{ background: "#fff", padding: "1px 5px", borderRadius: 3, border: "1px solid #d9d9d9" }}>Esc</kbd> {closeText}
-              </span>
+            <div className="pu-app" style={{ flex: 1 }}>
+              <Outlet />
             </div>
           </div>
+          <GlobalFooter />
+        </main>
+      </div>
+
+      <Drawer
+        title={<span style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>教师导航</span>}
+        placement="left"
+        onClose={() => setMobileNavOpen(false)}
+        open={mobileNavOpen}
+        width="76vw"
+        styles={{ body: { padding: 0 } }}
+      >
+        {renderNav()}
+      </Drawer>
+
+      {/* Command Palette */}
+      <Modal
+        open={commandVisible}
+        onCancel={() => {
+          setCommandVisible(false);
+          setCommandSearch("");
+        }}
+        footer={null}
+        centered
+        closable={false}
+        width={520}
+        styles={{ body: { padding: 0 } }}
+        style={{ top: 80 }}
+      >
+        <Input
+          autoFocus
+          prefix={<SearchOutlined style={{ color: colors.primary, fontSize: 16 }} />}
+          placeholder="搜索导航页面..."
+          value={commandSearch}
+          onChange={(e) => setCommandSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setCommandIndex((prev) => Math.min(prev + 1, commandItems.length - 1));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setCommandIndex((prev) => Math.max(prev - 1, 0));
+            } else if (e.key === "Enter" && commandItems.length > 0) {
+              handleCommandSelect(commandItems[commandIndex].path);
+            }
+          }}
+          style={{ height: 52, fontSize: 15, border: "none", borderBottom: "1px solid #f0f0f0" }}
+          bordered={false}
+        />
+        <div style={{ maxHeight: 380, overflow: "auto" }}>
+          {commandItems.length === 0 ? (
+            <div style={{ padding: 32, color: "#999", textAlign: "center" }}>没有匹配的页面</div>
+          ) : (
+            commandItems.map((item, idx) => {
+              const isSelected = idx === commandIndex;
+              return (
+                <div
+                  key={item.path}
+                  onClick={() => handleCommandSelect(item.path)}
+                  onMouseEnter={() => setCommandIndex(idx)}
+                  style={{
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: isSelected ? `${colors.primary}08` : "transparent",
+                    borderLeft: isSelected ? `3px solid ${colors.primary}` : "3px solid transparent",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 16, color: colors.primary }}>{item.icon}</span>
+                  <span style={{ fontWeight: 500, color: isSelected ? colors.primary : "#333", flex: 1 }}>
+                    {item.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#9aa7ba" }}>{item.group}</span>
+                  {isSelected && <EnterOutlined style={{ fontSize: 14, color: colors.primary }} />}
+                </div>
+              );
+            })
+          )}
         </div>
-      )}
-      <Outlet />
-    </ProLayout>
-    </div>
+      </Modal>
     </div>
   );
 }

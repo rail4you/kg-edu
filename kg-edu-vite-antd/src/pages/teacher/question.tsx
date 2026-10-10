@@ -12,9 +12,7 @@ import {
   Table,
   Tabs,
   Alert,
-  message,
   Form,
-  Popconfirm,
   Upload,
   Empty,
   Tree,
@@ -29,8 +27,6 @@ import {
   LinkOutlined,
   UploadOutlined,
   DownloadOutlined,
-  MoreOutlined,
-  FileTextOutlined,
   SettingOutlined,
   BookOutlined,
   SearchOutlined,
@@ -38,6 +34,7 @@ import {
 } from "@ant-design/icons";
 import ActionDropdown from "@/components/ActionDropdown";
 import { QuestionLevelConfigModal } from "@/components/QuestionLevelConfigModal";
+import { AppPage } from "@/components/proto";
 import {
   listQuestions,
   createQuestion,
@@ -48,8 +45,6 @@ import {
   destroyConnection,
   getFileTemplateBySection,
   importQuestionsFromXlsx,
-  moveQuestionUp,
-  moveQuestionDown,
   buildCSRFHeaders,
   type QuestionResourceSchema,
   type CreateQuestionInput,
@@ -57,7 +52,6 @@ import {
   type QuestionConnectionResourceSchema,
   type CreateConnectionInput,
   type ImportQuestionsFromXlsxInput,
-  type ResourceResourceSchema,
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
@@ -267,7 +261,7 @@ export default function TeacherQuestion() {
     React.useState<QuestionConnectionResourceSchema | null>(null);
 
   // 在 selectedCourseId 声明之后调用 hook
-  const { getLabel, shouldSeed, seedDefaults, isSeeding } = useQuestionLevelConfig(selectedCourseId);
+  const { getLabel, shouldSeed, seedDefaults } = useQuestionLevelConfig(selectedCourseId);
   const [tabValue, setTabValue] = React.useState("questions");
   const [importResultModalOpen, setImportResultModalOpen] =
     React.useState(false);
@@ -543,48 +537,6 @@ export default function TeacherQuestion() {
     },
     onError: (error: any) => {
       message.error(error?.message || "删除失败，请重试");
-    },
-  });
-
-  // 上移问题
-  const moveUpMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const result = await moveQuestionUp({
-        tenant,
-        primaryKey: id,
-        fields: ["id"],
-        headers: getAuthHeaders(user) as Record<string, string>,
-      });
-      if (!result.success) throw new Error("Failed to move up");
-      return result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["questions", tenant] });
-      message.success("上移成功");
-    },
-    onError: () => {
-      message.error("上移失败");
-    },
-  });
-
-  // 下移问题
-  const moveDownMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const result = await moveQuestionDown({
-        tenant,
-        primaryKey: id,
-        fields: ["id"],
-        headers: getAuthHeaders(user) as Record<string, string>,
-      });
-      if (!result.success) throw new Error("Failed to move down");
-      return result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["questions", tenant] });
-      message.success("下移成功");
-    },
-    onError: () => {
-      message.error("下移失败");
     },
   });
 
@@ -931,7 +883,7 @@ export default function TeacherQuestion() {
       try {
         await deleteQuestionMutation.mutateAsync(id);
         successIds.push(id);
-      } catch (error) {
+      } catch {
         failedIds.push(id);
       }
     }
@@ -977,7 +929,7 @@ export default function TeacherQuestion() {
         courseId: selectedCourseId,
         attributes,
       });
-    } catch (error) {
+    } catch {
       message.error("导入失败，请重试");
     }
   };
@@ -1024,7 +976,7 @@ export default function TeacherQuestion() {
       } else {
         message.error("下载模板失败，请稍后重试");
       }
-    } catch (error) {
+    } catch {
       message.error("下载模板失败，请稍后重试");
     }
   };
@@ -1318,29 +1270,19 @@ export default function TeacherQuestion() {
   ];
 
   return (
-    <div className="question-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.question-wrap{padding:12px!important}.question-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <FileTextOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-                  <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>
-          问题管理
-        </Title>
-      </div>
+    <AppPage
+      title="问题管理"
+      description="管理课程问题与知识关联"
+      actions={
+        <Button
+          type="text"
+          className="teacher-page-back-btn"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
+      <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
       {/* 课程选择独立一行 */}
       <div style={{ marginTop: 16, marginBottom: 16 }}>
@@ -2021,6 +1963,6 @@ export default function TeacherQuestion() {
         onClose={() => setConfigModalOpen(false)}
         courseId={selectedCourseId}
       />
-    </div>
+    </AppPage>
   );
 }

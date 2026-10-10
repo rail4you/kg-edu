@@ -10,6 +10,7 @@ import { useTenantFilter, ALL_TENANTS } from "@/hooks/use-tenant-filter";
 import { TenantLayout } from "@/components/admin/tenant-layout";
 import { MobileTableCard } from "@/components/admin/mobile-table-card";
 import { useResponsive } from "@/hooks/use-responsive";
+import { AppPage } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -251,14 +252,16 @@ export default function PermissionsManagement() {
 
   if (!hasTenant()) {
     return (
-      <Card>
-        <Alert
-          message="需要选择组织"
-          description="请先在组织管理页面选择一个组织，然后返回此页面查看用户权限。"
-          type="info"
-          showIcon
-        />
-      </Card>
+      <AppPage title="权限管理" description="查看用户角色与权限">
+        <Card>
+          <Alert
+            message="需要选择组织"
+            description="请先在组织管理页面选择一个组织，然后返回此页面查看用户权限。"
+            type="info"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -268,7 +271,7 @@ export default function PermissionsManagement() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage title="权限管理" description="查看用户角色与权限">
       {/* ── User list ── */}
       <Card styles={{ body: { padding: isMobile ? 12 : 20 } }}>
         <div style={{ marginBottom: isMobile ? 12 : 20 }}>
@@ -351,7 +354,7 @@ export default function PermissionsManagement() {
           />
         )}
       </Card>
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }

@@ -22,7 +22,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  InfoCircleOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 import EmptyState from "@/components/EmptyState";
@@ -40,6 +39,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import type { ColumnsType } from "antd/es/table";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -452,36 +452,18 @@ export default function CourseInfoPage() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 0",
-          borderBottom: "1px solid #f0f0f0",
-          gap: 12,
-        }}
-      >
-        <InfoCircleOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-                  <Button
-
-                    className="teacher-page-back-btn"
-
-                    type="text"
-
-                    icon={<ArrowLeftOutlined />}
-
-                    onClick={() => navigate("/teacher/dashboard")}
-
-                    style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-
-                  />
-
-        <Title level={4} style={{ margin: 0 }}>
-          课程信息管理
-        </Title>
-      </div>
-
+    <AppPage
+      title="课程信息管理"
+      description="管理课程背景与教学要求"
+      actions={
+        <Button
+          className="teacher-page-back-btn"
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard")}
+        />
+      }
+    >
       {coursesLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
           <Spin size="large" />
@@ -581,6 +563,6 @@ export default function CourseInfoPage() {
       >
         {renderForm()}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

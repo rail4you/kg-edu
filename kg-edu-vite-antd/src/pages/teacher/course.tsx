@@ -50,8 +50,9 @@ import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders } from "@/utils/api-helpers";
 import { useTranslate } from "@/locales/use-locales";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const EDUCATION_LEVEL_OPTIONS = [
@@ -91,9 +92,6 @@ export default function CourseManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
-  // 颜色主题 Modal 状态
-  const [colorSchemeCourseId, setColorSchemeCourseId] = useState<string | null>(null);
-
   const tenant = currentTenant?.schemaName || "";
   const { t } = useTranslate("teacher");
   const { canEdit } = useEditPermission();
@@ -109,16 +107,8 @@ export default function CourseManagementPage() {
     }
     style.textContent = `
       @media (max-width: 768px) {
-        .course-back-btn { display: inline-flex !important; }
         .course-mobile-table-hide { display: none !important; }
-        .course-toolbar { flex-wrap: wrap; }
-        .course-page-wrap { padding: 12px !important; }
-        .course-page-wrap .ant-table-cell { padding: 8px 6px !important; }
-        .course-page-wrap .ant-btn { font-size: 12px !important; padding: 2px 6px !important; }
-        .course-page-wrap .course-action-text { display: none !important; }
-      }
-      @media (min-width: 769px) {
-        .course-back-btn { display: none !important; }
+        .course-action-text { display: none !important; }
       }
     `;
     return () => { style.remove(); };
@@ -466,37 +456,31 @@ export default function CourseManagementPage() {
   ];
 
   return (
-    <div className="course-page-wrap" style={{ padding: 24 }}>
-      {/* 标题区域 */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+    <AppPage
+      title={t("pages.course.title")}
+      description="管理课程信息与发布状态"
+      actions={
+        <>
           <Button
-            className="course-back-btn"
+            className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-          <ReadOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-          <Title level={4} style={{ margin: 0 }}>{t("pages.course.title")}</Title>
-        </div>
-      </div>
-
-      {/* 工具栏 */}
-      <div className="course-toolbar" style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setCreateModalOpen(true); }} style={canEdit ? undefined : { display: "none" }}>
-          {t("pages.course.addCourse")}
-        </Button>
-        <Space.Compact>
-          <Button type={viewMode === "card" ? "primary" : "default"} icon={<AppstoreOutlined />} onClick={() => setViewMode("card")}>
-            卡片
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setCreateModalOpen(true); }} style={canEdit ? undefined : { display: "none" }}>
+            {t("pages.course.addCourse")}
           </Button>
-          <Button type={viewMode === "table" ? "primary" : "default"} icon={<UnorderedListOutlined />} onClick={() => setViewMode("table")}>
-            表格
-          </Button>
-        </Space.Compact>
-      </div>
-
+          <Space.Compact>
+            <Button type={viewMode === "card" ? "primary" : "default"} icon={<AppstoreOutlined />} onClick={() => setViewMode("card")}>
+              卡片
+            </Button>
+            <Button type={viewMode === "table" ? "primary" : "default"} icon={<UnorderedListOutlined />} onClick={() => setViewMode("table")}>
+              表格
+            </Button>
+          </Space.Compact>
+        </>
+      }
+    >
       {/* 内容区域 */}
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}><Spin size="large" /></div>
@@ -636,6 +620,6 @@ export default function CourseManagementPage() {
       <Modal open={editModalOpen} onCancel={() => { setEditModalOpen(false); setEditingCourse(null); }} title={t("pages.course.editCourseTitle")} width={600} onOk={() => form.submit()} confirmLoading={updateMutation.isPending}>
         {renderForm()}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

@@ -24,7 +24,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  ApartmentOutlined,
   BookOutlined,
   TeamOutlined,
   UploadOutlined,
@@ -46,8 +45,9 @@ import {
 import { getSTSToken, uploadFileToOSS } from "@/lib/oss-upload";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   draft: { color: "default", label: "草稿" },
@@ -381,36 +381,30 @@ export default function MicroMajorDashboard() {
   ];
 
   return (
-    <div className="mm-dashboard-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.mm-dashboard-wrap{padding:12px!important}.mm-dashboard-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-                  <Button
+    <AppPage
+      className="mm-dashboard-wrap"
+      title="微专业管理"
+      description="管理微专业与课程体系"
+      actions={
+        <>
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={3} style={{ margin: 0 }}>
-          <ApartmentOutlined style={{ marginRight: 8 }} />
-          微专业管理
-        </Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setCreateModalOpen(true)}
-          style={canEdit ? undefined : { display: "none" }}
-        >
-          创建微专业
-        </Button>
-      </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalOpen(true)}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            创建微专业
+          </Button>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.mm-dashboard-wrap{padding:12px!important}.mm-dashboard-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 
       <Card>
         <Table
@@ -591,6 +585,6 @@ export default function MicroMajorDashboard() {
           </Row>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

@@ -11,13 +11,14 @@ import {
   Upload,
   message,
 } from "antd";
-import { CloudUploadOutlined, UploadOutlined, CloseOutlined } from "@ant-design/icons";
+import { UploadOutlined, CloseOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 export default function VideoUploader() {
@@ -160,16 +161,9 @@ export default function VideoUploader() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 24 }}>
+    <AppPage title="视频上传" description="上传视频并生成播放地址" style={{ maxWidth: 600 }}>
       <Card>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          <Title level={4} style={{ margin: 0 }}>
-            <Space>
-              <CloudUploadOutlined />
-              Upload Video
-            </Space>
-          </Title>
-
           {status && (
             <Alert
               type={
@@ -267,6 +261,6 @@ export default function VideoUploader() {
           {videoUrl && <TextArea value={videoUrl} disabled rows={2} />}
         </Space>
       </Card>
-    </div>
+    </AppPage>
   );
 }

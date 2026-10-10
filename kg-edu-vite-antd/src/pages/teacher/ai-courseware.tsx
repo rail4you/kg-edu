@@ -10,7 +10,6 @@ import {
   Table,
   Tag,
   Space,
-  Avatar,
   List,
   Progress,
   Switch,
@@ -51,8 +50,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Courseware {
   id: string;
@@ -965,109 +965,24 @@ export default function AICoursewarePage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 24 }}>
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Title level={4} style={{ marginBottom: 4 }}>
-              AI教案课件知识库
-            </Title>
-            <Text type="secondary">
-              智能生成和管理您的教学资源，支持AI辅助创建和RAG知识库解析
-            </Text>
-          </Col>
-          <Col>
-            <Button type="primary" icon={<ReloadOutlined />}>
-              刷新知识库
-            </Button>
-          </Col>
-        </Row>
-      </div>
-
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={12} md={6}>
-          <Card>
-            <Space>
-              <Avatar
-                style={{ backgroundColor: "#1890ff" }}
-                icon={<FileTextOutlined />}
-              />
-              <div>
-                <Statistic
-                  title={null}
-                  value={coursewareList.length}
-                  valueStyle={{ fontSize: 24, fontWeight: 600 }}
-                />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  总资源数
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card>
-            <Space>
-              <Avatar
-                style={{ backgroundColor: "#52c41a" }}
-                icon={<StarOutlined />}
-              />
-              <div>
-                <Statistic
-                  title={null}
-                  value={
-                    coursewareList.filter((item) => item.aiGenerated).length
-                  }
-                  valueStyle={{ fontSize: 24, fontWeight: 600 }}
-                />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  AI生成
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card>
-            <Space>
-              <Avatar
-                style={{ backgroundColor: "#722ed1" }}
-                icon={<BookOutlined />}
-              />
-              <div>
-                <Statistic
-                  title={null}
-                  value={4}
-                  valueStyle={{ fontSize: 24, fontWeight: 600 }}
-                />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  学科覆盖
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card>
-            <Space>
-              <Avatar
-                style={{ backgroundColor: "#faad14" }}
-                icon={<CloudUploadOutlined />}
-              />
-              <div>
-                <Statistic
-                  title={null}
-                  value="12.5MB"
-                  valueStyle={{ fontSize: 24, fontWeight: 600 }}
-                />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  存储空间
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-      </Row>
+    <AppPage
+      title="AI教案课件知识库"
+      description="智能生成和管理您的教学资源，支持AI辅助创建和RAG知识库解析"
+      actions={
+        <Button type="primary" icon={<ReloadOutlined />}>
+          刷新知识库
+        </Button>
+      }
+    >
+      <StatGrid
+        columns={4}
+        items={[
+          { label: "总资源数", value: coursewareList.length, icon: <FileTextOutlined /> },
+          { label: "AI生成", value: coursewareList.filter((item) => item.aiGenerated).length, icon: <StarOutlined /> },
+          { label: "学科覆盖", value: 4, icon: <BookOutlined /> },
+          { label: "存储空间", value: "12.5MB", icon: <CloudUploadOutlined /> },
+        ]}
+      />
 
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
 
@@ -1078,6 +993,6 @@ export default function AICoursewarePage() {
         style={{ right: 24, bottom: 24 }}
       />
       )}
-    </div>
+    </AppPage>
   );
 }

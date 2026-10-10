@@ -848,7 +848,7 @@ export default function TeacherGraphQuestionView({ courseId, hideManagement }: {
           display: "flex",
           alignItems: "center",
           gap: isMobile ? 4 : 16,
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid var(--pu-line)",
           backgroundColor: "white",
           flexShrink: 0,
           flexWrap: isMobile ? "wrap" : "nowrap",
@@ -878,7 +878,7 @@ export default function TeacherGraphQuestionView({ courseId, hideManagement }: {
                 }
               } catch {}
             }}
-              style={{ background: "#f5f5f5", border: "1px solid #d9d9d9", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}>
+              style={{ background: "#fff", border: "1px solid var(--pu-line)", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}>
               {label as string}
             </button>
           ))}

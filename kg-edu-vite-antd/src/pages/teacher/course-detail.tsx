@@ -31,6 +31,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { myCourses, listMajorCourses, getMajor } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -117,18 +118,18 @@ export default function CourseDetailPage() {
 
   if (!courseId) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="课程详情">
         <Empty description="缺少课程 ID" />
         <Button onClick={() => navigate("/teacher/dashboard/course")}>
           返回课程列表
         </Button>
-      </div>
+      </AppPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="课程详情">
         <div style={{ marginBottom: 16 }}>
           <Skeleton active paragraph={{ rows: 1 }} />
         </div>
@@ -138,18 +139,18 @@ export default function CourseDetailPage() {
             <div style={{ marginTop: 12, color: "#999" }}>加载中...</div>
           </div>
         </Card>
-      </div>
+      </AppPage>
     );
   }
 
   if (!course) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="课程详情">
         <Empty description="课程不存在" />
         <Button onClick={() => navigate("/teacher/dashboard/course")}>
           返回课程列表
         </Button>
-      </div>
+      </AppPage>
     );
   }
 
@@ -392,31 +393,24 @@ export default function CourseDetailPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
+    <AppPage
+      title={
         <Space>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard/course")}
-          >
-            返回课程列表
-          </Button>
-          <Title level={4} style={{ margin: 0 }}>
-            {course.title}
-          </Title>
+          {course.title}
           <Tag color={course.publishStatus ? "green" : "default"}>
             {course.publishStatus ? "已发布" : "草稿"}
           </Tag>
         </Space>
+      }
+      description="课程基本信息与专业关联"
+      actions={
         <Space>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard/course")}
+          />
           <Button
             icon={<BookOutlined />}
             onClick={() =>
@@ -429,8 +423,8 @@ export default function CourseDetailPage() {
             编辑课程
           </Button>
         </Space>
-      </div>
-
+      }
+    >
       <Card>
         <Tabs
           defaultActiveKey="basic"
@@ -438,6 +432,6 @@ export default function CourseDetailPage() {
           size="large"
         />
       </Card>
-    </div>
+    </AppPage>
   );
 }

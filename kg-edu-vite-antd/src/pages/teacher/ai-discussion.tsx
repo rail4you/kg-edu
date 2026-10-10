@@ -39,6 +39,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -1177,108 +1178,34 @@ export default function AIDiscussionPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <Title
-            level={4}
-            style={{ margin: 0, marginBottom: 4, fontWeight: 600 }}
-          >
-            AI课程讨论
-          </Title>
-          <Text type="secondary">智能聊天组与签到管理，打造互动式课堂体验</Text>
-        </div>
+    <AppPage
+      title="AI课程讨论"
+      description="智能聊天组与签到管理"
+      actions={
         <Button icon={<PlusOutlined />} style={canEdit ? undefined : { display: "none" }}>创建讨论组</Button>
-      </div>
-
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card styles={{ body: { padding: 16 } }}>
-            <Space>
-              <Avatar style={{ backgroundColor: "#1890ff" }}>
-                <CommentOutlined />
-              </Avatar>
-              <div>
-                <Title level={5} style={{ margin: 0, fontWeight: 600 }}>
-                  {chatGroups.length}
-                </Title>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  讨论组总数
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card styles={{ body: { padding: 16 } }}>
-            <Space>
-              <Avatar style={{ backgroundColor: "#52c41a" }}>
-                <TeamOutlined />
-              </Avatar>
-              <div>
-                <Title level={5} style={{ margin: 0, fontWeight: 600 }}>
-                  {chatGroups.reduce(
-                    (acc, group) => acc + group.participants.length,
-                    0,
-                  )}
-                </Title>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  总参与人数
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card styles={{ body: { padding: 16 } }}>
-            <Space>
-              <Avatar style={{ backgroundColor: "#faad14" }}>
-                <RobotOutlined />
-              </Avatar>
-              <div>
-                <Title level={5} style={{ margin: 0, fontWeight: 600 }}>
-                  {chatGroups.reduce(
-                    (acc, group) => acc + group.aiCharacters.length,
-                    0,
-                  )}
-                </Title>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  AI助教数量
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card styles={{ body: { padding: 16 } }}>
-            <Space>
-              <Avatar style={{ backgroundColor: "#1890ff" }}>
-                <CheckCircleOutlined />
-              </Avatar>
-              <div>
-                <Title level={5} style={{ margin: 0, fontWeight: 600 }}>
-                  {Math.round(
-                    (chatGroups.filter((g) => g.checkInEnabled).length /
-                      chatGroups.length) *
-                      100,
-                  )}
-                  %
-                </Title>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  启用签到率
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-      </Row>
+      }
+    >
+      <StatGrid
+        columns={4}
+        items={[
+          { label: "讨论组总数", value: chatGroups.length, icon: <CommentOutlined /> },
+          {
+            label: "总参与人数",
+            value: chatGroups.reduce((acc, group) => acc + group.participants.length, 0),
+            icon: <TeamOutlined />,
+          },
+          {
+            label: "AI助教数量",
+            value: chatGroups.reduce((acc, group) => acc + group.aiCharacters.length, 0),
+            icon: <RobotOutlined />,
+          },
+          {
+            label: "启用签到率",
+            value: `${Math.round((chatGroups.filter((g) => g.checkInEnabled).length / chatGroups.length) * 100)}%`,
+            icon: <CheckCircleOutlined />,
+          },
+        ]}
+      />
 
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
 
@@ -1297,6 +1224,6 @@ export default function AIDiscussionPage() {
         }}
       />
       )}
-    </div>
+    </AppPage>
   );
 }

@@ -8,7 +8,6 @@ import {
   Typography,
   App,
   Alert,
-  Descriptions,
   Tag,
   Spin,
   Tooltip,
@@ -16,7 +15,6 @@ import {
 import {
   KeyOutlined,
   SaveOutlined,
-  ApiOutlined,
   CheckCircleOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -28,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { useResponsive } from "@/hooks/use-responsive";
+import { AppPage } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -86,7 +85,7 @@ function maskKey(key: string): string {
   return key.slice(0, 4) + "••••••••" + key.slice(-4);
 }
 
-async function copyToClipboard(text: string, message: any) {
+async function copyToClipboard(text: string, message: { success: (s: string) => void; error: (s: string) => void }) {
   try {
     await navigator.clipboard.writeText(text);
     message.success("已复制到剪贴板");
@@ -125,38 +124,39 @@ export default function ApiKeyConfigPage() {
         message.error("保存失败，请重试");
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       message.error(error?.message || "保存失败");
     },
   });
 
   if (!isSuperAdmin) {
     return (
-      <div style={{ padding: isMobile ? 12 : 24 }}>
+      <AppPage title="API Key 配置" description="配置通义千问 DashScope 密钥">
         <Alert
           type="error"
           message="权限不足"
           description="只有超级管理员可以管理 API Key 配置"
         />
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: isMobile ? 12 : 24 }}>
+    <AppPage
+      title="API Key 配置"
+      description="配置通义千问 DashScope 密钥"
+      actions={
+        <Space wrap>
+          <Tag color="blue">DashScope</Tag>
+          {config ? (
+            <Tag color="green" icon={<CheckCircleOutlined />}>已配置</Tag>
+          ) : (
+            <Tag color="orange" icon={<WarningOutlined />}>未配置</Tag>
+          )}
+        </Space>
+      }
+    >
       <Card
-        title={
-          <Space wrap size={isMobile ? 2 : 4} style={{ fontSize: isMobile ? 13 : 14 }}>
-            <ApiOutlined style={{ color: "#1677ff", fontSize: isMobile ? 14 : 16 }} />
-            <span>{isMobile ? "Qwen" : "通义千问 (Qwen)"}</span>
-            <Tag color="blue" style={{ fontSize: isMobile ? 10 : 12, lineHeight: isMobile ? "18px" : "22px", padding: isMobile ? "0 4px" : undefined }}>DashScope</Tag>
-            {config ? (
-              <Tag color="green" icon={<CheckCircleOutlined />} style={{ fontSize: isMobile ? 10 : 12, lineHeight: isMobile ? "18px" : "22px", padding: isMobile ? "0 4px" : undefined }}>已配置</Tag>
-            ) : (
-              <Tag color="orange" icon={<WarningOutlined />} style={{ fontSize: isMobile ? 10 : 12, lineHeight: isMobile ? "18px" : "22px", padding: isMobile ? "0 4px" : undefined }}>未配置</Tag>
-            )}
-          </Space>
-        }
         size={isMobile ? "small" : "default"}
         style={{ marginBottom: isMobile ? 16 : 24 }}
         styles={{ body: { padding: isMobile ? 12 : 24 } }}
@@ -355,6 +355,6 @@ export default function ApiKeyConfigPage() {
           style={{ marginTop: isMobile ? 12 : 16 }}
         />
       </Card>
-    </div>
+    </AppPage>
   );
 }

@@ -16,8 +16,9 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCompetenciesByMajor } from "@/lib/ash_rpc";
 import { generateCompetencyGraph } from "@/lib/agent_api";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const CATEGORY_MAP: Record<string, { label: string }> = {
@@ -369,36 +370,29 @@ export default function MajorCompetency() {
   const hasGraph = graphData !== null && graphData.nodes.length > 0;
 
   return (
-    <div style={{ padding: "20px 24px" }}>
-      {/* Top bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexShrink: 0 }}>
-        <Button
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)}
-          style={{ padding: "4px 0" }}
-        >
-          返回专业管理
-        </Button>
-      </div>
-
-      {/* Header row */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12, flexShrink: 0 }}>
-        <div>
-          <Title level={4} style={{ margin: 0 }}>能力图谱构建</Title>
-          <Text type="secondary" style={{ fontSize: 13 }}>基于 AI 分析专业与岗位数据，自动生成能力素质图谱</Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<ThunderboltOutlined />}
-          loading={generateMutation.isPending}
-          onClick={() => generateMutation.mutate()}
-          size="large"
-        >
-          {generateMutation.isPending ? "AI 生成中..." : hasGraph ? "重新生成" : "AI 生成图谱"}
-        </Button>
-      </div>
-
+    <AppPage
+      title="能力图谱构建"
+      description="基于 AI 分析生成能力素质图谱"
+      actions={
+        <>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(`/teacher/dashboard/major-detail/${majorId}`)}
+          />
+          <Button
+            type="primary"
+            icon={<ThunderboltOutlined />}
+            loading={generateMutation.isPending}
+            onClick={() => generateMutation.mutate()}
+            size="large"
+          >
+            {generateMutation.isPending ? "AI 生成中..." : hasGraph ? "重新生成" : "AI 生成图谱"}
+          </Button>
+        </>
+      }
+    >
       {/* Stats + Prompt — inline bar */}
       {hasGraph && !generateMutation.isPending && (
         <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 16, flexShrink: 0, flexWrap: "wrap" }}>
@@ -578,6 +572,6 @@ export default function MajorCompetency() {
           </div>
         )}
       </Drawer>
-    </div>
+    </AppPage>
   );
 }

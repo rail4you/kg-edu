@@ -52,6 +52,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useCourses } from "@/hooks/use-courses";
+import { AppPage, StatGrid } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -1014,65 +1015,71 @@ export default function StudySummary() {
 
   if (!tenantName) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Title level={4} style={{ marginBottom: 16, color: "#faad14" }}>
-          未选择组织
-        </Title>
-        <Text style={{ marginBottom: 24 }}>
-          请选择一个组织以查看学习数据分析。
-        </Text>
-        <Button
-          type="primary"
-          onClick={() => (window.location.href = "/dashboard/organization")}
+      <AppPage title="学习数据分析" description="基于课程内容的深度分析报告">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
         >
-          选择组织
-        </Button>
-      </div>
+          <Title level={4} style={{ marginBottom: 16, color: "#faad14" }}>
+            未选择组织
+          </Title>
+          <Text style={{ marginBottom: 24 }}>
+            请选择一个组织以查看学习数据分析。
+          </Text>
+          <Button
+            type="primary"
+            onClick={() => (window.location.href = "/dashboard/organization")}
+          >
+            选择组织
+          </Button>
+        </div>
+      </AppPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Spin size="large" />
-        <Text style={{ marginLeft: 16 }}>
-          {studentStatsLoading
-            ? "加载学习统计数据中..."
-            : courseStatsLoading
-              ? "加载课程统计数据中..."
-              : "加载课程数据中..."}
-        </Text>
-      </div>
+      <AppPage title="学习数据分析" description="基于课程内容的深度分析报告">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <Spin size="large" />
+          <Text style={{ marginLeft: 16 }}>
+            {studentStatsLoading
+              ? "加载学习统计数据中..."
+              : courseStatsLoading
+                ? "加载课程统计数据中..."
+                : "加载课程数据中..."}
+          </Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (courses.length === 0) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Empty description="暂无课程数据" />
-      </div>
+      <AppPage title="学习数据分析" description="基于课程内容的深度分析报告">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <Empty description="暂无课程数据" />
+        </div>
+      </AppPage>
     );
   }
 
@@ -1682,123 +1689,63 @@ export default function StudySummary() {
   ];
 
   return (
-    <div style={{ backgroundColor: "#F8F9FA", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: 24 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 32,
-            background: "#fff",
-            padding: "20px 24px",
-            borderRadius: 8,
-            border: "1px solid #E0E0E0",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <BarChartOutlined style={{ fontSize: 28, color: "#0056D2" }} />
-            <div>
-              <Title level={4} style={{ margin: 0, fontWeight: 700, color: "#1F1F1F" }}>
-                学习数据分析 - {tenantDisplayName}
-              </Title>
-              <Text style={{ fontSize: 14, color: "#5E5E5E" }}>基于课程内容的深度分析报告</Text>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <Select
-              value={selectedCourseId}
-              onChange={setSelectedCourseId}
-              style={{ minWidth: 300 }}
-              placeholder="选择课程"
-              options={courses?.map?.((course: any) => ({
-                value: course?.id,
-                label: course?.title,
-              }))}
+    <AppPage
+      title="学习数据分析"
+      description="基于课程内容的深度分析报告"
+      actions={
+        <>
+          <Select
+            value={selectedCourseId}
+            onChange={setSelectedCourseId}
+            style={{ minWidth: 300 }}
+            placeholder="选择课程"
+            options={courses?.map?.((course: any) => ({
+              value: course?.id,
+              label: course?.title,
+            }))}
+          />
+          <Tooltip title="刷新数据">
+            <Button
+              type="text"
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
             />
-            <Tooltip title="刷新数据">
-              <Button
-                type="text"
-                icon={<ReloadOutlined />}
-                onClick={handleRefresh}
-              />
-            </Tooltip>
-            <Tooltip title="导出报告">
-              <Button
-                type="text"
-                icon={<DownloadOutlined />}
-                onClick={handleExportData}
-              />
-            </Tooltip>
-          </div>
-        </div>
-
-        <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
-          <Col xs={12} sm={6}>
-            <div style={{
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              borderRadius: 8,
-              padding: "20px 24px",
-              borderLeft: "4px solid #0056D2",
-            }}>
-              <div style={{ fontSize: 13, color: "#5E5E5E", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                <ReadOutlined style={{ color: "#0056D2" }} /> 总内容数量
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#0056D2" }}>
-                {analyticsData.totalContent}
-              </div>
-            </div>
-          </Col>
-          <Col xs={12} sm={6}>
-            <div style={{
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              borderRadius: 8,
-              padding: "20px 24px",
-              borderLeft: "4px solid #18842C",
-            }}>
-              <div style={{ fontSize: 13, color: "#5E5E5E", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                <FileTextOutlined style={{ color: "#18842C" }} /> 练习题数量
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#18842C" }}>
-                {exercises.length}
-              </div>
-            </div>
-          </Col>
-          <Col xs={12} sm={6}>
-            <div style={{
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              borderRadius: 8,
-              padding: "20px 24px",
-              borderLeft: "4px solid #6B2FA0",
-            }}>
-              <div style={{ fontSize: 13, color: "#5E5E5E", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                <SolutionOutlined style={{ color: "#6B2FA0" }} /> 平均分数
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#6B2FA0" }}>
-                {analyticsData.avgScore}
-              </div>
-            </div>
-          </Col>
-          <Col xs={12} sm={6}>
-            <div style={{
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              borderRadius: 8,
-              padding: "20px 24px",
-              borderLeft: "4px solid #E65100",
-            }}>
-              <div style={{ fontSize: 13, color: "#5E5E5E", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                <RiseOutlined style={{ color: "#E65100" }} /> AI内容比例
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#E65100" }}>
-                {analyticsData.aiContentRatio}%
-              </div>
-            </div>
-          </Col>
-        </Row>
+          </Tooltip>
+          <Tooltip title="导出报告">
+            <Button
+              type="text"
+              icon={<DownloadOutlined />}
+              onClick={handleExportData}
+            />
+          </Tooltip>
+        </>
+      }
+    >
+      <>
+        <StatGrid
+          items={[
+            {
+              label: "总内容数量",
+              value: analyticsData.totalContent,
+              icon: <ReadOutlined />,
+            },
+            {
+              label: "练习题数量",
+              value: exercises.length,
+              icon: <FileTextOutlined />,
+            },
+            {
+              label: "平均分数",
+              value: analyticsData.avgScore,
+              icon: <SolutionOutlined />,
+            },
+            {
+              label: "AI内容比例",
+              value: `${analyticsData.aiContentRatio}%`,
+              icon: <RiseOutlined />,
+            },
+          ]}
+        />
 
         <Tabs
           activeKey={activeTab}
@@ -1842,7 +1789,7 @@ export default function StudySummary() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </>
+    </AppPage>
   );
 }

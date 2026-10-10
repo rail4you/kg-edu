@@ -14,7 +14,6 @@ import {
   Input,
   App,
   Popconfirm,
-  Tag,
   Form,
 } from "antd";
 import {
@@ -46,6 +45,7 @@ import { useResponsive } from "@/hooks/use-responsive";
 import { useTenantFilter, ALL_TENANTS } from "@/hooks/use-tenant-filter";
 import { TenantLayout } from "@/components/admin/tenant-layout";
 import { fetchAcrossTenants } from "@/lib/tenant-query";
+import { AppPage, StatGrid } from "@/components/proto";
 import type { IUserItem } from "@/types/user";
 
 interface UserData {
@@ -454,14 +454,16 @@ export default function AdminManagement() {
 
   if (!isSuperAdmin && !hasTenant()) {
     return (
-      <Card>
-        <Alert
-          message="请先选择组织"
-          description="管理员管理需要在特定组织/租户下进行。请先选择一个组织。"
-          type="warning"
-          showIcon
-        />
-      </Card>
+      <AppPage title="管理员管理" description="管理组织内的管理员账户">
+        <Card>
+          <Alert
+            message="请先选择组织"
+            description="管理员管理需要在特定组织/租户下进行。请先选择一个组织。"
+            type="warning"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -471,32 +473,13 @@ export default function AdminManagement() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage title="管理员管理" description="管理组织内的管理员账户">
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
         {/* 顶部信息栏：管理员统计 */}
-        <div
-          style={{
-            marginBottom: isMobile ? 12 : 16,
-            padding: isMobile ? 10 : 12,
-            borderRadius: 8,
-            background: "#f6f8fa",
-            border: "1px solid #e8eaed",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            <Tag color="blue" style={{ fontSize: isMobile ? 11 : 13, padding: isMobile ? "0 8px" : "0 10px", lineHeight: isMobile ? "22px" : "24px", flexShrink: 0 }}>
-              管理员: {users.length}
-            </Tag>
-          </div>
-        </div>
+        <StatGrid
+          columns={4}
+          items={[{ label: "管理员", value: users.length }]}
+        />
 
         {/* 移动端工具栏 */}
         {isMobile && (
@@ -762,7 +745,7 @@ export default function AdminManagement() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }

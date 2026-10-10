@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Card, Table, Button, Typography, Tag, Modal, Input, Space, message, Popconfirm, Select, DatePicker, Row, Col, QRCode, Progress, Tooltip, Descriptions, InputNumber, Empty, Divider,
+  Card, Table, Button, Typography, Tag, Modal, Input, Space, message, Popconfirm, Select, QRCode, Progress, Tooltip, Descriptions, InputNumber, Empty, Divider,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
-  PlusOutlined, SendOutlined, StopOutlined, QrcodeOutlined, DeleteOutlined, FileTextOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined,
+  PlusOutlined, SendOutlined, StopOutlined, QrcodeOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
@@ -16,8 +16,9 @@ import { getTasksByCourse, createTask, publishTask, closeTask, deleteTask, getGr
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 const TASK_TYPE_LABELS: Record<string, string> = { submission: "提交任务", discussion: "讨论任务", survey: "投票调查", file_upload: "文件上传" };
@@ -336,23 +337,25 @@ export default function GroupTaskPage() {
   ];
 
   return (
-    <div className="group-task-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.group-task-wrap{padding:12px!important}.group-task-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>          <Button
+    <AppPage
+      className="group-task-wrap"
+      title="分组任务"
+      description="为分组发布任务并跟踪完成进度"
+      actions={
+        <>
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={4} style={{ margin: 0 }}><FileTextOutlined /> 分组任务</Title></Col>
-          <Col><Space>
-            <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId} onChange={setSelectedCourseId} options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
-            <Button type="primary" icon={<PlusOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }} onClick={() => { setFormData({ title: "", description: "", taskType: "submission", dueDate: null, groupId: null }); setDialogOpen(true); }}>创建任务</Button>
-          </Space></Col>
-        </Row>
+          <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId} onChange={setSelectedCourseId} options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
+          <Button type="primary" icon={<PlusOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }} onClick={() => { setFormData({ title: "", description: "", taskType: "submission", dueDate: null, groupId: null }); setDialogOpen(true); }}>创建任务</Button>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.group-task-wrap{padding:12px!important}.group-task-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <Card>
         <Table columns={columns} dataSource={tasks} rowKey="id" loading={isLoading} locale={{ emptyText: selectedCourseId ? "暂无任务" : "请先选择课程" }} />
       </Card>
 
@@ -408,12 +411,15 @@ export default function GroupTaskPage() {
               const percent = totalMembers > 0 ? Math.round((submittedCount / totalMembers) * 100) : 0;
               return (
                 <Card size="small" style={{ marginBottom: 16, background: "#fafafa" }}>
-                  <Row gutter={24}>
-                    <Col span={6}><div style={{ textAlign: "center" }}><div style={{ fontSize: 24, fontWeight: 600 }}>{totalMembers}</div><Text type="secondary">总人数</Text></div></Col>
-                    <Col span={6}><div style={{ textAlign: "center" }}><div style={{ fontSize: 24, fontWeight: 600, color: "#1890ff" }}>{submittedCount}</div><Text type="secondary">已提交</Text></div></Col>
-                    <Col span={6}><div style={{ textAlign: "center" }}><div style={{ fontSize: 24, fontWeight: 600, color: "#52c41a" }}>{gradedCount}</div><Text type="secondary">已评分</Text></div></Col>
-                    <Col span={6}><div style={{ textAlign: "center" }}><div style={{ fontSize: 24, fontWeight: 600, color: "#faad14" }}>{totalMembers - submittedCount}</div><Text type="secondary">未提交</Text></div></Col>
-                  </Row>
+                  <StatGrid
+                    columns={4}
+                    items={[
+                      { label: "总人数", value: totalMembers },
+                      { label: "已提交", value: submittedCount },
+                      { label: "已评分", value: gradedCount },
+                      { label: "未提交", value: totalMembers - submittedCount },
+                    ]}
+                  />
                   <div style={{ marginTop: 12 }}><Progress percent={percent} strokeColor="#1890ff" /></div>
                 </Card>
               );
@@ -526,6 +532,6 @@ export default function GroupTaskPage() {
           </>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

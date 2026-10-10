@@ -8,7 +8,7 @@ import {
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ApartmentOutlined,
+  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined,
   CopyOutlined, CheckCircleOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons";
@@ -23,8 +23,9 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Graph {
   id: string;
@@ -222,51 +223,51 @@ export default function TeacherJobCompetencyGraphs() {
   ];
 
   return (
-    <div className="job-competency-graphs-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.job-competency-graphs-wrap{padding:12px!important}.job-competency-graphs-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>          <Button
+    <AppPage
+      className="job-competency-graphs-wrap"
+      title="岗位能力图谱"
+      description="管理岗位能力图谱版本与激活"
+      actions={
+        <>
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={4} style={{ margin: 0 }}><ApartmentOutlined /> 岗位能力图谱</Title></Col>
-          <Col>
-            <Space>
-              <Select
-                allowClear
-                placeholder="按专业筛选"
-                style={{ width: 180 }}
-                value={majorFilter}
-                onChange={setMajorFilter}
-                options={majors.map(m => ({ value: m.id, label: m.name }))}
-              />
-              <Select
-                allowClear
-                placeholder="按岗位筛选"
-                style={{ width: 220 }}
-                value={jobFilter}
-                onChange={setJobFilterAndUrl}
-                options={jobs.map(j => ({ value: j.id, label: j.title }))}
-              />
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setEditing(null);
-                  setForm({ name: "", description: "", isActive: true, version: 1, jobPositionId: jobFilter });
-                  setDialogOpen(true);
-                }}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                创建图谱
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+          <Select
+            allowClear
+            placeholder="按专业筛选"
+            style={{ width: 180 }}
+            value={majorFilter}
+            onChange={setMajorFilter}
+            options={majors.map(m => ({ value: m.id, label: m.name }))}
+          />
+          <Select
+            allowClear
+            placeholder="按岗位筛选"
+            style={{ width: 220 }}
+            value={jobFilter}
+            onChange={setJobFilterAndUrl}
+            options={jobs.map(j => ({ value: j.id, label: j.title }))}
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditing(null);
+              setForm({ name: "", description: "", isActive: true, version: 1, jobPositionId: jobFilter });
+              setDialogOpen(true);
+            }}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            创建图谱
+          </Button>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.job-competency-graphs-wrap{padding:12px!important}.job-competency-graphs-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <Card>
         <Table columns={columns} dataSource={graphs} rowKey="id" loading={isLoading} pagination={{ pageSize: 20 }} />
       </Card>
 
@@ -305,6 +306,6 @@ export default function TeacherJobCompetencyGraphs() {
           </Row>
         </Space>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

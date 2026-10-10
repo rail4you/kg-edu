@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Button, Card, Col, Empty, Form, Input, Row, Select, Space, Spin, Typography, message, Tag, Upload, Progress,
+  Button, Card, Col, Empty, Form, Input, Row, Select, Spin, message, Tag, Upload, Progress,
 } from "antd";
 import { ArrowLeftOutlined, SaveOutlined, UploadOutlined, SendOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
@@ -13,8 +13,7 @@ import {
   getMicroMajor, updateMicroMajor, listUsers, publishMicroMajor,
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-
-const { Title, Text } = Typography;
+import { AppPage } from "@/components/proto";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "草稿" },
@@ -164,50 +163,39 @@ export default function MicroMajorEdit() {
   });
 
   if (isLoading) {
-    return <div style={{ padding: 24, textAlign: "center", marginTop: 80 }}><Spin size="large" /></div>;
+    return <AppPage title="编辑微专业"><Spin size="large" /></AppPage>;
   }
   if (!microMajor) {
-    return <div className="micro-major-edit-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.micro-major-edit-wrap{padding:12px!important}.micro-major-edit-wrap .ant-table-cell{padding:6px 4px!important}}`}</style><Empty description="微专业不存在" /></div>;
+    return <AppPage title="编辑微专业"><Empty description="微专业不存在" /></AppPage>;
   }
 
   return (
-    <div className="micro-major-edit-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.micro-major-edit-wrap{padding:12px!important}.micro-major-edit-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Button icon={<ArrowLeftOutlined />} style={{ marginBottom: 16 }}
-        onClick={() => navigate("/teacher/dashboard/micro-major-list")}>
-        返回微专业列表
-      </Button>
-
+    <AppPage
+      title="编辑微专业"
+      description="维护微专业基础信息"
+      actions={
+        <>
+          <Button icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard/micro-major-list")}>
+            返回微专业列表
+          </Button>
+          {microMajor?.status !== "active" && (
+            <Button
+              icon={<SendOutlined />}
+              onClick={() => publishMutation.mutate()}
+              loading={publishMutation.isPending}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              发布
+            </Button>
+          )}
+          {microMajor?.status === "active" && (
+            <Tag color="green" style={{ fontSize: 14, padding: "4px 12px" }}>已发布</Tag>
+          )}
+        </>
+      }
+    >
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-          <Col>          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
-<Title level={4} style={{ margin: 0 }}>编辑微专业</Title></Col>
-          <Col>
-            <Space>
-              {microMajor?.status !== "active" && (
-                <Button
-                  icon={<SendOutlined />}
-                  onClick={() => publishMutation.mutate()}
-                  loading={publishMutation.isPending}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  发布
-                </Button>
-              )}
-              {microMajor?.status === "active" && (
-                <Tag color="green" style={{ fontSize: 14, padding: "4px 12px" }}>已发布</Tag>
-              )}
-            </Space>
-          </Col>
-        </Row>
-
         <Form form={form} layout="vertical" onFinish={(values) => updateMutation.mutate(values)}>
           {/* 基本信息 */}
           <Card type="inner" title="基本信息" style={{ marginBottom: 16 }}>
@@ -350,6 +338,6 @@ export default function MicroMajorEdit() {
           </div>
         </Form>
       </Card>
-    </div>
+    </AppPage>
   );
 }

@@ -8,7 +8,7 @@ import {
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, TeamOutlined,
+  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined,
   ApartmentOutlined,
   ArrowLeftOutlined,
   SettingOutlined
@@ -23,8 +23,9 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface JobPosition {
   id: string;
@@ -221,46 +222,46 @@ export default function TeacherJobList() {
   ];
 
   return (
-    <div className="job-list-wrap" style={{ padding: 24 }}>
-<style>{`@media(max-width:768px){.job-list-wrap{padding:12px!important}.job-list-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>          <Button
+    <AppPage
+      className="job-list-wrap"
+      title="岗位管理"
+      description="管理专业岗位与能力图谱"
+      actions={
+        <>
+          <Button
             className="teacher-page-back-btn"
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
           />
-<Title level={4} style={{ margin: 0 }}><TeamOutlined /> 岗位管理</Title></Col>
-          <Col>
-            <Space>
-              <Select
-                allowClear
-                placeholder="按专业筛选"
-                style={{ width: 180 }}
-                value={majorFilter}
-                onChange={setMajorFilter}
-                options={majors.map(m => ({ value: m.id, label: m.name }))}
-                notFoundContent={majors.length === 0 ? "暂无专业，请先在“管理专业”中新建" : undefined}
-              />
-              <Button icon={<SettingOutlined />} onClick={() => setMajorManageOpen(true)}>管理专业</Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setEditing(null);
-                  setForm({ title: "", description: "", requirements: "", salaryRange: "", source: "", majorId: "", majorName: "" });
-                  setMajorSearch("");
-                  setDialogOpen(true);
-                }}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                添加岗位
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+          <Select
+            allowClear
+            placeholder="按专业筛选"
+            style={{ width: 180 }}
+            value={majorFilter}
+            onChange={setMajorFilter}
+            options={majors.map(m => ({ value: m.id, label: m.name }))}
+            notFoundContent={majors.length === 0 ? "暂无专业，请先在“管理专业”中新建" : undefined}
+          />
+          <Button icon={<SettingOutlined />} onClick={() => setMajorManageOpen(true)}>管理专业</Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditing(null);
+              setForm({ title: "", description: "", requirements: "", salaryRange: "", source: "", majorId: "", majorName: "" });
+              setMajorSearch("");
+              setDialogOpen(true);
+            }}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            添加岗位
+          </Button>
+        </>
+      }
+    >
+<style>{`@media(max-width:768px){.job-list-wrap{padding:12px!important}.job-list-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <Card>
         {majors.length === 0 && (
           <Alert type="info" showIcon message="暂无专业" description={<span>当前暂无专业，请先 <a onClick={() => setMajorManageOpen(true)}>前往“管理专业”新建专业</a> 后再创建岗位</span>} style={{ marginBottom: 12 }} />
         )}
@@ -394,6 +395,6 @@ export default function TeacherJobList() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

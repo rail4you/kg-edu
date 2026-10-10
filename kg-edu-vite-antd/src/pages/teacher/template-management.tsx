@@ -37,8 +37,9 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const extractArrayData = (result: any): any[] => {
   if (result?.success && result.data) {
@@ -178,36 +179,37 @@ export default function TemplateManagementPage() {
 
   if (authLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Progress percent={50} status="active" />
-        <Text style={{ marginLeft: 16 }}>正在检查认证状态...</Text>
-      </div>
+      <AppPage title="模板管理">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh",
+          }}
+        >
+          <Progress percent={50} status="active" />
+          <Text style={{ marginLeft: 16 }}>正在检查认证状态...</Text>
+        </div>
+      </AppPage>
     );
   }
 
   if (!user) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <Title level={4} style={{ marginBottom: 8, color: "#ff4d4f" }}>
-          用户未登录
-        </Title>
-        <Text style={{ marginBottom: 16 }}>请登录以访问模板管理。</Text>
-      </div>
+      <AppPage title="模板管理">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh",
+          }}
+        >
+          <Text style={{ marginBottom: 16 }}>请登录以访问模板管理。</Text>
+        </div>
+      </AppPage>
     );
   }
 
@@ -381,18 +383,10 @@ export default function TemplateManagementPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          模板管理
-        </Title>
+    <AppPage
+      title="模板管理"
+      description="管理系统文件模板"
+      actions={
         <Button
           type="primary"
           icon={<CloudUploadOutlined />}
@@ -401,8 +395,8 @@ export default function TemplateManagementPage() {
         >
           上传模板
         </Button>
-      </div>
-
+      }
+    >
       {error && (
         <Alert
           message="加载模板列表失败"
@@ -545,6 +539,6 @@ export default function TemplateManagementPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

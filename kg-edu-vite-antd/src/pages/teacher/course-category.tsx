@@ -30,8 +30,9 @@ import type { ColumnsType } from "antd/es/table";
 import { useTranslate } from "@/locales/use-locales";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Category {
   id: string;
@@ -281,28 +282,24 @@ export default function CourseCategoryPage() {
   ];
 
   return (
-    <div className="cat-page-wrap" style={{ padding: 24 }}>
-      <style>{`@media(max-width:768px){.cat-mobile-hide{display:none!important}.cat-action-text{display:none!important}.cat-page-wrap{padding:12px!important}.cat-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      {/* 标题区域 */}
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <Button
-              className="teacher-page-back-btn"
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard")}
-              style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-            />
-            <FolderOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-            <Title level={4} style={{ margin: 0 }}>学科分类管理</Title>
-          </div>
-          <Text type="secondary">管理课程学科分类，添加、编辑或删除分类信息</Text>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDialog()} style={canEdit ? undefined : { display: "none" }}>
-          添加学科分类
-        </Button>
-      </div>
+    <AppPage
+      title="学科分类管理"
+      description="管理课程学科分类信息"
+      actions={
+        <>
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teacher/dashboard")}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDialog()} style={canEdit ? undefined : { display: "none" }}>
+            添加学科分类
+          </Button>
+        </>
+      }
+    >
+      <style>{`@media(max-width:768px){.cat-mobile-hide{display:none!important}.cat-action-text{display:none!important}}`}</style>
 
       {/* 表格 */}
       <Card style={{ borderRadius: 8 }}>
@@ -458,6 +455,6 @@ export default function CourseCategoryPage() {
           <Alert type="warning" message={`该分类下还有 ${getCourseCount(categoryToDelete)} 门课程，删除后这些课程将失去分类关联。`} style={{ marginTop: 16 }} />
         )}
       </Modal>
-    </div>
+    </AppPage>
   );
 }

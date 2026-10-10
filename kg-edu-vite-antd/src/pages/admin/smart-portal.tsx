@@ -59,8 +59,9 @@ import {
 import { ConfigForm } from "@/components/smart-portal/ConfigForm";
 import { SmartPortalRenderer } from "@/components/smart-portal/SmartPortalRenderer";
 import { useSmartPortalData } from "@/components/smart-portal/use-smart-portal-data";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface OrgOption {
   id: string;
@@ -202,8 +203,8 @@ export default function AdminSmartPortal() {
       setName(cfg.name);
       setEnabled(cfg.enabled);
       setBlocks(cfg.layout.blocks.map(hydrateBlock));
-    } catch (e: any) {
-      message.error(e?.message || "加载智慧门户布局失败");
+    } catch (e) {
+      message.error((e as Error)?.message || "加载智慧门户布局失败");
     } finally {
       setLoading(false);
     }
@@ -298,31 +299,18 @@ export default function AdminSmartPortal() {
 
   if (!isSuperAdmin) {
     return (
-      <div style={{ padding: 48 }}>
+      <AppPage title="智慧门户" description="拖拽组件搭建学生端智能门户">
         <Empty description="仅超级管理员可配置智慧门户" />
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1400, margin: "0 auto" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 240 }}>
-          <Title level={4} style={{ margin: 0 }}>
-            智慧门户
-          </Title>
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            拖放左侧组件到画布，配置参数后保存；学生端将在「智能门户」展示该页面。
-          </Text>
-        </div>
+    <AppPage
+      title="智慧门户"
+      description="拖拽组件搭建学生端智能门户"
+      style={{ maxWidth: 1400, margin: "0 auto" }}
+      actions={
         <Space wrap>
           <span style={{ fontSize: 13 }}>
             启用 <Switch checked={enabled} onChange={setEnabled} />
@@ -341,7 +329,8 @@ export default function AdminSmartPortal() {
             保存
           </Button>
         </Space>
-      </div>
+      }
+    >
 
       {preview && (
         <Card size="small" style={{ marginBottom: 16 }}>
@@ -467,6 +456,6 @@ export default function AdminSmartPortal() {
           </>
         )}
       </Drawer>
-    </div>
+    </AppPage>
   );
 }

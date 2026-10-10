@@ -795,7 +795,7 @@ export default function TeacherGraphTreeView({ courseId: propCourseId, knowledge
     <div style={{ width: "100%", height: "100%", minHeight: 0, display: "flex", flexDirection: "column", background: "#f0f2f5", fontFamily: "'Microsoft YaHei','PingFang SC','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", }}>
       <style>{`body.is-panning { cursor: grabbing !important; user-select: none; } body.is-panning * { cursor: grabbing !important; } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
       {/* Toolbar */}
-      <div style={{ minHeight: isMobile ? 36 : 48, background: "#fff", display: "flex", alignItems: "center", padding: isMobile ? "3px 6px" : "4px 16px", gap: isMobile ? 4 : 12, flexShrink: 0, borderBottom: "1px solid #e5e7eb", zIndex: 10, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+      <div style={{ minHeight: isMobile ? 36 : 48, background: "#fff", display: "flex", alignItems: "center", padding: isMobile ? "3px 6px" : "4px 16px", gap: isMobile ? 4 : 12, flexShrink: 0, borderBottom: "1px solid var(--pu-line)", zIndex: 10, flexWrap: isMobile ? "wrap" : "nowrap" }}>
         <Input
           placeholder="搜索..."
           prefix={<SearchOutlined style={{ color: "#999" }} />}
@@ -814,7 +814,7 @@ export default function TeacherGraphTreeView({ courseId: propCourseId, knowledge
             <button
               key={label as string}
               onClick={() => val === "reset" ? setScale(1.0) : setScale((s) => Math.max(0.2, Math.min(2.5, s + (val as number))))}
-              style={{ background: "#f5f5f5", border: "1px solid #d9d9d9", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}
+              style={{ background: "#fff", border: "1px solid var(--pu-line)", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}
             >
               {label as string}
             </button>

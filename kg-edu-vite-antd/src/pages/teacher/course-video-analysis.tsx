@@ -21,8 +21,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getCourseVideo, listCourseVideos } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface Segment {
   start_sec: number;
@@ -80,31 +81,36 @@ export default function CourseVideoAnalysis() {
 
   if (!videoId) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-        <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-          <Title level={4} style={{ margin: 0 }}>AI 章节视频解析 ★</Title>
-        </div>
-        <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-          <Card title="选择要解析的课程视频">
-            <List
-              dataSource={videoList || []}
-              renderItem={(v: any) => (
-                <List.Item
-                  actions={[
-                    <Button key="go" type="primary" size="small" onClick={() => navigate(`/teacher/dashboard/course-video-analysis/${v.id}`)}>
-                      AI 解析
-                    </Button>,
-                  ]}
-                >
-                  <Text>{v.name} </Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>{String(v.id).slice(0, 8)}…</Text>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </div>
-      </div>
+      <AppPage
+        title="AI 章节视频解析 ★"
+        description="选择课程视频并发起 AI 章节解析"
+        actions={
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
+          />
+        }
+      >
+        <Card title="选择要解析的课程视频">
+          <List
+            dataSource={videoList || []}
+            renderItem={(v: any) => (
+              <List.Item
+                actions={[
+                  <Button key="go" type="primary" size="small" onClick={() => navigate(`/teacher/dashboard/course-video-analysis/${v.id}`)}>
+                    AI 解析
+                  </Button>,
+                ]}
+              >
+                <Text>{v.name} </Text>
+                <Text type="secondary" style={{ fontSize: 12 }}>{String(v.id).slice(0, 8)}…</Text>
+              </List.Item>
+            )}
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -205,19 +211,25 @@ export default function CourseVideoAnalysis() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", paddingBottom: 24 }}>
-      <div style={{ padding: 24, background: "white", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: 8 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-        <Title level={4} style={{ margin: 0 }}>AI 章节视频解析</Title>
-        <div style={{ flex: 1 }} />
-        {status && <Tag color={status === "done" ? "green" : status === "failed" ? "red" : "processing"}>{status}</Tag>}
-        <Button type="primary" icon={<FundOutlined />} loading={analyzing} onClick={startAnalyze}>
-          发起 AI 解析
-        </Button>
-      </div>
-
-      <div style={{ padding: 24, maxWidth: 1280, margin: "0 auto" }}>
-        <Row gutter={[16, 16]}>
+    <AppPage
+      title="AI 章节视频解析"
+      description="自动生成视频摘要、分段总结与知识点打点"
+      actions={
+        <>
+          <Button
+            type="text"
+            className="teacher-page-back-btn"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
+          />
+          {status && <Tag color={status === "done" ? "green" : status === "failed" ? "red" : "processing"}>{status}</Tag>}
+          <Button type="primary" icon={<FundOutlined />} loading={analyzing} onClick={startAnalyze}>
+            发起 AI 解析
+          </Button>
+        </>
+      }
+    >
+      <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
             <Card title="视频">
               {video?.videoUrl ? (
@@ -323,7 +335,6 @@ export default function CourseVideoAnalysis() {
             </Card>
           </Col>
         </Row>
-      </div>
-    </div>
+    </AppPage>
   );
 }

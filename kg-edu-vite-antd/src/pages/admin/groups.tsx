@@ -34,6 +34,7 @@ import { useTenantFilter, ALL_TENANTS } from "@/hooks/use-tenant-filter";
 import { TenantLayout } from "@/components/admin/tenant-layout";
 import { fetchAcrossTenants } from "@/lib/tenant-query";
 import { useResponsive } from "@/hooks/use-responsive";
+import { AppPage } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -415,9 +416,11 @@ export default function GroupManagement() {
 
   if (!isSuperAdmin && !hasTenant()) {
     return (
-      <Card>
-        <Alert message="请先选择组织" type="warning" showIcon />
-      </Card>
+      <AppPage title="小组管理" description="管理教学小组与成员">
+        <Card>
+          <Alert message="请先选择组织" type="warning" showIcon />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -427,7 +430,7 @@ export default function GroupManagement() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage title="小组管理" description="管理教学小组与成员">
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
         {/* 移动端工具栏 */}
         {isMobile && (
@@ -652,7 +655,7 @@ export default function GroupManagement() {
           pagination={{ pageSize: 10, simple: isMobile }}
         />
       </Modal>
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }

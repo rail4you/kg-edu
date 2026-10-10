@@ -14,7 +14,6 @@ import {
 import {
   UserOutlined,
   BookOutlined,
-  TeamOutlined,
   MailOutlined,
   BankOutlined,
 } from "@ant-design/icons";
@@ -24,6 +23,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { listUsers } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -291,31 +291,21 @@ export default function TeachersPage() {
 
   if (!currentTenant?.schemaName) {
     return (
-      <div style={{ padding: 24 }}>
-        <div
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Alert
-            type="warning"
-            message="未选择组织"
-            description="请选择一个组织以查看教师信息。"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        </div>
-      </div>
+      <AppPage title="教师团队">
+        <Alert
+          type="warning"
+          message="未选择组织"
+          description="请选择一个组织以查看教师信息。"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      </AppPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="教师团队">
         <div
           style={{
             minHeight: "100vh",
@@ -326,13 +316,13 @@ export default function TeachersPage() {
         >
           <Spin size="large" />
         </div>
-      </div>
+      </AppPage>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="教师团队">
         <Alert
           type="error"
           message="加载教师信息失败"
@@ -340,13 +330,13 @@ export default function TeachersPage() {
           showIcon
           style={{ marginTop: 24 }}
         />
-      </div>
+      </AppPage>
     );
   }
 
   if (!teachers.length) {
     return (
-      <div style={{ padding: 24 }}>
+      <AppPage title="教师团队">
         <div
           style={{
             minHeight: "100vh",
@@ -369,65 +359,20 @@ export default function TeachersPage() {
             }
           />
         </div>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div>
-      {/* 页面标题 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 16,
-          padding: 0,
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)",
-            flexShrink: 0,
-          }}
-        >
-          <TeamOutlined style={{ fontSize: 18, color: "#1890ff" }} />
-        </div>
-        <div>
-          <Title
-            level={3}
-            style={{
-              marginBottom: 0,
-              fontWeight: 700,
-              color: "#333",
-              lineHeight: 1.2,
-            }}
-          >
-            教师团队
-          </Title>
-          {teachers.length > 0 && (
-            <Text style={{ fontSize: 12, color: "#8c8c8c" }}>
-              共 {teachers.length} 位教师
-            </Text>
-          )}
-        </div>
-      </div>
-
+    <AppPage title="教师团队" description={`共 ${teachers.length} 位教师`}>
       {/* 教师卡片列表 */}
       <Row gutter={[20, 20]}>
         {teachers.map((teacher) => (
           <Col xs={24} md={12} key={teacher.id}>
             <TeacherCard teacher={teacher} />
-          </Col>
-        ))}
+        </Col>
+      ))}
       </Row>
-    </div>
+    </AppPage>
   );
 }

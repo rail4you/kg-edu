@@ -559,7 +559,7 @@ export default function MMChapterManager({ tenant, courseId, headers }: MMChapte
   ];
 
   return (
-    <div>
+    <div className="pu-app">
       <Card
         style={{ boxShadow: "0 1px 3px rgba(16, 24, 40, 0.1)" }}
       >

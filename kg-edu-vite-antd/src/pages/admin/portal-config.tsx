@@ -38,8 +38,9 @@ import {
   getQuickNavIconSrc,
   normalizeQuickNavIcon,
 } from "@/components/home/quick-nav-icons";
+import { AppPage } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 /** 学历层级固定键（与课程 education_level 保持一致），按学历由高到低排列，顺序固定 */
@@ -205,8 +206,8 @@ export default function PortalConfigPage() {
         })
       );
       setPages([...config.pages].sort((a, b) => a.sortOrder - b.sortOrder));
-    } catch (e: any) {
-      message.error(e?.message || "加载失败");
+    } catch (e) {
+      message.error((e as Error)?.message || "加载失败");
     } finally {
       setLoading(false);
     }
@@ -467,14 +468,16 @@ export default function PortalConfigPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: 80 }}>
-        <Spin size="large" tip="加载门户配置..." />
-      </div>
+      <AppPage title="门户配置" description="配置首页学历层级与模板页导航">
+        <div style={{ textAlign: "center", padding: 80 }}>
+          <Spin size="large" tip="加载门户配置..." />
+        </div>
+      </AppPage>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <AppPage title="门户配置" description="配置首页学历层级与模板页导航">
       <Card>
       <Tabs
         defaultActiveKey="levels"
@@ -485,9 +488,6 @@ export default function PortalConfigPage() {
             children: (
               <div style={{ paddingTop: 8 }}>
                 <div style={{ marginBottom: 20 }}>
-                  <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-                    学历层级名称
-                  </Title>
                   <Text type="secondary">
                     首页四个学历层级由高到低固定排列（研究生 → 本科 → 高职 → 中职），各层级的展示名称可自由修改，顺序不可调整
                   </Text>
@@ -541,9 +541,6 @@ export default function PortalConfigPage() {
               <div style={{ paddingTop: 8 }}>
                 <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
                   <div>
-                    <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-                      模板页管理
-                    </Title>
                     <Text type="secondary">
                       首页导航固定「课程 / 微专业」两项，其后按下方顺序展示模板页，启用项最多展示 6 项。
                       每项可修改名称、更换图标，访问链接为 /page/网页标识符；所有操作保存后即时生效
@@ -651,6 +648,6 @@ export default function PortalConfigPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppPage>
   );
 }

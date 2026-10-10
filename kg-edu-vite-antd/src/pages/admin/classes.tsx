@@ -33,6 +33,7 @@ import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useTenantFilter, ALL_TENANTS } from "@/hooks/use-tenant-filter";
 import { TenantLayout } from "@/components/admin/tenant-layout";
 import { fetchAcrossTenants } from "@/lib/tenant-query";
+import { AppPage } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -482,14 +483,16 @@ export default function ClassManagement() {
 
   if (!isSuperAdmin && !hasTenant()) {
     return (
-      <Card>
-        <Alert
-          message="请先选择组织"
-          description="班级管理需要在特定组织/租户下进行。请先选择一个组织。"
-          type="warning"
-          showIcon
-        />
-      </Card>
+      <AppPage title="班级管理" description="管理班级与学生关联">
+        <Card>
+          <Alert
+            message="请先选择组织"
+            description="班级管理需要在特定组织/租户下进行。请先选择一个组织。"
+            type="warning"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -499,7 +502,7 @@ export default function ClassManagement() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage title="班级管理" description="管理班级与学生关联">
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
         {/* 移动端工具栏 */}
         {isMobile && (
@@ -740,7 +743,7 @@ export default function ClassManagement() {
           loading={classStudentsLoading}
         />
       </Modal>
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }

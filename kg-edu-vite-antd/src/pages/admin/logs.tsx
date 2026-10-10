@@ -3,7 +3,6 @@ import {
   Card,
   Table,
   Button,
-  Space,
   Tag,
   Typography,
   Input,
@@ -28,8 +27,9 @@ import { TenantLayout } from "@/components/admin/tenant-layout";
 import { Alert } from "antd";
 import { MobileTableCard } from "@/components/admin/mobile-table-card";
 import { useResponsive } from "@/hooks/use-responsive";
+import { AppPage, StatGrid } from "@/components/proto";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -333,14 +333,16 @@ export default function SystemLogs() {
 
   if (!hasTenant() && !isSuperAdmin) {
     return (
-      <Card>
-        <Alert
-          message="需要选择组织"
-          description="请先在组织管理页面选择一个组织，然后返回此页面查看活动日志。"
-          type="info"
-          showIcon
-        />
-      </Card>
+      <AppPage title="系统日志" description="查看系统操作日志">
+        <Card>
+          <Alert
+            message="需要选择组织"
+            description="请先在组织管理页面选择一个组织，然后返回此页面查看活动日志。"
+            type="info"
+            showIcon
+          />
+        </Card>
+      </AppPage>
     );
   }
 
@@ -350,32 +352,30 @@ export default function SystemLogs() {
       selected={selectedTenantId}
       onSelect={setSelectedTenantId}
     >
-    <div>
+    <AppPage
+      title="系统日志"
+      description="查看系统操作日志"
+      actions={
+        <>
+          <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
+            刷新
+          </Button>
+          <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportLogs}>
+            导出
+          </Button>
+        </>
+      }
+    >
       {/* Stats cards */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={12} sm={4}>
-          <Card size="small">
-            <Text type="secondary" style={{ fontSize: isMobile ? 11 : 14 }}>
-              总记录
-            </Text>
-            <Title level={isMobile ? 5 : 3} style={{ margin: 0 }}>
-              {filteredLogs.length}
-            </Title>
-          </Card>
-        </Col>
-        {Object.entries(actionTypeLabels).slice(0, isMobile ? 3 : 5).map(([key, { label, color }]) => (
-          <Col xs={12} sm={4} key={key}>
-            <Card size="small">
-              <Text type="secondary" style={{ fontSize: isMobile ? 11 : 14 }}>
-                {label}
-              </Text>
-              <Title level={isMobile ? 5 : 3} style={{ margin: 0, color }}>
-                {stats[key] || 0}
-              </Title>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <StatGrid
+        columns={isMobile ? 2 : 6}
+        items={[
+          { label: "总记录", value: filteredLogs.length },
+          ...Object.entries(actionTypeLabels)
+            .slice(0, isMobile ? 3 : 5)
+            .map(([key, { label }]) => ({ label, value: stats[key] || 0 })),
+        ]}
+      />
 
       {/* Filters */}
       <Card style={{ marginBottom: 16 }} styles={{ body: { padding: isMobile ? 12 : 24 } }}>
@@ -422,16 +422,6 @@ export default function SystemLogs() {
 
       {/* Table */}
       <Card styles={{ body: { padding: isMobile ? 12 : 24 } }}>
-        {isMobile && (
-          <div style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <Button size="small" icon={<ReloadOutlined />} onClick={() => refetch()}>
-              刷新
-            </Button>
-            <Button size="small" type="primary" icon={<DownloadOutlined />} onClick={handleExportLogs}>
-              导出
-            </Button>
-          </div>
-        )}
         {!isMobile && (
           <Table
             columns={columns}
@@ -439,18 +429,6 @@ export default function SystemLogs() {
             rowKey="id"
             loading={isLoading}
             scroll={{ x: 950 }}
-            title={() => (
-              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-                <Space wrap>
-                  <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-                    刷新
-                  </Button>
-                  <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportLogs}>
-                    导出
-                  </Button>
-                </Space>
-              </div>
-            )}
             pagination={{
               showSizeChanger: true,
               showQuickJumper: true,
@@ -486,7 +464,7 @@ export default function SystemLogs() {
           </div>
         )}
       </Card>
-    </div>
+    </AppPage>
     </TenantLayout>
   );
 }
