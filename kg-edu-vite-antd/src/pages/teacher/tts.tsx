@@ -19,13 +19,14 @@ interface Voice {
   label: string;
   gender: string;
   language: string;
+  supports_emotion?: boolean;
 }
 
 const LANGUAGE_OPTIONS = [
   { value: "zh", label: "中文" },
   { value: "en", label: "英语" },
   { value: "ja", label: "日语" },
-  { value: "es", label: "西班牙语" },
+  // cosyvoice-v3-flash 不支持西班牙语（仅支持中英日韩印尼）
 ];
 
 /** cosyvoice-v3-flash 情感指令（instruction 须为中文固定格式） */
@@ -121,6 +122,29 @@ export default function TtsSynthesis() {
     setSynthesizing(true);
     setAudioUrl("");
     try {
+      // 选了日语音色 且 输入文本不是日语（不含平假名/片假名），则先翻译为日语
+      const isJaVoice = selectedVoice?.language === "ja";
+      const hasJapaneseKana = /[\u3040-\u309F\u30A0-\u30FF]/.test(t);
+      let actualText = t;
+      if (isJaVoice && !hasJapaneseKana) {
+        try {
+          const tr = await fetch("/api/tts/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...headers, "x-org-schema": tenant },
+            body: JSON.stringify({ text: t, target: "ja" }),
+          }).then((x) => x.json());
+          if (tr.success) {
+            actualText = tr.data.translated;
+            message.info(`已自动翻译为日语：${actualText}`);
+          } else {
+            message.error(`翻译失败：${tr.error || "未知错误"}`);
+            return;
+          }
+        } catch (e) {
+          message.error("翻译请求异常");
+          return;
+        }
+      }
       // cosyvoice-v3-flash 的 instruction 须为中文固定格式；未选情感则不传
       const instruction =
         emotion && emotion !== "" ? `你说话的情感是${emotion}。` : undefined;
@@ -129,7 +153,7 @@ export default function TtsSynthesis() {
         headers: { "Content-Type": "application/json", ...headers, "x-org-schema": tenant },
         body: JSON.stringify({
           tenant,
-          text: t,
+          text: actualText,
           voice,
           speech_rate: speechRate,
           volume,
@@ -151,6 +175,20 @@ export default function TtsSynthesis() {
 
   const voiceLabel = (v: Voice) =>
     `${v.label}${v.language && v.language !== "zh" ? `（${v.language}）` : ""}`;
+
+  // 根据所选语言过滤可选音色（只列出能说该语言的音色）
+  const filteredVoices = voices.filter((v) => {
+    const langs = (v.language || "").split(",").map((s) => s.trim());
+    return langs.includes(language);
+  });
+
+  // 语言或音色列表变化时，如果当前 voice 不在过滤后列表里，自动选第一个
+  React.useEffect(() => {
+    if (filteredVoices.length > 0 && !filteredVoices.find((v) => v.voice === voice)) {
+      setVoice(filteredVoices[0].voice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, voices]);
 
   if (authLoading) {
     return (
@@ -192,12 +230,12 @@ export default function TtsSynthesis() {
             <Card title="2. 语音参数（音色 / 语速 / 音量 / 语言）" style={{ marginTop: 16 }}>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Text strong>音色（支持男女声 / 多语言 / 情感音色）</Text>
+                  <Text strong>音色（仅显示支持“{language}”语言的音色）</Text>
                   <Select
                     style={{ width: "100%", marginTop: 8 }}
                     value={voice}
                     onChange={setVoice}
-                    options={voices.map((v) => ({
+                    options={filteredVoices.map((v) => ({
                       value: v.voice,
                       label: `${voiceLabel(v)} · ${v.gender === "male" ? "男声" : "女声"}`,
                     }))}
@@ -205,6 +243,11 @@ export default function TtsSynthesis() {
                   {selectedVoice && (
                     <Text type="secondary" style={{ display: "block", marginTop: 4, fontSize: 12 }}>
                       支持语言：{selectedVoice.language}
+                    </Text>
+                  )}
+                  {filteredVoices.length === 0 && (
+                    <Text type="warning" style={{ display: "block", marginTop: 4, fontSize: 12 }}>
+                      当前语言下没有可用音色
                     </Text>
                   )}
                 </Col>
@@ -235,8 +278,14 @@ export default function TtsSynthesis() {
                   style={{ width: "100%", marginTop: 8 }}
                   value={emotion}
                   onChange={setEmotion}
+                  disabled={!selectedVoice?.supports_emotion}
                   options={EMOTIONS}
                 />
+                {!selectedVoice?.supports_emotion && (
+                  <Text type="secondary" style={{ display: "block", marginTop: 4, fontSize: 12 }}>
+                    当前音色不支持情感指令（仅龙安洋支持）。选择情感后将不会生效。
+                  </Text>
+                )}
               </div>
             </Card>
           </Col>

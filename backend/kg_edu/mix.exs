@@ -52,7 +52,9 @@ defmodule KgEdu.MixProject do
       {:picosat_elixir, "~> 0.2"},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:open_api_spex, "~> 3.0"},
-      # NOTE: tidewave removed (2026-09) — dev toolbar breaks Chrome<=86; see endpoint.ex
+      # NOTE: tidewave's dev toolbar disabled at runtime (toolbar: false) to keep
+      # Chrome<=86 working — only the MCP server is enabled. See endpoint.ex.
+      {:tidewave, "~> 0.9", only: [:dev]},
       {:ash_admin, "~> 0.13"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},
@@ -66,7 +68,7 @@ defmodule KgEdu.MixProject do
       {:ecto_sql, "~> 3.13"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.1"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:phoenix_live_reload, "~> 1.6.1", only: :dev},
       {:phoenix_live_view, "~> 1.1.0-rc.0"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},

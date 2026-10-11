@@ -24,7 +24,7 @@ const EXAMPLE_INTERESTS = [
   "联邦学习",
 ];
 const EXAMPLE_SCHOLARS = ["周志华", "张钹", "姚期智", "李飞飞"];
-const EXAMPLE_VENUES = ["中国科学", "计算机学报", "软件学报", "自动化学报", "清华大学学报"];
+const EXAMPLE_VENUES = ["中国科学", "计算机学报", "软件学报", "自动化学报", "清华大学学报", "电子学报", "通信学报", "北京学报", "浙江学报", "复旦学报"];
 
 function followTypeLabel(kind: string) {
   return kind === "scholar" ? "学者" : kind === "venue" ? "期刊" : "研究兴趣";

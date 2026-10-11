@@ -14,6 +14,110 @@ defmodule KgEdu.Agent.TtsService do
 
   @default_model "cosyvoice-v3-flash"
 
+  @translation_model "qwen-mt-plus"
+
+  # DashScope qwen-mt-plus 接受的语言代码（取自官方翻译 API）
+  @translation_languages %{
+    "zh" => "Chinese",
+    "en" => "English",
+    "ja" => "Japanese",
+    "ko" => "Korean",
+    "id" => "Indonesian",
+    "es" => "Spanish",
+    "fr" => "French",
+    "de" => "German",
+    "ru" => "Russian"
+  }
+
+  @doc """
+  翻译文本（使用 DashScope qwen-mt-plus 专用翻译模型）。
+
+  opts:
+  - `:text` (必填)
+  - `:target` (必填) 目标语言代码："zh" | "en" | "ja" | ...
+  - `:source` (可选) 源语言代码；不传则自动检测
+
+  成功返回 `{:ok, %{translated: String.t, source: String.t, target: String.t}}`，
+  失败返回 `{:error, reason}`。
+  """
+  def translate(opts) when is_list(opts) or is_map(opts) do
+    opts = Map.new(opts)
+    text = opts[:text] || opts["text"]
+    target = opts[:target] || opts["target"]
+
+    cond do
+      is_nil(text) or text == "" ->
+        {:error, "翻译文本不能为空"}
+
+      is_nil(target) or target == "" ->
+        {:error, "目标语言不能为空"}
+
+      not Map.has_key?(@translation_languages, target) ->
+        {:error, "不支持的目标语言: #{target}（支持：#{Map.keys(@translation_languages) |> Enum.join(", ")}）"}
+
+      true ->
+        do_translate(text, target, opts)
+    end
+  end
+
+  defp do_translate(text, target, opts) do
+    with {:ok, api_key} <- fetch_key() do
+      target_name = Map.fetch!(@translation_languages, target)
+
+      translation_options =
+        case opts[:source] || opts["source"] do
+          nil -> %{source_lang: "auto", target_lang: target_name}
+          source when is_binary(source) and source != "" ->
+            source_name =
+              if Map.has_key?(@translation_languages, source) do
+                Map.fetch!(@translation_languages, source)
+              else
+                source
+              end
+            %{source_lang: source_name, target_lang: target_name}
+        end
+
+      body = %{
+        model: @translation_model,
+        messages: [%{role: "user", content: text}],
+        translation_options: translation_options
+      }
+
+      url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+
+      case Req.post(url,
+             json: body,
+             headers: %{
+               "authorization" => "Bearer #{api_key}",
+               "content-type" => "application/json"
+             },
+             receive_timeout: 30_000
+           ) do
+        {:ok, %{status: status, body: resp_body}} when status in 200..299 ->
+          translated =
+            get_in(resp_body, ["choices", Access.at(0), "message", "content"]) ||
+              get_in(resp_body, ["output", "text"])
+
+          if is_binary(translated) and translated != "" do
+            {:ok,
+             %{
+               translated: String.trim(translated),
+               source: opts[:source] || opts["source"] || "auto",
+               target: target
+             }}
+          else
+            {:error, "翻译响应未包含文本: #{truncate_resp(resp_body)}"}
+          end
+
+        {:ok, %{status: status, body: resp_body}} ->
+          {:error, "翻译请求失败 (#{status}): #{truncate_resp(resp_body)}"}
+
+        {:error, error} ->
+          {:error, "翻译请求异常: #{inspect(error)}"}
+      end
+    end
+  end
+
   @doc """
   curated 音色表（前端下拉用；`synthesize/1` 实际透传 voice 字符串，
   也支持直接填 DashScope 官方 voice 名/复刻音色）。
@@ -24,7 +128,15 @@ defmodule KgEdu.Agent.TtsService do
   """
   def voices do
     [
-      %{voice: "longanyang", label: "男声-龙安洋（男·标杆）", gender: "male", language: "zh,en"},
+      # 仅 longanyang（标杆音色）支持情感 emotion 指令（dashscope cosyvoice-v3-flash）
+      # 其他 v3 音色与全部日语音色不支持（会返回 428 InvalidParameter）
+      %{
+        voice: "longanyang",
+        label: "男声-龙安洋（男·标杆）",
+        gender: "male",
+        language: "zh,en",
+        supports_emotion: true
+      },
       %{voice: "longshuo_v3", label: "男声-龙硕（男·干练）", gender: "male", language: "zh,en"},
       %{voice: "longtian_v3", label: "男声-龙天（男·磁性）", gender: "male", language: "zh,en"},
       %{voice: "longcheng_v3", label: "男声-龙橙（男·智慧）", gender: "male", language: "zh,en"},
@@ -32,7 +144,14 @@ defmodule KgEdu.Agent.TtsService do
       %{voice: "longxiaoxia_v3", label: "女声-龙小夏（女·沉稳）", gender: "female", language: "zh,en"},
       %{voice: "longhua_v3", label: "女声-龙华（女·元气）", gender: "female", language: "zh,en"},
       %{voice: "longwan_v3", label: "女声-龙婉（女·柔声）", gender: "female", language: "zh,en"},
-      %{voice: "longyan_v3", label: "女声-龙颜（女·温暖）", gender: "female", language: "zh,en"}
+      %{voice: "longyan_v3", label: "女声-龙颜（女·温暖）", gender: "female", language: "zh,en"},
+
+      # ── 日语（cosyvoice-v3-flash 出海营销） ─────────────────────
+      %{voice: "loongriko_v3",   label: "女声-Riko（二次元霓虹女）",   gender: "female", language: "ja"},
+      %{voice: "loongtomoka_v3", label: "女声-loongtomoka（成熟日语女）", gender: "female", language: "ja"},
+      %{voice: "loongyuuna_v3",  label: "女声-Yuuna（年轻日语女）",     gender: "female", language: "ja"},
+      %{voice: "loongtomoya_v3", label: "男声-loongtomoya（日语男）",   gender: "male",   language: "ja"},
+      %{voice: "loongyuuma_v3",  label: "男声-Yuuma（日语男）",         gender: "male",   language: "ja"}
     ]
   end
 

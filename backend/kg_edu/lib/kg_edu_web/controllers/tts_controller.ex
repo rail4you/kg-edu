@@ -12,6 +12,28 @@ defmodule KgEduWeb.TtsController do
   end
 
   @doc """
+  POST /api/tts/translate — 翻译文本（使用 DashScope qwen-mt-plus）。
+
+  body: { text, target, source? }
+  返回: { success: true, data: { translated, source, target } }
+  """
+  def translate(conn, params) do
+    input = params["input"] || params
+
+    case KgEdu.Agent.TtsService.translate(
+           text: input["text"],
+           target: input["target"],
+           source: input["source"]
+         ) do
+      {:ok, %{translated: translated, source: source, target: target}} ->
+        json(conn, %{success: true, data: %{translated: translated, source: source, target: target}})
+
+      {:error, reason} ->
+        json(conn, %{success: false, error: reason})
+    end
+  end
+
+  @doc """
   POST /api/tts/synthesize — 文字转语音。
 
   body: { text, voice?, model?, speech_rate?, volume?, language?, instruction?, courseId? }

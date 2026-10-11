@@ -120,7 +120,11 @@ defmodule KgEduWeb.Router do
     get "/admin/system-info", SystemInfoController, :get_info
     # P0: AI 语音合成（Qwen TTS）
     get "/tts/voices", TtsController, :voices
+    post "/tts/translate", TtsController, :translate
     post "/tts/synthesize", TtsController, :synthesize
+    # P1: 考试监考抓拍
+    get "/proctor/exams", ProctorController, :exams
+    get "/proctor/exams/:id/snapshots", ProctorController, :snapshots
     # P2: 视频 AI 解析
     post "/video-analysis/analyze", VideoAnalysisController, :analyze
     get "/video-analysis", VideoAnalysisController, :index
