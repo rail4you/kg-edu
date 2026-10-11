@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Empty, Grid, Layout, Skeleton, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -45,6 +45,26 @@ const LEVEL_ICON_PATHS = [
   "m14 4 6 6-4 4-6-6 4-4ZM11 11 4 18l2 2 7-7M4 4l4 1 1 4",
   "M12 6c-3-2-6-2-10-1v14c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1Zm0 0v14",
 ];
+
+/** 精选课程分类（对齐交互原型 home-course-filters） */
+const COURSE_CATEGORY_RULES: Array<{ category: string; test: RegExp }> = [
+  { category: "设计艺术", test: /设计|艺术|视觉|美学|创意|绘画|构成/ },
+  { category: "工程技术", test: /材料|工程|制造|成型|智能|机械|电子|工艺|技术/ },
+  { category: "商务数据", test: /商务|数据|分析|经济|金融|会计|管理|营销/ },
+];
+
+function getCourseCategory(course: CatalogCourse): string {
+  const source = [
+    course.title,
+    course.subjectCategory?.name,
+    course.originalSubjectName,
+    course.major,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const hit = COURSE_CATEGORY_RULES.find((rule) => rule.test.test(source));
+  return hit?.category || course.standardSubject?.name || "综合";
+}
 
 function LevelIcon({ index }: { index: number }) {
   return (
@@ -239,6 +259,30 @@ export default function HomePage() {
     [courses, levelTitleMap]
   );
 
+  // 精选课程分类筛选（对齐交互原型：设计艺术 / 工程技术 / 商务数据）
+  const [courseFilter, setCourseFilter] = useState("全部");
+  const courseCategories = useMemo(() => {
+    const known = ["设计艺术", "工程技术", "商务数据"];
+    const present = new Set(recommendedCourses.map(getCourseCategory));
+    return ["全部", ...known.filter((c) => present.has(c))];
+  }, [recommendedCourses]);
+  const featuredCourses = useMemo(() => {
+    const source =
+      courseFilter === "全部"
+        ? recommendedCourses
+        : recommendedCourses.filter((c) => getCourseCategory(c) === courseFilter);
+    // 目录会跨组织聚合，可能出现同一课程 id 重复，需去重避免 React key 冲突
+    const seen = new Set<string>();
+    const unique: CatalogCourse[] = [];
+    for (const c of source) {
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      unique.push(c);
+      if (unique.length >= 3) break;
+    }
+    return unique;
+  }, [recommendedCourses, courseFilter]);
+
   // 首页微专业区：取真实微专业前 3 个（跨学校，复用列表页查询逻辑）
   const { data: homeMajors = [] } = useQuery({
     queryKey: ["home-micro-majors"],
@@ -406,36 +450,62 @@ export default function HomePage() {
                 <div><h2>好课程，陪伴每一步成长。</h2></div>
                 <a className="ed-text-link" onClick={() => navigate("/courses")}>探索全部课程 <span>→</span></a>
               </div>
-              <div className="ed-section__intro"><p>从基础原理到真实实践，选择一门课程，打开一个新的世界。</p></div>
-              <div className="ed-featured">
-                {recommendedCourses.slice(0, 3).map((c, i) => (
-                  <article key={c.id} className="ed-course">
-                    <a
-                      className={`ed-course__art v${i + 1}`}
-                      onClick={() => handleCourseClick(c)}
-                      style={
-                        c.imageUrl
-                          ? {
-                              backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${c.imageUrl})`,
-                              backgroundSize: "cover",
-                              backgroundPosition: "center",
-                            }
-                          : undefined
-                      }
+              <div className="ed-section__intro">
+                <p>从基础原理到真实实践，选择一门课程，打开一个新的世界。</p>
+                <div className="ed-filters" role="group" aria-label="精选课程分类">
+                  {courseCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={courseFilter === cat ? "active" : ""}
+                      aria-pressed={courseFilter === cat}
+                      onClick={() => setCourseFilter(cat)}
                     >
-                      <span className="ed-course__index">0{i + 1} / {c.standardSubject.name || "课程"}</span>
-                      <strong>{c.title}</strong>
-                      <span className="ed-course__sub">{c.orgName}</span>
-                      <span className="ed-course__arrow" aria-hidden="true">↗</span>
-                    </a>
-                    <div className="ed-course__body">
-                      <div className="ed-course__meta"><span>{c.standardSubject.name}</span><small>智慧课程</small></div>
-                      <h3><a onClick={() => handleCourseClick(c)}>{c.title}</a></h3>
-                      <p title={c.description || c.title}>{c.description && c.description !== c.title ? c.description : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}</p>
-                      <div className="ed-course__footer"><span>{[c.teacherName || "教学团队", c.major].filter(Boolean).join(" · ")}</span><a onClick={() => handleCourseClick(c)}>了解课程 →</a></div>
-                    </div>
-                  </article>
-                ))}
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="ed-featured">
+                {featuredCourses.length === 0 ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description="该分类下暂无课程"
+                    style={{ gridColumn: "1 / -1", padding: "40px 0" }}
+                  />
+                ) : (
+                  featuredCourses.map((c, i) => {
+                    const category = getCourseCategory(c);
+                    return (
+                      <article key={c.id} className="ed-course">
+                        <a
+                          className={`ed-course__art v${i + 1}`}
+                          onClick={() => handleCourseClick(c)}
+                          style={
+                            c.imageUrl
+                              ? {
+                                  backgroundImage: `linear-gradient(180deg, rgba(6,19,39,.25) 0%, rgba(6,19,39,.72) 100%), url(${c.imageUrl})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                              : undefined
+                          }
+                        >
+                          <span className="ed-course__index">0{i + 1} / {category}</span>
+                          <strong>{c.title}</strong>
+                          <span className="ed-course__sub">{c.orgName}</span>
+                          <span className="ed-course__arrow" aria-hidden="true">↗</span>
+                        </a>
+                        <div className="ed-course__body">
+                          <div className="ed-course__meta"><span>{category}</span><small>智慧课程</small></div>
+                          <h3><a onClick={() => handleCourseClick(c)}>{c.title}</a></h3>
+                          <p title={c.description || c.title}>{c.description && c.description !== c.title ? c.description : "课程简介正在完善中，点击进入可查看课程详情与学习内容。"}</p>
+                          <div className="ed-course__footer"><span>{[c.teacherName || "教学团队", c.major].filter(Boolean).join(" · ")}</span><a onClick={() => handleCourseClick(c)}>了解课程 →</a></div>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
               </div>
             </section>
 
@@ -475,27 +545,34 @@ export default function HomePage() {
                         </div>
                         <h3><a onClick={() => handleMajorClick(m)}>{m.name}微专业</a></h3>
                         <p className="major-desc" title={desc}>{desc}</p>
-                        {(m.courseTitles.length > 0 || (m.microMajorCourses?.length || 0) > 0) ? (
-                          <div className="major-course-preview">
-                            <div><b>你将学习</b><small>{m.microMajorCourses?.length || m.courseTitles.length} 门系列课程</small></div>
-                            {m.courseTitles.length > 0 && (
-                              <ol>
-                                {m.courseTitles.slice(0, 3).map((t, ti) => (
-                                  <li key={ti}><span>0{ti + 1}</span>{t}</li>
-                                ))}
-                              </ol>
-                            )}
-                            <a className="major-more-courses" onClick={() => handleMajorClick(m)}>查看全部 {m.microMajorCourses?.length || m.courseTitles.length} 门课程 <span>→</span></a>
+                        <div className="major-course-preview">
+                          <div>
+                            <b>你将学习</b>
+                            <small>
+                              {(m.microMajorCourses?.length || 0) > 0
+                                ? `${m.microMajorCourses?.length} 门系列课程`
+                                : m.courseTitles.length > 0
+                                  ? `${m.courseTitles.length} 门系列课程`
+                                  : "系列课程筹备中"}
+                            </small>
                           </div>
-                        ) : (
-                          <div className="major-course-preview">
-                            <div><b>你将学习</b><small>系列课程筹备中</small></div>
-                            <ol>
-                              <li><span>--</span>课程体系即将公布，敬请期待</li>
-                            </ol>
-                            <a className="major-more-courses" onClick={() => handleMajorClick(m)}>了解微专业详情 <span>→</span></a>
-                          </div>
-                        )}
+                          <ol>
+                            {[0, 1, 2].map((ti) => {
+                              const courseTitle = m.courseTitles[ti];
+                              return (
+                                <li key={ti} className={courseTitle ? undefined : "is-empty"}>
+                                  <span>0{ti + 1}</span>
+                                  {courseTitle || "——"}
+                                </li>
+                              );
+                            })}
+                          </ol>
+                          <a className="major-more-courses" onClick={() => handleMajorClick(m)}>
+                            {(m.microMajorCourses?.length || m.courseTitles.length) > 0
+                              ? <>查看全部 {m.microMajorCourses?.length || m.courseTitles.length} 门课程 <span>→</span></>
+                              : <>了解微专业详情 <span>→</span></>}
+                          </a>
+                        </div>
                         <div className="major-card-bottom"><a onClick={() => handleMajorClick(m)}>了解微专业 ↗</a></div>
                       </div>
                     </article>

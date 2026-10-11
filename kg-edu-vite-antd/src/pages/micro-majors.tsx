@@ -113,21 +113,23 @@ function MicroMajorCard({
         <div className="major-course-preview">
           <div>
             <b>你将学习</b>
-            <small>{courses.length} 门系列课程</small>
+            <small>{courses.length > 0 ? `${courses.length} 门系列课程` : "系列课程筹备中"}</small>
           </div>
-          {titles.length > 0 ? (
-            <ol>
-              {titles.slice(0, 3).map((t, i) => (
-                <li key={i}><span>0{i + 1}</span>{t}</li>
-              ))}
-            </ol>
-          ) : (
-            <ol>
-              <li><span>--</span>课程体系即将公布</li>
-            </ol>
-          )}
+          <ol>
+            {[0, 1, 2].map((i) => {
+              const t = titles[i];
+              return (
+                <li key={i} className={t ? undefined : "is-empty"}>
+                  <span>0{i + 1}</span>
+                  {t || "——"}
+                </li>
+              );
+            })}
+          </ol>
           <a className="major-more-courses" onClick={() => onClick(major)}>
-            查看全部 {courses.length} 门课程 <span>→</span>
+            {courses.length > 0
+              ? <>查看全部 {courses.length} 门课程 <span>→</span></>
+              : <>了解微专业详情 <span>→</span></>}
           </a>
         </div>
         <div className="major-card-bottom">
