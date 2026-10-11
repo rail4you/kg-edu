@@ -1,652 +1,324 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Button, Empty, Input, Modal, Popconfirm, Spin, message } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Card,
-  Typography,
-  Row,
-  Col,
-  Avatar,
-  Spin,
-  Empty,
-  Tooltip,
-  message,
-} from "antd";
-import {
-  UserOutlined,
-  BookOutlined,
-  StarOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  BankOutlined,
-  DownOutlined,
-  RightOutlined,
-} from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
-import { useTranslate } from "@/locales/use-locales";
-import {
-  listUsers,
-  listCourses,
-  listAssignmentsForTeacher,
-  listCourseAssignments,
+  listResearchRoomMessages,
+  createResearchRoomMessage,
+  markResearchRoomMessageRead,
+  deleteResearchRoomMessage,
 } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
-import { getCurrentTenant } from "@/lib/tenant";
-import { AppPage } from "@/components/proto";
+import "./virtual-research-room.css";
 
-const { Title, Text } = Typography;
+/* ────────────────────── types ────────────────────── */
 
-const DEFAULT_AVATAR =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Ccircle cx='50' cy='35' r='20' fill='%23ccc'/%3E%3Cellipse cx='50' cy='80' rx='30' ry='20' fill='%23ccc'/%3E%3C/svg%3E";
+interface ResearchMessage {
+  id: string;
+  title: string;
+  content: string;
+  authorLabel?: string | null;
+  readStatus: "unread" | "read";
+  participated: boolean;
+  postedAt: string;
+}
 
-const extractArrayData = (result: any): any[] => {
-  if (result?.success && result.data) {
-    if (Array.isArray(result.data)) return result.data;
-    if ("results" in result.data && Array.isArray(result.data.results))
-      return result.data.results;
-    if ("data" in result.data && Array.isArray(result.data.data))
-      return result.data.data;
-  }
-  return [];
-};
+type TabId = "all" | "unread" | "mine";
 
-const getHeaders = (user: any): Record<string, string> =>
-  getAuthHeaders(user) as Record<string, string>;
+const TABS: { id: TabId; label: string }[] = [
+  { id: "all", label: "全部消息" },
+  { id: "unread", label: "未读消息" },
+  { id: "mine", label: "我参与的" },
+];
 
-const ROLE_ORDER = ["primary_teacher", "assistant_teacher", "guest_teacher"];
+function formatPostedAt(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hhmm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === now.toDateString()) return `今天 ${hhmm}`;
+  if (d.toDateString() === yesterday.toDateString()) return `昨天 ${hhmm}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hhmm}`;
+}
 
-const getRoleLabel = (role: string, t: any) => {
-  switch (role) {
-    case "primary_teacher":
-      return t("pages.virtualResearchRoom.role.primary");
-    case "assistant_teacher":
-      return t("pages.virtualResearchRoom.role.assistant");
-    case "guest_teacher":
-      return t("pages.virtualResearchRoom.role.guest");
-    default:
-      return role;
-  }
-};
+/* ────────────────────── component ────────────────────── */
 
-const getRoleColor = (role: string): string => {
-  switch (role) {
-    case "primary_teacher":
-      return "#0056D2";
-    case "assistant_teacher":
-      return "#1A6B50";
-    case "guest_teacher":
-      return "#6B3FA0";
-    default:
-      return "#595959";
-  }
-};
+export default function VirtualResearchRoom() {
+  const { user, tenant } = useAuth();
+  const queryClient = useQueryClient();
+  const headers = getAuthHeaders(user) as Record<string, string>;
 
-const getRoleBgColor = (role: string): string => {
-  switch (role) {
-    case "primary_teacher":
-      return "#E8F0FE";
-    case "assistant_teacher":
-      return "#E6F4EA";
-    case "guest_teacher":
-      return "#F3E8FD";
-    default:
-      return "#F5F5F5";
-  }
-};
+  const [tab, setTab] = useState<TabId>("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [active, setActive] = useState<ResearchMessage | null>(null);
+  const [reply, setReply] = useState("");
+  const [replying, setReplying] = useState(false);
 
-const CopyText: React.FC<{ text: string; icon?: React.ReactNode }> = ({
-  text,
-  icon,
-}) => {
-  const [copied, setCopied] = useState(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ["researchRoomMessages", tenant],
+    queryFn: async () => {
+      const res = await listResearchRoomMessages({
+        tenant,
+        fields: [
+          "id",
+          "title",
+          "content",
+          "authorLabel",
+          "readStatus",
+          "participated",
+          "postedAt",
+        ],
+        page: { limit: 100, offset: 0 },
+        headers,
+      });      if (res.success) {
+        const payload = res.data as unknown;
+        if (Array.isArray(payload)) return payload as ResearchMessage[];
+        const nested = (payload as { results?: ResearchMessage[] })?.results;
+        return Array.isArray(nested) ? nested : [];
+      }
+      return [];
+    },
+    enabled: !!tenant && !!user,
+  });
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      message.success("已复制");
-      setTimeout(() => setCopied(false), 1500);
+  const messages = data ?? [];
+  const filtered = messages.filter((m) => {
+    if (tab === "unread") return m.readStatus === "unread";
+    if (tab === "mine") return m.participated;
+    return true;
+  });
+
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ["researchRoomMessages", tenant] });
+
+  const handleCreate = async () => {
+    if (!draftTitle.trim() || !draftContent.trim()) {
+      message.warning("请填写标题和内容");
+      return;
+    }
+    setSubmitting(true);
+    const res = await createResearchRoomMessage({
+      tenant,
+      input: {
+        title: draftTitle.trim(),
+        content: draftContent.trim(),
+        authorLabel: user?.displayName || "教师",
+        authorId: user?.id,
+        participated: true,
+      },
+      fields: ["id"],
+      headers,
     });
+    setSubmitting(false);
+    if (res.success) {
+      message.success("已发布讨论");
+      setCreateOpen(false);
+      setDraftTitle("");
+      setDraftContent("");
+      refresh();
+    } else {
+      message.error("发布失败，请稍后重试");
+    }
+  };
+
+  const openMessage = async (m: ResearchMessage) => {
+    setActive(m);
+    setReply("");
+    if (m.readStatus === "unread") {
+      await markResearchRoomMessageRead({
+        tenant,
+        primaryKey: m.id,
+        fields: ["id"],
+        headers,
+      });
+      refresh();
+    }
+  };
+
+  const handleReply = async () => {    if (!active || !reply.trim()) {
+      message.warning("请输入回复内容");
+      return;
+    }
+    setReplying(true);
+    const res = await createResearchRoomMessage({
+      tenant,
+      input: {
+        title: `回复：${active.title}`,
+        content: reply.trim(),
+        authorLabel: user?.displayName || "教师",
+        authorId: user?.id,
+        participated: true,
+      },
+      fields: ["id"],
+      headers,
+    });
+    setReplying(false);
+    if (res.success) {
+      message.success("已回复");
+      setActive(null);
+      setReply("");
+      refresh();
+    } else {
+      message.error("回复失败，请稍后重试");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const res = await deleteResearchRoomMessage({
+      tenant,
+      primaryKey: id,
+      headers,
+    });
+    if (res.success) {
+      message.success("已删除");
+      if (active?.id === id) setActive(null);
+      refresh();
+    } else {
+      message.error("删除失败，请稍后重试");
+    }
   };
 
   return (
-    <Tooltip title={copied ? "已复制 ✓" : text}>
-      <span
-        onClick={handleCopy}
-        style={{
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          padding: "2px 4px",
-          borderRadius: 4,
-          transition: "background 0.15s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#f0f0f0";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-        }}
-      >
-        {icon}
-      </span>
-    </Tooltip>
-  );
-};
-
-interface CourseWithTeachers {
-  courseId: string;
-  courseTitle: string;
-  imageUrl: string;
-  creatorId: string;
-  creator: any;
-  teachers: {
-    teacherId: string;
-    teacher: any;
-    role: string;
-  }[];
-}
-
-const buildCourseWithTeachers = (
-  courses: any[],
-  assignments: any[],
-  teacherMap: Map<string, any>,
-): CourseWithTeachers[] => {
-  return courses.map((course: any) => {
-    const courseAssignments = assignments.filter(
-      (a: any) => a.courseId === course.id,
-    );
-    const teachersInCourse: CourseWithTeachers["teachers"] = [];
-    courseAssignments.forEach((a: any) => {
-      const teacher = teacherMap.get(a.teacherId);
-      if (teacher) {
-        teachersInCourse.push({ teacherId: a.teacherId, teacher, role: a.role });
-      }
-    });
-    const creator = teacherMap.get(course.teacherId);
-    if (creator && !teachersInCourse.find((t) => t.teacherId === course.teacherId)) {
-      teachersInCourse.unshift({
-        teacherId: course.teacherId,
-        teacher: creator,
-        role: "primary_teacher",
-      });
-    }
-    teachersInCourse.sort(
-      (a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role),
-    );
-    return {
-      courseId: course.id,
-      courseTitle: course.title,
-      imageUrl: course.imageUrl || "",
-      creatorId: course.teacherId,
-      creator,
-      teachers: teachersInCourse,
-    };
-  });
-};
-
-const fetchCoursesGroupedData = async (user: any): Promise<CourseWithTeachers[]> => {
-  const currentTenant = getCurrentTenant();
-  const tenant = currentTenant?.schemaName || "";
-  const courseFields = ["id", "title", "teacherId", "imageUrl"];
-
-  if (user?.role !== "teacher") {
-    const coursesResult = await listCourses({
-      tenant,
-      fields: courseFields,
-      page: { limit: 1000, offset: 0 },
-      headers: getHeaders(user),
-    });
-    const courses = extractArrayData(coursesResult);
-    if (courses.length === 0) return [];
-
-    const courseIds = courses.map((c: any) => c.id);
-    const teacherIds = new Set<string>();
-    courses.forEach((c: any) => {
-      if (c.teacherId) teacherIds.add(c.teacherId);
-    });
-
-    const assignmentsResult = await listCourseAssignments({
-      tenant,
-      fields: ["id", "courseId", "teacherId", "role"],
-      filter: { courseId: { in: courseIds } },
-      page: { limit: 1000, offset: 0 },
-      headers: getHeaders(user),
-    });
-    const assignments = extractArrayData(assignmentsResult);
-    assignments.forEach((a: any) => {
-      if (a.teacherId) teacherIds.add(a.teacherId);
-    });
-
-    const teachersResult = await listUsers({
-      tenant,
-      fields: [
-        "id", "name", "email", "phone", "role", "avatarUrl",
-        "jobTitle", "bio", "major", "colledge",
-      ],
-      filter: { role: { eq: "teacher" }, id: { in: Array.from(teacherIds) } },
-      headers: getHeaders(user),
-    });
-    const teachers = extractArrayData(teachersResult);
-    const teacherMap = new Map<string, any>();
-    teachers.forEach((t: any) => teacherMap.set(t.id, t));
-
-    return buildCourseWithTeachers(courses, assignments, teacherMap);
-  }
-
-  const currentTeacherId = user.id;
-
-  const createdCoursesResult = await listCourses({
-    tenant,
-    fields: courseFields,
-    filter: { teacherId: { eq: currentTeacherId } },
-    page: { limit: 1000, offset: 0 },
-    headers: getHeaders(user),
-  });
-  const createdCourses = extractArrayData(createdCoursesResult);
-
-  const assignedResult = await listAssignmentsForTeacher({
-    tenant,
-    input: { teacherId: currentTeacherId },
-    fields: ["id", "courseId"],
-    headers: getHeaders(user),
-  });
-  const assignedCourses = extractArrayData(assignedResult);
-
-  const allCourseIds = [
-    ...new Set([
-      ...createdCourses.map((c: any) => c.id),
-      ...assignedCourses.map((a: any) => a.courseId).filter(Boolean),
-    ]),
-  ];
-
-  if (allCourseIds.length === 0) return [];
-
-  const allCoursesResult = await listCourses({
-    tenant,
-    fields: courseFields,
-    filter: { id: { in: allCourseIds } },
-    page: { limit: 1000, offset: 0 },
-    headers: getHeaders(user),
-  });
-  const allCourses = extractArrayData(allCoursesResult);
-
-  const allAssignmentsResult = await listCourseAssignments({
-    tenant,
-    fields: ["id", "courseId", "teacherId", "role"],
-    filter: { courseId: { in: allCourseIds } },
-    page: { limit: 1000, offset: 0 },
-    headers: getHeaders(user),
-  });
-  const allAssignments = extractArrayData(allAssignmentsResult);
-
-  const teacherIds = new Set<string>();
-  allCourses.forEach((c: any) => {
-    if (c.teacherId) teacherIds.add(c.teacherId);
-  });
-  allAssignments.forEach((a: any) => {
-    if (a.teacherId) teacherIds.add(a.teacherId);
-  });
-
-  const allTeachersResult = await listUsers({
-    tenant,
-    fields: [
-      "id", "name", "email", "phone", "role", "avatarUrl",
-      "jobTitle", "bio", "major", "colledge",
-    ],
-    filter: { role: { eq: "teacher" }, id: { in: Array.from(teacherIds) } },
-    headers: getHeaders(user),
-  });
-  const allTeachers = extractArrayData(allTeachersResult);
-  const teacherMap = new Map<string, any>();
-  allTeachers.forEach((t: any) => teacherMap.set(t.id, t));
-
-  return buildCourseWithTeachers(allCourses, allAssignments, teacherMap);
-};
-
-const ROLE_ICON: Record<string, React.ReactNode> = {
-  primary_teacher: <StarOutlined />,
-  assistant_teacher: <BookOutlined />,
-  guest_teacher: <UserOutlined />,
-};
-
-const TeacherRow: React.FC<{
-  teacher: any;
-  role: string;
-  t: any;
-}> = ({ teacher, role, t }) => {
-  const roleColor = getRoleColor(role);
-  const roleBgColor = getRoleBgColor(role);
-  const roleIcon = ROLE_ICON[role];
-  const roleLabel = getRoleLabel(role, t);
-
-  return (
-    <Card
-      style={{
-        borderRadius: 12,
-        overflow: "hidden",
-        border: "1px solid #e8e8e8",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-        transition: "all 0.2s ease-in-out",
-        height: "100%",
-      }}
-      styles={{ body: { padding: 0 } }}
-      hoverable
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.12)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
-      }}
-    >
-      <div style={{ display: "flex", minHeight: 160 }}>
-        {/* 左侧：头像、姓名、职称、角色 */}
-        <div
-          style={{
-            width: 140,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "14px 12px",
-            backgroundColor: "#fafafa",
-            borderRight: "1px solid #f0f0f0",
-            gap: 6,
-          }}
-        >
-          <Avatar
-            size={52}
-            src={teacher.avatarUrl || DEFAULT_AVATAR}
-            alt={teacher.name}
-            style={{
-              border: "2px solid #fff",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-            }}
-          />
-
-          <Text strong ellipsis style={{ fontSize: 14, textAlign: "center", width: "100%" }}>
-            {teacher.name || t("pages.virtualResearchRoom.unknownTeacher")}
-          </Text>
-
-          {teacher.jobTitle && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {teacher.jobTitle}
-            </Text>
-          )}
-
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              fontSize: 11,
-              color: roleColor,
-              background: roleBgColor,
-              borderRadius: 4,
-              padding: "2px 8px",
-              fontWeight: 500,
-            }}
-          >
-            {roleIcon && React.cloneElement(roleIcon as React.ReactElement, { style: { fontSize: 11 } })}
-            {roleLabel}
-          </span>
+    <div className="virtual-room">
+      <div className="page-head">
+        <div>
+          <h1>虚拟教研室</h1>
+          <p>让教学沟通围绕课程与具体问题展开。</p>
         </div>
+        <div className="row">
+          <Button type="primary" onClick={() => setCreateOpen(true)}>
+            发布讨论
+          </Button>
+        </div>
+      </div>
 
-        {/* 右侧：简介和联系方式 */}
-        <div
-          style={{
-            flex: 1,
-            padding: "12px 16px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* 个人简介 */}
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginBottom: 4,
-              }}
-            >
-              <UserOutlined style={{ fontSize: 13, color: "#8c8c8c" }} />
-              <Text strong style={{ fontSize: 13, color: "#404040" }}>
-                个人简介
-              </Text>
-            </div>
+      <div className="tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={tab === t.id ? "active" : ""}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-            {teacher.bio ? (
-              <Typography.Paragraph
-                type="secondary"
-                ellipsis={{ rows: 3, expandable: true, symbol: "展开" }}
-                style={{ lineHeight: 1.5, marginBottom: 0, fontSize: 13 }}
-              >
-                {teacher.bio}
-              </Typography.Paragraph>
+      {isLoading ? (
+        <Spin>
+          <div style={{ minHeight: 200 }} />
+        </Spin>
+      ) : (
+        <div className="grid two">
+          <div className="card">
+            {filtered.length === 0 ? (
+              <Empty description="暂无消息" style={{ padding: "40px 0" }} />
             ) : (
-              <Text
-                type="secondary"
-                italic
-                style={{ fontSize: 13 }}
-              >
-                暂无个人简介信息
-              </Text>
+              filtered.map((m) => (
+                <div className="item" key={m.id}>
+                  <span className="avatar">
+                    {(m.authorLabel || "通").charAt(0)}
+                  </span>
+                  <div className="item__body">
+                    <h3>{m.title}</h3>
+                    <small>
+                      {m.authorLabel || "课程教学团队"} · {formatPostedAt(m.postedAt)}
+                    </small>
+                    <p>{m.content}</p>
+                    <Button onClick={() => openMessage(m)}>查看与回复</Button>
+                  </div>
+                  <div className="item__side">
+                    <Popconfirm
+                      title="删除这条消息？"
+                      description="删除后不可恢复。"
+                      okText="删除"
+                      cancelText="取消"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => handleDelete(m.id)}
+                    >
+                      <button type="button" className="item__delete" aria-label="删除消息" title="删除">
+                        <CloseOutlined />
+                      </button>
+                    </Popconfirm>
+                  </div>
+                </div>
+              ))
             )}
           </div>
 
-          {/* 底部联系信息 */}
-          {(teacher.email || teacher.phone || teacher.colledge) && (
-            <div
-              style={{
-                marginTop: 8,
-                paddingTop: 8,
-                borderTop: "1px solid #f0f0f0",
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                flexWrap: "wrap",
-              }}
-            >
-              {teacher.email && (
-                <CopyText
-                  text={teacher.email}
-                  icon={
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 12,
-                        color: "#8c8c8c",
-                      }}
-                    >
-                      <MailOutlined style={{ fontSize: 12 }} />
-                      {teacher.email}
-                    </span>
-                  }
-                />
-              )}
-              {teacher.phone && (
-                <CopyText
-                  text={teacher.phone}
-                  icon={
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 12,
-                        color: "#8c8c8c",
-                      }}
-                    >
-                      <PhoneOutlined style={{ fontSize: 12 }} />
-                      {teacher.phone}
-                    </span>
-                  }
-                />
-              )}
-              {teacher.colledge && (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    fontSize: 12,
-                    color: "#8c8c8c",
-                  }}
-                >
-                  <BankOutlined style={{ fontSize: 12 }} />
-                  {teacher.colledge}
-                </span>
-              )}
+          <section className="card">
+            <h2>交流提示</h2>
+            <p className="muted" style={{ margin: "20px 0" }}>
+              描述具体的课程、章节与问题，有助于获得更准确的反馈。
+            </p>
+            <div className="note">
+              此处发布的内容只在原型内展示，不会发送邮件或通知真实用户。
             </div>
-          )}
+          </section>
         </div>
-      </div>
-    </Card>
-  );
-};
+      )}
 
-const CourseGroupCard: React.FC<{
-  course: CourseWithTeachers;
-  t: any;
-  isLast?: boolean;
-}> = ({ course, t, isLast }) => {
-  const courseId = `course-${course.courseId}`;
-  const [expanded, setExpanded] = useState(true);
-
-  return (
-    <div style={{ marginBottom: isLast ? 0 : 16 }}>
-      <div
-        onClick={() => setExpanded(!expanded)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "12px 0",
-          cursor: "pointer",
-        }}
+      {/* 发布讨论 */}
+      <Modal
+        title="发布讨论"
+        open={createOpen}
+        onCancel={() => setCreateOpen(false)}
+        onOk={handleCreate}
+        confirmLoading={submitting}
+        okText="发布"
+        cancelText="取消"
+        destroyOnClose
       >
-        {expanded ? (
-          <DownOutlined style={{ color: "#1890ff", fontSize: 14 }} />
-        ) : (
-          <RightOutlined style={{ color: "#1890ff", fontSize: 14 }} />
-        )}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <BookOutlined style={{ fontSize: 16, color: "#1890ff" }} />
-          <Title
-            level={5}
-            style={{
-              margin: 0,
-              color: "#262626",
-              fontWeight: 600,
-            }}
-          >
-            {course.courseTitle || t("pages.virtualResearchRoom.unknownCourse")}
-          </Title>
-        </div>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {course.teachers.length} 位教师
-        </Text>
-      </div>
-      {expanded && (
-        <div style={{ paddingBottom: 8 }}>
-          <Row gutter={[16, 16]}>
-            {course.teachers.map((item) => (
-              <Col xs={24} md={12} key={item.teacherId}>
-                <TeacherRow teacher={item.teacher} role={item.role} t={t} />
-              </Col>
-            ))}
-          </Row>
-        </div>
-      )}
-      {!isLast && (
-        <div
-          style={{
-            borderTop: "1px dashed #d9d9d9",
-            marginTop: 8,
-          }}
+        <Input
+          placeholder="讨论标题"
+          value={draftTitle}
+          onChange={(e) => setDraftTitle(e.target.value)}
+          style={{ marginBottom: 12 }}
         />
-      )}
-    </div>
-  );
-};
+        <Input.TextArea
+          placeholder="描述具体的课程、章节与问题"
+          value={draftContent}
+          onChange={(e) => setDraftContent(e.target.value)}
+          rows={5}
+        />
+      </Modal>
 
-export default function VirtualResearchRoom() {
-  const { user } = useAuth();
-  const { t } = useTranslate("teacher");
-
-  const {
-    data: coursesData,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["courses-grouped-teachers"],
-    queryFn: () => fetchCoursesGroupedData(user),
-    enabled: !!user,
-  });
-
-  if (isLoading) {
-    return (
-      <AppPage title={t("pages.virtualResearchRoom.title")}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: 300,
-          }}
-        >
-          <Spin size="large" tip={t("pages.virtualResearchRoom.loading")}>
-            <div style={{ padding: 50 }} />
-          </Spin>
-        </div>
-      </AppPage>
-    );
-  }
-
-  if (error) {
-    return (
-      <AppPage title={t("pages.virtualResearchRoom.title")}>
-        <Text type="danger">{t("pages.virtualResearchRoom.loadError")}</Text>
-      </AppPage>
-    );
-  }
-
-  const courses = coursesData || [];
-
-  return (
-    <AppPage
-      title={t("pages.virtualResearchRoom.title")}
-      description={t("pages.virtualResearchRoom.subtitle")}
-    >
-      {courses.length === 0 ? (
-        <Card style={{ borderRadius: 12 }}>
-          <Empty
-            description={t("pages.virtualResearchRoom.noTeachers")}
-            style={{ padding: "40px 0" }}
-          />
-        </Card>
-      ) : (
-        <div>
-          {courses.map((course, index) => (
-            <CourseGroupCard
-              key={course.courseId}
-              course={course}
-              t={t}
-              isLast={index === courses.length - 1}
+      {/* 查看与回复 */}
+      <Modal
+        title={active?.title}
+        open={!!active}
+        onCancel={() => setActive(null)}
+        onOk={handleReply}
+        confirmLoading={replying}
+        okText="回复"
+        cancelText="关闭"
+        destroyOnClose
+      >
+        {active && (
+          <>
+            <small style={{ color: "#64748b" }}>
+              {active.authorLabel || "课程教学团队"} · {formatPostedAt(active.postedAt)}
+            </small>
+            <p style={{ margin: "14px 0", lineHeight: 1.8, color: "#202f47" }}>
+              {active.content}
+            </p>
+            <Input.TextArea
+              placeholder="写下你的回复…"
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              rows={4}
             />
-          ))}
-        </div>
-      )}
-    </AppPage>
+          </>
+        )}
+      </Modal>
+    </div>
   );
 }

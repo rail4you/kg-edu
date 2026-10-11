@@ -1,0 +1,277 @@
+/* ============================================================
+   虚拟教研室 —— 严格对齐「易课程-完整交互原型」discussion() 样式
+   作用域：.virtual-room（避免影响其它页面）
+   ============================================================ */
+
+.virtual-room {
+  --vr-blue: #2859df;
+  --vr-ink: #202f47;
+  --vr-muted: #64748b;
+  --vr-line: #e3e9f1;
+  --vr-radius: 14px;
+  color: var(--vr-ink);
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 26px 34px 50px;
+}
+
+/* ---------- 页头 ---------- */
+.virtual-room .page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.virtual-room .page-head h1 {
+  font-size: 29px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  line-height: 1.5;
+  color: var(--vr-ink);
+  margin: 0;
+}
+
+.virtual-room .page-head p {
+  font-size: 14px;
+  color: var(--vr-muted);
+  margin: 6px 0 0;
+}
+
+.virtual-room .row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---------- 标签页（下划线） ---------- */
+.virtual-room .tabs {
+  display: flex;
+  gap: 26px;
+  border-bottom: 1px solid var(--vr-line);
+  margin-bottom: 24px;
+  overflow: auto;
+}
+
+.virtual-room .tabs button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  white-space: nowrap;
+  padding: 12px 2px;
+  color: var(--vr-muted);
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.16s;
+}
+
+.virtual-room .tabs button:hover {
+  color: var(--vr-blue);
+}
+
+.virtual-room .tabs button.active {
+  color: var(--vr-blue);
+  border-bottom: 3px solid var(--vr-blue);
+  font-weight: 650;
+}
+
+/* ---------- 栅格 ---------- */
+.virtual-room .grid {
+  display: grid;
+  gap: 20px;
+}
+
+.virtual-room .two {
+  grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr);
+}
+
+/* ---------- 卡片 ---------- */
+.virtual-room .card {
+  background: #fff;
+  border: 1px solid var(--vr-line);
+  border-radius: var(--vr-radius);
+  padding: 24px;
+  min-width: 0;
+}
+
+.virtual-room .card h2 {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--vr-ink);
+  margin: 0;
+}
+
+/* ---------- 消息项 ---------- */
+.virtual-room .item {
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f5;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.virtual-room .item:last-child {
+  border: 0;
+}
+
+.virtual-room .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8eeff;
+  color: var(--vr-blue);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.virtual-room .item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.virtual-room .item h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--vr-ink);
+  margin: 0;
+}
+
+.virtual-room .item small {
+  display: block;
+  color: var(--vr-muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.virtual-room .item p {
+  font-size: 14px;
+  color: var(--vr-muted);
+  margin: 13px 0;
+  line-height: 1.75;
+}
+
+/* ---------- 消息右侧操作区 ---------- */
+.virtual-room .item__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.virtual-room .item__delete {
+  border: 0;
+  background: transparent;
+  color: #b8c2cf;
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.virtual-room .item:hover .item__delete {
+  opacity: 1;
+}
+
+.virtual-room .item__delete:hover {
+  color: #c93d50;
+  background: #fdeef1;
+}
+
+/* ---------- 标签 ---------- */
+.virtual-room .tag {
+  display: inline-block;
+  border-radius: 5px;
+  padding: 3px 9px;
+  background: #eaf6f0;
+  color: #137b62;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.virtual-room .tag.blue {
+  background: #edf1ff;
+  color: var(--vr-blue);
+}
+
+/* ---------- 提示 ---------- */
+.virtual-room .note {
+  padding: 18px;
+  border-left: 3px solid var(--vr-blue);
+  background: #f5f8ff;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #62738a;
+  border-radius: 0 10px 10px 0;
+}
+
+.virtual-room .muted {
+  color: var(--vr-muted);
+}
+
+/* ---------- Ant Design 按钮对齐原型 ---------- */
+.virtual-room .ant-btn {
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  font-weight: 400;
+}
+
+.virtual-room .ant-btn-default {
+  background: #fff;
+  border-color: var(--vr-line);
+  color: var(--vr-ink);
+}
+
+.virtual-room .ant-btn-default:not(:disabled):hover {
+  background: #edf2ff;
+  border-color: #c6d3f7;
+  color: var(--vr-ink);
+}
+
+@media (max-width: 1100px) {
+  .virtual-room {
+    padding: 22px 22px 40px;
+  }
+
+  .virtual-room .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .virtual-room {
+    padding: 18px 16px 32px;
+  }
+
+  .virtual-room .page-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .virtual-room .page-head h1 {
+    font-size: 25px;
+  }
+
+  .virtual-room .card {
+    padding: 18px;
+  }
+
+  .virtual-room .tabs {
+    gap: 18px;
+  }
+}

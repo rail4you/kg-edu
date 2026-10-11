@@ -1715,13 +1715,26 @@ export type BrandingConfigResourceSchema = {
 
 
 
+// SmartPortalLayout Schema
+export type SmartPortalLayoutResourceSchema = {
+  __type: "Resource";
+  __primitiveFields: "id" | "key" | "name" | "layout" | "enabled";
+  id: UUID;
+  key: string;
+  name: string | null;
+  layout: Record<string, any> | null;
+  enabled: boolean;
+};
+
+
+
 // ReportTemplate Schema
 export type ReportTemplateResourceSchema = {
   __type: "Resource";
   __primitiveFields: "id" | "name" | "kind" | "config" | "createdById";
   id: UUID;
   name: string;
-  kind: "report" | "table";
+  kind: "report" | "table" | "outline";
   config: Record<string, any> | null;
   createdById: UUID | null;
   createdBy: { __type: "Relationship"; __resource: UserResourceSchema | null; };
@@ -1776,7 +1789,27 @@ export type FormAssignmentResourceSchema = {
   status: "pending" | "submitted";
   form: { __type: "Relationship"; __resource: FormDefResourceSchema; };
   student: { __type: "Relationship"; __resource: UserResourceSchema; };
-  assignedBy: { __type: "Relationship"; __resource: UserResourceSchema | null; };
+};
+
+
+
+// ResearchRoomMessage Schema
+export type ResearchRoomMessageResourceSchema = {
+  __type: "Resource";
+  __primitiveFields: "id" | "title" | "content" | "authorLabel" | "readStatus" | "participated" | "postedAt" | "insertedAt" | "updatedAt" | "authorId" | "courseId";
+  id: UUID;
+  title: string;
+  content: string;
+  authorLabel: string | null;
+  readStatus: "unread" | "read";
+  participated: boolean;
+  postedAt: UtcDateTime;
+  insertedAt: UtcDateTimeUsec;
+  updatedAt: UtcDateTimeUsec;
+  authorId: UUID | null;
+  courseId: UUID | null;
+  author: { __type: "Relationship"; __resource: UserResourceSchema | null; };
+  course: { __type: "Relationship"; __resource: CourseResourceSchema | null; };
 };
 
 
@@ -8224,6 +8257,43 @@ export type BrandingConfigFilterInput = {
 
 
 };
+export type SmartPortalLayoutFilterInput = {
+  and?: Array<SmartPortalLayoutFilterInput>;
+  or?: Array<SmartPortalLayoutFilterInput>;
+  not?: Array<SmartPortalLayoutFilterInput>;
+
+  id?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  key?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  name?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  layout?: {
+    eq?: Record<string, any>;
+    notEq?: Record<string, any>;
+    in?: Array<Record<string, any>>;
+  };
+
+  enabled?: {
+    eq?: boolean;
+    notEq?: boolean;
+  };
+
+
+
+};
 export type ReportTemplateFilterInput = {
   and?: Array<ReportTemplateFilterInput>;
   or?: Array<ReportTemplateFilterInput>;
@@ -8242,9 +8312,9 @@ export type ReportTemplateFilterInput = {
   };
 
   kind?: {
-    eq?: "report" | "table";
-    notEq?: "report" | "table";
-    in?: Array<"report" | "table">;
+    eq?: "report" | "table" | "outline";
+    notEq?: "report" | "table" | "outline";
+    in?: Array<"report" | "table" | "outline">;
   };
 
   config?: {
@@ -8425,7 +8495,93 @@ export type FormAssignmentFilterInput = {
 
   student?: UserFilterInput;
 
-  assignedBy?: UserFilterInput;
+};
+export type ResearchRoomMessageFilterInput = {
+  and?: Array<ResearchRoomMessageFilterInput>;
+  or?: Array<ResearchRoomMessageFilterInput>;
+  not?: Array<ResearchRoomMessageFilterInput>;
+
+  id?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  title?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  content?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  authorLabel?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
+  };
+
+  readStatus?: {
+    eq?: "unread" | "read";
+    notEq?: "unread" | "read";
+    in?: Array<"unread" | "read">;
+  };
+
+  participated?: {
+    eq?: boolean;
+    notEq?: boolean;
+  };
+
+  postedAt?: {
+    eq?: UtcDateTime;
+    notEq?: UtcDateTime;
+    greaterThan?: UtcDateTime;
+    greaterThanOrEqual?: UtcDateTime;
+    lessThan?: UtcDateTime;
+    lessThanOrEqual?: UtcDateTime;
+    in?: Array<UtcDateTime>;
+  };
+
+  insertedAt?: {
+    eq?: UtcDateTimeUsec;
+    notEq?: UtcDateTimeUsec;
+    greaterThan?: UtcDateTimeUsec;
+    greaterThanOrEqual?: UtcDateTimeUsec;
+    lessThan?: UtcDateTimeUsec;
+    lessThanOrEqual?: UtcDateTimeUsec;
+    in?: Array<UtcDateTimeUsec>;
+  };
+
+  updatedAt?: {
+    eq?: UtcDateTimeUsec;
+    notEq?: UtcDateTimeUsec;
+    greaterThan?: UtcDateTimeUsec;
+    greaterThanOrEqual?: UtcDateTimeUsec;
+    lessThan?: UtcDateTimeUsec;
+    lessThanOrEqual?: UtcDateTimeUsec;
+    in?: Array<UtcDateTimeUsec>;
+  };
+
+  authorId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+  courseId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
+
+  author?: UserFilterInput;
+
+  course?: CourseFilterInput;
 
 };
 
@@ -113472,9 +113628,302 @@ export async function validateSaveBrandingConfig(
 }
 
 
+export type GetSmartPortalLayoutFields = UnifiedFieldSelection<SmartPortalLayoutResourceSchema>[];
+type InferGetSmartPortalLayoutResult<
+  Fields extends GetSmartPortalLayoutFields,
+> = Array<InferResult<SmartPortalLayoutResourceSchema, Fields>>;
+
+export type GetSmartPortalLayoutResult<Fields extends GetSmartPortalLayoutFields> = | { success: true; data: InferGetSmartPortalLayoutResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getSmartPortalLayout<Fields extends GetSmartPortalLayoutFields>(
+  config: {
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  filter?: SmartPortalLayoutFilterInput;
+  sort?: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<GetSmartPortalLayoutResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("get_smart_portal_layout", config);
+  }
+
+  const payload = {
+    action: "get_smart_portal_layout",
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("get_smart_portal_layout", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as GetSmartPortalLayoutResult<Fields>;
+}
+
+
+export type ValidateGetSmartPortalLayoutResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetSmartPortalLayout(
+  config: {
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetSmartPortalLayoutResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("get_smart_portal_layout", config);
+  }
+
+  const payload = {
+    action: "get_smart_portal_layout"
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateGetSmartPortalLayoutResult;
+}
+
+
+export type SaveSmartPortalLayoutInput = {
+  name?: string | null;
+  layout?: Record<string, any> | null;
+  enabled?: boolean;
+};
+
+export type SaveSmartPortalLayoutValidationErrors = {
+  name?: string[];
+  layout?: {  };
+  enabled?: string[];
+};
+
+export const saveSmartPortalLayoutZodschema = z.object({
+  name: z.string().optional(),
+  layout: z.record(z.string(), z.any()).optional(),
+  enabled: z.boolean().optional(),
+});
+
+export type SaveSmartPortalLayoutFields = UnifiedFieldSelection<SmartPortalLayoutResourceSchema>[];
+
+type InferSaveSmartPortalLayoutResult<
+  Fields extends SaveSmartPortalLayoutFields,
+> = InferResult<SmartPortalLayoutResourceSchema, Fields>;
+
+export type SaveSmartPortalLayoutResult<Fields extends SaveSmartPortalLayoutFields> = | { success: true; data: InferSaveSmartPortalLayoutResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function saveSmartPortalLayout<Fields extends SaveSmartPortalLayoutFields>(
+  config: {
+  input: SaveSmartPortalLayoutInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<SaveSmartPortalLayoutResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("save_smart_portal_layout", config);
+  }
+
+  const payload = {
+    action: "save_smart_portal_layout",
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("save_smart_portal_layout", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as SaveSmartPortalLayoutResult<Fields>;
+}
+
+
+export type ValidateSaveSmartPortalLayoutResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateSaveSmartPortalLayout(
+  config: {
+  input: SaveSmartPortalLayoutInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateSaveSmartPortalLayoutResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("save_smart_portal_layout", config);
+  }
+
+  const payload = {
+    action: "save_smart_portal_layout",
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateSaveSmartPortalLayoutResult;
+}
+
+
 export type CreateReportTemplateInput = {
   name: string;
-  kind?: "report" | "table";
+  kind?: "report" | "table" | "outline";
   config?: Record<string, any> | null;
   createdById?: UUID | null;
 };
@@ -113488,7 +113937,7 @@ export type CreateReportTemplateValidationErrors = {
 
 export const createReportTemplateZodschema = z.object({
   name: z.string().min(1),
-  kind: z.enum(["report", "table"]).optional(),
+  kind: z.enum(["report", "table", "outline"]).optional(),
   config: z.record(z.string(), z.any()).optional(),
   createdById: z.uuid().optional(),
 });
@@ -113637,7 +114086,7 @@ export async function validateCreateReportTemplate(
 
 export type UpdateReportTemplateInput = {
   name: string;
-  kind?: "report" | "table";
+  kind?: "report" | "table" | "outline";
   config?: Record<string, any> | null;
 };
 
@@ -113649,7 +114098,7 @@ export type UpdateReportTemplateValidationErrors = {
 
 export const updateReportTemplateZodschema = z.object({
   name: z.string().min(1),
-  kind: z.enum(["report", "table"]).optional(),
+  kind: z.enum(["report", "table", "outline"]).optional(),
   config: z.record(z.string(), z.any()).optional(),
 });
 
@@ -117804,6 +118253,783 @@ export async function validateListFormAssignmentsByStudent(
   }
 
   return result as ValidateListFormAssignmentsByStudentResult;
+}
+
+
+export type ListResearchRoomMessagesFields = UnifiedFieldSelection<ResearchRoomMessageResourceSchema>[];
+
+
+type InferListResearchRoomMessagesResult<
+  Fields extends ListResearchRoomMessagesFields,
+  Page extends ListResearchRoomMessagesConfig["page"] = undefined
+> = ConditionalPaginatedResultMixed<Page, Array<InferResult<ResearchRoomMessageResourceSchema, Fields>>, {
+  results: Array<InferResult<ResearchRoomMessageResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  count?: number | null;
+  type: "offset";
+}, {
+  results: Array<InferResult<ResearchRoomMessageResourceSchema, Fields>>;
+  hasMore: boolean;
+  limit: number;
+  after: string | null;
+  before: string | null;
+  previousPage: string;
+  nextPage: string;
+  count?: number | null;
+  type: "keyset";
+}>;
+
+export type ListResearchRoomMessagesConfig = {
+  tenant: string;
+  hookCtx?: ActionHookContext;
+  fields: ListResearchRoomMessagesFields;
+  filter?: ResearchRoomMessageFilterInput;
+  sort?: string;
+  page?: (
+    {
+      limit?: number;
+      offset?: number;
+      count?: boolean;
+    } | {
+      limit?: number;
+      after?: string;
+      before?: string;
+    }
+  );
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+};
+
+export type ListResearchRoomMessagesResult<Fields extends ListResearchRoomMessagesFields, Page extends ListResearchRoomMessagesConfig["page"] = undefined> = | { success: true; data: InferListResearchRoomMessagesResult<Fields, Page>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listResearchRoomMessages<Fields extends ListResearchRoomMessagesFields, Config extends ListResearchRoomMessagesConfig>(
+  config: Config & { fields: Fields }
+): Promise<ListResearchRoomMessagesResult<Fields, Config["page"]>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("list_research_room_messages", config);
+  }
+
+  const payload = {
+    action: "list_research_room_messages",
+    tenant: config.tenant,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort }),
+    ...(config.page && { page: config.page })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("list_research_room_messages", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ListResearchRoomMessagesResult<Fields, Config["page"]>;
+}
+
+
+export type ValidateListResearchRoomMessagesResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListResearchRoomMessages(
+  config: {
+  tenant: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListResearchRoomMessagesResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("list_research_room_messages", config);
+  }
+
+  const payload = {
+    action: "list_research_room_messages",
+    tenant: config.tenant
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateListResearchRoomMessagesResult;
+}
+
+
+export type GetResearchRoomMessageInput = {
+  id: UUID;
+};
+
+export type GetResearchRoomMessageValidationErrors = {
+  id?: string[];
+};
+
+export const getResearchRoomMessageZodschema = z.object({
+  id: z.uuid(),
+});
+
+export type GetResearchRoomMessageFields = UnifiedFieldSelection<ResearchRoomMessageResourceSchema>[];
+type InferGetResearchRoomMessageResult<
+  Fields extends GetResearchRoomMessageFields,
+> = InferResult<ResearchRoomMessageResourceSchema, Fields> | null;
+
+export type GetResearchRoomMessageResult<Fields extends GetResearchRoomMessageFields> = | { success: true; data: InferGetResearchRoomMessageResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function getResearchRoomMessage<Fields extends GetResearchRoomMessageFields>(
+  config: {
+  tenant: string;
+  input: GetResearchRoomMessageInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<GetResearchRoomMessageResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("get_research_room_message", config);
+  }
+
+  const payload = {
+    action: "get_research_room_message",
+    tenant: config.tenant,
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("get_research_room_message", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as GetResearchRoomMessageResult<Fields>;
+}
+
+
+export type ValidateGetResearchRoomMessageResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateGetResearchRoomMessage(
+  config: {
+  tenant: string;
+  input: GetResearchRoomMessageInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateGetResearchRoomMessageResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("get_research_room_message", config);
+  }
+
+  const payload = {
+    action: "get_research_room_message",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateGetResearchRoomMessageResult;
+}
+
+
+export type CreateResearchRoomMessageInput = {
+  title: string;
+  content: string;
+  authorLabel?: string | null;
+  authorId?: UUID | null;
+  courseId?: UUID | null;
+  postedAt?: UtcDateTime;
+  participated?: boolean;
+};
+
+export type CreateResearchRoomMessageValidationErrors = {
+  title?: string[];
+  content?: string[];
+  authorLabel?: string[];
+  authorId?: string[];
+  courseId?: string[];
+  postedAt?: string[];
+  participated?: string[];
+};
+
+export const createResearchRoomMessageZodschema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  authorLabel: z.string().optional(),
+  authorId: z.uuid().optional(),
+  courseId: z.uuid().optional(),
+  postedAt: z.iso.datetime().optional(),
+  participated: z.boolean().optional(),
+});
+
+export type CreateResearchRoomMessageFields = UnifiedFieldSelection<ResearchRoomMessageResourceSchema>[];
+
+type InferCreateResearchRoomMessageResult<
+  Fields extends CreateResearchRoomMessageFields,
+> = InferResult<ResearchRoomMessageResourceSchema, Fields>;
+
+export type CreateResearchRoomMessageResult<Fields extends CreateResearchRoomMessageFields> = | { success: true; data: InferCreateResearchRoomMessageResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function createResearchRoomMessage<Fields extends CreateResearchRoomMessageFields>(
+  config: {
+  tenant: string;
+  input: CreateResearchRoomMessageInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<CreateResearchRoomMessageResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("create_research_room_message", config);
+  }
+
+  const payload = {
+    action: "create_research_room_message",
+    tenant: config.tenant,
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("create_research_room_message", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as CreateResearchRoomMessageResult<Fields>;
+}
+
+
+export type ValidateCreateResearchRoomMessageResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateCreateResearchRoomMessage(
+  config: {
+  tenant: string;
+  input: CreateResearchRoomMessageInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateCreateResearchRoomMessageResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("create_research_room_message", config);
+  }
+
+  const payload = {
+    action: "create_research_room_message",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateCreateResearchRoomMessageResult;
+}
+
+
+export type MarkResearchRoomMessageReadFields = UnifiedFieldSelection<ResearchRoomMessageResourceSchema>[];
+
+type InferMarkResearchRoomMessageReadResult<
+  Fields extends MarkResearchRoomMessageReadFields,
+> = InferResult<ResearchRoomMessageResourceSchema, Fields>;
+
+export type MarkResearchRoomMessageReadResult<Fields extends MarkResearchRoomMessageReadFields> = | { success: true; data: InferMarkResearchRoomMessageReadResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function markResearchRoomMessageRead<Fields extends MarkResearchRoomMessageReadFields>(
+  config: {
+  tenant: string;
+  primaryKey: UUID;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<MarkResearchRoomMessageReadResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("mark_research_room_message_read", config);
+  }
+
+  const payload = {
+    action: "mark_research_room_message_read",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("mark_research_room_message_read", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as MarkResearchRoomMessageReadResult<Fields>;
+}
+
+
+export type ValidateMarkResearchRoomMessageReadResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateMarkResearchRoomMessageRead(
+  config: {
+  tenant: string;
+  primaryKey: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateMarkResearchRoomMessageReadResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("mark_research_room_message_read", config);
+  }
+
+  const payload = {
+    action: "mark_research_room_message_read",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateMarkResearchRoomMessageReadResult;
+}
+
+
+
+export type DeleteResearchRoomMessageResult = | { success: true; data: {}; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function deleteResearchRoomMessage(
+  config: {
+  tenant: string;
+  primaryKey: UUID;
+  hookCtx?: ActionHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<DeleteResearchRoomMessageResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("delete_research_room_message", config);
+  }
+
+  const payload = {
+    action: "delete_research_room_message",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("delete_research_room_message", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as DeleteResearchRoomMessageResult;
+}
+
+
+export type ValidateDeleteResearchRoomMessageResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateDeleteResearchRoomMessage(
+  config: {
+  tenant: string;
+  primaryKey: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateDeleteResearchRoomMessageResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("delete_research_room_message", config);
+  }
+
+  const payload = {
+    action: "delete_research_room_message",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateDeleteResearchRoomMessageResult;
 }
 
 

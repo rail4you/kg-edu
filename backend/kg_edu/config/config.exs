@@ -141,7 +141,8 @@ config :kg_edu,
     KgEdu.MajorAnalysis,
     KgEdu.SystemConfig,
     KgEdu.Insights,
-    KgEdu.Forms
+    KgEdu.Forms,
+    KgEdu.Research
   ]
 
 # Configures the endpoint
