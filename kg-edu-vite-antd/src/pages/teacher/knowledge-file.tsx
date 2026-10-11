@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Card,
   Typography,
   Tabs,
   Select,
@@ -20,10 +19,9 @@ import {
   Badge,
   Tooltip,
   Statistic,
-  Row,
-  Col,
   Popover,
   Pagination,
+  Table,
 } from "antd";
 import type { TreeDataNode } from "antd";
 import {
@@ -43,6 +41,7 @@ import {
   FileImageOutlined,
   ClockCircleOutlined,
   SyncOutlined,
+  PlusOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
 } from "@ant-design/icons";
@@ -252,9 +251,7 @@ function FilesTable({
   onMove?: (file: FileData, direction: "up" | "down") => void;
   reordering?: boolean;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchText, setInternalSearchText] = useState("");
-  const pageSize = 5;
   const actualSearchText = searchText ?? internalSearchText;
   const handleSearchChange = onSearchChange ?? setInternalSearchText;
 
@@ -266,11 +263,6 @@ function FilesTable({
     }
     return list;
   }, [files, actualSearchText]);
-
-  const paginatedFiles = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredFiles.slice(start, start + pageSize);
-  }, [filteredFiles, currentPage]);
 
   if (loading) {
     return (
@@ -303,101 +295,82 @@ function FilesTable({
   }
 
   return (
-    <div style={{ padding: "0 4px" }}>
-      <Row gutter={[12, 12]}>
-        {paginatedFiles.map((file) => (
-          <Col xs={24} sm={12} lg={12} xl={12} key={file.id}>
-            <Card
-              size="small"
-              hoverable
-              styles={{
-                body: {
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                },
-              }}
-              style={{
-                borderRadius: 8,
-                border: "1px solid #e8ecf0",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <div style={{
-                width: 52,
-                height: 52,
-                borderRadius: 10,
-                background: "#f5f7fa",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 12,
-              }}>
-                {getFileIcon(file.fileType)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Text strong ellipsis style={{ display: "block", marginBottom: 4 }}>
-                  {file.filename}
-                </Text>
-                <Space size={8}>
-                  <Tag style={{ fontSize: 11, padding: "0 6px" }}>{simplifyFileType(file.filename || "", file.fileType)}</Tag>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {(file.size / 1024).toFixed(1)} KB
-                  </Text>
-                  {file.source === "ai_generated" && (
-                    <Tag style={{ fontSize: 11, padding: "0 6px" }}>AI生成文件</Tag>
-                  )}
-                </Space>
-              </div>
-              <Tooltip title="取消关联">
+    <>
+      <Table<FileData>
+        rowKey="id"
+        size="middle"
+        loading={loading}
+        pagination={false}
+        dataSource={filteredFiles}
+        columns={[
+          {
+            title: "文件名称",
+            dataIndex: "filename",
+            key: "filename",
+            render: (_: string, file) => (
+              <Space size={8}>
+                <span style={{ display: "inline-flex", width: 22, justifyContent: "center" }}>
+                  {getFileIcon(file.fileType)}
+                </span>
+                <Text strong ellipsis style={{ maxWidth: 320 }}>{file.filename}</Text>
+                {file.source === "ai_generated" && (
+                  <Tag color="green" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>AI生成文件</Tag>
+                )}
+              </Space>
+            ),
+          },
+          {
+            title: "类型",
+            dataIndex: "fileType",
+            key: "fileType",
+            width: 90,
+            render: (_: string, file) => (
+              <Tag style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>
+                {simplifyFileType(file.filename || "", file.fileType)}
+              </Tag>
+            ),
+          },
+          {
+            title: "大小",
+            dataIndex: "size",
+            key: "size",
+            width: 110,
+            render: (size: number) => (
+              <Text type="secondary" style={{ fontSize: 13 }}>{(size / 1024).toFixed(1)} KB</Text>
+            ),
+          },
+          {
+            title: "操作",
+            key: "action",
+            width: onMove ? 160 : 110,
+            render: (_: unknown, file) => (
+              <Space size={4}>
+                {onMove && (
+                  <>
+                    <Tooltip title="上移">
+                      <Button size="small" type="text" icon={<ArrowUpOutlined />} disabled={reordering} onClick={() => onMove(file, "up")} />
+                    </Tooltip>
+                    <Tooltip title="下移">
+                      <Button size="small" type="text" icon={<ArrowDownOutlined />} disabled={reordering} onClick={() => onMove(file, "down")} />
+                    </Tooltip>
+                  </>
+                )}
                 <Button
+                  type="link"
                   size="small"
-                  type="text"
                   danger
                   icon={<DisconnectOutlined />}
                   onClick={() => onUnlink(file.id, file.filename)}
-                  style={{ marginLeft: 8 }}
-                />
-                </Tooltip>
-                {onMove && (
-                  <Space size={2} style={{ marginLeft: 4 }}>
-                    <Tooltip title="上移">
-                      <Button
-                        size="small"
-                        type="text"
-                        icon={<ArrowUpOutlined />}
-                        disabled={reordering}
-                        onClick={() => onMove(file, "up")}
-                      />
-                    </Tooltip>
-                    <Tooltip title="下移">
-                      <Button
-                        size="small"
-                        type="text"
-                        icon={<ArrowDownOutlined />}
-                        disabled={reordering}
-                        onClick={() => onMove(file, "down")}
-                      />
-                    </Tooltip>
-                  </Space>
-                )}
-              </Card>
-            </Col>
-          ))}
-        </Row>
-        {filteredFiles.length > pageSize && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={filteredFiles.length}
-              onChange={(page) => setCurrentPage(page)}
-              showSizeChanger={false}
-              simple
-            />
-          </div>
-        )}
-      </div>
+                >
+                  取消关联
+                </Button>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <div className="pu-table-footer"><span>共 {filteredFiles.length} 条</span></div>
+    </>
   );
 }
 
@@ -414,9 +387,7 @@ function ExercisesTable({
   searchText?: string;
   onSearchChange?: (text: string) => void;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchText, setInternalSearchText] = useState("");
-  const pageSize = 5;
   const actualSearchText = searchText ?? internalSearchText;
   const handleSearchChange = onSearchChange ?? setInternalSearchText;
 
@@ -425,11 +396,6 @@ function ExercisesTable({
     if (!actualSearchText) return exercises;
     return exercises.filter(e => e.title?.toLowerCase().includes(actualSearchText.toLowerCase()));
   }, [exercises, actualSearchText]);
-
-  const paginatedExercises = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredExercises.slice(start, start + pageSize);
-  }, [filteredExercises, currentPage]);
 
   const renderExercisePreview = (exercise: ExerciseData) => {
     const parseOptions = (): Record<string, any> | null => {
@@ -672,86 +638,65 @@ function ExercisesTable({
   }
 
   return (
-    <div style={{ padding: "0 4px" }}>
-      <Row gutter={[12, 12]}>
-        {paginatedExercises.map((exercise) => (
-          <Col xs={24} sm={12} lg={12} xl={12} key={exercise.id}>
-            <Popover
-              content={renderExercisePreview(exercise)}
-              trigger="hover"
-              mouseEnterDelay={0.2}
-              placement="right"
-            >
-              <Card
-                size="small"
-                hoverable
-                styles={{
-                  body: {
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "16px 20px",
-                  },
-                }}
-                style={{
-                  borderRadius: 8,
-                  border: "1px solid #e8ecf0",
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                }}
+    <>
+      <Table<ExerciseData>
+        rowKey="id"
+        size="middle"
+        loading={loading}
+        pagination={false}
+        dataSource={filteredExercises}
+        columns={[
+          {
+            title: "题目",
+            dataIndex: "title",
+            key: "title",
+            render: (title: string, exercise) => (
+              <Popover
+                content={renderExercisePreview(exercise)}
+                trigger="hover"
+                mouseEnterDelay={0.2}
+                placement="right"
               >
-                <div style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 10,
-                  background: "linear-gradient(135deg, #e8f4fd 0%, #d4ecf9 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}>
-                  <FormOutlined style={{ color: "#0056D2", fontSize: 20 }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Text strong ellipsis style={{ display: "block", marginBottom: 4 }}>
-                    {exercise.title}
-                  </Text>
-                  <Space size={8}>
-                    <Tag color="blue" style={{ fontSize: 11, padding: "0 6px" }}>{QUESTION_TYPE_LABELS[exercise.questionType] || exercise.questionType}</Tag>
-                    {exercise.aiType === "ai_generated" && (
-                      <Tag color="green" icon={<SyncOutlined spin />} style={{ fontSize: 11, padding: "0 6px" }}>AI生成</Tag>
-                    )}
-                  </Space>
-                </div>
-                <div style={{ pointerEvents: "auto" }}>
-                  <Tooltip title="取消关联">
-                    <Button
-                      size="small"
-                      type="text"
-                      danger
-                      icon={<DisconnectOutlined />}
-                      onClick={() => onUnlink(exercise.id, exercise.title)}
-                      style={{ marginLeft: 8 }}
-                    />
-                  </Tooltip>
-                </div>
-              </Card>
+                <Text strong ellipsis style={{ maxWidth: 360, cursor: "pointer" }}>{title}</Text>
               </Popover>
-            </Col>
-          ))}
-        </Row>
-        {filteredExercises.length > pageSize && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={filteredExercises.length}
-              onChange={(page) => setCurrentPage(page)}
-              showSizeChanger={false}
-              simple
-            />
-          </div>
-        )}
-      </div>
+            ),
+          },
+          {
+            title: "题型",
+            dataIndex: "questionType",
+            key: "questionType",
+            width: 150,
+            render: (qt: string, exercise) => (
+              <Space size={4}>
+                <Tag color="blue" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>
+                  {QUESTION_TYPE_LABELS[qt] || qt}
+                </Tag>
+                {exercise.aiType === "ai_generated" && (
+                  <Tag color="green" icon={<SyncOutlined spin />} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>AI生成</Tag>
+                )}
+              </Space>
+            ),
+          },
+          {
+            title: "操作",
+            key: "action",
+            width: 110,
+            render: (_: unknown, exercise) => (
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DisconnectOutlined />}
+                onClick={() => onUnlink(exercise.id, exercise.title)}
+              >
+                取消关联
+              </Button>
+            ),
+          },
+        ]}
+      />
+      <div className="pu-table-footer"><span>共 {filteredExercises.length} 条</span></div>
+    </>
   );
 }
 
@@ -768,9 +713,7 @@ function HomeworksTable({
   searchText?: string;
   onSearchChange?: (text: string) => void;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchText, setInternalSearchText] = useState("");
-  const pageSize = 5;
   const actualSearchText = searchText ?? internalSearchText;
   const handleSearchChange = onSearchChange ?? setInternalSearchText;
 
@@ -779,11 +722,6 @@ function HomeworksTable({
     if (!actualSearchText) return homeworks;
     return homeworks.filter(h => h.title?.toLowerCase().includes(actualSearchText.toLowerCase()));
   }, [homeworks, actualSearchText]);
-
-  const paginatedHomeworks = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredHomeworks.slice(start, start + pageSize);
-  }, [filteredHomeworks, currentPage]);
 
   const renderHomeworkPreview = (homework: HomeworkData) => {
     return (
@@ -841,88 +779,65 @@ function HomeworksTable({
   }
 
   return (
-    <div style={{ padding: "0 4px" }}>
-      <Row gutter={[12, 12]}>
-        {paginatedHomeworks.map((homework) => (
-          <Col xs={24} sm={12} lg={12} xl={12} key={homework.id}>
-            <Popover
-              content={renderHomeworkPreview(homework)}
-              trigger="hover"
-              mouseEnterDelay={0.2}
-              placement="right"
-            >
-              <Card
-                size="small"
-                hoverable
-                styles={{
-                  body: {
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "16px 20px",
-                  },
-                }}
-                style={{
-                  borderRadius: 8,
-                  border: "1px solid #e8ecf0",
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                }}
+    <>
+      <Table<HomeworkData>
+        rowKey="id"
+        size="middle"
+        loading={loading}
+        pagination={false}
+        dataSource={filteredHomeworks}
+        columns={[
+          {
+            title: "作业标题",
+            dataIndex: "title",
+            key: "title",
+            render: (title: string, homework) => (
+              <Popover
+                content={renderHomeworkPreview(homework)}
+                trigger="hover"
+                mouseEnterDelay={0.2}
+                placement="right"
               >
-                <div style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 10,
-                  background: "linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}>
-                  <FileTextOutlined style={{ color: "#fa8c16", fontSize: 20 }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Text strong ellipsis style={{ display: "block", marginBottom: 4 }}>
-                    {homework.title}
-                  </Text>
-                  <Space size={8}>
-                    <Tag color="orange" icon={<ClockCircleOutlined />} style={{ fontSize: 11, padding: "0 6px" }}>
-                      满分: {homework.score || "N/A"}
-                    </Tag>
-                    {homework.aiType === "ai_generated" && (
-                      <Tag color="green" icon={<SyncOutlined spin />} style={{ fontSize: 11, padding: "0 6px" }}>AI生成</Tag>
-                    )}
-                  </Space>
-                </div>
-                <div style={{ pointerEvents: "auto" }}>
-                  <Tooltip title="取消关联">
-                    <Button
-                      size="small"
-                      type="text"
-                      danger
-                      icon={<DisconnectOutlined />}
-                      onClick={() => onUnlink(homework.id, homework.title)}
-                      style={{ marginLeft: 8 }}
-                    />
-                  </Tooltip>
-                </div>
-              </Card>
+                <Text strong ellipsis style={{ maxWidth: 360, cursor: "pointer" }}>{title}</Text>
               </Popover>
-            </Col>
-          ))}
-        </Row>
-        {filteredHomeworks.length > pageSize && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={filteredHomeworks.length}
-              onChange={(page) => setCurrentPage(page)}
-              showSizeChanger={false}
-              simple
-            />
-          </div>
-        )}
-      </div>
+            ),
+          },
+          {
+            title: "满分",
+            dataIndex: "score",
+            key: "score",
+            width: 120,
+            render: (score: string, homework) => (
+              <Space size={4}>
+                <Tag color="orange" icon={<ClockCircleOutlined />} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>
+                  {score || "N/A"}
+                </Tag>
+                {homework.aiType === "ai_generated" && (
+                  <Tag color="green" icon={<SyncOutlined spin />} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>AI生成</Tag>
+                )}
+              </Space>
+            ),
+          },
+          {
+            title: "操作",
+            key: "action",
+            width: 110,
+            render: (_: unknown, homework) => (
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DisconnectOutlined />}
+                onClick={() => onUnlink(homework.id, homework.title)}
+              >
+                取消关联
+              </Button>
+            ),
+          },
+        ]}
+      />
+      <div className="pu-table-footer"><span>共 {filteredHomeworks.length} 条</span></div>
+    </>
   );
 }
 
@@ -939,9 +854,7 @@ function VideosTable({
   searchText?: string;
   onSearchChange?: (text: string) => void;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchText, setInternalSearchText] = useState("");
-  const pageSize = 5;
   const actualSearchText = searchText ?? internalSearchText;
   const handleSearchChange = onSearchChange ?? setInternalSearchText;
 
@@ -950,11 +863,6 @@ function VideosTable({
     if (!actualSearchText) return videos;
     return videos.filter(v => v.title?.toLowerCase().includes(actualSearchText.toLowerCase()));
   }, [videos, actualSearchText]);
-
-  const paginatedVideos = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredVideos.slice(start, start + pageSize);
-  }, [filteredVideos, currentPage]);
 
   if (loading) {
     return (
@@ -995,87 +903,58 @@ function VideosTable({
   };
 
   return (
-    <div style={{ padding: "0 4px" }}>
-      <Row gutter={[12, 12]}>
-        {paginatedVideos.map((video) => (
-          <Col xs={24} sm={12} lg={12} xl={12} key={video.id}>
-            <Card
-              size="small"
-              hoverable
-              styles={{
-                body: {
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                },
-              }}
-              style={{
-                borderRadius: 8,
-                border: "1px solid #e8ecf0",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <div style={{
-                width: 52,
-                height: 52,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #fce8f3 0%, #fcd5e5 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 12,
-                overflow: "hidden",
-              }}>
-                {video.thumbnail ? (
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <VideoCameraOutlined style={{ color: "#eb2f96", fontSize: 20 }} />
+    <>
+      <Table<VideoData>
+        rowKey="id"
+        size="middle"
+        loading={loading}
+        pagination={false}
+        dataSource={filteredVideos}
+        columns={[
+          {
+            title: "视频标题",
+            dataIndex: "title",
+            key: "title",
+            render: (title: string) => (
+              <Text strong ellipsis style={{ maxWidth: 360 }}>{title}</Text>
+            ),
+          },
+          {
+            title: "时长",
+            dataIndex: "duration",
+            key: "duration",
+            width: 150,
+            render: (duration: number | null | undefined, video) => (
+              <Space size={4}>
+                <Tag color="magenta" icon={<ClockCircleOutlined />} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>
+                  {formatDuration(duration)}
+                </Tag>
+                {video.aiType === "ai_generated" && (
+                  <Tag color="green" icon={<SyncOutlined spin />} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>AI生成</Tag>
                 )}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Text strong ellipsis style={{ display: "block", marginBottom: 4 }}>
-                  {video.title}
-                </Text>
-                <Space size={8}>
-                  <Tag color="magenta" icon={<ClockCircleOutlined />} style={{ fontSize: 11, padding: "0 6px" }}>
-                    {formatDuration(video.duration)}
-                  </Tag>
-                  {video.aiType === "ai_generated" && (
-                    <Tag color="green" icon={<SyncOutlined spin />} style={{ fontSize: 11, padding: "0 6px" }}>AI生成</Tag>
-                  )}
-                </Space>
-              </div>
-              <Tooltip title="取消关联">
-                <Button
-                  size="small"
-                  type="text"
-                  danger
-                  icon={<DisconnectOutlined />}
-                  onClick={() => onUnlink(video.id, video.title || "")}
-                  style={{ marginLeft: 8 }}
-                />
-              </Tooltip>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-      {filteredVideos.length > pageSize && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            total={filteredVideos.length}
-            onChange={(page) => setCurrentPage(page)}
-            showSizeChanger={false}
-            simple
-          />
-        </div>
-      )}
-    </div>
+              </Space>
+            ),
+          },
+          {
+            title: "操作",
+            key: "action",
+            width: 110,
+            render: (_: unknown, video) => (
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DisconnectOutlined />}
+                onClick={() => onUnlink(video.id, video.title || "")}
+              >
+                取消关联
+              </Button>
+            ),
+          },
+        ]}
+      />
+      <div className="pu-table-footer"><span>共 {filteredVideos.length} 条</span></div>
+    </>
   );
 }
 
@@ -1092,9 +971,7 @@ function LinksTable({
   searchText?: string;
   onSearchChange?: (text: string) => void;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchText, setInternalSearchText] = useState("");
-  const pageSize = 5;
   const actualSearchText = searchText ?? internalSearchText;
   const handleSearchChange = onSearchChange ?? setInternalSearchText;
 
@@ -1103,11 +980,6 @@ function LinksTable({
     if (!actualSearchText) return links;
     return links.filter(l => l.title?.toLowerCase().includes(actualSearchText.toLowerCase()));
   }, [links, actualSearchText]);
-
-  const paginatedLinks = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredLinks.slice(start, start + pageSize);
-  }, [filteredLinks, currentPage]);
 
   if (loading) {
     return (
@@ -1145,82 +1017,62 @@ function LinksTable({
   };
 
   return (
-    <div style={{ padding: "0 4px" }}>
-      <Row gutter={[12, 12]}>
-        {paginatedLinks.map((link) => (
-          <Col xs={24} sm={12} lg={12} xl={12} key={link.id}>
-            <Card
-              size="small"
-              hoverable
-              styles={{
-                body: {
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                },
-              }}
-              style={{
-                borderRadius: 8,
-                border: "1px solid #e8ecf0",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <div style={{
-                width: 52,
-                height: 52,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 12,
-              }}>
-                <LinkOutlined style={{ color: "#1890ff", fontSize: 20 }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }} onClick={(e) => handleLinkClick(link.url, e)}>
-                <Text strong ellipsis style={{ display: "block", marginBottom: 4, cursor: "pointer" }}>
-                  {link.title}
-                </Text>
-                <Text
-                  type="secondary"
-                  ellipsis
-                  style={{ fontSize: 12, display: "block", marginBottom: 4, cursor: "pointer" }}
-                  title={link.url}
+    <>
+      <Table<LinkData>
+        rowKey="id"
+        size="middle"
+        loading={loading}
+        pagination={false}
+        dataSource={filteredLinks}
+        columns={[
+          {
+            title: "标题",
+            dataIndex: "title",
+            key: "title",
+            render: (title: string, link) => (
+              <Space size={4}>
+                <a onClick={(e) => handleLinkClick(link.url, e)} style={{ fontWeight: 600 }}>{title}</a>
+                {link.category && (
+                  <Tag color="blue" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>{link.category}</Tag>
+                )}
+              </Space>
+            ),
+          },
+          {
+            title: "链接",
+            dataIndex: "url",
+            key: "url",
+            render: (url: string) => (
+              <Tooltip title={url}>
+                <a
+                  onClick={(e) => handleLinkClick(url, e)}
+                  style={{ fontFamily: "monospace", fontSize: 12, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 320 }}
                 >
-                  {link.url}
-                </Text>
-                {link.category && <Tag color="blue" style={{ fontSize: 11, padding: "0 6px" }}>{link.category}</Tag>}
-              </div>
-              <Tooltip title="取消关联">
-                <Button
-                  size="small"
-                  type="text"
-                  danger
-                  icon={<DisconnectOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUnlink(link.id, link.title);
-                  }}
-                  style={{ marginLeft: 8 }}
-                />
+                  {url}
+                </a>
               </Tooltip>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-      {filteredLinks.length > pageSize && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            total={filteredLinks.length}
-            onChange={(page) => setCurrentPage(page)}
-            showSizeChanger={false}
-            simple
-          />
-        </div>
-      )}
-    </div>
+            ),
+          },
+          {
+            title: "操作",
+            key: "action",
+            width: 110,
+            render: (_: unknown, link) => (
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DisconnectOutlined />}
+                onClick={() => onUnlink(link.id, link.title)}
+              >
+                取消关联
+              </Button>
+            ),
+          },
+        ]}
+      />
+      <div className="pu-table-footer"><span>共 {filteredLinks.length} 条</span></div>
+    </>
   );
 }
 
@@ -1284,10 +1136,10 @@ function KnowledgeTreeView({
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 初始化展开状态 - 默认不展开任何节点，让用户手动展开
+  // 初始化展开状态 - 默认展开全部知识层级
   useEffect(() => {
     if (!isInitialized && items.length > 0) {
-      setExpandedKeys([]);
+      setExpandedKeys(getAllKeys(items));
       setIsInitialized(true);
     }
   }, [items, isInitialized]);
@@ -1301,7 +1153,7 @@ function KnowledgeTreeView({
       const matchingKeys = getAllKeys(filterTree(items, value));
       setExpandedKeys(matchingKeys);
     } else {
-      setExpandedKeys([]);
+      setExpandedKeys(getAllKeys(items));
     }
   };
 
@@ -1344,7 +1196,7 @@ function KnowledgeTreeView({
       const label = item.label || item.title || "";
       // 高亮搜索词
       let titleNode: React.ReactNode = (
-        <span style={{ fontSize: 16, lineHeight: 1.9 }}>{label}</span>
+        <span style={{ fontSize: 15, lineHeight: 1.5 }}>{label}</span>
       );
       if (searchText) {
         const index = label.toLowerCase().indexOf(searchText.toLowerCase());
@@ -1353,7 +1205,7 @@ function KnowledgeTreeView({
           const matchStr = label.substring(index, index + searchText.length);
           const afterStr = label.substring(index + searchText.length);
           titleNode = (
-            <span style={{ fontSize: 16, lineHeight: 1.9 }}>
+            <span style={{ fontSize: 15, lineHeight: 1.5 }}>
               {beforeStr}
               <span style={{ background: "#ffe58f", color: "#1F1F1F", padding: "0 2px", borderRadius: 2 }}>
                 {matchStr}
@@ -1367,7 +1219,6 @@ function KnowledgeTreeView({
       return {
         ...item,
         title: titleNode,
-        icon: <BookOutlined style={{ color: "#0056D2", fontSize: 16 }} />,
         children: item.children ? enhanceTreeData(item.children, searchText) : undefined,
       };
     });
@@ -1391,14 +1242,14 @@ function KnowledgeTreeView({
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "16px", borderBottom: "1px solid #f0f0f0" }}>
+      <div style={{ padding: "12px 12px 8px", borderBottom: "1px solid var(--pu-line-soft, #edf0f5)" }}>
         <Input
           placeholder="搜索知识点..."
           prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
           allowClear
-          style={{ borderRadius: 6, fontSize: 15 }}
+          style={{ borderRadius: 8, fontSize: 14 }}
         />
         {searchValue && (
           <div style={{ marginTop: 8, fontSize: 14, lineHeight: "22px", color: "#8c8c8c" }}>
@@ -1406,14 +1257,13 @@ function KnowledgeTreeView({
           </div>
         )}
       </div>
-      <div style={{ flex: 1, overflow: "auto", padding: "12px" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: "8px 12px 12px" }}>
         <Tree
           treeData={treeDataWithTitle}
           onSelect={handleSelect}
           selectedKeys={selectedItemId ? [selectedItemId] : []}
           expandedKeys={expandedKeys}
           onExpand={handleExpand}
-          showIcon
           blockNode
           style={{
             background: "transparent",
@@ -2255,7 +2105,6 @@ export default function KnowledgeFilePage() {
   const [tabValue, setTabValue] = useState("0");
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [tabSearchText, setTabSearchText] = useState<Record<string, string>>({});
-  const [tabPage, setTabPage] = useState<Record<string, number>>({});
 
   const [knowledgeTreeLoading, setKnowledgeTreeLoading] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
@@ -2716,21 +2565,19 @@ export default function KnowledgeFilePage() {
       ),
       children: (
         <>
-          <Row gutter={[8, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">
-              <Button type="primary" size="small" onClick={() => { setTabValue("0"); setLinkDialogOpen(true); }}>
-                关联文件
-              </Button>
-            </Col>
-            <Col>
-              <Input.Search
-                placeholder="搜索文件..."
-                allowClear
-                onChange={(e) => { setTabSearchText(prev => ({ ...prev, "0": e.target.value })); setTabPage(prev => ({ ...prev, "0": 1 })); }}
-                style={{ width: 180 }}
-              />
-            </Col>
-          </Row>
+          <div className="pu-filters" style={{ marginBottom: 12 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setTabValue("0"); setLinkDialogOpen(true); }}>
+              关联文件
+            </Button>
+            <Input
+              className="pu-search"
+              placeholder="搜索文件..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              allowClear
+              value={tabSearchText["0"] || ""}
+              onChange={(e) => setTabSearchText(prev => ({ ...prev, "0": e.target.value }))}
+            />
+          </div>
           <FilesTable
             files={displayFiles}
             loading={filesLoading}
@@ -2753,21 +2600,19 @@ export default function KnowledgeFilePage() {
       ),
       children: (
         <>
-          <Row gutter={[8, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">
-              <Button type="primary" size="small" onClick={() => { setTabValue("1"); setLinkDialogOpen(true); }}>
-                关联练习
-              </Button>
-            </Col>
-            <Col>
-              <Input.Search
-                placeholder="搜索..."
-                allowClear
-                onChange={(e) => { setTabSearchText(prev => ({ ...prev, "1": e.target.value })); setTabPage(prev => ({ ...prev, "1": 1 })); }}
-                style={{ width: 180 }}
-              />
-            </Col>
-          </Row>
+          <div className="pu-filters" style={{ marginBottom: 12 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setTabValue("1"); setLinkDialogOpen(true); }}>
+              关联练习
+            </Button>
+            <Input
+              className="pu-search"
+              placeholder="搜索练习..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              allowClear
+              value={tabSearchText["1"] || ""}
+              onChange={(e) => setTabSearchText(prev => ({ ...prev, "1": e.target.value }))}
+            />
+          </div>
           <ExercisesTable
             exercises={exercises}
             loading={exercisesLoading}
@@ -2788,21 +2633,19 @@ export default function KnowledgeFilePage() {
       ),
       children: (
         <>
-          <Row gutter={[8, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">
-              <Button type="primary" size="small" onClick={() => { setTabValue("2"); setLinkDialogOpen(true); }}>
-                关联作业
-              </Button>
-            </Col>
-            <Col>
-              <Input.Search
-                placeholder="搜索..."
-                allowClear
-                onChange={(e) => { setTabSearchText(prev => ({ ...prev, "2": e.target.value })); setTabPage(prev => ({ ...prev, "2": 1 })); }}
-                style={{ width: 180 }}
-              />
-            </Col>
-          </Row>
+          <div className="pu-filters" style={{ marginBottom: 12 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setTabValue("2"); setLinkDialogOpen(true); }}>
+              关联作业
+            </Button>
+            <Input
+              className="pu-search"
+              placeholder="搜索作业..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              allowClear
+              value={tabSearchText["2"] || ""}
+              onChange={(e) => setTabSearchText(prev => ({ ...prev, "2": e.target.value }))}
+            />
+          </div>
           <HomeworksTable
             homeworks={homeworks}
             loading={homeworksLoading}
@@ -2823,21 +2666,19 @@ export default function KnowledgeFilePage() {
       ),
       children: (
         <>
-          <Row gutter={[8, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">
-              <Button type="primary" size="small" onClick={() => { setTabValue("3"); setLinkDialogOpen(true); }}>
-                关联视频
-              </Button>
-            </Col>
-            <Col>
-              <Input.Search
-                placeholder="搜索..."
-                allowClear
-                onChange={(e) => { setTabSearchText(prev => ({ ...prev, "3": e.target.value })); setTabPage(prev => ({ ...prev, "3": 1 })); }}
-                style={{ width: 180 }}
-              />
-            </Col>
-          </Row>
+          <div className="pu-filters" style={{ marginBottom: 12 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setTabValue("3"); setLinkDialogOpen(true); }}>
+              关联视频
+            </Button>
+            <Input
+              className="pu-search"
+              placeholder="搜索视频..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              allowClear
+              value={tabSearchText["3"] || ""}
+              onChange={(e) => setTabSearchText(prev => ({ ...prev, "3": e.target.value }))}
+            />
+          </div>
           <VideosTable
             videos={videos}
             loading={videosLoading}
@@ -2858,21 +2699,19 @@ export default function KnowledgeFilePage() {
       ),
       children: (
         <>
-          <Row gutter={[8, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">
-              <Button type="primary" size="small" onClick={() => { setTabValue("4"); setLinkDialogOpen(true); }}>
-                关联链接
-              </Button>
-            </Col>
-            <Col>
-              <Input.Search
-                placeholder="搜索..."
-                allowClear
-                onChange={(e) => { setTabSearchText(prev => ({ ...prev, "4": e.target.value })); setTabPage(prev => ({ ...prev, "4": 1 })); }}
-                style={{ width: 180 }}
-              />
-            </Col>
-          </Row>
+          <div className="pu-filters" style={{ marginBottom: 12 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setTabValue("4"); setLinkDialogOpen(true); }}>
+              关联链接
+            </Button>
+            <Input
+              className="pu-search"
+              placeholder="搜索链接..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              allowClear
+              value={tabSearchText["4"] || ""}
+              onChange={(e) => setTabSearchText(prev => ({ ...prev, "4": e.target.value }))}
+            />
+          </div>
           <LinksTable
             links={links}
             loading={linksLoading}
@@ -2888,11 +2727,45 @@ export default function KnowledgeFilePage() {
   return (
     <AppPage
       fill
+      className="knowledge-file-page"
       title="知识资源管理"
       description="为知识点关联文件、练习、作业、视频与链接"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识点课程资源</>}
     >
-      <style>{`@media(max-width:768px){.kf-page-wrap{height:auto!important}.kf-page-wrap .kf-header{padding:12px 16px!important}.kf-page-wrap .kf-body{flex-direction:column!important;padding:12px!important}.kf-page-wrap .kf-sidebar{width:100%!important;min-width:100%!important;height:auto!important;max-height:300px!important}.kf-page-wrap .kf-course-select{padding:8px 16px!important}.kf-page-wrap .kf-course-select .ant-space{display:flex!important;flex-direction:column!important;width:100%!important}.kf-page-wrap .kf-course-select .ant-select{min-width:0!important;width:100%!important}}`}</style>
+      <style>{`
+        .knowledge-file-page { height: calc(100vh - 60px); }
+        .knowledge-tree .ant-tree-treenode {
+          align-items: center;
+          width: 100%;
+          padding: 1px 0;
+        }
+        .knowledge-tree .ant-tree-switcher {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          align-self: center;
+          line-height: 1;
+        }
+        .knowledge-tree .ant-tree-switcher .ant-tree-switcher-icon {
+          font-size: 12px;
+        }
+        .knowledge-tree .ant-tree-node-content-wrapper {
+          display: inline-flex;
+          align-items: center;
+          padding: 3px 6px;
+          border-radius: 8px;
+        }
+        .knowledge-tree .ant-tree-title {
+          display: inline-flex;
+          align-items: center;
+        }
+        @media(max-width:768px){
+          .knowledge-file-page { height: auto; }
+          .kf-page-wrap{height:auto!important}
+          .kf-page-wrap .kf-body{flex-direction:column!important;padding:0!important}
+          .kf-page-wrap .kf-sidebar{width:100%!important;min-width:100%!important;height:auto!important;max-height:320px!important}
+        }
+      `}</style>
       <div className="kf-page-wrap" style={{
         display: "flex",
         flexDirection: "column",
@@ -2910,7 +2783,7 @@ export default function KnowledgeFilePage() {
           />
         </div>
 
-      <div className="kf-body" style={{ display: "flex", flex: 1, overflow: "hidden", padding: "24px", gap: 16 }}>
+      <div className="kf-body" style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden", gap: 16 }}>
         {/* 左侧知识树 */}
         <div className="kf-sidebar"
           style={{
@@ -2918,22 +2791,20 @@ export default function KnowledgeFilePage() {
             minWidth: 400,
             height: "100%",
             background: "#ffffff",
-            borderRadius: 12,
-            border: "1px solid #e8ecf0",
+            borderRadius: 14,
+            border: "1px solid var(--pu-line, #e3e9f1)",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
           }}
         >
           <div style={{
-            padding: "6px 16px",
-            borderBottom: "1px solid #e8ecf0",
-            background: "#fafafa",
+            padding: "10px 16px",
+            borderBottom: "1px solid var(--pu-line, #e3e9f1)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            minHeight: 40,
+            minHeight: 48,
           }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <BookOutlined style={{ color: "#0056D2", fontSize: 16 }} />
@@ -3035,18 +2906,16 @@ export default function KnowledgeFilePage() {
                 display: "flex",
                 flexDirection: "column",
                 background: "#ffffff",
-                borderRadius: 12,
-                border: "1px solid #e8ecf0",
+                borderRadius: 14,
+                border: "1px solid var(--pu-line, #e3e9f1)",
                 overflow: "hidden",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
               }}
             >
               {/* 知识点头部信息 */}
               <div style={{
-                padding: "6px 16px",
-                borderBottom: "1px solid #e8ecf0",
-                background: "#fafafa",
-                minHeight: 40,
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--pu-line, #e3e9f1)",
+                minHeight: 48,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -3073,23 +2942,23 @@ export default function KnowledgeFilePage() {
                 justifyContent: "center",
                 alignItems: "center",
                 background: "#ffffff",
-                borderRadius: 12,
-                border: "1px solid #e8ecf0",
+                borderRadius: 14,
+                border: "1px solid var(--pu-line, #e3e9f1)",
                 gap: 16
               }}
             >
               <div style={{
-                width: 80,
-                height: 80,
+                width: 76,
+                height: 76,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #f0f4f8 0%, #e8ecf0 100%)",
+                background: "var(--pu-blue-soft, #edf2ff)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
               }}>
-                <BookOutlined style={{ fontSize: 36, color: "#bfbfbf" }} />
+                <BookOutlined style={{ fontSize: 34, color: "#93a7d6" }} />
               </div>
-              <Text type="secondary" style={{ fontSize: 17, lineHeight: "26px" }}>
+              <Text type="secondary" style={{ fontSize: 16, lineHeight: "26px" }}>
                 {selectedCourseId
                   ? "请从左侧选择知识点查看关联资源"
                   : "请先选择课程"}
