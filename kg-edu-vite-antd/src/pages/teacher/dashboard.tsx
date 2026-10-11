@@ -1,38 +1,18 @@
-import { useState } from "react";
+import type { CSSProperties } from "react";
 import {
   ReadOutlined,
   TeamOutlined,
   BookOutlined,
-  PartitionOutlined,
   FileTextOutlined,
-  ScheduleOutlined,
-  UserOutlined,
-  FormOutlined,
-  VideoCameraOutlined,
-  FolderOutlined,
-  RobotOutlined,
-  EditOutlined,
-  FileOutlined,
-  ApartmentOutlined,
-  BarChartOutlined,
-  TrophyOutlined,
-  CheckSquareOutlined,
-  CommentOutlined,
-  ExperimentOutlined,
-  MailOutlined,
-  SettingOutlined,
-  UpOutlined,
-  DownOutlined,
 } from "@ant-design/icons";
+import { Button, Empty, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardStats } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
-import { useTranslate } from "@/locales/use-locales";
-import { PageHead, StatGrid, ProtoCard } from "@/components/proto";
-import type { ReactNode } from "react";
+import "./dashboard.css";
 
 /* ────────────────────── types ────────────────────── */
 
@@ -43,128 +23,28 @@ interface DashboardStats {
   calculatedAt: string;
 }
 
-interface FuncEntry {
-  path: string;
-  titleKey: string;
-  icon: ReactNode;
-}
+/* ────────────────────── static content（参照原型教师工作台） ────────────────────── */
 
-interface FuncGroup {
-  key: string;
-  titleKey: string;
-  icon: ReactNode;
-  items: FuncEntry[];
-}
+const WEEK_BARS = [35, 57, 42, 78, 61, 92, 72];
+const WEEK_DAYS = ["一", "二", "三", "四", "五", "六", "日"];
 
-/* ────────────────────── config ────────────────────── */
-
-const functionGroups: FuncGroup[] = [
-  {
-    key: "teaching",
-    titleKey: "pages.dashboard.teachingManagement",
-    icon: <ReadOutlined />,
-    items: [
-      { path: "/teacher/dashboard/course", titleKey: "pages.dashboard.courseManagement", icon: <ReadOutlined /> },
-      { path: "/teacher/dashboard/student-enrollment", titleKey: "pages.dashboard.studentEnrollment", icon: <TeamOutlined /> },
-      { path: "/teacher/dashboard/assign-course", titleKey: "pages.dashboard.assignCourse", icon: <UserOutlined /> },
-      { path: "/teacher/dashboard/course-category", titleKey: "pages.dashboard.courseCategory", icon: <FolderOutlined /> },
-      { path: "/teacher/dashboard/course-info", titleKey: "pages.dashboard.courseInfo", icon: <FileOutlined /> },
-      { path: "/teacher/dashboard/link", titleKey: "pages.dashboard.link", icon: <FileOutlined /> },
-      { path: "/teacher/dashboard/book-info", titleKey: "pages.dashboard.bookInfo", icon: <BookOutlined /> },
-      { path: "/teacher/dashboard/course-video", titleKey: "pages.dashboard.courseVideo", icon: <VideoCameraOutlined /> },
-      { path: "/teacher/dashboard/course-evaluation", titleKey: "pages.dashboard.discussionManagement", icon: <CommentOutlined /> },
-    ],
-  },
-  {
-    key: "knowledge",
-    titleKey: "pages.dashboard.knowledgeManagement",
-    icon: <BookOutlined />,
-    items: [
-      { path: "/teacher/dashboard/knowledge-resource", titleKey: "pages.dashboard.knowledgeResource", icon: <BookOutlined /> },
-      { path: "/teacher/dashboard/knowledge-relation", titleKey: "pages.dashboard.knowledgeRelation", icon: <PartitionOutlined /> },
-      { path: "/teacher/dashboard/knowledge-cognitive-goals", titleKey: "pages.dashboard.cognitiveGoals", icon: <TrophyOutlined /> },
-      { path: "/teacher/dashboard/knowledge-file", titleKey: "menu.knowledgeFile", icon: <FileOutlined /> },
-    ],
-  },
-  {
-    key: "exercise",
-    titleKey: "pages.dashboard.exerciseHomework",
-    icon: <FileTextOutlined />,
-    items: [
-      { path: "/teacher/dashboard/exercise", titleKey: "pages.dashboard.exercise", icon: <FileTextOutlined /> },
-      { path: "/teacher/dashboard/question", titleKey: "pages.dashboard.question", icon: <EditOutlined /> },
-      { path: "/teacher/dashboard/exam-management", titleKey: "pages.dashboard.examManagement", icon: <ScheduleOutlined /> },
-      { path: "/teacher/dashboard/exam-grading", titleKey: "pages.dashboard.examGrading", icon: <CheckSquareOutlined /> },
-      { path: "/teacher/dashboard/homework", titleKey: "pages.dashboard.homework", icon: <FormOutlined /> },
-    ],
-  },
-  {
-    key: "resource",
-    titleKey: "pages.dashboard.teachingResource",
-    icon: <FolderOutlined />,
-    items: [
-      { path: "/teacher/dashboard/chapter", titleKey: "pages.dashboard.chapter", icon: <BookOutlined /> },
-      { path: "/teacher/dashboard/file", titleKey: "pages.dashboard.file", icon: <FileOutlined /> },
-      { path: "/teacher/dashboard/video", titleKey: "pages.dashboard.video", icon: <VideoCameraOutlined /> },
-      { path: "/teacher/dashboard/experiment-management", titleKey: "menu.experimentManagement", icon: <ExperimentOutlined /> },
-      { path: "/teacher/dashboard/group-management", titleKey: "pages.dashboard.groupManagement", icon: <TeamOutlined /> },
-      { path: "/teacher/dashboard/check-in-management", titleKey: "pages.dashboard.checkIn", icon: <CheckSquareOutlined /> },
-    ],
-  },
-  {
-    key: "ai",
-    titleKey: "pages.dashboard.aiAssistant",
-    icon: <RobotOutlined />,
-    items: [
-      { path: "/teacher/dashboard/ai-assistant", titleKey: "pages.dashboard.aiAssistant", icon: <RobotOutlined /> },
-      { path: "/teacher/dashboard/ai-exercise", titleKey: "pages.dashboard.aiExercise", icon: <EditOutlined /> },
-      { path: "/teacher/dashboard/ai-file", titleKey: "pages.dashboard.aiFile", icon: <FileOutlined /> },
-      { path: "/teacher/dashboard/ai-command", titleKey: "pages.dashboard.aiCommand", icon: <EditOutlined /> },
-    ],
-  },
-  {
-    key: "major",
-    titleKey: "pages.dashboard.majorManagement",
-    icon: <ApartmentOutlined />,
-    items: [
-      { path: "/teacher/dashboard/major-list", titleKey: "pages.dashboard.major", icon: <ApartmentOutlined /> },
-      { path: "/teacher/dashboard/micro-major-list", titleKey: "pages.dashboard.microMajor", icon: <ApartmentOutlined /> },
-    ],
-  },
-  {
-    key: "analysis",
-    titleKey: "pages.dashboard.dataAnalysis",
-    icon: <BarChartOutlined />,
-    items: [
-      { path: "/teacher/dashboard/course-statistics", titleKey: "pages.dashboard.courseStatistics", icon: <BarChartOutlined /> },
-      { path: "/teacher/dashboard/student-profile", titleKey: "pages.dashboard.studentProfile", icon: <UserOutlined /> },
-      { path: "/teacher/dashboard/learning-recommendations", titleKey: "pages.dashboard.learningRec", icon: <TrophyOutlined /> },
-      { path: "/teacher/dashboard/activity-summary", titleKey: "pages.dashboard.activitySummary", icon: <BarChartOutlined /> },
-    ],
-  },
-  {
-    key: "system",
-    titleKey: "pages.dashboard.system",
-    icon: <SettingOutlined />,
-    items: [
-      { path: "/teacher/dashboard/settings", titleKey: "pages.dashboard.settings", icon: <SettingOutlined /> },
-      { path: "/teacher/dashboard/email-config", titleKey: "pages.dashboard.emailConfig", icon: <MailOutlined /> },
-      { path: "/teacher/dashboard/email-messages", titleKey: "pages.dashboard.emailMessages", icon: <MailOutlined /> },
-      { path: "/teacher/dashboard/virtual-research-room", titleKey: "pages.dashboard.virtualRoom", icon: <ExperimentOutlined /> },
-    ],
-  },
+const TODO_ITEMS = [
+  { title: "批阅：形态与构成作业", desc: "今天 · 优先处理", path: "/teacher/dashboard/homework" },
+  { title: "检查：第二章课程资源", desc: "本周教学安排", path: "/teacher/dashboard/file" },
+  { title: "回复：课程学习讨论", desc: "本周教学安排", path: "/teacher/dashboard/discussion-session" },
 ];
+
+const COVER_THEMES = ["", " alt", " third"];
 
 /* ────────────────────── component ────────────────────── */
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user, tenant } = useAuth();
-  const { t } = useTranslate("teacher");
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(functionGroups.map(g => g.key));
-  const [showAllGroups, setShowAllGroups] = useState(false);
 
-  const { courses } = useCourses({ fields: ["id"] });
+  const { courses } = useCourses({
+    fields: ["id", "title", "description", "major", "semester"],
+  });
 
   const { data: statsData } = useQuery({
     queryKey: ["dashboardStats", tenant],
@@ -179,173 +59,136 @@ export default function TeacherDashboard() {
     enabled: !!tenant && !!user,
   });
 
-  const statValues = [
-    courses.length,
-    statsData?.studentCount ?? 0,
-    statsData?.knowledgeCount ?? 0,
-    statsData?.homeworkCount ?? 0,
-  ];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "上午好" : hour < 18 ? "下午好" : "晚上好";
+  const name = user?.displayName || "王老师";
 
   const statCards = [
-    { titleKey: "pages.dashboard.activeCourses", value: statValues[0], icon: <ReadOutlined /> },
-    { titleKey: "pages.dashboard.totalStudents", value: statValues[1], icon: <TeamOutlined /> },
-    { titleKey: "pages.dashboard.knowledgePoints", value: statValues[2], icon: <BookOutlined /> },
-    { titleKey: "pages.dashboard.totalHomework", value: statValues[3], icon: <FormOutlined /> },
+    { label: "授课课程", value: courses.length, desc: "本学期正在运行", icon: <ReadOutlined /> },
+    {
+      label: "在课学生",
+      value: statsData?.studentCount ?? 0,
+      desc: "分布于 6 个教学班",
+      icon: <TeamOutlined />,
+    },
+    {
+      label: "课程知识点",
+      value: statsData?.knowledgeCount ?? 0,
+      desc: "构建结构化知识体系",
+      icon: <BookOutlined />,
+    },
+    {
+      label: "待批阅作业",
+      value: statsData?.homeworkCount ?? 0,
+      desc: "来自 2 门课程",
+      icon: <FileTextOutlined />,
+    },
   ];
 
-  // 控制显示的分组
-  const visibleGroups = showAllGroups ? functionGroups : functionGroups.slice(0, 5);
-
-  const handleGroupToggle = (key: string) => {
-    setExpandedGroups(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
-  };
-
   return (
-    <div style={{ padding: "20px 24px 40px" }}>
-      <PageHead
-        title="教师工作台"
-        description="集中管理课程、知识体系、教学运行与学情分析"
-      />
-
-      <StatGrid
-        columns={4}
-        items={statCards.map((card) => ({
-          label: t(card.titleKey),
-          value: card.value,
-          icon: card.icon,
-        }))}
-      />
-
-      <div className="pu-stack">
-        {visibleGroups.map((group) => {
-          const isExpanded = expandedGroups.includes(group.key);
-          const groupTitle = t(group.titleKey);
-
-          return (
-            <ProtoCard
-              key={group.key}
-              title={
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <span
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 9,
-                      background: "var(--pu-blue-soft)",
-                      color: "var(--pu-blue)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 16,
-                    }}
-                  >
-                    {group.icon}
-                  </span>
-                  {groupTitle}
-                </span>
-              }
-              extra={
-                <button
-                  type="button"
-                  onClick={() => handleGroupToggle(group.key)}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    border: 0,
-                    background: "transparent",
-                    color: "var(--pu-muted)",
-                    cursor: "pointer",
-                    fontSize: 13,
-                  }}
-                >
-                  {group.items.length} 个功能
-                  {isExpanded ? <UpOutlined /> : <DownOutlined />}
-                </button>
-              }
-            >
-              {isExpanded && (
-                <div
-                  className="pu-grid"
-                  style={{
-                    gridTemplateColumns: "repeat(auto-fill, minmax(168px, 1fr))",
-                    gap: 12,
-                  }}
-                >
-                  {group.items.map((item) => (
-                    <button
-                      key={item.path}
-                      type="button"
-                      onClick={() => navigate(item.path)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: "14px 16px",
-                        background: "#f9fbff",
-                        border: "1px solid var(--pu-line-soft)",
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "border-color 0.2s, background 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#c7d8fb";
-                        e.currentTarget.style.background = "#f3f7ff";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "var(--pu-line-soft)";
-                        e.currentTarget.style.background = "#f9fbff";
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: 10,
-                          background: "#edf2ff",
-                          color: "var(--pu-blue)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 18,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {item.icon}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 500,
-                          color: "var(--pu-ink)",
-                          lineHeight: 1.35,
-                        }}
-                      >
-                        {t(item.titleKey)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ProtoCard>
-          );
-        })}
+    <div className="teacher-dashboard">
+      <div className="page-head">
+        <div>
+          <h1>
+            {name}，{greeting}
+          </h1>
+          <p>今天也有新的想法，值得带进课堂。</p>
+        </div>
+        <div className="row">
+          <Button onClick={() => message.info("当前展示 2026 秋季学期演示数据")}>
+            2026 秋季学期
+          </Button>
+        </div>
       </div>
 
-      {/* Show More / Less Button */}
-      {functionGroups.length > 5 && (
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button
-            type="button"
-            className="ant-btn ant-btn-default"
-            onClick={() => setShowAllGroups(!showAllGroups)}
-            style={{ borderRadius: 20, padding: "8px 24px" }}
-          >
-            {showAllGroups ? "收起更多功能 ↑" : "展开更多功能 ↓"}
-          </button>
+      <div className="grid stats">
+        {statCards.map((card) => (
+          <div className="card stat" key={card.label}>
+            <span className="stat-icon">{card.icon}</span>
+            <small>{card.label}</small>
+            <div className="number">{card.value}</div>
+            <small>{card.desc}</small>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid two">
+        <section className="card">
+          <div className="card-title">
+            <h2>本周学习活跃情况</h2>
+            <span className="tag blue">最近 7 天</span>
+          </div>
+          <div className="row">
+            <b style={{ fontSize: 26, lineHeight: 1.4 }}>{statsData?.studentCount ?? 128}</b>
+            <small style={{ color: "var(--td-muted)" }}>学习活动次数</small>
+          </div>
+          <div className="chart" role="img" aria-label="最近七天学习趋势，数据为演示值">
+            {WEEK_BARS.map((n, i) => (
+              <div
+                key={i}
+                className="bar"
+                style={{ "--h": `${n}%` } as CSSProperties}
+                title={`周${WEEK_DAYS[i]}：${n} 次`}
+              >
+                <span>周{WEEK_DAYS[i]}</span>
+              </div>
+            ))}
+          </div>
+          <div className="legend">柱高代表每日活动次数 · 演示数据</div>
+        </section>
+
+        <section className="card">
+          <div className="card-title">
+            <h2>待办事项</h2>
+            <a onClick={() => navigate("/teacher/dashboard/homework")}>查看全部 →</a>
+          </div>
+          {TODO_ITEMS.map((item, i) => (
+            <div className="item" key={item.path}>
+              <span className="item-number">{i + 1}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </div>
+              <Button onClick={() => navigate(item.path)}>处理</Button>
+            </div>
+          ))}
+        </section>
+      </div>
+
+      <div className="catalog-title">
+        <h2>我的课程</h2>
+        <a onClick={() => navigate("/teacher/dashboard/course")}>查看全部 →</a>
+      </div>
+
+      {courses.length === 0 ? (
+        <div className="card">
+          <Empty description="暂无课程" />
+        </div>
+      ) : (
+        <div className="grid three">
+          {courses.slice(0, 3).map((course, i) => {
+            const subtitle = [course.major, course.semester].filter(Boolean).join(" · ");
+            return (
+              <article className="card course-card" key={course.id}>
+                <div className={`course-cover${COVER_THEMES[i % 3]}`}>
+                  <small>COURSE {String(i + 1).padStart(2, "0")}</small>
+                  <b>{course.title}</b>
+                  <span>{subtitle || "DESIGN FOUNDATIONS"}</span>
+                </div>
+                <h3>{course.title}</h3>
+                <p>{course.major || "智慧课程"}</p>
+                <p style={{ marginTop: 8 }}>{course.description || "查看课程内容与教学安排。"}</p>
+                <div className="row">
+                  <span className="tag blue">已发布</span>
+                  <Button
+                    onClick={() => navigate(`/teacher/dashboard/course-info?courseId=${course.id}`)}
+                  >
+                    管理课程 →
+                  </Button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

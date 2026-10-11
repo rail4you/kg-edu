@@ -1,0 +1,383 @@
+/* ============================================================
+   教师工作台 —— 严格对齐「易课程-完整交互原型」教师工作台样式
+   作用域：.teacher-dashboard（避免影响其它页面）
+   ============================================================ */
+
+.teacher-dashboard {
+  --td-blue: #2859df;
+  --td-navy: #142744;
+  --td-ink: #202f47;
+  --td-muted: #64748b;
+  --td-line: #e3e9f1;
+  --td-radius: 14px;
+  color: var(--td-ink);
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 26px 34px 50px;
+}
+
+/* ---------- 页头 ---------- */
+.teacher-dashboard .page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.teacher-dashboard .page-head h1 {
+  font-size: 29px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  line-height: 1.5;
+  color: var(--td-ink);
+  margin: 0;
+}
+
+.teacher-dashboard .page-head p {
+  font-size: 14px;
+  color: var(--td-muted);
+  margin: 6px 0 0;
+}
+
+.teacher-dashboard .row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---------- 栅格 ---------- */
+.teacher-dashboard .grid {
+  display: grid;
+  gap: 20px;
+}
+
+.teacher-dashboard .stats {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 24px;
+}
+
+.teacher-dashboard .two {
+  grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr);
+}
+
+.teacher-dashboard .three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* ---------- 卡片 ---------- */
+.teacher-dashboard .card {
+  background: #fff;
+  border: 1px solid var(--td-line);
+  border-radius: var(--td-radius);
+  padding: 24px;
+  min-width: 0;
+}
+
+.teacher-dashboard .card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.teacher-dashboard .card-title h2 {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--td-ink);
+  margin: 0;
+}
+
+/* ---------- 指标卡 ---------- */
+.teacher-dashboard .stat {
+  position: relative;
+  padding: 20px 23px;
+}
+
+.teacher-dashboard .stat small {
+  color: var(--td-muted);
+  font-size: 13px;
+}
+
+.teacher-dashboard .stat .number {
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 1.5;
+  margin: 8px 0;
+  color: var(--td-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.teacher-dashboard .stat .number small {
+  font-weight: 400;
+  margin-left: 5px;
+}
+
+.teacher-dashboard .stat-icon {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  color: var(--td-blue);
+  background: #edf2ff;
+  padding: 8px;
+  border-radius: 9px;
+  line-height: 1;
+  display: inline-flex;
+}
+
+/* ---------- 标签 ---------- */
+.teacher-dashboard .tag {
+  display: inline-block;
+  border-radius: 5px;
+  padding: 3px 9px;
+  background: #eaf6f0;
+  color: #137b62;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.teacher-dashboard .tag.blue {
+  background: #edf1ff;
+  color: var(--td-blue);
+}
+
+/* ---------- 柱状图 ---------- */
+.teacher-dashboard .chart {
+  display: flex;
+  align-items: flex-end;
+  height: 170px;
+  gap: 18px;
+  padding: 15px 12px 0;
+  border-bottom: 1px solid var(--td-line);
+  margin-bottom: 30px;
+}
+
+.teacher-dashboard .bar {
+  flex: 1;
+  height: var(--h);
+  background: #5e83ef;
+  border-radius: 5px 5px 0 0;
+  position: relative;
+  min-width: 12px;
+}
+
+.teacher-dashboard .bar:nth-child(2n) {
+  background: #b8cafb;
+}
+
+.teacher-dashboard .bar:hover {
+  background: var(--td-blue);
+}
+
+.teacher-dashboard .bar span {
+  position: absolute;
+  bottom: -29px;
+  font-size: 12px;
+  color: var(--td-muted);
+  width: 100%;
+  text-align: center;
+}
+
+.teacher-dashboard .legend {
+  display: flex;
+  gap: 18px;
+  color: var(--td-muted);
+  font-size: 12px;
+  margin-top: 15px;
+}
+
+/* ---------- 列表项（待办事项） ---------- */
+.teacher-dashboard .item {
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f5;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+}
+
+.teacher-dashboard .item:last-child {
+  border: 0;
+}
+
+.teacher-dashboard .item h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--td-ink);
+  margin: 0;
+}
+
+.teacher-dashboard .item p {
+  font-size: 14px;
+  color: var(--td-muted);
+  margin: 4px 0 0;
+}
+
+.teacher-dashboard .item-number {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #f0f4fc;
+  color: var(--td-blue);
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+/* ---------- 目录标题（我的课程） ---------- */
+.teacher-dashboard .catalog-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 30px 0 20px;
+}
+
+.teacher-dashboard .catalog-title h2 {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--td-ink);
+  margin: 0;
+}
+
+/* ---------- 链接 ---------- */
+.teacher-dashboard a {
+  color: var(--td-blue);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.teacher-dashboard a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 课程卡片 ---------- */
+.teacher-dashboard .course-cover {
+  background: #e9efff;
+  color: #31508d;
+  padding: 25px;
+  border-radius: 10px;
+  min-height: 145px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.teacher-dashboard .course-cover.alt {
+  background: #e7f4f0;
+  color: #246958;
+}
+
+.teacher-dashboard .course-cover.third {
+  background: #f5edfa;
+  color: #75538b;
+}
+
+.teacher-dashboard .course-cover b {
+  font-size: 24px;
+  max-width: 240px;
+  line-height: 1.45;
+}
+
+.teacher-dashboard .course-cover small {
+  font-size: 13px;
+  color: var(--td-muted);
+}
+
+.teacher-dashboard .course-cover > span {
+  font-size: 12px;
+}
+
+.teacher-dashboard .course-card h3 {
+  margin: 18px 0 7px;
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--td-ink);
+}
+
+.teacher-dashboard .course-card p {
+  font-size: 14px;
+  color: var(--td-muted);
+  margin: 0;
+}
+
+.teacher-dashboard .course-card .row {
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+/* ---------- Ant Design 按钮对齐原型 ---------- */
+.teacher-dashboard .ant-btn {
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  font-weight: 400;
+}
+
+.teacher-dashboard .ant-btn-default {
+  background: #fff;
+  border-color: var(--td-line);
+  color: var(--td-ink);
+}
+
+.teacher-dashboard .ant-btn-default:not(:disabled):hover {
+  background: #edf2ff;
+  border-color: #c6d3f7;
+  color: var(--td-ink);
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1100px) {
+  .teacher-dashboard {
+    padding: 22px 22px 40px;
+  }
+
+  .teacher-dashboard .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .teacher-dashboard .two,
+  .teacher-dashboard .three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-dashboard {
+    padding: 18px 16px 32px;
+  }
+
+  .teacher-dashboard .page-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .teacher-dashboard .page-head h1 {
+    font-size: 25px;
+  }
+
+  .teacher-dashboard .stats {
+    gap: 12px;
+  }
+
+  .teacher-dashboard .stat {
+    padding: 15px;
+  }
+
+  .teacher-dashboard .stat-icon {
+    display: none;
+  }
+
+  .teacher-dashboard .stat .number {
+    font-size: 27px;
+  }
+
+  .teacher-dashboard .card {
+    padding: 18px;
+  }
+
+  .teacher-dashboard .three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
