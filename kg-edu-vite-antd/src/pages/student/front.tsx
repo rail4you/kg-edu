@@ -1905,9 +1905,11 @@ export default function StudentFront() {
       <main className="front-dashboard-shell">
         <section className="front-dashboard-hero">
           <div className="front-dashboard-hero__content">
-            <button type="button" className="front-back-btn" onClick={handleBack}>
-              <ArrowLeftOutlined /> {entryFrom === "home" ? "返回首页" : "返回课程列表"}
-            </button>
+            {entryFrom !== "home" && (
+              <button type="button" className="front-back-btn" onClick={handleBack}>
+                <ArrowLeftOutlined /> 返回课程列表
+              </button>
+            )}
             <div className="front-dashboard-hero__headline">
               <h1>{courseTitle}</h1>
               <p>{courseMajor}</p>
