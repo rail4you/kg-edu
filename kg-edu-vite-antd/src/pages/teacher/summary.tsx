@@ -403,7 +403,7 @@ export default function SummaryPage() {
   }
 
   return (
-    <AppPage title="教学概览" description="实时查看教学资源和学习活动统计">
+    <AppPage title="教学概览" description="实时查看教学资源和学习活动统计" breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程数据统计</>}>
       <StatGrid
         items={[
           {

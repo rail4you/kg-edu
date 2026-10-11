@@ -584,3 +584,19 @@
     font-size: 14px;
   }
 }
+
+/* 模块卡片：整卡可点，悬停仅做轻微背景/边框变化（克制，不使用按钮） */
+.module-home-module-card {
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.module-home-module-card:hover {
+  background: #f8faff;
+  border-color: #c7d8fb;
+  box-shadow: 0 6px 18px rgba(16, 47, 81, 0.06);
+}
+
+.module-home-module-card:focus-visible {
+  outline: 3px solid #94b2ff;
+  outline-offset: 3px;
+}

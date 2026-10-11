@@ -39,7 +39,8 @@ import { extractArrayData } from "@/utils/api-helpers";
 import type { ColumnsType } from "antd/es/table";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import "./course-info.css";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -82,7 +83,7 @@ const multiLineCellStyle: CSSProperties = {
   display: "-webkit-box",
   overflow: "hidden",
   WebkitBoxOrient: "vertical",
-  WebkitLineClamp: 3,
+  WebkitLineClamp: 2,
   lineHeight: "22px",
   whiteSpace: "pre-wrap",
   wordBreak: "break-word",
@@ -92,7 +93,7 @@ const renderMultiLineText = (text?: string | null) => {
   const content = text?.trim() || "-";
   return (
     <Tooltip title={content}>
-      <Text style={multiLineCellStyle}>{content}</Text>
+      <Text className="ci-multiline">{content}</Text>
     </Tooltip>
   );
 };
@@ -116,6 +117,7 @@ export default function CourseInfoPage() {
   };
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingCourseInfo, setEditingCourseInfo] = useState<CourseInfo | null>(
@@ -356,25 +358,24 @@ export default function CourseInfoPage() {
     {
       title: "操作",
       key: "action",
-      width: 100,
-      onCell: () => ({ style: { verticalAlign: "middle" } }),
+      width: 110,
       render: (_: unknown, record: CourseInfo) => (
         <Space>
-          <Tooltip title="编辑">
-            <ReadonlyActionButton
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
+          <ReadonlyActionButton
+            type="link"
+            size="small"
+            onClick={() => handleEdit(record)}
+          >
+            编辑
+          </ReadonlyActionButton>
           <Popconfirm
             title="确定要删除这个课程信息吗？"
             description="此操作无法撤销。"
             onConfirm={() => deleteMutation.mutate(record.id)}
           >
-            <Tooltip title="删除">
-              <ReadonlyActionButton type="text" danger icon={<DeleteOutlined />} />
-            </Tooltip>
+            <ReadonlyActionButton type="link" size="small" danger>
+              删除
+            </ReadonlyActionButton>
           </Popconfirm>
         </Space>
       ),
@@ -455,83 +456,73 @@ export default function CourseInfoPage() {
     <AppPage
       title="课程信息管理"
       description="管理课程背景与教学要求"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程信息</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreate}
+          disabled={!activeCourseId || createMutation.isPending}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          创建课程信息
+        </Button>
       }
     >
-      {coursesLoading ? (
-        <div style={{ textAlign: "center", padding: 48 }}>
-          <Spin size="large" />
-        </div>
-      ) : coursesError ? (
-        <Alert
-          type="error"
-          message={`加载课程列表失败: ${(coursesError as Error).message}`}
-          style={{ marginBottom: 16 }}
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
         />
-      ) : (
-        <>
-          <div style={{ marginTop: 16, marginBottom: 16 }}>
-            <Space>
-              <Text strong>选择课程：</Text>
-              <Select
-                style={{ width: 280 }}
-                placeholder="请选择课程"
-                value={activeCourseId || undefined}
-                onChange={setSelectedCourseId}
-                loading={coursesLoading}
-                options={(Array.isArray(courses) ? courses : []).map((course: Course) => ({
-                  value: course.id,
-                  label: course.title,
-                }))}
-              />
-            </Space>
-          </div>
+        <div className="pu-filters">
+          <Select
+            style={{ width: 240 }}
+            placeholder="请选择课程"
+            value={activeCourseId || undefined}
+            onChange={setSelectedCourseId}
+            loading={coursesLoading}
+            options={(Array.isArray(courses) ? courses : []).map((course: Course) => ({
+              value: course.id,
+              label: course.title,
+            }))}
+          />
+        </div>
 
-          <Card>
+        {coursesLoading ? (
+          <div style={{ textAlign: "center", padding: 48 }}>
+            <Spin size="large" />
+          </div>
+        ) : coursesError ? (
+          <Alert
+            type="error"
+            message={`加载课程列表失败: ${(coursesError as Error).message}`}
+            style={{ marginBottom: 16 }}
+          />
+        ) : !activeCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择一门课程以查看其课程信息。" />
+        ) : courseInfos.length === 0 ? (
+          <ProtoEmpty title="暂无课程信息" description="点击右上角「创建课程信息」开始。" />
+        ) : (
+          <>
             <Table
-              className="theme-table"
               columns={columns}
               dataSource={courseInfos}
               rowKey="id"
               loading={courseInfosLoading}
-              title={() => (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Space>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={handleCreate}
-                      disabled={!activeCourseId || createMutation.isPending}
-                      style={canEdit ? undefined : { display: "none" }}
-                    >
-                      创建课程信息
-                    </Button>
-                  </Space>
-                </div>
-              )}
-              locale={{
-                emptyText: (
-                  <EmptyState
-                    description={
-                      !activeCourseId
-                        ? "请先选择一个课程"
-                        : "暂无课程信息"
-                    }
-                  />
-                ),
-              }}
               pagination={false}
-              scroll={{ x: 800 }}
+              size="middle"
+              scroll={{ x: 900 }}
             />
-          </Card>
-        </>
-      )}
+            <div className="pu-table-footer">
+              <span>共 {courseInfos.length} 条</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       <Modal
         open={createModalOpen}

@@ -32,8 +32,12 @@ export interface UseCoursesOptions {
 export interface UseCoursesReturn {
   /** 课程列表数据 */
   courses: Course[];
-  /** 是否正在加载（包括查询中和重试中） */
+  /** 是否正在加载（首次请求中、尚未拿到首批数据，或为空且仍在自动重试） */
   loading: boolean;
+  /** 是否已经拿到过一次响应（无论是否为空） */
+  hasLoaded: boolean;
+  /** 底层 react-query 是否正在请求中（含后台刷新） */
+  isFetching: boolean;
   /** 当前重试次数 */
   retryCount: number;
   /** 最大重试次数 */
@@ -101,6 +105,7 @@ export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
   const {
     data,
     isLoading: queryLoading,
+    isFetching: queryFetching,
     refetch,
     error,
   } = useQuery({
@@ -141,10 +146,17 @@ export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
 
   const courses = Array.isArray(data) ? data : [];
   const isMaxRetryReached = retryCount >= maxRetry;
+  const hasLoaded = data !== undefined;
+  const isReady = !!tenant && !!user && enabled;
 
-  // 计算加载状态：查询中 或 (数据为空且未超过重试次数且启用自动重试)
+  // 计算加载状态：
+  // - 查询进行中
+  // - 已具备加载条件但尚未拿到首批数据（避免渲染出「暂无课程」的假空态）
+  // - 数据为空且未超过重试次数且启用自动重试（避免瞬时空结果闪烁）
   const loading =
-    queryLoading || (autoRetry && courses.length === 0 && !isMaxRetryReached);
+    queryLoading ||
+    (!hasLoaded && isReady) ||
+    (autoRetry && courses.length === 0 && !isMaxRetryReached);
 
   // 自动重试逻辑
   useEffect(() => {
@@ -211,6 +223,8 @@ export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
   return {
     courses,
     loading,
+    hasLoaded,
+    isFetching: queryFetching,
     retryCount,
     maxRetry,
     isMaxRetryReached,

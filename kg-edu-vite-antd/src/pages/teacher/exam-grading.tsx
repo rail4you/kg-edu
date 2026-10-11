@@ -512,13 +512,6 @@ export default function ExamGrading() {
       align: "center",
     },
     {
-      title: "学生ID",
-      dataIndex: "studentId",
-      key: "studentId",
-      width: 200,
-      align: "center",
-    },
-    {
       title: "提交时间",
       dataIndex: "submittedAt",
       key: "submittedAt",

@@ -26,6 +26,7 @@ import {
   CodeOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
+  SearchOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons";
 import { z } from "zod";
@@ -44,7 +45,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import TemplateSelector from "@/components/ai-command-templates/TemplateSelector";
 import type { AITemplate } from "@/config/aiCommandTemplates";
 
@@ -102,6 +103,8 @@ export default function AiCommand() {
   const [commandToDelete, setCommandToDelete] = useState<string | null>(null);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
 
   const {
     register,
@@ -265,17 +268,11 @@ export default function AiCommand() {
   return (
     <AppPage
       className="ai-cmd-wrap"
-      title={t("pages.aiCommand.title")}
-      description={t("pages.aiCommand.description")}
+      title="AI命令中心"
+      description="配置与管理工作台中的 AI 命令模板，辅助备课、答疑与知识梳理。"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;AI命令中心</>}
       actions={
         <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-            style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-          />
           <Button icon={<AppstoreOutlined />} onClick={() => setTemplateSelectorOpen(true)} style={canEdit ? undefined : { display: "none" }}>
             {t("pages.aiCommand.useTemplate")}
           </Button>
@@ -285,128 +282,109 @@ export default function AiCommand() {
         </>
       }
     >
-      <style>{`@media(max-width:768px){.ai-cmd-wrap{padding:12px!important}.ai-cmd-wrap .ant-table-cell{padding:6px 4px!important}.ai-cmd-wrap .cmd-action-text{display:none!important}}`}</style>
-
-      {/* 工具栏 */}
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 12 }}>
-        <Space.Compact>
-          <Button
-            type={viewMode === "card" ? "primary" : "default"}
-            icon={<AppstoreOutlined />}
-            onClick={() => setViewMode("card")}
-          >
-            卡片
-          </Button>
-          <Button
-            type={viewMode === "table" ? "primary" : "default"}
-            icon={<UnorderedListOutlined />}
-            onClick={() => setViewMode("table")}
-          >
-            表格
-          </Button>
-        </Space.Compact>
-      </div>
-
-      {/* 内容区域 */}
-      {loading ? (
-        <div style={{ textAlign: "center", padding: 64 }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
-            <Text type="secondary">{t("pages.aiCommand.loading")}</Text>
-          </div>
-        </div>
-      ) : commands.length === 0 ? (
-        <Empty
-          image={<CodeOutlined style={{ fontSize: 64, color: "#1890ff" }} />}
-          description={
-            <div>
-              <Text strong style={{ display: "block", marginBottom: 8 }}>
-                {t("pages.aiCommand.noCommands")}
-              </Text>
-              <Text type="secondary">
-                {t("pages.aiCommand.noCommandsHint")}
-              </Text>
-              <div style={{ marginTop: 16 }}>
-                <Space>
-                  <Button icon={<AppstoreOutlined />} onClick={() => setTemplateSelectorOpen(true)} style={canEdit ? undefined : { display: "none" }}>
-                    {t("pages.aiCommand.useTemplate")}
-                  </Button>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={canEdit ? undefined : { display: "none" }}>
-                    {t("pages.aiCommand.createNew")}
-                  </Button>
-                </Space>
-              </div>
-            </div>
-          }
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
         />
-      ) : viewMode === "card" ? (
-        <Row gutter={[16, 16]}>
-          {commands.map((command) => (
-            <Col xs={24} sm={12} lg={8} key={command.id}>
-              <Card
-                style={{ borderRadius: 8, border: "1px solid #f0f0f0" }}
-                styles={{ body: { padding: 16 } }}
-              >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-                  <Text strong style={{ fontSize: 15 }}>
-                    {command.title || t("pages.aiCommand.unnamedCommand")}
-                  </Text>
-                  <Space size={4}>
-                    <ReadonlyActionButton title={t("pages.aiCommand.editCommand")} type="text" size="small" icon={<EditOutlined />} onClick={() => handleEdit(command)} />
-                    <ReadonlyActionButton title={t("pages.aiCommand.deleteCommand")} type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(command.id)} />
-                  </Space>
-                </div>
-                {command.user && (
-                  <Text type="secondary" style={{ fontSize: 13 }} ellipsis={{ rows: 2 }}>
-                    {command.user}
-                  </Text>
-                )}
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      ) : (
-        <Card style={{ borderRadius: 8 }}>
-          <Table
-            dataSource={commands}
-            columns={[
-              {
-                title: "命令名称",
-                dataIndex: "title",
-                key: "title",
-                render: (_, record) => {
-                  const name = record.title || t("pages.aiCommand.unnamedCommand");
-                  return <Tooltip title={name} mouseEnterDelay={0.3}><Text style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</Text></Tooltip>;
-                },
-              },
-              {
-                title: "用户模板",
-                dataIndex: "user",
-                key: "user",
-                render: (user) => user ? <Text ellipsis style={{ maxWidth: 300 }}>{user}</Text> : "-",
-              },
-              {
-                title: "操作",
-                key: "actions",
-                width: 100,
-                render: (_, record) => (
-                  <Space>
-                    <ReadonlyActionButton type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-                      {t("pages.aiCommand.editCommand")}
-                    </ReadonlyActionButton>
-                    <ReadonlyActionButton type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-                      {t("pages.aiCommand.deleteCommand")}
-                    </ReadonlyActionButton>
-                  </Space>
-                ),
-              },
-            ]}
-            rowKey="id"
-            pagination={false}
-            size="small"
+
+        <div className="pu-filters">
+          <Input
+            className="pu-search"
+            placeholder="搜索命令名称"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
           />
-        </Card>
-      )}
+          <Button onClick={() => setSearchText("")}>重置</Button>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 64 }}>
+            <Spin size="large" />
+          </div>
+        ) : commands.filter((c) =>
+            !searchText ||
+            (c.title || "").toLowerCase().includes(searchText.toLowerCase()),
+          ).length === 0 ? (
+          <ProtoEmpty
+            title={t("pages.aiCommand.noCommands")}
+            description={
+              searchText
+                ? "未找到匹配的命令，请调整关键词。"
+                : t("pages.aiCommand.noCommandsHint")
+            }
+            action={
+              <Space>
+                <Button icon={<AppstoreOutlined />} onClick={() => setTemplateSelectorOpen(true)} style={canEdit ? undefined : { display: "none" }}>
+                  {t("pages.aiCommand.useTemplate")}
+                </Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={canEdit ? undefined : { display: "none" }}>
+                  {t("pages.aiCommand.createNew")}
+                </Button>
+              </Space>
+            }
+          />
+        ) : (
+          <>
+            <Table
+              dataSource={commands.filter((c) =>
+                !searchText ||
+                (c.title || "").toLowerCase().includes(searchText.toLowerCase()),
+              )}
+              columns={[
+                {
+                  title: "命令名称",
+                  dataIndex: "title",
+                  key: "title",
+                  render: (_, record) => {
+                    const name = record.title || t("pages.aiCommand.unnamedCommand");
+                    return (
+                      <Tooltip title={name} mouseEnterDelay={0.3}>
+                        <Text style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {name}
+                        </Text>
+                      </Tooltip>
+                    );
+                  },
+                },
+                {
+                  title: "用户模板",
+                  dataIndex: "user",
+                  key: "user",
+                  render: (user) => (user ? <Text ellipsis style={{ maxWidth: 300 }}>{user}</Text> : "-"),
+                },
+                {
+                  title: "操作",
+                  key: "actions",
+                  width: 140,
+                  render: (_, record) => (
+                    <Space>
+                      <ReadonlyActionButton type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+                        {t("pages.aiCommand.editCommand")}
+                      </ReadonlyActionButton>
+                      <ReadonlyActionButton type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+                        {t("pages.aiCommand.deleteCommand")}
+                      </ReadonlyActionButton>
+                    </Space>
+                  ),
+                },
+              ]}
+              rowKey="id"
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {commands.length} 条命令</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       {/* 表单弹窗 */}
       <Modal

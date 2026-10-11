@@ -43,7 +43,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { updateAnswerExplanation } from "@/lib/agent_api";
@@ -238,6 +238,7 @@ export default function ExercisePage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [importing, setImporting] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [subtab, setSubtab] = useState("all");
   const [analyzingExerciseId, setAnalyzingExerciseId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -854,21 +855,49 @@ export default function ExercisePage() {
     <AppPage
       title="习题管理"
       description="管理课程习题"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;题库管理</>}
       actions={
-        <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+        <Space>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => setImportModalOpen(true)}
+            disabled={!selectedCourseId}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            导入习题
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+            下载模板
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              resetForm();
+              setCreateModalOpen(true);
+            }}
+            disabled={!selectedCourseId}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            添加习题
+          </Button>
+        </Space>
       }
     >
       <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
-      <Card style={{ marginTop: 24, marginBottom: 24 }}>
-        <Space>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
           <Select
-            style={{ width: 280 }}
+            style={{ width: 240 }}
             placeholder="选择课程"
             value={selectedCourseId || undefined}
             onChange={(val) => {
@@ -879,56 +908,15 @@ export default function ExercisePage() {
             loading={coursesLoading}
             options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
           />
-          {selectedCourseId && (
-            <Input
-              placeholder="搜索习题标题或内容"
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 240 }}
-              suffix={searchText ? (
-                <span
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setSearchText("")}
-                >
-                  ×
-                </span>
-              ) : null}
-            />
-          )}
-          {selectedCourseId && (
-            <>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  resetForm();
-                  setCreateModalOpen(true);
-                }}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                添加习题
-              </Button>
-              <Button
-                icon={<UploadOutlined />}
-                onClick={() => setImportModalOpen(true)}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                导入习题
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleDownloadTemplate}
-              >
-                下载模板
-              </Button>
-            </>
-          )}
-        </Space>
-      </Card>
-
-      <Card>
-        <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+          <Input
+            className="pu-search"
+            placeholder="搜索习题标题或内容"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
           {selectedRowKeys.length > 0 && canEdit && (
             <Popconfirm
               title={`确定删除选中的 ${selectedRowKeys.length} 道习题？`}
@@ -940,26 +928,31 @@ export default function ExercisePage() {
             </Popconfirm>
           )}
         </div>
-        {selectedCourseId ? (
+
+        {!selectedCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择课程以查看其习题。" />
+        ) : exercises.length === 0 ? (
+          <ProtoEmpty title="暂无习题" description="点击右上角「添加习题」开始。" />
+        ) : (
           <>
-            {console.log("[exercise] Table dataSource:", exercises, "length:", exercises?.length)}
             <Table
-              className="theme-table"
               columns={columns}
               dataSource={exercises}
               rowKey="id"
               loading={exercisesLoading}
-              pagination={{ pageSize: 10 }}
+              pagination={false}
+              size="middle"
               rowSelection={{
                 selectedRowKeys,
                 onChange: (keys) => setSelectedRowKeys(keys),
               }}
             />
+            <div className="pu-table-footer">
+              <span>共 {exercises.length} 条</span>
+            </div>
           </>
-        ) : (
-          <Empty description="请先选择课程" />
         )}
-      </Card>
+      </ProtoCard>
 
       <Modal
         open={createModalOpen}

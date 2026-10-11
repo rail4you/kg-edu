@@ -45,7 +45,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useCourses } from "@/hooks/use-courses";
 import FilePreview from "@/components/FilePreview";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -130,6 +130,7 @@ export default function AIFilePage() {
   const [fileToDelete, setFileToDelete] = useState<FileData | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [subtab, setSubtab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -267,282 +268,90 @@ export default function AIFilePage() {
 
   return (
     <AppPage
-      title="AI 生成文件"
-      description="管理课程AI生成的文件"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-          style={{ color: "#1890ff", padding: "4px 8px", fontSize: 16 }}
-        />
-      }
+      title="AI文件"
+      description="集中管理 AI 生成的文件，支持预览、下载与删除。"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;AI文件</>}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+
+        <div className="pu-filters">
           <Select
-            style={{ width: 280 }}
+            style={{ width: 240 }}
             placeholder="请选择课程"
             value={selectedCourseId || undefined}
             onChange={handleCourseChange}
             loading={coursesLoading}
             disabled={coursesLoading}
-            suffixIcon={<AppstoreOutlined style={{ color: "#0056D2" }} />}
             options={courses.map((course) => ({
               value: course.id,
               label: course.title,
             }))}
           />
           <Input
+            className="pu-search"
             placeholder="搜索文件名..."
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 200 }}
             allowClear
           />
-          <Space.Compact>
-            <Button
-              type={viewMode === "card" ? "primary" : "default"}
-              icon={<AppstoreOutlined />}
-              onClick={() => setViewMode("card")}
-            >
-              卡片
-            </Button>
-            <Button
-              type={viewMode === "table" ? "primary" : "default"}
-              icon={<FileTextOutlined />}
-              onClick={() => setViewMode("table")}
-            >
-              表格
-            </Button>
-          </Space.Compact>
+          <Button onClick={() => setSearchText("")}>重置</Button>
         </div>
 
-      {/* 内容区域 */}
-      <div style={{ flex: 1, overflow: "auto" }}>
         {coursesLoading ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100%",
-              gap: 16
-            }}
-          >
-            <Spin size="large" />
-            <Text type="secondary">加载课程中...</Text>
+          <div style={{ padding: 48, textAlign: "center" }}>
+            <Spin />
           </div>
         ) : !selectedCourseId ? (
-          <div
-            style={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              background: "#ffffff",
-              borderRadius: 12,
-              border: "1px solid #e8ecf0",
-              gap: 16
-            }}
-          >
-            <div style={{
-              width: 80,
-              height: 80,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #f0f4f8 0%, #e8ecf0 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}>
-              <FolderOutlined style={{ fontSize: 36, color: "#bfbfbf" }} />
-            </div>
-            <Text type="secondary" style={{ fontSize: 15 }}>
-              请先选择课程
-            </Text>
-          </div>
+          <ProtoEmpty
+            title="请先选择课程"
+            description="选择一门课程以查看其 AI 生成的文件。"
+          />
         ) : filesLoading ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: 400,
-            }}
-          >
-            <Spin size="large" tip="加载文件中..." />
+          <div style={{ padding: 48, textAlign: "center" }}>
+            <Spin tip="加载文件中..." />
           </div>
         ) : filteredFiles.length === 0 ? (
-          <div
-            style={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              background: "#ffffff",
-              borderRadius: 12,
-              border: "1px solid #e8ecf0",
-              gap: 16
-            }}
-          >
-            <Empty
-              description={
-                <span style={{ color: "#8c8c8c" }}>
-                  {searchText ? "未找到匹配的文件" : "该课程暂无 AI 生成的文件"}
-                </span>
-              }
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          </div>
-        ) : viewMode === "card" ? (
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #e8ecf0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
-            }}
-          >
-            {/* 文件卡片网格 */}
-            <Row gutter={[12, 12]}>
-              {paginatedFiles.map((file) => (
-                <Col xs={24} sm={12} lg={8} xl={6} key={file.id}>
-                  <Card
-                    size="small"
-                    hoverable
-                    styles={{
-                      body: {
-                        display: "flex",
-                        flexDirection: "column",
-                        padding: "16px 20px",
-                      },
-                    }}
-                    style={{
-                      borderRadius: 8,
-                      border: "1px solid #e8ecf0",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}>
-                      <div style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: 10,
-                        background: "#f5f7fa",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 12,
-                      }}>
-                        {getFileIcon(file.fileType)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Tooltip title={file.filename}>
-                          <Text
-                            strong
-                            ellipsis
-                            style={{ display: "block", marginBottom: 4 }}
-                          >
-                            {file.filename}
-                          </Text>
-                        </Tooltip>
-                        <Space size={8}>
-                          <Tag style={{ fontSize: 11, padding: "0 6px" }}>
-                            {simplifyFileType(file.fileType, file.filename)}
-                          </Tag>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {formatFileSize(file.size)}
-                          </Text>
-                        </Space>
-                      </div>
-                    </div>
-
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginTop: "auto",
-                      paddingTop: 12,
-                      borderTop: "1px solid #f0f0f0"
-                    }}>
-                      {file.source && (
-                        <Tag color="green" style={{ fontSize: 11 }}>
-                          {file.source === "ai_generated" ? "AI 生成" : file.source}
-                        </Tag>
-                      )}
-                      {!file.source && <span />}
-                      <Space size={4}>
-                        <Tooltip title="预览">
-                          <Button
-                            size="small"
-                            type="text"
-                            icon={<EyeOutlined />}
-                            onClick={() => handlePreview(file)}
-                          />
-                        </Tooltip>
-                        <Tooltip title="下载">
-                          <Button
-                            size="small"
-                            type="text"
-                            icon={<DownloadOutlined />}
-                            onClick={() => handleDownload(file)}
-                          />
-                        </Tooltip>
-                        <ReadonlyActionButton title="删除" size="small" type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteClick(file)} />
-                      </Space>
-                    </div>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-            {/* 卡片视图分页 */}
-            <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-              <Pagination
-                current={currentPage}
-                pageSize={pageSize}
-                total={filteredFiles.length}
-                onChange={setCurrentPage}
-                showSizeChanger={false}
-                showTotal={(total) => `共 ${total} 个文件`}
-              />
-            </div>
-          </Card>
+          <ProtoEmpty
+            title={searchText ? "未找到匹配的文件" : "该课程暂无 AI 生成的文件"}
+            description="调整筛选条件，或让 AI 生成新的课程文件。"
+          />
         ) : (
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #e8ecf0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
-            }}
-          >
+          <>
             <Table
               dataSource={paginatedFiles}
+              rowKey="id"
+              size="middle"
+              pagination={false}
               columns={[
                 {
-                  title: "文件名",
+                  title: "文件名称",
                   dataIndex: "filename",
                   key: "filename",
                   render: (_, record) => (
                     <Space style={{ maxWidth: "100%" }}>
                       <span style={{ flexShrink: 0 }}>{getFileIcon(record.fileType)}</span>
                       <Tooltip title={record.filename} mouseEnterDelay={0.3}>
-                        <Text strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{record.filename}</Text>
+                        <Text strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>
+                          {record.filename}
+                        </Text>
                       </Tooltip>
                     </Space>
                   ),
                 },
                 {
-                  title: "类型",
+                  title: "文件类型",
                   dataIndex: "fileType",
                   key: "fileType",
-                  width: 100,
+                  width: 120,
                   render: (_, record) => (
                     <Tag>{simplifyFileType(record.fileType, record.filename)}</Tag>
                   ),
@@ -551,15 +360,16 @@ export default function AIFilePage() {
                   title: "大小",
                   dataIndex: "size",
                   key: "size",
-                  width: 100,
+                  width: 110,
                   render: (size) => formatFileSize(size),
                 },
                 {
                   title: "来源",
                   dataIndex: "source",
                   key: "source",
-                  width: 100,
-                  render: (source) => source === "ai_generated" ? <Tag color="green">AI 生成</Tag> : source || "-",
+                  width: 120,
+                  render: (source) =>
+                    source === "ai_generated" ? <Tag color="green">AI 生成</Tag> : source || "-",
                 },
                 {
                   title: "操作",
@@ -588,24 +398,20 @@ export default function AIFilePage() {
                   ),
                 },
               ]}
-              rowKey="id"
-              pagination={false}
-              size="small"
             />
-            {/* 表格视图分页 */}
-            <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+            <div className="pu-table-footer">
+              <span>共 {filteredFiles.length} 个文件</span>
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
                 total={filteredFiles.length}
                 onChange={setCurrentPage}
                 showSizeChanger={false}
-                showTotal={(total) => `共 ${total} 个文件`}
               />
             </div>
-          </Card>
+          </>
         )}
-      </div>
+      </ProtoCard>
 
       {/* 删除确认弹窗 */}
       <Modal

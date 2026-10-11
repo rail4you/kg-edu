@@ -24,7 +24,8 @@ import {
   DeleteOutlined,
   UploadOutlined,
   DownloadOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import {
   listHomeworks,
@@ -39,7 +40,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -57,6 +58,8 @@ export default function HomeworkManagementPage() {
   const currentTenant = getCurrentTenant();
   const { canEdit } = useEditPermission();
   const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingHomework, setEditingHomework] =
@@ -305,6 +308,9 @@ export default function HomeworkManagementPage() {
 
   const courses = extractArrayData(coursesData);
   const homeworks = homeworksData || [];
+  const filteredHomeworks = homeworks.filter(
+    (h) => !searchText || (h.title || "").toLowerCase().includes(searchText.trim().toLowerCase()),
+  );
 
   if (authLoading) {
     return (
@@ -607,48 +613,42 @@ export default function HomeworkManagementPage() {
     <AppPage
       title="作业管理"
       description="管理课程作业与批改"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;作业管理</>}
       actions={
-        <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+        <Space>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => setImportModalOpen(true)}
+            disabled={!selectedCourse}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            导入作业
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+            下载模板
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalOpen(true)}
+            disabled={!selectedCourse}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            创建作业
+          </Button>
+        </Space>
       }
     >
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程：</Text>
-          <Select
-            style={{ width: 280 }}
-            placeholder="请选择课程"
-            value={selectedCourse || undefined}
-            onChange={(value) => setSelectedCourse(value)}
-            options={courses.map((course: any) => ({
-              label: course.title,
-              value: course.id,
-            }))}
-          />
-        </Space>
-      </div>
-
       {renderLoadingOverlay()}
 
       {coursesData?.success === false && (
         <div style={{ textAlign: "center", padding: 64 }}>
-          <Text
-            type="danger"
-            style={{ fontSize: 16, marginBottom: 16, display: "block" }}
-          >
+          <Text type="danger" style={{ fontSize: 16, marginBottom: 16, display: "block" }}>
             加载课程时出错: {coursesData.errors?.[0]?.message || "未知错误"}
           </Text>
           <Button
             type="primary"
-            onClick={() => {
-              queryClient.invalidateQueries({
-                queryKey: ["courses", tenant],
-              });
-            }}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["courses", tenant] })}
           >
             重试
           </Button>
@@ -657,10 +657,7 @@ export default function HomeworkManagementPage() {
 
       {homeworksError && (
         <div style={{ textAlign: "center", padding: 64 }}>
-          <Text
-            type="danger"
-            style={{ fontSize: 16, marginBottom: 16, display: "block" }}
-          >
+          <Text type="danger" style={{ fontSize: 16, marginBottom: 16, display: "block" }}>
             加载作业时出错: {(homeworksError as Error)?.message}
           </Text>
           <Button type="primary" onClick={() => refetchHomeworks()}>
@@ -669,83 +666,75 @@ export default function HomeworkManagementPage() {
         </div>
       )}
 
-      {!coursesLoading && coursesData?.success && courses.length === 0 && (
-        <Empty description="未找到课程，请先创建课程后再管理作业" />
-      )}
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
+          <Select
+            style={{ width: 240 }}
+            placeholder="请选择课程"
+            value={selectedCourse || undefined}
+            onChange={(value) => setSelectedCourse(value)}
+            loading={coursesLoading}
+            options={courses.map((course: any) => ({ label: course.title, value: course.id }))}
+          />
+          <Input
+            className="pu-search"
+            placeholder="搜索作业标题"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
+          {selectedRowKeys.length > 0 && canEdit && (
+            <Popconfirm
+              title={`确定要删除选中的 ${selectedRowKeys.length} 个作业吗？`}
+              onConfirm={() => bulkDeleteMutation.mutate(selectedRowKeys as string[])}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button danger icon={<DeleteOutlined />} loading={bulkDeleteMutation.isPending}>
+                批量删除 ({selectedRowKeys.length})
+              </Button>
+            </Popconfirm>
+          )}
+        </div>
 
-      {!coursesLoading &&
-        coursesData?.success &&
-        courses.length > 0 &&
-        !selectedCourse && (
-          <Empty description="请选择一个课程，选择课程后将显示该课程的作业列表" />
-        )}
-
-      {!homeworksLoading &&
-        !homeworksError &&
-        selectedCourse && (
-          <Card>
+        {!selectedCourse ? (
+          <ProtoEmpty
+            title="请选择课程"
+            description={
+              courses.length === 0
+                ? "未找到课程，请先创建课程后再管理作业"
+                : "选择课程后将显示该课程的作业列表。"
+            }
+          />
+        ) : filteredHomeworks.length === 0 ? (
+          <ProtoEmpty title="暂无作业" description="点击右上角「创建作业」开始。" />
+        ) : (
+          <>
             <Table
-              className="theme-table"
               columns={columns}
-              dataSource={homeworks}
+              dataSource={filteredHomeworks}
               rowKey="id"
-              rowSelection={homeworks.length > 0 ? rowSelection : undefined}
-              locale={{ emptyText: <Empty description="该课程暂无作业" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
-              title={() => (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Space>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => setCreateModalOpen(true)}
-                      style={canEdit ? undefined : { display: "none" }}
-                    >
-                      创建作业
-                    </Button>
-                    <Button
-                      icon={<UploadOutlined />}
-                      onClick={() => setImportModalOpen(true)}
-                      style={canEdit ? undefined : { display: "none" }}
-                    >
-                      导入作业
-                    </Button>
-                    <Button
-                      icon={<DownloadOutlined />}
-                      onClick={handleDownloadTemplate}
-                    >
-                      下载模板
-                    </Button>
-                    {selectedRowKeys.length > 0 && canEdit && (
-                      <Popconfirm
-                        title={`确定要删除选中的 ${selectedRowKeys.length} 个作业吗？`}
-                        onConfirm={() =>
-                          bulkDeleteMutation.mutate(selectedRowKeys as string[])
-                        }
-                        okText="确定"
-                        cancelText="取消"
-                      >
-                        <Button
-                          danger
-                          icon={<DeleteOutlined />}
-                          loading={bulkDeleteMutation.isPending}
-                        >
-                          批量删除 ({selectedRowKeys.length})
-                        </Button>
-                      </Popconfirm>
-                    )}
-                  </Space>
-                </div>
-              )}
-              pagination={{
-                pageSize: 25,
-                showSizeChanger: true,
-                pageSizeOptions: ["10", "25", "50"],
-                showTotal: (total) => `共 ${total} 条`,
-              }}
+              rowSelection={filteredHomeworks.length > 0 ? rowSelection : undefined}
+              loading={homeworksLoading}
+              pagination={false}
+              size="middle"
             />
-          </Card>
+            <div className="pu-table-footer">
+              <span>共 {filteredHomeworks.length} 条</span>
+            </div>
+          </>
         )}
-
+      </ProtoCard>
       <Modal
         title="创建新作业"
         open={createModalOpen}

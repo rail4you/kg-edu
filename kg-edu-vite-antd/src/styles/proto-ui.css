@@ -861,6 +861,12 @@
   border-color: var(--pu-blue-strong);
 }
 
+/* 页头操作按钮：对齐原型按钮尺寸（约 9px 纵向内边距） */
+:is(.pu-page, .pu-page-fill, .pu-app) .pu-head__actions .ant-btn {
+  min-height: 38px;
+  padding: 0 16px;
+}
+
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-input,
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-input-affix-wrapper,
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-select-selector,

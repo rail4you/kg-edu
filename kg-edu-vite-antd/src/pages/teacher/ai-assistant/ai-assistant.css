@@ -1,0 +1,261 @@
+/* ============================================================
+   AI 智能体助手 —— 对齐「易课程-完整交互原型」#/teacher/AI智能体助手
+   左侧「课程助手」快捷提示面板 + 右侧对话卡片
+   ============================================================ */
+
+.ai-assistant-page {
+  height: calc(100vh - 60px);
+}
+
+.ai-assistant-page .pu-breadcrumb {
+  margin: 0;
+  padding: 20px 24px 0;
+}
+
+.ai-assistant-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 20px 24px 28px;
+  gap: 16px;
+}
+
+/* ---------- 分栏 ---------- */
+.ai-split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 24px;
+}
+
+.ai-card {
+  background: #fff;
+  border: 1px solid var(--pu-line, #e3e9f1);
+  border-radius: 14px;
+  min-width: 0;
+}
+
+/* ---------- 左侧：课程助手 ---------- */
+.ai-tree {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-tree h3 {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--pu-ink, #202f47);
+  margin: 0 0 12px;
+}
+
+.ai-tree__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-tree__list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 5px 0;
+  border: 0;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: #202f47;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-tree__list button:hover {
+  background: #f2f5fb;
+  color: var(--pu-blue, #2859df);
+}
+
+.ai-note {
+  margin-top: auto;
+  padding: 14px 16px;
+  border-left: 3px solid var(--pu-blue, #2859df);
+  background: #f5f8ff;
+  border-radius: 0 10px 10px 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #62738a;
+}
+
+/* ---------- 右侧：对话卡片 ---------- */
+.ai-chat {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-chat__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--pu-line-soft, #edf0f5);
+  flex-shrink: 0;
+}
+
+.ai-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8eeff;
+  color: var(--pu-blue, #2859df);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ai-avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+  margin: 0 auto 12px;
+}
+
+.ai-chat__header h3 {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--pu-ink, #202f47);
+  margin: 0;
+}
+
+.ai-chat__header small {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.ai-chat__switch {
+  margin-left: auto;
+  min-width: 150px;
+}
+
+.ai-chat__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.ai-chat__body > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-chat__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: #64748b;
+  text-align: center;
+  padding: 24px;
+}
+
+.ai-chat__empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 使用原型头部，隐藏内置 thread header */
+.ai-chat .aui-thread-header {
+  display: none;
+}
+
+/* ---------- 对话区：对齐原型气泡 / 头像 / 输入条 ---------- */
+.ai-assistant-page .aui-thread-viewport {
+  padding: 20px 22px;
+  gap: 18px;
+}
+
+.ai-assistant-page .aui-message-bubble {
+  box-shadow: none;
+  font-size: 15px;
+  padding: 16px 20px;
+}
+
+/* 助手气泡：左上方直角，浅蓝灰底 */
+.ai-assistant-page .aui-message-row-assistant .aui-message-bubble {
+  background: #f1f5fc;
+  color: #202f47;
+  border: 0;
+  border-radius: 0 14px 14px 14px;
+}
+
+/* 用户气泡：右上方直角，浅蓝底 */
+.ai-assistant-page .aui-message-row-user .aui-message-bubble {
+  background: #eaf0ff;
+  color: #202f47;
+  border-radius: 14px 0 14px 14px;
+}
+
+.ai-assistant-page .aui-message-row-user .aui-message-bubble,
+.ai-assistant-page .aui-message-row-user .aui-message-bubble * {
+  color: #202f47;
+}
+
+/* 头像：原型风格（浅蓝底 + 品牌蓝） */
+.ai-assistant-page .aui-message-row .ant-avatar {
+  background: #e8eeff !important;
+  color: #2859df !important;
+}
+
+.ai-assistant-page .aui-message-column {
+  max-width: 80%;
+}
+
+/* 输入条：白底细边框 + 品牌蓝发送按钮 */
+.ai-assistant-page .aui-composer-root {
+  padding: 14px 22px 18px;
+  border-top: 1px solid #edf0f5;
+  background: #fff;
+}
+
+.ai-assistant-page .aui-composer-shell {
+  background: #fff;
+  border: 1px solid #d9e1ec;
+  border-radius: 10px;
+}
+
+.ai-assistant-page .aui-composer-shell:focus-within {
+  border-color: #2859df;
+  box-shadow: 0 0 0 3px rgba(40, 89, 223, 0.1);
+}
+
+.ai-assistant-page .aui-composer-send {
+  background: #2859df;
+  border-radius: 8px;
+}
+
+.ai-assistant-page .aui-composer-send:hover {
+  background: #1846bc;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 992px) {
+  .ai-assistant-page {
+    height: auto;
+  }
+
+  .ai-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-tree {
+    display: none;
+  }
+
+  .ai-chat {
+    min-height: 70vh;
+  }
+}

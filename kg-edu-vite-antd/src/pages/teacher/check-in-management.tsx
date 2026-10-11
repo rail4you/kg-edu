@@ -39,7 +39,7 @@ import {
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -107,6 +107,7 @@ export default function CheckInManagement() {
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [subtab, setSubtab] = useState("all");
   const [recordsDialogOpen, setRecordsDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<CheckInSession | null>(
@@ -411,13 +412,16 @@ export default function CheckInManagement() {
     <AppPage
       title="签到管理"
       description="发起课堂签到并查看签到记录"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;签到管理</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setDialogOpen(true)}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          发起签到
+        </Button>
       }
     >
       <StatGrid
@@ -429,33 +433,33 @@ export default function CheckInManagement() {
         ]}
       />
 
-      <Card>
-        <Table
-          className="theme-table"
-          columns={columns}
-          dataSource={sessions}
-          rowKey="id"
-          loading={isLoading}
-          title={() => (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setDialogOpen(true)}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  发起签到
-                </Button>
-              </Space>
-            </div>
-          )}
-          pagination={{
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
         />
-      </Card>
+        {sessions.length === 0 ? (
+          <ProtoEmpty title="暂无签到" description="点击右上角「发起签到」开始。" />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={sessions}
+              rowKey="id"
+              loading={isLoading}
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {sessions.length} 条</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       <Modal
         title="发起签到"

@@ -26,7 +26,8 @@ import {
   BookOutlined,
   PaperClipOutlined,
   UploadOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import EmptyState from "@/components/EmptyState";
 import {
@@ -43,7 +44,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -90,6 +91,8 @@ export default function BookInfoPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<BookType | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
   const [imageProgress, setImageProgress] = useState(0);
@@ -406,7 +409,6 @@ export default function BookInfoPage() {
       dataIndex: "coverImage",
       key: "coverImage",
       width: 96,
-      align: "center",
       onCell: () => ({ style: { verticalAlign: "middle" } }),
       render: (coverImage: string | null, record: BookType) =>
         coverImage ? (
@@ -478,7 +480,6 @@ export default function BookInfoPage() {
       key: "attachment",
       className: "book-mobile-hide",
       width: "16%",
-      align: "center",
       onCell: () => ({ style: { verticalAlign: "middle" } }),
       render: (attachment: string | null) =>
         attachment ? (
@@ -495,24 +496,23 @@ export default function BookInfoPage() {
     {
       title: "操作",
       key: "action",
-      width: 72,
-      align: "center",
-      onCell: () => ({ style: { verticalAlign: "middle" } }),
+      width: 110,
       render: (_: unknown, record: BookType) => (
         <Space size={0}>
           <ReadonlyActionButton
-            type="text"
+            type="link"
             size="small"
-            icon={<EditOutlined />}
             onClick={() => handleEditBook(record)}
-          />
+          >
+            编辑
+          </ReadonlyActionButton>
           <Popconfirm
             title="确定要删除这本教材吗？"
             onConfirm={() => handleDeleteBook(record.id)}
             okText="确定"
             cancelText="取消"
           >
-            <ReadonlyActionButton type="text" danger size="small" icon={<DeleteOutlined />} />
+            <ReadonlyActionButton type="link" danger size="small">删除</ReadonlyActionButton>
           </Popconfirm>
         </Space>
       ),
@@ -680,13 +680,23 @@ export default function BookInfoPage() {
     <AppPage
       title="教材管理"
       description="管理课程教材与附件资料"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;教材管理</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            resetForm();
+            if (selectedCourseId) {
+              setFormData((prev) => ({ ...prev, courseId: selectedCourseId }));
+            }
+            setCreateModalOpen(true);
+          }}
+          loading={createBookMutation.isPending}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          添加教材
+        </Button>
       }
     >
       <style>{`@media(max-width:768px){.book-mobile-hide{display:none!important}}`}</style>
@@ -695,75 +705,80 @@ export default function BookInfoPage() {
           <Spin size="large" />
         </div>
       ) : (
-        <>
-          <Card>
-            {booksError && (
-              <Alert
-                message={`加载教材失败: ${getErrorMessage(booksError, "未知错误")}`}
-                type="error"
-                style={{ marginBottom: 16 }}
-              />
-            )}
-
-            <Table
-              className="theme-table"
-              columns={columns}
-              dataSource={books}
-              rowKey="id"
-              loading={booksLoading}
-              size="small"
-              title={() => (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                  <Space wrap>
-                    <Text strong>选择课程：</Text>
-                    <Select
-                      style={{ width: 180 }}
-                      placeholder="请选择课程"
-                      allowClear
-                      value={selectedCourseId || undefined}
-                      onChange={(value) => setSelectedCourseId(value || "")}
-                      loading={coursesLoading}
-                      options={[
-                        { label: "所有课程", value: "" },
-                        ...courses.map((course: Course) => ({
-                          label: course.title,
-                          value: course.id,
-                        })),
-                      ]}
-                    />
-                  </Space>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => {
-                      resetForm();
-                      if (selectedCourseId) {
-                        setFormData((prev) => ({ ...prev, courseId: selectedCourseId }));
-                      }
-                      setCreateModalOpen(true);
-                    }}
-                    loading={createBookMutation.isPending}
-                    style={canEdit ? undefined : { display: "none" }}
-                  >
-                    添加教材
-                  </Button>
-                </div>
-              )}
-              locale={{
-                emptyText: (
-                  <EmptyState
-                    description={selectedCourseId ? "暂无教材" : "请先选择一个课程"}
-                  />
-                ),
-              }}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total) => `共 ${total} 条`,
-              }}
+        <ProtoCard>
+          {booksError && (
+            <Alert
+              message={`加载教材失败: ${getErrorMessage(booksError, "未知错误")}`}
+              type="error"
+              style={{ marginBottom: 16 }}
             />
-          </Card>
-        </>
+          )}
+
+          <ProtoTabs
+            items={[
+              { id: "all", label: "全部记录" },
+              { id: "recent", label: "最近更新" },
+            ]}
+            active={subtab}
+            onChange={setSubtab}
+          />
+          <div className="pu-filters">
+            <Select
+              style={{ width: 200 }}
+              placeholder="选择课程"
+              allowClear
+              value={selectedCourseId || undefined}
+              onChange={(value) => setSelectedCourseId(value || "")}
+              loading={coursesLoading}
+              options={[
+                { label: "所有课程", value: "" },
+                ...courses.map((course: Course) => ({
+                  label: course.title,
+                  value: course.id,
+                })),
+              ]}
+            />
+            <Input
+              className="pu-search"
+              placeholder="搜索教材标题"
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              allowClear
+            />
+            <Button onClick={() => setSearchText("")}>重置</Button>
+          </div>
+
+          {(() => {
+            const q = searchText.trim().toLowerCase();
+            const filtered = (books || []).filter(
+              (b: BookType) => !q || (b.title || "").toLowerCase().includes(q),
+            );
+            if (filtered.length === 0) {
+              return (
+                <ProtoEmpty
+                  title={selectedCourseId ? "暂无教材" : "请先选择课程"}
+                  description="可切换课程，或点击右上角「添加教材」。"
+                />
+              );
+            }
+            return (
+              <>
+                <Table
+                  columns={columns}
+                  dataSource={filtered}
+                  rowKey="id"
+                  loading={booksLoading}
+                  size="middle"
+                  pagination={false}
+                />
+                <div className="pu-table-footer">
+                  <span>共 {filtered.length} 条</span>
+                </div>
+              </>
+            );
+          })()}
+        </ProtoCard>
       )}
 
       <Modal

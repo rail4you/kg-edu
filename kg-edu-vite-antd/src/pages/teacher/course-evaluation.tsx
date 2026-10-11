@@ -16,6 +16,7 @@ import {
   Empty,
   Avatar,
   Rate,
+  Input,
 } from "antd";
 import {
   DeleteOutlined,
@@ -23,7 +24,8 @@ import {
   UserOutlined,
   EyeOutlined,
   StarOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -36,7 +38,7 @@ import type { DiscussionResourceSchema } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -47,6 +49,8 @@ export default function CourseEvaluationPage() {
   const { user, loading: authLoading } = useAuth();
   const currentTenant = getCurrentTenant();
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedDiscussion, setSelectedDiscussion] =
     useState<DiscussionResourceSchema | null>(null);
@@ -198,7 +202,6 @@ export default function CourseEvaluationPage() {
       title: "发布时间",
       dataIndex: "insertedAt",
       key: "insertedAt",
-      align: "center" as const,
       width: 100,
       render: (date: string) =>
         date ? new Date(date).toLocaleDateString("zh-CN") : "-",
@@ -206,22 +209,23 @@ export default function CourseEvaluationPage() {
     {
       title: "操作",
       key: "action",
-      align: "center" as const,
       width: 120,
       render: (_: any, record: DiscussionResourceSchema) => (
         <Space size={4}>
           <Button
-            type="text"
-            icon={<EyeOutlined />}
+            type="link"
+            size="small"
             onClick={() => handleViewDiscussion(record)}
-          />
+          >
+            查看
+          </Button>
           <Popconfirm
             title="确定删除此评价？"
             onConfirm={() => deleteMutation.mutate(record.id)}
             okText="确定"
             cancelText="取消"
           >
-            <ReadonlyActionButton type="text" danger icon={<DeleteOutlined />} />
+            <ReadonlyActionButton type="link" size="small" danger>删除</ReadonlyActionButton>
           </Popconfirm>
         </Space>
       ),
@@ -263,14 +267,7 @@ export default function CourseEvaluationPage() {
     <AppPage
       title="课程评价管理"
       description="查看与管理学生课程评价"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
-      }
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程评价管理</>}
     >
       <StatGrid
         columns={2}
@@ -280,55 +277,66 @@ export default function CourseEvaluationPage() {
         ]}
       />
 
-      {/* 筛选和列表 */}
-      <div style={{ marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程查看评价：</Text>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
           <Select
-            value={selectedCourseId}
+            value={selectedCourseId || undefined}
             onChange={setSelectedCourseId}
-            style={{ width: 200 }}
+            style={{ width: 240 }}
             allowClear
             placeholder="全部课程"
             loading={coursesLoading}
-          >
-            {courses.map((course) => (
-              <Option key={course.id} value={course.id}>
-                {course.title}
-              </Option>
-            ))}
-          </Select>
-        </Space>
-      </div>
+            options={courses.map((course) => ({ value: course.id, label: course.title }))}
+          />
+          <Input
+            className="pu-search"
+            placeholder="搜索评价内容"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
+        </div>
 
-      <Card>
-        <Table
-          className="theme-table"
-          columns={columns}
-          dataSource={discussions}
-          rowKey="id"
-          loading={discussionsLoading}
-          title={() => (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Space>
-                <Text strong>课程评价列表</Text>
-              </Space>
-            </div>
-          )}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条课程评价`,
-          }}
-          locale={{
-            emptyText: selectedCourseId ? (
-              <Empty description="暂无课程评价" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            ) : (
-              <Empty description="请先选择一个课程" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            ),
-          }}
-        />
-      </Card>
+        {(() => {
+          const q = searchText.trim().toLowerCase();
+          const filtered = (discussions || []).filter(
+            (d: DiscussionResourceSchema) => !q || (d.content || "").toLowerCase().includes(q),
+          );
+          if (filtered.length === 0) {
+            return (
+              <ProtoEmpty
+                title={selectedCourseId ? "暂无课程评价" : "请先选择课程"}
+                description="可切换课程查看学生评价。"
+              />
+            );
+          }
+          return (
+            <>
+              <Table
+                columns={columns}
+                dataSource={filtered}
+                rowKey="id"
+                loading={discussionsLoading}
+                size="middle"
+                pagination={false}
+              />
+              <div className="pu-table-footer">
+                <span>共 {filtered.length} 条课程评价</span>
+              </div>
+            </>
+          );
+        })()}
+      </ProtoCard>
 
       {/* 查看课程评价详情 Modal */}
       <Modal

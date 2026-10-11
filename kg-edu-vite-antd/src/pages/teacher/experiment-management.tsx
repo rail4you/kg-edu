@@ -14,6 +14,7 @@ import {
   List,
   Empty,
   Tooltip,
+  Select,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -25,7 +26,8 @@ import {
   CloudOutlined,
   ExperimentOutlined,
   BookOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -38,7 +40,7 @@ import {
 import { useCourses } from "@/hooks/use-courses";
 import ActionDropdown from "@/components/ActionDropdown";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -69,6 +71,7 @@ export default function ExperimentManagement() {
   const [searchParams] = useSearchParams();
   const [searchText, setSearchText] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [subtab, setSubtab] = useState("all");
 
   // 从 URL 参数初始化 selectedCourseId
   React.useEffect(() => {
@@ -307,7 +310,6 @@ export default function ExperimentManagement() {
           <Tag>{getExperimentTypeLabel(type)}</Tag>
         </Space>
       ),
-      align: "center",
     },
     {
       title: "所属课程",
@@ -315,7 +317,6 @@ export default function ExperimentManagement() {
       key: "courseName",
       width: 150,
       render: (text: string) => text || "-",
-      align: "center",
     },
     {
       title: "难度",
@@ -327,7 +328,6 @@ export default function ExperimentManagement() {
           {getDifficultyLevelLabel(level)}
         </Tag>
       ),
-      align: "center",
     },
     {
       title: "学时",
@@ -335,7 +335,6 @@ export default function ExperimentManagement() {
       key: "durationHours",
       width: 80,
       render: (hours: number) => (hours ? `${hours}h` : "-"),
-      align: "center",
     },
     {
       title: "知识点",
@@ -343,13 +342,11 @@ export default function ExperimentManagement() {
       key: "knowledgeResourcesCount",
       width: 80,
       render: (count: number) => count || 0,
-      align: "center",
     },
     {
       title: "指导书",
       key: "guideUrl",
       width: 120,
-      align: "center",
       render: (_, record) =>
         record.guideUrl ? (
           <a
@@ -366,7 +363,6 @@ export default function ExperimentManagement() {
       title: "操作",
       key: "action",
       width: 80,
-      align: "center",
       render: (_, record) => {
         const items = [
           {
@@ -403,13 +399,16 @@ export default function ExperimentManagement() {
     <AppPage
       title="实验管理"
       description="管理各课程的实验内容与指导书"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;实验管理</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => navigate("/teacher/dashboard/experiment-form/new")}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          创建实验
+        </Button>
       }
     >
       {selectedCourse && (
@@ -423,152 +422,56 @@ export default function ExperimentManagement() {
         />
       )}
 
-      <div style={{ display: "flex", gap: 24 }}>
-        {/* 左侧课程列表 */}
-        <Card
-          style={{ width: 280, flexShrink: 0 }}
-          styles={{ body: { padding: 0 } }}
-        >
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid #f0f0f0",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <BookOutlined style={{ color: "#1890ff" }} />
-            <span>课程列表</span>
-            <Tag color="blue" style={{ marginLeft: "auto" }}>
-              {courses.length}
-            </Tag>
-          </div>
-          <div style={{ maxHeight: 500, overflow: "auto" }}>
-            {isLoadingCourses ? (
-              <div style={{ padding: 24, textAlign: "center" }}>
-                <Spin />
-              </div>
-            ) : courses.length === 0 ? (
-              <Empty
-                description="暂无课程"
-                style={{ padding: 24 }}
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            ) : (
-              <List
-                dataSource={courses}
-                renderItem={(course) => (
-                  <List.Item
-                    style={{
-                      padding: "12px 16px",
-                      cursor: "pointer",
-                      backgroundColor:
-                        selectedCourseId === course.id ? "#e6f7ff" : "transparent",
-                      borderLeft:
-                        selectedCourseId === course.id
-                          ? "3px solid #1890ff"
-                          : "3px solid transparent",
-                      transition: "all 0.2s",
-                    }}
-                    onClick={() => setSelectedCourseId(course.id)}
-                    onMouseEnter={(e) => {
-                      if (selectedCourseId !== course.id) {
-                        e.currentTarget.style.backgroundColor = "#fafafa";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedCourseId !== course.id) {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }
-                    }}
-                  >
-                    <div style={{ width: "100%" }}>
-                      <Text
-                        strong={selectedCourseId === course.id}
-                        style={{
-                          color:
-                            selectedCourseId === course.id ? "#1890ff" : "#333",
-                        }}
-                      >
-                        {course.title}
-                      </Text>
-                      {course.description && (
-                        <Text
-                          type="secondary"
-                          style={{
-                            display: "block",
-                            fontSize: 12,
-                            marginTop: 4,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {course.description}
-                        </Text>
-                      )}
-                    </div>
-                  </List.Item>
-                )}
-              />
-            )}
-          </div>
-        </Card>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
+          <Select
+            value={selectedCourseId || undefined}
+            onChange={(value) => setSelectedCourseId(value || null)}
+            placeholder="请选择课程"
+            style={{ width: 240 }}
+            loading={isLoadingCourses}
+            allowClear
+            options={courses.map((course) => ({ value: course.id, label: course.title }))}
+          />
+          <Input
+            className="pu-search"
+            placeholder="搜索实验名称"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
+        </div>
 
-        {/* 右侧实验列表 */}
-        <Card style={{ flexGrow: 1 }}>
-          {!selectedCourseId ? (
-            <Empty
-              description="请从左侧选择一个课程查看实验"
-              style={{ padding: 48 }}
+        {!selectedCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择课程以查看其实验内容。" />
+        ) : filteredExperiments.length === 0 ? (
+          <ProtoEmpty title="暂无实验" description="点击右上角「创建实验」开始。" />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={filteredExperiments}
+              rowKey="id"
+              loading={isLoading}
+              pagination={false}
+              size="middle"
             />
-          ) : (
-            <>
-              <div
-                style={{
-                  marginBottom: 24,
-                  marginTop: -14,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Space size="middle">
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => navigate("/teacher/dashboard/experiment-form/new")}
-                    style={canEdit ? undefined : { display: "none" }}
-                  >
-                    创建实验
-                  </Button>
-                </Space>
-                <Input.Search
-                  placeholder="搜索实验名称"
-                  allowClear
-                  onChange={(e) => setSearchText(e.target.value)}
-                  style={{ width: 300 }}
-                />
-              </div>
-              <Table
-                className="theme-table"
-                columns={columns}
-                dataSource={filteredExperiments}
-                rowKey="id"
-                loading={isLoading}
-                pagination={{
-                  showSizeChanger: true,
-                  showTotal: (total) => `共 ${total} 条`,
-                  defaultPageSize: 10,
-                  pageSizeOptions: ["10", "25", "50", "100"],
-                }}
-              />
-            </>
-          )}
-        </Card>
-      </div>
+            <div className="pu-table-footer">
+              <span>共 {filteredExperiments.length} 条</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
     </AppPage>
   );
 }

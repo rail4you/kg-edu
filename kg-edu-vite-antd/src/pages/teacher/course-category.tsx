@@ -14,7 +14,7 @@ import {
   Tooltip,
   Empty,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, FolderOutlined, ArrowLeftOutlined, EyeOutlined, ReadOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, FolderOutlined, ArrowLeftOutlined, EyeOutlined, ReadOutlined, SearchOutlined } from "@ant-design/icons";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   listSubjectCategories,
@@ -30,7 +30,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useTranslate } from "@/locales/use-locales";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -52,6 +52,8 @@ export default function CourseCategoryPage() {
   const { t } = useTranslate("teacher");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({
@@ -85,6 +87,9 @@ export default function CourseCategoryPage() {
   });
 
   const categories: Category[] = extractArrayData(categoriesData);
+  const filteredCategories = categories.filter(
+    (c) => !searchText || (c.name || "").toLowerCase().includes(searchText.trim().toLowerCase()),
+  );
 
   const getCourseCount = (category: Category) => {
     return category.courses?.length || 0;
@@ -254,7 +259,6 @@ export default function CourseCategoryPage() {
       title: "关联课程",
       key: "courseCount",
       width: "16%",
-      align: "center",
       render: (_: unknown, record: Category) => {
         const count = getCourseCount(record);
         return <Text>{count} 门课程</Text>;
@@ -264,16 +268,15 @@ export default function CourseCategoryPage() {
       title: "操作",
       key: "action",
       width: "22%",
-      align: "center",
       render: (_: unknown, record: Category) => (
         <Space size={4}>
-          <ReadonlyActionButton type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewCourses(record)}>
+          <ReadonlyActionButton type="link" size="small" onClick={() => handleViewCourses(record)}>
             <span className="cat-action-text">查看</span>
           </ReadonlyActionButton>
-          <ReadonlyActionButton type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenDialog(record)}>
+          <ReadonlyActionButton type="link" size="small" onClick={() => handleOpenDialog(record)}>
             <span className="cat-action-text">{t("common.edit")}</span>
           </ReadonlyActionButton>
-          <ReadonlyActionButton type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleOpenDeleteDialog(record)}>
+          <ReadonlyActionButton type="link" size="small" danger onClick={() => handleOpenDeleteDialog(record)}>
             <span className="cat-action-text">{t("common.delete")}</span>
           </ReadonlyActionButton>
         </Space>
@@ -285,24 +288,36 @@ export default function CourseCategoryPage() {
     <AppPage
       title="学科分类管理"
       description="管理课程学科分类信息"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学科分类</>}
       actions={
-        <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDialog()} style={canEdit ? undefined : { display: "none" }}>
-            添加学科分类
-          </Button>
-        </>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDialog()} style={canEdit ? undefined : { display: "none" }}>
+          添加学科分类
+        </Button>
       }
     >
       <style>{`@media(max-width:768px){.cat-mobile-hide{display:none!important}.cat-action-text{display:none!important}}`}</style>
 
-      {/* 表格 */}
-      <Card style={{ borderRadius: 8 }}>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
+          <Input
+            className="pu-search"
+            placeholder="搜索学科分类"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
+        </div>
+
         {isLoading ? (
           <div style={{ textAlign: "center", padding: 64 }}><Spin /></div>
         ) : error ? (
@@ -313,25 +328,17 @@ export default function CourseCategoryPage() {
               action={<Button size="small" onClick={() => refetch()}>重试</Button>}
             />
           </div>
+        ) : filteredCategories.length === 0 ? (
+          <ProtoEmpty title="暂无学科分类" description="点击右上角「添加学科分类」创建。" />
         ) : (
-          <Table
-            columns={columns}
-            dataSource={categories}
-            rowKey="id"
-            size="small"
-            pagination={{
-              current: page,
-              pageSize: pageSize,
-              showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (p, ps) => { setPage(p); setPageSize(ps); },
-            }}
-            locale={{
-              emptyText: "暂无学科分类",
-            }}
-          />
+          <>
+            <Table columns={columns} dataSource={filteredCategories} rowKey="id" size="middle" pagination={false} />
+            <div className="pu-table-footer">
+              <span>共 {filteredCategories.length} 条</span>
+            </div>
+          </>
         )}
-      </Card>
+      </ProtoCard>
 
       {/* 添加/编辑弹窗 */}
       <Modal

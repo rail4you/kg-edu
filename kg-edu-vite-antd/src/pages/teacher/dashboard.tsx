@@ -87,6 +87,7 @@ export default function TeacherDashboard() {
 
   return (
     <div className="teacher-dashboard">
+      <div className="pu-breadcrumb">智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;教师工作台</div>
       <div className="page-head">
         <div>
           <h1>

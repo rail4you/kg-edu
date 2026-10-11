@@ -17,6 +17,7 @@ import {
   Progress,
   Form,
   Popconfirm,
+  Input,
 } from "antd";
 import type { TableProps } from "antd";
 import {
@@ -34,6 +35,7 @@ import {
   ArrowDownOutlined,
   MenuOutlined,
   SortAscendingOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   listFiles,
@@ -46,7 +48,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -221,6 +223,8 @@ export default function FileManagement() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
@@ -890,7 +894,6 @@ export default function FileManagement() {
       title: "类型",
       key: "fileType",
       width: 100,
-      align: "center",
       sorter: (a: FileType, b: FileType) =>
         getFileExtension(a.filename).localeCompare(
           getFileExtension(b.filename),
@@ -908,7 +911,6 @@ export default function FileManagement() {
       dataIndex: "size",
       key: "size",
       width: 100,
-      align: "center",
       sorter: (a: FileType, b: FileType) => (a.size || 0) - (b.size || 0),
       sortOrder: sortedInfo.columnKey === "size" ? sortedInfo.order : undefined,
       render: (size: number) => <Text>{formatFileSize(size)}</Text>,
@@ -918,7 +920,6 @@ export default function FileManagement() {
       dataIndex: "insertedAt",
       key: "insertedAt",
       width: 150,
-      align: "center",
       sorter: (a: FileType, b: FileType) =>
         (new Date(a.insertedAt || 0).getTime() || 0) -
         (new Date(b.insertedAt || 0).getTime() || 0),
@@ -931,7 +932,6 @@ export default function FileManagement() {
       dataIndex: "purpose",
       key: "purpose",
       width: 120,
-      align: "center",
       ellipsis: true,
       render: (purpose: string) => {
         const purposeMap: Record<string, string> = {
@@ -957,7 +957,6 @@ export default function FileManagement() {
       title: "操作",
       key: "action",
       width: 150,
-      align: "center",
       render: (_: unknown, record: FileType) => (
         <Space>
           {canEdit && (
@@ -1045,139 +1044,142 @@ export default function FileManagement() {
     <AppPage
       title="资源管理"
       description="管理课程资源文件与上传"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;资源管理</>}
       actions={
         <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<CloudUploadOutlined />}
+          onClick={() => setUploadDialogOpen(true)}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          批量上传
+        </Button>
       }
     >
-      {/* 课程选择独立一行 */}
-      <div style={{ marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程：</Text>
-          <Select
-            value={selectedCourseId}
-            onChange={(value) => {
-              setSelectedCourseId(value);
-            }}
-            loading={coursesLoading}
-            placeholder="请选择课程"
-            style={{ width: 280 }}
-            allowClear
-          >
-            {(Array.isArray(courses) ? courses : []).map((course: any) => (
-              <Select.Option key={course.id} value={course.id}>
-                {course.title}
-              </Select.Option>
-            ))}
-          </Select>
-          {selectedCourseId && (
-            <Button
-              type="link"
-              size="small"
-              onClick={() => {
-                setSelectedCourseId("");
-              }}
-            >
-              清除
-            </Button>
-          )}
-        </Space>
-      </div>
-
       {error && (
         <Alert
           type="error"
-          message={
-            error instanceof Error ? error.message : "Failed to load files"
-          }
+          message={error instanceof Error ? error.message : "Failed to load files"}
           style={{ marginBottom: 16 }}
           showIcon
         />
       )}
 
-      <Card>
-        <Table
-          className="theme-table"
-          columns={columns}
-          dataSource={orderedFiles}
-          rowKey="id"
-          loading={isLoading || isReordering}
-          onChange={(_, __, sorter: any) => {
-            const s = Array.isArray(sorter) ? sorter[0] : sorter;
-            if (s && s.order) {
-              setSortedInfo({ columnKey: s.columnKey as string, order: s.order });
-            } else {
-              setSortedInfo({});
-            }
-          }}
-          title={() => (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<CloudUploadOutlined />}
-                  onClick={() => setUploadDialogOpen(true)}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  批量上传
-                </Button>
-                {canEdit && (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "2px 10px",
-                      borderRadius: 4,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      border: "1px solid #c5c9cf",
-                      background: "#f5f6f8",
-                      color: "#555c66",
-                    }}
-                  >
-                    {!isManualMode ? (
-                      <>
-                        <SortAscendingOutlined />
-                        按{
-                          sortedInfo.columnKey === "filename"
-                            ? "文件名"
-                            : sortedInfo.columnKey === "fileType"
-                              ? "类型"
-                              : sortedInfo.columnKey === "size"
-                                ? "大小"
-                                : sortedInfo.columnKey === "insertedAt"
-                                  ? "上传时间"
-                                  : "列"
-                        }排序
-                      </>
-                    ) : hasManualOrder ? (
-                      <>
-                        <MenuOutlined />
-                        手动排序
-                      </>
-                    ) : (
-                      <>
-                        <MenuOutlined />
-                        上传时间倒序
-                      </>
-                    )}
-                  </span>
-                )}
-              </Space>
-            </div>
-          )}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
         />
-      </Card>
+        <div className="pu-filters">
+          <Select
+            value={selectedCourseId || undefined}
+            onChange={(value) => setSelectedCourseId(value || "")}
+            loading={coursesLoading}
+            placeholder="请选择课程"
+            style={{ width: 240 }}
+            allowClear
+            options={(Array.isArray(courses) ? courses : []).map((course: any) => ({
+              value: course.id,
+              label: course.title,
+            }))}
+          />
+          <Input
+            className="pu-search"
+            placeholder="搜索文件名"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
+          {canEdit && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 10px",
+                borderRadius: 4,
+                fontSize: 12,
+                fontWeight: 500,
+                border: "1px solid #c5c9cf",
+                background: "#f5f6f8",
+                color: "#555c66",
+              }}
+            >
+              {!isManualMode ? (
+                <>
+                  <SortAscendingOutlined />
+                  按{
+                    sortedInfo.columnKey === "filename"
+                      ? "文件名"
+                      : sortedInfo.columnKey === "fileType"
+                        ? "类型"
+                        : sortedInfo.columnKey === "size"
+                          ? "大小"
+                          : sortedInfo.columnKey === "insertedAt"
+                            ? "上传时间"
+                            : "列"
+                  }排序
+                </>
+              ) : hasManualOrder ? (
+                <>
+                  <MenuOutlined />
+                  手动排序
+                </>
+              ) : (
+                <>
+                  <MenuOutlined />
+                  上传时间倒序
+                </>
+              )}
+            </span>
+          )}
+        </div>
+
+        {(() => {
+          const q = searchText.trim().toLowerCase();
+          const list = (orderedFiles || []).filter(
+            (f) => !q || (f.filename || "").toLowerCase().includes(q),
+          );
+          if (list.length === 0) {
+            return (
+              <ProtoEmpty
+                title={selectedCourseId ? "暂无资源文件" : "请先选择课程"}
+                description="选择课程后上传或管理资源文件。"
+              />
+            );
+          }
+          return (
+            <>
+              <Table
+                columns={columns}
+                dataSource={list}
+                rowKey="id"
+                loading={isLoading || isReordering}
+                onChange={(_, __, sorter: any) => {
+                  const s = Array.isArray(sorter) ? sorter[0] : sorter;
+                  if (s && s.order) {
+                    setSortedInfo({ columnKey: s.columnKey as string, order: s.order });
+                  } else {
+                    setSortedInfo({});
+                  }
+                }}
+                pagination={false}
+                size="middle"
+              />
+              <div className="pu-table-footer">
+                <span>共 {list.length} 条</span>
+              </div>
+            </>
+          );
+        })()}
+      </ProtoCard>
+
 
       <Modal
         title={

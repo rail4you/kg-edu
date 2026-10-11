@@ -16,7 +16,7 @@ import { getTasksByCourse, createTask, publishTask, closeTask, deleteTask, getGr
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -67,6 +67,7 @@ export default function GroupTaskPage() {
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [subtab, setSubtab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -341,23 +342,62 @@ export default function GroupTaskPage() {
       className="group-task-wrap"
       title="分组任务"
       description="为分组发布任务并跟踪完成进度"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;分组任务</>}
       actions={
-        <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId} onChange={setSelectedCourseId} options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
-          <Button type="primary" icon={<PlusOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }} onClick={() => { setFormData({ title: "", description: "", taskType: "submission", dueDate: null, groupId: null }); setDialogOpen(true); }}>创建任务</Button>
-        </>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          disabled={!selectedCourseId}
+          style={canEdit ? undefined : { display: "none" }}
+          onClick={() => {
+            setFormData({ title: "", description: "", taskType: "submission", dueDate: null, groupId: null });
+            setDialogOpen(true);
+          }}
+        >
+          创建任务
+        </Button>
       }
     >
 <style>{`@media(max-width:768px){.group-task-wrap{padding:12px!important}.group-task-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <Card>
-        <Table columns={columns} dataSource={tasks} rowKey="id" loading={isLoading} locale={{ emptyText: selectedCourseId ? "暂无任务" : "请先选择课程" }} />
-      </Card>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
+          <Select
+            style={{ width: 240 }}
+            placeholder="选择课程"
+            value={selectedCourseId || undefined}
+            onChange={setSelectedCourseId}
+            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []}
+          />
+        </div>
+
+        {!selectedCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择课程以管理分组任务。" />
+        ) : tasks.length === 0 ? (
+          <ProtoEmpty title="暂无任务" description="点击右上角「创建任务」开始。" />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={tasks}
+              rowKey="id"
+              loading={isLoading}
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {tasks.length} 条</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       {/* ── Create task dialog ── */}
       <Modal title="创建分组任务" open={dialogOpen} onCancel={() => setDialogOpen(false)} onOk={() => createMutation.mutate()} confirmLoading={createMutation.isPending}>

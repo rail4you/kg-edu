@@ -303,6 +303,7 @@ export default function AiPractice() {
     <AppPage
       title="AI 实践"
       description="按智慧门户的 AI 实践内容与学生查看对话记录、报告与成绩"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;AI 实践</>}
       actions={
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadAttempts} loading={loadingAttempts}>

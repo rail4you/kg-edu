@@ -459,6 +459,9 @@ interface AssistantChatProps {
   /** Hide tool-call chips / args preview — used on the student side so the
    *  chat only shows clean Q&A (the final result). */
   hideToolCalls?: boolean;
+  /** Inject text into the composer (e.g. from quick-prompt buttons).
+   *  `nonce` must change each time so repeated clicks re-apply. */
+  presetPrompt?: { text: string; nonce: number } | null;
 }
 
 export default function AssistantChat({
@@ -466,6 +469,7 @@ export default function AssistantChat({
   conversationId,
   aiCommand,
   hideToolCalls = false,
+  presetPrompt,
 }: AssistantChatProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -482,6 +486,14 @@ export default function AssistantChat({
   const abortRef = useRef<AbortController | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // 快速提示：外部注入文本到输入框并聚焦
+  useEffect(() => {
+    if (presetPrompt?.text) {
+      setInput(presetPrompt.text);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [presetPrompt?.nonce]);
   // Whether a background run (from a previous visit to this conversation) is
   // still generating — the view keeps watching its persisted progress.
   const [observedRunning, setObservedRunning] = useState(false);

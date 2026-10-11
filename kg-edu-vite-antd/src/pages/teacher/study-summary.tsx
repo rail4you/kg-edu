@@ -53,6 +53,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useCourses } from "@/hooks/use-courses";
 import { AppPage, StatGrid } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Title, Text } = Typography;
 
@@ -1692,17 +1693,16 @@ export default function StudySummary() {
     <AppPage
       title="学习数据分析"
       description="基于课程内容的深度分析报告"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学习数据统计</>}
       actions={
         <>
-          <Select
+          <SwitchButton
+            title="切换当前课程"
+            buttonLabel="切换课程"
+            options={(courses || []).map((course: any) => ({ id: course.id, label: course.title }))}
             value={selectedCourseId}
-            onChange={setSelectedCourseId}
-            style={{ minWidth: 300 }}
-            placeholder="选择课程"
-            options={courses?.map?.((course: any) => ({
-              value: course?.id,
-              label: course?.title,
-            }))}
+            onChange={(id) => setSelectedCourseId(id || "")}
+            allowAll={false}
           />
           <Tooltip title="刷新数据">
             <Button

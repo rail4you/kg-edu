@@ -1,0 +1,10 @@
+/* 课程信息表格：多行文本单元格（两行截断，悬停查看全文） */
+.ci-multiline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 22px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

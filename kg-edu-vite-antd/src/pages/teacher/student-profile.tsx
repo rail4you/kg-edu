@@ -46,6 +46,7 @@ import {
   listActivityLogsByTimeRange,
 } from "@/lib/ash_rpc";
 import { AppPage, StatGrid } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
 
@@ -593,21 +594,23 @@ export default function StudentProfile() {
     <AppPage
       title="学生学情画像"
       description="查看学生知识与活跃情况"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学生学情画像</>}
       actions={
         <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
+          <SwitchButton
+            title="切换当前课程"
+            buttonLabel="切换课程"
+            options={courses?.map((c: any) => ({ id: c.id, label: c.title })) || []}
+            value={selectedCourseId}
+            onChange={(id) => { setSelectedCourseId(id ?? null); setSelectedStudentId(null); }}
           />
-          <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId}
-            onChange={(v) => { setSelectedCourseId(v); setSelectedStudentId(null); }}
-            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
-          <Select style={{ width: 200 }} placeholder="选择学生" showSearch optionFilterProp="label"
-            value={selectedStudentId} onChange={setSelectedStudentId}
-            options={students.map((s: any) => ({ label: s.name || s.email || s.id, value: s.id }))}
-            disabled={!selectedCourseId} />
+          <SwitchButton
+            title="切换学生"
+            buttonLabel="切换学生"
+            options={students.map((s: any) => ({ id: s.id, label: s.name || s.email || s.id }))}
+            value={selectedStudentId}
+            onChange={(id) => setSelectedStudentId(id ?? null)}
+          />
         </>
       }
     >

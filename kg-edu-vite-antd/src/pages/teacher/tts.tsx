@@ -192,7 +192,7 @@ export default function TtsSynthesis() {
 
   if (authLoading) {
     return (
-      <AppPage title="AI 语音合成" description="文字转多音色多语言语音">
+      <AppPage title="AI 语音合成" description="文字转多音色多语言语音" breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;AI 语音合成</>}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
           <Spin size="large" />
         </div>
@@ -204,6 +204,7 @@ export default function TtsSynthesis() {
     <AppPage
       title="AI 语音合成（听力题 / 口语测评）"
       description="文字转多音色多语言语音"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;AI 语音合成</>}
       actions={
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
       }

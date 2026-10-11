@@ -14,11 +14,13 @@ import {
   Empty,
   Spin,
   Table,
+  Input,
 } from "antd";
 import {
   UserAddOutlined,
   DeleteOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   listUsers,
@@ -34,7 +36,7 @@ import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useTranslate } from "@/locales/use-locales";
 import type { ColumnsType } from "antd/es/table";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -65,6 +67,8 @@ export default function TeacherAssignCoursePage() {
   const { canEdit } = useEditPermission();
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [selectedTeacher, setSelectedTeacher] = useState<string>("");
   const [selectedRole, setSelectedRole] = useState<TeacherAssignmentRole>("assistant_teacher");
@@ -262,11 +266,10 @@ export default function TeacherAssignCoursePage() {
     {
       title: "操作",
       key: "actions",
-      width: 60,
-      align: "center",
+      width: 100,
       render: (_, record) => (
         <Popconfirm title="确定删除？" onConfirm={() => handleRemoveAssignment(record.courseId, record.teacherId)}>
-          <ReadonlyActionButton type="link" danger size="small" icon={<DeleteOutlined />} />
+          <ReadonlyActionButton type="link" danger size="small">移除</ReadonlyActionButton>
         </Popconfirm>
       ),
     },
@@ -276,36 +279,63 @@ export default function TeacherAssignCoursePage() {
     <AppPage
       title="课程分配管理"
       description="管理教师与课程的分配关系"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;分配课程</>}
       actions={
-        <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <Button type="primary" icon={<UserAddOutlined />} onClick={() => setAssignDialogOpen(true)} style={canEdit ? undefined : { display: "none" }}>
-            分配课程
-          </Button>
-        </>
+        <Button type="primary" icon={<UserAddOutlined />} onClick={() => setAssignDialogOpen(true)} style={canEdit ? undefined : { display: "none" }}>
+          分配课程
+        </Button>
       }
     >
       <style>{`@media(max-width:768px){.asgn-mobile-hide{display:none!important}}`}</style>
 
-      {/* 表格 */}
-      <Card style={{ borderRadius: 8 }}>
-        {assignments?.length === 0 ? (
-          <Empty description="暂无课程分配" />
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={assignments}
-            rowKey={(record) => `${record.courseId}-${record.teacherId}`}
-            pagination={false}
-            size="small"
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
+          <Input
+            className="pu-search"
+            placeholder="搜索课程或教师"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
           />
-        )}
-      </Card>
+          <Button onClick={() => setSearchText("")}>重置</Button>
+        </div>
+
+        {(() => {
+          const q = searchText.trim().toLowerCase();
+          const filtered = (assignments || []).filter(
+            (a) =>
+              !q ||
+              getCourseTitle(a.courseId).toLowerCase().includes(q) ||
+              getTeacherName(a.teacherId).toLowerCase().includes(q),
+          );
+          if (filtered.length === 0) {
+            return <ProtoEmpty title={assignments?.length ? "未找到匹配的分配" : "暂无课程分配"} description="点击右上角「分配课程」添加。" />;
+          }
+          return (
+            <>
+              <Table
+                columns={columns}
+                dataSource={filtered}
+                rowKey={(record) => `${record.courseId}-${record.teacherId}`}
+                pagination={false}
+                size="middle"
+              />
+              <div className="pu-table-footer">
+                <span>共 {filtered.length} 条</span>
+              </div>
+            </>
+          );
+        })()}
+      </ProtoCard>
 
       {/* 分配弹窗 */}
       <Modal

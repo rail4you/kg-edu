@@ -40,6 +40,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import * as echarts from "echarts";
 import { AppPage, StatGrid } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
 
@@ -414,13 +415,18 @@ export default function ActivitySummaryPage() {
       className="activity-summary-wrap"
       title="学生活动总览"
       description={selectedStudentId ? "查看选定学生的活动记录" : "查看所有学生的活动记录"}
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;活动总结</>}
       actions={
         <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
+          <SwitchButton
+            title="切换学生"
+            buttonLabel="切换学生"
+            options={(students || []).map((s: any) => ({ id: s.id, label: s.name || s.email || s.id }))}
+            value={selectedStudentId}
+            onChange={(id) => setSelectedStudentId(id ?? null)}
+            allowAll
+            allLabel="全部学生"
+            size="middle"
           />
           {selectedDate && (
             <Tag closable onClose={() => setSelectedDate(null)} color="blue" style={{ fontSize: 13, padding: "2px 10px" }}>
@@ -434,24 +440,6 @@ export default function ActivitySummaryPage() {
       }
     >
 <style>{`@media(max-width:768px){.activity-summary-wrap{padding:12px!important}.activity-summary-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-        <Text strong style={{ fontSize: 14, whiteSpace: "nowrap" }}>学生：</Text>
-        <Select
-          style={{ width: 260 }}
-          placeholder="全部学生"
-          value={selectedStudentId}
-          onChange={setSelectedStudentId}
-          allowClear
-          showSearch
-          optionFilterProp="label"
-          size="middle"
-          options={(students || []).map((s: any) => ({ label: s.name || s.email || s.id, value: s.id }))}
-        />
-        {selectedStudentId && (
-          <Button size="small" onClick={() => setSelectedStudentId(null)}>清除筛选</Button>
-        )}
-      </div>
-
       {/* ── Daily Activity Bar Chart + Date Range Selector ── */}
       <Card style={{ marginBottom: 20, borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>

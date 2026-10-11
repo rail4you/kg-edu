@@ -582,14 +582,7 @@ export default function TeacherLearningRecommendations() {
     <AppPage
       title="学生学习推荐分析"
       description="查看和管理班级学生的学习推荐情况"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
-      }
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学习推荐分析</>}
     >
       <StatGrid
         columns={6}

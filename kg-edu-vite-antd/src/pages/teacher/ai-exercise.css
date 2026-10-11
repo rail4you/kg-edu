@@ -1,0 +1,131 @@
+/* ============================================================
+   AI 生成试题 —— 对齐「易课程-完整交互原型」#/teacher/AI生成试题
+   左侧「出题要求」表单卡片 + 右侧「试题预览」卡片
+   ============================================================ */
+
+.ai-exercise-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  height: calc(100vh - 210px);
+  min-height: 520px;
+}
+
+/* 两张卡片等高，内容超出时卡片内部滚动，页面高度保持稳定 */
+.ai-exercise-form,
+.ai-exercise-preview {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ---------- 出题要求表单 ---------- */
+.ai-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+}
+
+.ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-field.full {
+  grid-column: 1 / -1;
+}
+
+.ai-field__label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.ai-field .ant-select,
+.ai-field .ant-input-number,
+.ai-field .ant-input {
+  width: 100%;
+}
+
+.ai-form-actions {
+  border-top: 1px solid #edf0f5;
+  margin-top: 24px;
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ---------- 试题预览 ---------- */
+.ai-preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  color: #64748b;
+}
+
+.ai-preview-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8eeff;
+  color: #2859df;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.ai-preview-empty h2 {
+  font-size: 20px;
+  font-weight: 650;
+  color: #202f47;
+  margin: 0 0 8px;
+}
+
+.ai-preview-empty p {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.ai-preview-empty small {
+  color: #94a3b8;
+}
+
+.ai-preview-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.ai-question-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.ai-question-item:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .ai-exercise-split {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 0;
+  }
+
+  .ai-exercise-form,
+  .ai-exercise-preview {
+    height: auto;
+    overflow: visible;
+  }
+
+  .ai-field-grid {
+    grid-template-columns: 1fr;
+  }
+}

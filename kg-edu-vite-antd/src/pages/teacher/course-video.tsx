@@ -48,7 +48,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import {
   getSTSToken,
   uploadFileToOSS,
@@ -487,50 +487,43 @@ export default function CourseVideoManagementPage() {
     course?.title || "未分配课程";
 
   const renderVideoActions = (courseVideo: CourseVideoResourceSchema) => (
-    <div style={{ display: "flex", justifyContent: "center" }}>
-      <Space size={2}>
-        <Tooltip title="预览">
-          <Button
-            size="small"
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => handlePreviewVideo(courseVideo)}
-          />
-        </Tooltip>
-        {!isImage(courseVideo) && (
-          <Tooltip title="AI 解析（摘要/分段/打点/词云）">
-            <Button
-              size="small"
-              type="text"
-              icon={<FundOutlined />}
-              style={{ color: "#722ed1" }}
-              onClick={() => navigate(`/teacher/dashboard/course-video-analysis/${courseVideo.id}`)}
-            />
-          </Tooltip>
-        )}
-        <Tooltip title="编辑">
-          <ReadonlyActionButton
-            size="small"
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleEditCourseVideo(courseVideo)}
-          />
-        </Tooltip>
-        <Popconfirm
-          title="确定删除?"
-          onConfirm={() => deleteCourseVideoMutation.mutate(courseVideo.id)}
+    <Space size={4}>
+      <Button
+        size="small"
+        type="link"
+        onClick={() => handlePreviewVideo(courseVideo)}
+      >
+        预览
+      </Button>
+      {!isImage(courseVideo) && (
+        <Button
+          size="small"
+          type="link"
+          onClick={() => navigate(`/teacher/dashboard/course-video-analysis/${courseVideo.id}`)}
         >
-          <Tooltip title="删除">
-            <ReadonlyActionButton
-              size="small"
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-            />
-          </Tooltip>
-        </Popconfirm>
-      </Space>
-    </div>
+          AI 解析
+        </Button>
+      )}
+      <ReadonlyActionButton
+        size="small"
+        type="link"
+        onClick={() => handleEditCourseVideo(courseVideo)}
+      >
+        编辑
+      </ReadonlyActionButton>
+      <Popconfirm
+        title="确定删除?"
+        onConfirm={() => deleteCourseVideoMutation.mutate(courseVideo.id)}
+      >
+        <ReadonlyActionButton
+          size="small"
+          type="link"
+          danger
+        >
+          删除
+        </ReadonlyActionButton>
+      </Popconfirm>
+    </Space>
   );
 
   const isVideo = (cv: CourseVideoResourceSchema) => (cv.mediaType || "video") === "video";
@@ -634,7 +627,6 @@ export default function CourseVideoManagementPage() {
       dataIndex: "imageUrl",
       key: "imageUrl",
       width: 96,
-      align: "center" as const,
       onCell: () => ({ style: { verticalAlign: "middle" as const } }),
       render: (imageUrl: string, record: CourseVideoResourceSchema) => {
         const isImg = isImage(record);
@@ -681,7 +673,6 @@ export default function CourseVideoManagementPage() {
       title: "类型",
       key: "mediaType",
       width: 80,
-      align: "center" as const,
       onCell: () => ({ style: { verticalAlign: "middle" as const } }),
       render: (_: unknown, record: CourseVideoResourceSchema) => (
         <Tag color={isImage(record) ? "cyan" : "purple"}>
@@ -706,9 +697,7 @@ export default function CourseVideoManagementPage() {
     {
       title: "操作",
       key: "action",
-      width: 100,
-      align: "center" as const,
-      onCell: () => ({ style: { verticalAlign: "middle" as const } }),
+      width: 220,
       render: (_: unknown, record: CourseVideoResourceSchema) => renderVideoActions(record),
     },
   ];
@@ -780,52 +769,82 @@ export default function CourseVideoManagementPage() {
     <AppPage
       title="课程媒体管理"
       description="管理课程视频与图片媒体资源"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程视频</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setCreateDialogOpen(true)}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          上传媒体
+        </Button>
       }
     >
-      {/* 课程选择 */}
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程：</Text>
-          {coursesLoading ? (
-            <Spin size="small" />
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "0", label: "卡片视图" },
+            { id: "1", label: "表格视图" },
+          ]}
+          active={currentTab}
+          onChange={(id) => setCurrentTab(id)}
+        />
+        <div className="pu-filters">
+          <Select
+            value={selectedCourseId === "" ? undefined : activeCourseId || undefined}
+            onChange={(value) => setSelectedCourseId(value)}
+            placeholder="请选择课程"
+            style={{ width: 240 }}
+            loading={coursesLoading}
+            allowClear
+            options={courses.map((course: CourseResourceSchema) => ({
+              value: course.id,
+              label: course.title,
+            }))}
+          />
+        </div>
+
+        {currentTab === "0" ? (
+          courseVideos.length > 0 ? (
+            <Row gutter={[16, 16]}>{courseVideos.map(renderCourseVideoCard)}</Row>
           ) : (
-            <Select
-              value={selectedCourseId === "" ? undefined : activeCourseId || undefined}
-              onChange={(value) => setSelectedCourseId(value)}
-              placeholder="请选择课程"
-              style={{ width: 280 }}
-              allowClear
-            >
-              {courses.map((course: CourseResourceSchema) => (
-                <Option key={course.id} value={course.id}>
-                  {course.title}
-                </Option>
-              ))}
-            </Select>
-          )}
-        </Space>
-      </div>
+            <ProtoEmpty
+              title={activeCourseId ? "暂无课程媒体" : "请先选择一个课程"}
+              description="选择课程后上传视频或图片媒体。"
+            />
+          )
+        ) : courseVideos.length > 0 ? (
+          <>
+            <Table
+              columns={tableColumns}
+              dataSource={courseVideos}
+              rowKey="id"
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {courseVideos.length} 条</span>
+            </div>
+          </>
+        ) : (
+          <ProtoEmpty
+            title={activeCourseId ? "暂无课程媒体" : "请先选择一个课程"}
+            description="选择课程后上传视频或图片媒体。"
+          />
+        )}
 
-      <Tabs activeKey={currentTab} onChange={setCurrentTab} items={tabItems} />
-
-      {isLoading && (
-        <div style={{ textAlign: "center", padding: 24 }}>
-          <Spin size="large" />
-        </div>
-      )}
-      {error && (
-        <div style={{ textAlign: "center", padding: 24 }}>
-          <Text type="danger">加载失败</Text>
-        </div>
-      )}
-
+        {isLoading && (
+          <div style={{ textAlign: "center", padding: 24 }}>
+            <Spin size="large" />
+          </div>
+        )}
+        {error && (
+          <div style={{ textAlign: "center", padding: 24 }}>
+            <Text type="danger">加载失败</Text>
+          </div>
+        )}
+      </ProtoCard>
       {/* Create Dialog */}
       <Modal
         open={createDialogOpen}

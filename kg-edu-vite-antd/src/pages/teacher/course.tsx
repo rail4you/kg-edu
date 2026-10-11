@@ -32,6 +32,7 @@ import {
   UnorderedListOutlined,
   BgColorsOutlined,
   ArrowLeftOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import ImageCropper from "@/components/ImageCropper";
 import ColorSchemeSelector from "@/components/course/ColorSchemeSelector";
@@ -50,7 +51,7 @@ import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders } from "@/utils/api-helpers";
 import { useTranslate } from "@/locales/use-locales";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -88,7 +89,9 @@ export default function CourseManagementPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("全部");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
@@ -168,7 +171,15 @@ export default function CourseManagementPage() {
     return null;
   };
 
-  const paginatedCourses = courses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const filteredCourses = courses.filter((course) => {
+    const q = searchText.trim().toLowerCase();
+    if (q && !(course.title || "").toLowerCase().includes(q)) return false;
+    if (statusFilter === "已发布" && !course.publishStatus) return false;
+    if (statusFilter === "草稿" && course.publishStatus) return false;
+    return true;
+  });
+
+  const paginatedCourses = filteredCourses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const createMutation = useMutation({
     mutationFn: async (values: any) => {
@@ -388,21 +399,39 @@ export default function CourseManagementPage() {
 
   const tableColumns: ColumnsType<Course> = [
     {
+      title: "课程封面",
+      dataIndex: "imageUrl",
+      key: "cover",
+      width: 110,
+      render: (_, record) =>
+        record.imageUrl ? (
+          <img
+            src={record.imageUrl}
+            alt={record.title}
+            style={{ width: 80, height: 45, objectFit: "cover", borderRadius: 6, display: "block" }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 80,
+              height: 45,
+              background: "linear-gradient(135deg, #234968, #4a7fb5)",
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ReadOutlined style={{ color: "#fff", fontSize: 16 }} />
+          </div>
+        ),
+    },
+    {
       title: "课程名称",
       dataIndex: "title",
       key: "title",
-      width: "40%",
       render: (_, record) => (
-        <Space>
-          {record.imageUrl ? (
-            <img src={record.imageUrl} alt={record.title} style={{ width: 40, height: 28, objectFit: "cover", borderRadius: 4 }} />
-          ) : (
-            <div style={{ width: 40, height: 28, background: "#1890ff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <ReadOutlined style={{ color: "#fff", fontSize: 14 }} />
-            </div>
-          )}
-          <Text strong style={{ fontSize: 13 }} ellipsis={{ tooltip: record.title }}>{record.title}</Text>
-        </Space>
+        <Text strong style={{ fontSize: 13 }} ellipsis={{ tooltip: record.title }}>{record.title}</Text>
       ),
     },
     {
@@ -430,23 +459,21 @@ export default function CourseManagementPage() {
       title: "状态",
       dataIndex: "publishStatus",
       key: "publishStatus",
-      align: "right",
       render: (status) => status ? <Tag color="green">{t("pages.course.published")}</Tag> : <Tag>{t("pages.course.draft")}</Tag>,
     },
     {
       title: "操作",
       key: "actions",
-      align: "right",
       render: (_, record) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => navigate(`/teacher/dashboard/course/${record.id}`)}>
+          <Button type="link" size="small" onClick={() => navigate(`/teacher/dashboard/course/${record.id}`)}>
             <span className="course-action-text">查看</span>
           </Button>
-          <ReadonlyActionButton type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+          <ReadonlyActionButton type="link" size="small" onClick={() => handleEdit(record)}>
             <span className="course-action-text">{t("common.edit")}</span>
           </ReadonlyActionButton>
           <Popconfirm title={t("common.confirmDelete")} onConfirm={() => deleteMutation.mutate(record.id)}>
-            <ReadonlyActionButton type="link" size="small" danger icon={<DeleteOutlined />}>
+            <ReadonlyActionButton type="link" size="small" danger>
               <span className="course-action-text">{t("common.delete")}</span>
             </ReadonlyActionButton>
           </Popconfirm>
@@ -458,160 +485,82 @@ export default function CourseManagementPage() {
   return (
     <AppPage
       title={t("pages.course.title")}
-      description="管理课程信息与发布状态"
+      description="集中管理课程信息与发布状态，保持教学内容清晰有序。"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程管理</>}
       actions={
-        <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setCreateModalOpen(true); }} style={canEdit ? undefined : { display: "none" }}>
-            {t("pages.course.addCourse")}
-          </Button>
-          <Space.Compact>
-            <Button type={viewMode === "card" ? "primary" : "default"} icon={<AppstoreOutlined />} onClick={() => setViewMode("card")}>
-              卡片
-            </Button>
-            <Button type={viewMode === "table" ? "primary" : "default"} icon={<UnorderedListOutlined />} onClick={() => setViewMode("table")}>
-              表格
-            </Button>
-          </Space.Compact>
-        </>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => { form.resetFields(); setCreateModalOpen(true); }}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          {t("pages.course.addCourse")}
+        </Button>
       }
     >
-      {/* 内容区域 */}
-      {isLoading ? (
-        <div style={{ textAlign: "center", padding: 48 }}><Spin size="large" /></div>
-      ) : !Array.isArray(courses) || courses.length === 0 ? (
-        <Empty description={t("pages.course.noCourses")} />
-      ) : viewMode === "card" ? (
-        <>
-          <Row gutter={[16, 16]}>
-            {paginatedCourses.map((course: Course) => (
-              <Col xs={24} sm={12} lg={8} xl={6} key={course.id}>
-                <Card
-                  style={{ borderRadius: 12, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
-                  styles={{ body: { padding: 0, flex: 1, display: "flex", flexDirection: "column" } }}
-                  hoverable
-                  onClick={(e) => {
-                    // 点击弹窗（颜色主题 Modal 等）内部的颜色/按钮时，事件会冒泡到卡片，此处拦截避免误跳转到课程详情页
-                    if (e.target.closest(".ant-modal-root")) return;
-                    navigate(`/teacher/dashboard/course/${course.id}`);
-                  }}
-                >
-                  {/* 封面区域 */}
-                  <div style={{ position: "relative", height: 140, flexShrink: 0 }}>
-                    {course.imageUrl ? (
-                      <img alt={course.title} src={course.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <ReadOutlined style={{ fontSize: 36, color: "#fff" }} />
-                      </div>
-                    )}
-                    {/* 封面底部渐变遮罩 - 放置学期与学分 */}
-                    <div style={{
-                      position: "absolute", bottom: 0, left: 0, right: 0,
-                      background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
-                      padding: "24px 12px 8px",
-                      display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                    }}>
-                      <span style={{ color: "#fff", fontSize: 12, opacity: 0.95 }}>
-                        {course.semester || ""}
-                      </span>
-                      {course.credits && (
-                        <span style={{
-                          color: "#fff", fontSize: 11,
-                          background: "rgba(255,255,255,0.2)",
-                          padding: "1px 8px", borderRadius: 10,
-                          backdropFilter: "blur(4px)",
-                        }}>
-                          {course.credits}{t("pages.course.credits")}
-                        </span>
-                      )}
-                    </div>
-                    {/* 已发布标签 */}
-                    {course.publishStatus && (
-                      <Tag color="green" style={{ position: "absolute", top: 8, right: 8, margin: 0, fontSize: 11 }}>
-                        {t("pages.course.published")}
-                      </Tag>
-                    )}
-                  </div>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
 
-                  {/* 信息区域 */}
-                  <div style={{ padding: "14px 16px 12px", flex: 1, display: "flex", flexDirection: "column" }}>
-                    {/* 课程标题 + 学科标签 */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                      <Text strong style={{ fontSize: 15, lineHeight: 1.4, flex: 1, minWidth: 0 }} ellipsis={{ tooltip: course.title }}>
-                        {course.title}
-                      </Text>
-                      {course.major && (
-                        <Tag color="purple" style={{ margin: 0, flexShrink: 0, fontSize: 11 }}>
-                          {course.major}
-                        </Tag>
-                      )}
-                    </div>
+        <div className="pu-filters">
+          <Input
+            className="pu-search"
+            placeholder="搜索课程名称"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
+            allowClear
+          />
+          <Select
+            style={{ width: 160 }}
+            value={statusFilter}
+            onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
+            options={["全部", "已发布", "草稿"].map((v) => ({ value: v, label: v }))}
+          />
+          <Button onClick={() => { setSearchText(""); setStatusFilter("全部"); setCurrentPage(1); }}>
+            重置
+          </Button>
+        </div>
 
-                    {/* 课程描述 */}
-                    <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0, fontSize: 12, color: "#8c8c8c", lineHeight: 1.6, flex: 1 }}>
-                      {course.description || t("pages.course.noDescription")}
-                    </Paragraph>
-                    {/* 颜色主题标签 */}
-                    {course.colorScheme && course.colorScheme !== "auto" && (
-                      <Tag
-                        icon={<BgColorsOutlined />}
-                        color="processing"
-                        style={{ marginTop: 6, fontSize: 11 }}
-                      >
-                        {course.colorScheme === "pure" ? "纯图模式" : course.colorScheme}
-                      </Tag>
-                    )}
-                  </div>
-
-                  {/* 操作栏 */}
-                  <div style={{ padding: "8px 16px 12px", display: "flex", justifyContent: "flex-end" }}>
-                    <Space size={4}>
-                      <ColorSchemeSelector
-                        courseId={course.id}
-                        tenant={tenant}
-                        currentScheme={course.colorScheme}
-                        onChange={(scheme) => {
-                          updateColorSchemeMutation.mutate({
-                            courseId: course.id,
-                            colorScheme: scheme,
-                          });
-                        }}
-                      />
-                      <Button type="link" size="small" icon={<EyeOutlined />} onClick={(e) => { e.stopPropagation(); navigate(`/teacher/dashboard/course/${course.id}`); }}>
-                        查看
-                      </Button>
-                      <ReadonlyActionButton type="link" size="small" icon={<EditOutlined />} onClick={(e) => { e.stopPropagation(); handleEdit(course); }}>
-                        {t("common.edit")}
-                      </ReadonlyActionButton>
-                      <Popconfirm title={t("common.confirmDelete")} onConfirm={(e) => { e?.stopPropagation(); deleteMutation.mutate(course.id); }}>
-                        <ReadonlyActionButton type="link" size="small" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()}>
-                          {t("common.delete")}
-                        </ReadonlyActionButton>
-                      </Popconfirm>
-                    </Space>
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-          <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-            <Pagination current={currentPage} pageSize={pageSize} total={courses.length} onChange={setCurrentPage} />
+        {isLoading ? (
+          <div style={{ textAlign: "center", padding: 48 }}>
+            <Spin size="large" />
           </div>
-        </>
-      ) : (
-        <Card style={{ borderRadius: 8 }}>
-          <Table dataSource={paginatedCourses} columns={tableColumns} rowKey="id" pagination={false} size="small" />
-          <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-            <Pagination current={currentPage} pageSize={pageSize} total={courses.length} onChange={setCurrentPage} />
-          </div>
-        </Card>
-      )}
+        ) : !Array.isArray(courses) || courses.length === 0 ? (
+          <ProtoEmpty
+            title={t("pages.course.noCourses")}
+            description="点击右上角「创建课程」开始建设。"
+          />
+        ) : filteredCourses.length === 0 ? (
+          <ProtoEmpty title="未找到匹配的课程" description="尝试调整搜索或筛选条件。" />
+        ) : (
+          <>
+            <Table
+              dataSource={paginatedCourses}
+              columns={tableColumns}
+              rowKey="id"
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {filteredCourses.length} 门课程</span>
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={filteredCourses.length}
+                onChange={setCurrentPage}
+                showSizeChanger={false}
+              />
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       <Modal open={createModalOpen} onCancel={() => setCreateModalOpen(false)} title={t("pages.course.addCourseTitle")} width={600} onOk={() => form.submit()} confirmLoading={createMutation.isPending}>
         {renderForm()}

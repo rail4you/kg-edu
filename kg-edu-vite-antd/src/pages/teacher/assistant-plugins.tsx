@@ -159,7 +159,7 @@ export default function AssistantPlugins() {
 
   if (authLoading) {
     return (
-      <AppPage title="AI 助教插件" description="大模型能力与插件应用池">
+      <AppPage title="AI 助教插件" description="大模型能力与插件应用池" breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;助教插件</>}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
           <Spin size="large" />
         </div>
@@ -171,6 +171,7 @@ export default function AssistantPlugins() {
     <AppPage
       title="AI 助教插件"
       description="大模型能力与插件应用池"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;助教插件</>}
       actions={
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
       }

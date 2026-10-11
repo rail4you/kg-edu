@@ -39,7 +39,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useNavigate } from "react-router-dom";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -69,6 +69,8 @@ export default function StudentEnrollmentPage() {
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
+  const [listSearch, setListSearch] = useState("");
   const [addStudentModalVisible, setAddStudentModalVisible] = useState<boolean>(false);
   const [searchText, setSearchText] = useState("");
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -308,7 +310,6 @@ export default function StudentEnrollmentPage() {
       key: "memberId",
       render: (_, row) => getStudentById(row.memberId)?.memberId || "-",
       width: 120,
-      fixed: "left",
     },
     {
       title: "学生姓名",
@@ -342,16 +343,17 @@ export default function StudentEnrollmentPage() {
     {
       title: "操作",
       key: "actions",
-      width: 48,
+      width: 90,
       className: "enroll-actions-col",
       render: (_, row) => (
         <ReadonlyActionButton
           size="small"
-          type="text"
+          type="link"
           danger
-          icon={<DeleteOutlined />}
           onClick={() => handleRemoveStudent(row.id)}
-        />
+        >
+          移除
+        </ReadonlyActionButton>
       ),
     },
   ];
@@ -360,79 +362,92 @@ export default function StudentEnrollmentPage() {
     <AppPage
       title="学生选课管理"
       description="管理课程选课学生名单"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学生选课</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          onClick={() => setAddStudentModalVisible(true)}
+          disabled={!selectedCourseId || availableStudents.length === 0 || enrollMutation.isPending}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          添加学生
+        </Button>
       }
     >
       <style>{`
         @media (max-width: 768px) {
           .enroll-mobile-hide { display: none !important; }
           .enroll-mobile-hide-in-modal { display: none !important; }
-          .ant-table-thead .enroll-actions-col,
-          .ant-table-tbody .enroll-actions-col {
-            padding: 4px 2px !important;
-            width: 36px !important;
-            min-width: 36px !important;
-            text-align: center !important;
-          }
         }
       `}</style>
 
-      <div style={{ marginBottom: 16 }}>
-        <Space wrap>
-          <Text strong>选择课程：</Text>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
           <Select
-            style={{ width: 280 }}
+            style={{ width: 240 }}
             placeholder="请选择课程"
             value={selectedCourseId || undefined}
             onChange={setSelectedCourseId}
             loading={coursesLoading}
             options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
           />
-        </Space>
-      </div>
+          <Input
+            className="pu-search"
+            placeholder="搜索学生姓名、邮箱或班级"
+            prefix={<SearchOutlined />}
+            value={listSearch}
+            onChange={(e) => setListSearch(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setListSearch("")}>重置</Button>
+        </div>
 
-      <Card style={{ borderRadius: 8 }}>
-        <Table
-          className="theme-table"
-          columns={columns}
-          dataSource={selectedCourseId ? enrollments : []}
-          rowKey="id"
-          loading={selectedCourseId ? enrollmentsLoading : false}
-          scroll={{ x: 600 }}
-          locale={{
-            emptyText: (
-              <EmptyState
-                description={selectedCourseId ? "暂无选课学生" : "请先选择一个课程"}
+        {(() => {
+          if (!selectedCourseId) {
+            return <ProtoEmpty title="请先选择课程" description="选择一门课程以查看选课学生名单。" />;
+          }
+          const q = listSearch.trim().toLowerCase();
+          const filtered = enrollments.filter((row) => {
+            if (!q) return true;
+            const st = getStudentById(row.memberId);
+            return [st?.name, st?.email, st?.className, st?.memberId].some(
+              (v) => (v || "").toLowerCase().includes(q),
+            );
+          });
+          if (filtered.length === 0) {
+            return (
+              <ProtoEmpty
+                title="暂无选课学生"
+                description="可点击右上角「添加学生」为课程添加学生。"
               />
-            ),
-          }}
-          title={() => (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Space wrap>
-                {selectedCourseId && availableStudents.length > 0 && canEdit && (
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => setAddStudentModalVisible(true)}
-                    disabled={enrollMutation.isPending}
-                  >
-                    添加学生
-                  </Button>
-                )}
-                <Text strong>已选课学生 ({selectedCourseId ? enrollments.length : 0})</Text>
-              </Space>
-            </div>
-          )}
-          pagination={{ pageSize: 10, size: "small" }}
-          size="small"
-        />
-      </Card>
+            );
+          }
+          return (
+            <>
+              <Table
+                  columns={columns}
+                dataSource={filtered}
+                rowKey="id"
+                loading={enrollmentsLoading}
+                scroll={{ x: 600 }}
+                pagination={false}
+                size="middle"
+              />
+              <div className="pu-table-footer">
+                <span>共 {filtered.length} 名学生</span>
+              </div>
+            </>
+          );
+        })()}
+      </ProtoCard>
 
       {/* 添加学生弹窗 */}
       <Modal

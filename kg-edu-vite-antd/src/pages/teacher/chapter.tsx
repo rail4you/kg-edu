@@ -68,7 +68,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import * as XLSX from "xlsx";
@@ -184,6 +184,7 @@ export default function ChapterManagement() {
   const { canEdit } = useEditPermission();
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<ChapterRow | null>(null);
   const [form] = Form.useForm();
@@ -904,31 +905,32 @@ export default function ChapterManagement() {
     <AppPage
       title="章节管理"
       description="维护课程章节层级与视频关联"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;章节管理</>}
       actions={
-        <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+        <Space>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => setImportModalOpen(true)}
+            disabled={!selectedCourseId}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            导入章节
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+            下载模板
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => handleAddClick()}
+            disabled={!selectedCourseId}
+            style={canEdit ? undefined : { display: "none" }}
+          >
+            新建章节
+          </Button>
+        </Space>
       }
     >
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程：</Text>
-          <Select
-            value={selectedCourseId}
-            onChange={setSelectedCourseId}
-            placeholder="请选择课程"
-            style={{ width: 280 }}
-            options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
-              value: course.id,
-              label: course.title,
-            }))}
-          />
-        </Space>
-      </div>
-
       {chaptersError && (
         <Alert
           type="error"
@@ -937,52 +939,36 @@ export default function ChapterManagement() {
         />
       )}
 
-      {!selectedCourseId && (
-        <Alert
-          type="info"
-          message="请先选择一个课程以查看和管理章节"
-          style={{ marginBottom: 24 }}
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
         />
-      )}
+        <div className="pu-filters">
+          <Select
+            value={selectedCourseId || undefined}
+            onChange={setSelectedCourseId}
+            placeholder="请选择课程"
+            style={{ width: 240 }}
+            options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
+              value: course.id,
+              label: course.title,
+            }))}
+          />
+        </div>
 
-      <Card
-        style={{
-          boxShadow: "0 1px 3px rgba(16, 24, 40, 0.1)",
-        }}
-      >
-        {chaptersLoading ? (
+        {!selectedCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择课程以查看和管理章节。" />
+        ) : chaptersLoading ? (
           <div style={{ textAlign: "center", padding: 48 }}>
             <Spin size="large" />
           </div>
         ) : chaptersData.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 24px" }}>
-            <Empty description="暂无章节数据，请添加或导入章节" />
-            <div style={{ marginTop: 24, display: "flex", justifyContent: "center", gap: 12 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => handleAddClick()}
-                disabled={!selectedCourseId}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                新建章节
-              </Button>
-              <Button
-                icon={<UploadOutlined />}
-                onClick={() => setImportModalOpen(true)}
-                disabled={!selectedCourseId}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                导入章节模板
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleDownloadTemplate}
-              >
-                下载模板
-              </Button>
-            </div>
-          </div>
+          <ProtoEmpty title="暂无章节" description="点击右上角「新建章节」或「导入章节」。" />
         ) : (
           <DndContext
             sensors={sensors}
@@ -994,7 +980,6 @@ export default function ChapterManagement() {
               strategy={verticalListSortingStrategy}
             >
               <Table
-                className="theme-table"
                 columns={columns}
                 dataSource={chaptersData}
                 rowKey="id"
@@ -1004,35 +989,6 @@ export default function ChapterManagement() {
                 indentSize={24}
                 childrenColumnName="children"
                 defaultExpandAllRows
-                title={() => (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Space>
-                      <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => handleAddClick()}
-                        disabled={!selectedCourseId}
-                        style={canEdit ? undefined : { display: "none" }}
-                      >
-                        添加章节
-                      </Button>
-                      <Button
-                        icon={<UploadOutlined />}
-                        onClick={() => setImportModalOpen(true)}
-                        disabled={!selectedCourseId}
-                        style={canEdit ? undefined : { display: "none" }}
-                      >
-                        导入章节
-                      </Button>
-                      <Button
-                        icon={<DownloadOutlined />}
-                        onClick={handleDownloadTemplate}
-                      >
-                        下载模板
-                      </Button>
-                    </Space>
-                  </div>
-                )}
                 components={{
                   body: {
                     row: ({ children, ...props }: any) => {
@@ -1044,7 +1000,8 @@ export default function ChapterManagement() {
             </SortableContext>
           </DndContext>
         )}
-      </Card>
+      </ProtoCard>
+
 
       <Modal
         open={editModalOpen}

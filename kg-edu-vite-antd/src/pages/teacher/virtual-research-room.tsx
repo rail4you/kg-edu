@@ -187,6 +187,7 @@ export default function VirtualResearchRoom() {
 
   return (
     <div className="virtual-room">
+      <div className="pu-breadcrumb">智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;虚拟教研室</div>
       <div className="page-head">
         <div>
           <h1>虚拟教研室</h1>

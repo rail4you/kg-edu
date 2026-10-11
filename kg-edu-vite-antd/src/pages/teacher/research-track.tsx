@@ -213,7 +213,7 @@ export default function ResearchTrack() {
 
   if (authLoading) {
     return (
-      <AppPage title="AI 追踪" description="研究兴趣 / 学者 / 期刊追踪">
+      <AppPage title="AI 追踪" description="研究兴趣 / 学者 / 期刊追踪" breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学术追踪</>}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
           <Spin size="large" />
         </div>
@@ -225,6 +225,7 @@ export default function ResearchTrack() {
     <AppPage
       title="AI 追踪（研究兴趣 / 学者 / 期刊）"
       description="研究兴趣 / 学者 / 期刊追踪"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;学术追踪</>}
       actions={
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
       }

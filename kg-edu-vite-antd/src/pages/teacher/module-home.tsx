@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Row, Col, Button } from "antd";
+import { Row, Col } from "antd";
 import {
   ReadOutlined,
   ApartmentOutlined,
@@ -12,7 +12,6 @@ import {
   BarChartOutlined,
   VideoCameraOutlined,
   StarOutlined,
-  ArrowRightOutlined,
 } from "@ant-design/icons";
 import GlobalFooter from "@/components/layout/global-footer";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -102,7 +101,6 @@ export default function ModuleHome() {
 
         <section className="module-home-content">
           <PageHead
-            eyebrow="教学业务入口"
             title="选择要进入的管理模块"
             description="从课程建设到微专业运营，在同一平台完成教学内容、资源与学习过程管理。"
           />
@@ -121,6 +119,7 @@ export default function ModuleHome() {
                 <Col key={mod.key} xs={24} md={12}>
                   <ProtoCard
                     onClick={() => navigate(mod.path)}
+                    className="module-home-module-card"
                     style={{ height: "100%", cursor: "pointer" }}
                     title={
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
@@ -166,20 +165,6 @@ export default function ModuleHome() {
                           <span style={{ marginLeft: 4 }}>{feature.label}</span>
                         </ProtoTag>
                       ))}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 22,
-                        paddingTop: 16,
-                        borderTop: "1px solid var(--pu-line-soft)",
-                        display: "flex",
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <Button type="primary" style={{ borderRadius: 8, fontWeight: 600 }}>
-                        进入模块 <ArrowRightOutlined />
-                      </Button>
                     </div>
                   </ProtoCard>
                 </Col>

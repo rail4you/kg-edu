@@ -14,7 +14,7 @@ import { getGroupsByCourse, createGroup, updateGroup, deleteGroup, listEnrollmen
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -46,6 +46,7 @@ export default function GroupManagement() {
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [subtab, setSubtab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [formData, setFormData] = useState({
@@ -258,26 +259,67 @@ export default function GroupManagement() {
     <AppPage
       title="分组管理"
       description="按课程创建与管理学习小组"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;分组管理</>}
       actions={
         <>
           <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <Select style={{ width: 240 }} placeholder="选择课程" value={selectedCourseId} onChange={setSelectedCourseId}
-            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []} />
-          <Button type="primary" icon={<PlusOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}
-            onClick={() => { setEditingGroup(null); setFormData({ name: "", description: "", maxMembers: undefined, memberIds: [] }); setDialogOpen(true); }}>创建小组</Button>
-          <Button icon={<SwapOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}>随机分组</Button>
+            type="primary"
+            icon={<PlusOutlined />}
+            disabled={!selectedCourseId}
+            style={canEdit ? undefined : { display: "none" }}
+            onClick={() => {
+              setEditingGroup(null);
+              setFormData({ name: "", description: "", maxMembers: undefined, memberIds: [] });
+              setDialogOpen(true);
+            }}
+          >
+            创建小组
+          </Button>
+          <Button icon={<SwapOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}>
+            随机分组
+          </Button>
         </>
       }
     >
-      <Card>
-        <Table
-            columns={columns} dataSource={groups} rowKey="id" loading={isLoading} locale={{ emptyText: selectedCourseId ? "暂无小组" : "请先选择课程" }} />
-      </Card>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
+          <Select
+            style={{ width: 240 }}
+            placeholder="选择课程"
+            value={selectedCourseId || undefined}
+            onChange={setSelectedCourseId}
+            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []}
+          />
+        </div>
+
+        {!selectedCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择课程以管理学习小组。" />
+        ) : groups.length === 0 ? (
+          <ProtoEmpty title="暂无小组" description="点击右上角「创建小组」开始。" />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={groups}
+              rowKey="id"
+              loading={isLoading}
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {groups.length} 条</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       <Modal title={editingGroup ? "编辑小组" : "创建小组"} open={dialogOpen}
         onCancel={() => { setDialogOpen(false); setEditingGroup(null); }}

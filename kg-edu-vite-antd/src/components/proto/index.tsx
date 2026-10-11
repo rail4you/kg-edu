@@ -35,6 +35,7 @@ export interface AppPageProps {
   description?: ReactNode;
   actions?: ReactNode;
   eyebrow?: ReactNode;
+  breadcrumb?: ReactNode;
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -46,6 +47,7 @@ export function AppPage({
   description,
   actions,
   eyebrow,
+  breadcrumb,
   children,
   className = "",
   style,
@@ -56,6 +58,7 @@ export function AppPage({
       className={`${fill ? "pu-page-fill" : "pu-page"}${className ? ` ${className}` : ""}`}
       style={style}
     >
+      {breadcrumb ? <div className="pu-breadcrumb">{breadcrumb}</div> : null}
       {title !== undefined && (
         <PageHead title={title} description={description} actions={actions} eyebrow={eyebrow} />
       )}

@@ -23,6 +23,7 @@ import {
   DeleteOutlined,
   LinkOutlined,
   ArrowLeftOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   listLinks,
@@ -38,7 +39,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -88,6 +89,8 @@ export default function LinkPage() {
   const [page, setPage] = useState(1);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [subtab, setSubtab] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [form] = Form.useForm();
 
   const queryClient = useQueryClient();
@@ -242,17 +245,16 @@ export default function LinkPage() {
     {
       title: "操作",
       key: "action",
-      width: 100,
-      align: "center",
-      onCell: () => ({ style: { verticalAlign: "middle" } }),
+      width: 120,
       render: (_: unknown, record: LinkType) => (
         <Space size={4}>
           <Button
-            type="text"
-            icon={<LinkOutlined />}
+            type="link"
+            size="small"
             onClick={() => handleOpenLink(record.url)}
-            title="打开链接"
-          />
+          >
+            打开
+          </Button>
           <Popconfirm
             title="确定删除此链接?"
             onConfirm={() => handleDelete(record.id)}
@@ -260,11 +262,13 @@ export default function LinkPage() {
             cancelText="取消"
           >
             <ReadonlyActionButton
-              type="text"
+              type="link"
+              size="small"
               danger
-              icon={<DeleteOutlined />}
               loading={deleteMutation.isPending}
-            />
+            >
+              删除
+            </ReadonlyActionButton>
           </Popconfirm>
         </Space>
       ),
@@ -288,98 +292,99 @@ export default function LinkPage() {
     <AppPage
       title="链接管理"
       description="管理课程相关外部资源链接"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;链接管理</>}
       actions={
         <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setAddDialogOpen(true)}
+          disabled={!activeCourseId}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          添加链接
+        </Button>
       }
     >
       <style>{`@media(max-width:768px){.link-course-select{flex-direction:column!important;width:100%!important}.link-course-select .ant-select{width:100%!important}}`}</style>
 
-      <div style={{ marginBottom: 16 }}>
-        <Space className="link-course-select">
-          <Text strong>选择课程：</Text>
+      <ProtoCard>
+        {error && (
+          <Alert
+            type="error"
+            message={error instanceof Error ? error.message : "Failed to load links"}
+            style={{ marginBottom: 16 }}
+            showIcon
+          />
+        )}
+
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
           <Select
             value={activeCourseId || undefined}
             onChange={(value) => {
-              setSelectedCourseId(value);
+              setSelectedCourseId(value || "");
               setPage(1);
             }}
             loading={coursesLoading}
             placeholder="请选择课程"
-            style={{ width: 280 }}
+            style={{ width: 240 }}
             allowClear
-          >
-            {(Array.isArray(courses) ? courses : []).map((course: { id: string; title: string }) => (
-              <Select.Option key={course.id} value={course.id}>
-                {course.title}
-              </Select.Option>
-            ))}
-          </Select>
-          {activeCourseId && (
-            <Button
-              type="link"
-              size="small"
-              onClick={() => {
-                setSelectedCourseId("");
-                setPage(1);
-              }}
-            >
-              清除
-            </Button>
-          )}
-        </Space>
-      </div>
+            options={(Array.isArray(courses) ? courses : []).map((course: { id: string; title: string }) => ({
+              value: course.id,
+              label: course.title,
+            }))}
+          />
+          <Input
+            className="pu-search"
+            placeholder="搜索链接标题或地址"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+          <Button onClick={() => setSearchText("")}>重置</Button>
+        </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message={
-            error instanceof Error ? error.message : "Failed to load links"
+        {(() => {
+          const q = searchText.trim().toLowerCase();
+          const filtered = (linkList || []).filter(
+            (l: LinkType) =>
+              !q ||
+              (l.title || "").toLowerCase().includes(q) ||
+              (l.url || "").toLowerCase().includes(q),
+          );
+          if (filtered.length === 0) {
+            return (
+              <ProtoEmpty
+                title={activeCourseId ? "暂无链接" : "请先选择课程"}
+                description="可切换课程，或点击右上角「添加链接」。"
+              />
+            );
           }
-          style={{ marginBottom: 16 }}
-          showIcon
-        />
-      )}
-
-      <Card>
-        <Table
-          className="theme-table"
-          columns={columns}
-          dataSource={linkList}
-          rowKey="id"
-          loading={isLoading}
-          size="middle"
-          title={() => (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setAddDialogOpen(true)}
-                  disabled={!activeCourseId}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  添加链接
-                </Button>
-              </Space>
-            </div>
-          )}
-          pagination={{
-            current: page,
-            pageSize: 10,
-            total: totalCount,
-            onChange: (newPage) => setPage(newPage),
-            showTotal: (total) => `共 ${total} 条`,
-          }}
-          locale={{
-            emptyText: activeCourseId ? "暂无链接，请点击添加按钮添加" : "请先选择一个课程",
-          }}
-        />
-      </Card>
+          return (
+            <>
+              <Table
+                columns={columns}
+                dataSource={filtered}
+                rowKey="id"
+                loading={isLoading}
+                size="middle"
+                pagination={false}
+              />
+              <div className="pu-table-footer">
+                <span>共 {filtered.length} 条</span>
+              </div>
+            </>
+          );
+        })()}
+      </ProtoCard>
 
       <Modal
         title="添加链接"

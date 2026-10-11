@@ -34,7 +34,7 @@ import {
 } from "@ant-design/icons";
 import ActionDropdown from "@/components/ActionDropdown";
 import { QuestionLevelConfigModal } from "@/components/QuestionLevelConfigModal";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import {
   listQuestions,
   createQuestion,
@@ -998,7 +998,6 @@ export default function TeacherQuestion() {
       dataIndex: "questionLevel",
       key: "questionLevel",
       width: 90,
-      align: "center" as const,
       render: (level: string) => (
         <Tag color={getQuestionLevelColor(level)}>
           {getQuestionLevelLabel(level)}
@@ -1010,7 +1009,6 @@ export default function TeacherQuestion() {
       dataIndex: "knowledgeResource",
       key: "knowledgeResource",
       width: "20%",
-      align: "center" as const,
       ellipsis: true,
       render: (knowledge: any) =>
         knowledge ? (
@@ -1030,7 +1028,6 @@ export default function TeacherQuestion() {
       title: "操作",
       key: "action",
       width: 50,
-      align: "center" as const,
       fixed: "right" as const,
       render: (_: any, record: any) => {
         const items = [
@@ -1101,7 +1098,6 @@ export default function TeacherQuestion() {
       dataIndex: "connectionType",
       key: "connectionType",
       width: 100,
-      align: "center" as const,
       render: (type: string) => (
         <Tag color={getConnectionTypeColor(type)}>
           {getConnectionTypeLabel(type)}
@@ -1113,7 +1109,6 @@ export default function TeacherQuestion() {
       dataIndex: "courseId",
       key: "courseId",
       width: "20%",
-      align: "center" as const,
       ellipsis: true,
       render: (id: string) => (
         <Text strong>{getCourseTitleById(id)}</Text>
@@ -1123,7 +1118,6 @@ export default function TeacherQuestion() {
       title: "操作",
       key: "action",
       width: 50,
-      align: "center" as const,
       fixed: "right" as const,
       render: (_: any, record: any) => {
         const items = [
@@ -1273,23 +1267,75 @@ export default function TeacherQuestion() {
     <AppPage
       title="问题管理"
       description="管理课程问题与知识关联"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;问题管理</>}
       actions={
-        <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+        <Space>
+          {tabValue === "questions" ? (
+            <>
+              <Button icon={<SettingOutlined />} onClick={() => setConfigModalOpen(true)}>
+                层级配置
+              </Button>
+              <Button
+                icon={<UploadOutlined />}
+                onClick={() => setImportModalOpen(true)}
+                disabled={!selectedCourseId}
+                style={canEdit ? undefined : { display: "none" }}
+              >
+                导入
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+                下载模板
+              </Button>
+              {selectedQuestionIds.length > 0 && (
+                <Button danger icon={<DeleteOutlined />} onClick={() => setBatchDeleteModalOpen(true)}>
+                  批量删除 ({selectedQuestionIds.length})
+                </Button>
+              )}
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setCreateQuestionModalOpen(true)}
+                disabled={!selectedCourseId}
+                style={canEdit ? undefined : { display: "none" }}
+              >
+                创建问题
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="primary"
+              icon={<LinkOutlined />}
+              onClick={() => {
+                setCreateConnectionModalOpen(true);
+                connectionForm.resetFields();
+                connectionForm.setFieldsValue({
+                  sourceQuestionId: undefined,
+                  targetQuestionIds: [],
+                  courseId: selectedCourseId || "",
+                  connectionType: "hierarchy",
+                });
+              }}
+            >
+              创建关联
+            </Button>
+          )}
+        </Space>
       }
     >
       <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
-      {/* 课程选择独立一行 */}
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程：</Text>
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "questions", label: "问题列表" },
+            { id: "connections", label: "问题关联" },
+          ]}
+          active={tabValue}
+          onChange={setTabValue}
+        />
+        <div className="pu-filters">
           <Select
-            style={{ width: 280 }}
+            style={{ width: 240 }}
             placeholder="请选择课程"
             value={selectedCourseId || undefined}
             onChange={(value) => handleCourseChange(value || undefined)}
@@ -1304,10 +1350,55 @@ export default function TeacherQuestion() {
               </Select.Option>
             ))}
           </Select>
-        </Space>
-      </div>
+        </div>
 
-      <Tabs activeKey={tabValue} onChange={setTabValue} items={tabItems} />
+        {!selectedCourseId ? (
+          <ProtoEmpty title="请先选择课程" description="选择课程以管理问题与知识关联。" />
+        ) : tabValue === "questions" ? (
+          questions.length === 0 ? (
+            <ProtoEmpty title="暂无问题" description="点击右上角「创建问题」开始。" />
+          ) : (
+            <>
+              <Table
+                columns={questionColumns}
+                dataSource={questions}
+                rowKey="id"
+                loading={questionsLoading}
+                rowSelection={{
+                  selectedRowKeys: selectedQuestionIds,
+                  onChange: (selectedRowKeys: React.Key[]) => {
+                    setSelectedQuestionIds(selectedRowKeys as string[]);
+                  },
+                  columnWidth: 8,
+                }}
+                pagination={false}
+                size="middle"
+                scroll={{ x: 700 }}
+              />
+              <div className="pu-table-footer">
+                <span>共 {questions.length} 条</span>
+              </div>
+            </>
+          )
+        ) : connections.length === 0 ? (
+          <ProtoEmpty title="暂无关联" description="点击右上角「创建关联」开始。" />
+        ) : (
+          <>
+            <Table
+              columns={connectionColumns}
+              dataSource={connections}
+              rowKey="id"
+              loading={connectionsLoading}
+              pagination={false}
+              size="middle"
+              scroll={{ x: 600 }}
+            />
+            <div className="pu-table-footer">
+              <span>共 {connections.length} 条</span>
+            </div>
+          </>
+        )}
+      </ProtoCard>
 
       <Modal
         title={

@@ -9,7 +9,6 @@ import {
   Col,
   Modal,
   Input,
-  Select,
   Tag,
   Spin,
   Alert,
@@ -54,11 +53,12 @@ import type { UploadProgress } from "@/lib/oss-upload";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
+import { CourseSelect } from "@/components/course/CourseSelect";
 import VideoAnalysisDrawer from "./components/video-analysis-drawer";
 import VideoAnalysisTasks from "./components/video-analysis-tasks";
 import { getChapter } from "@/lib/ash_rpc";
@@ -1043,10 +1043,9 @@ export default function VideoManagementPage() {
 
         <div style={{ marginBottom: 16 }}>
           <Text style={{ marginBottom: 8, display: "block" }}>所属课程 *</Text>
-          <Select
+          <CourseSelect
             style={{ width: "100%" }}
-            placeholder="请选择课程"
-            value={formData.courseId || undefined}
+            value={formData.courseId}
             onChange={(value) => {
               setFormData({
                 ...formData,
@@ -1055,11 +1054,6 @@ export default function VideoManagementPage() {
               });
               setChapterSearchText("");
             }}
-            allowClear
-            options={courses.map((course: any) => ({
-              label: course.title,
-              value: course.id,
-            }))}
           />
         </div>
 
@@ -1303,138 +1297,104 @@ export default function VideoManagementPage() {
     <AppPage
       title="视频管理"
       description="管理课程视频与AI解析"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;视频管理</>}
       actions={
         <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => handleOpenCreateDialog()}
+          disabled={!selectedCourseId}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          新建视频
+        </Button>
       }
     >
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space>
-          <Text strong>选择课程：</Text>
-          <Select
-            style={{ minWidth: 200 }}
-            placeholder="请选择课程"
-            value={selectedCourseId || undefined}
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "list", label: "视频列表" },
+            { id: "analysis", label: "AI 解析" },
+          ]}
+          active={currentTab}
+          onChange={setCurrentTab}
+        />
+        <div className="pu-filters">
+          <CourseSelect
+            style={{ minWidth: 240 }}
+            value={selectedCourseId}
             onChange={handleCourseSelect}
-            allowClear
-            options={courses.map((course: any) => ({
-              label: course.title,
-              value: course.id,
-            }))}
           />
-        </Space>
-      </div>
-
-      <Tabs
-        activeKey={currentTab}
-        onChange={setCurrentTab}
-        items={tabItems}
-        style={{ marginBottom: 24 }}
-      />
-
-      <Spin spinning={isLoading} tip="正在加载视频...">
-        {error && (
-          <div style={{ textAlign: "center", padding: "64px 0" }}>
-            <Title level={5} style={{ color: "#ff4d4f", marginBottom: 16 }}>
-              加载视频时出错: {(error as Error).message}
-            </Title>
-            <Button type="primary" onClick={() => refetch()}>
-              重试
-            </Button>
-          </div>
-        )}
-
-        {currentTab === "list" && !isLoading && !error && videos.length === 0 && (
-          <Card style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => handleOpenCreateDialog()}
-                  disabled={!selectedCourseId}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  新建视频
-                </Button>
-              </Space>
-            </div>
-            <Empty
-              description={selectedCourseId ? "该课程暂无视频，点击上方按钮创建" : "请先选择一个课程"}
-              style={{ padding: "64px 0" }}
-            />
-          </Card>
-        )}
-
-        {currentTab === "analysis" && (
-          <VideoAnalysisTasks
-            videos={videos as any}
-            courseId={selectedCourseId}
-            tenant={currentTenant?.schemaName || ""}
-            headers={getAuthHeaders(user) as Record<string, string>}
-            onOpenAnalysis={(v) => openAnalysis(v as VideoResourceSchema)}
-          />
-        )}
-
-        {currentTab === "list" && !isLoading && !error && videos.length > 0 && (
-          <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => handleOpenCreateDialog()}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  新建视频
-                </Button>
-              </Space>
-              <Space>
-                <Tooltip title="卡片视图">
-                  <Button
-                    type={viewMode === "card" ? "primary" : "default"}
-                    icon={<AppstoreOutlined />}
-                    onClick={() => setViewMode("card")}
-                  />
-                </Tooltip>
-                <Tooltip title="表格视图">
-                  <Button
-                    type={viewMode === "table" ? "primary" : "default"}
-                    icon={<UnorderedListOutlined />}
-                    onClick={() => setViewMode("table")}
-                  />
-                </Tooltip>
-              </Space>
-            </div>
-
-            {viewMode === "card" ? (
-              <Row gutter={[12, 12]}>
-                {videos.map(renderVideoCard)}
-              </Row>
-            ) : (
-              <Card
-                bordered={false}
-                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
+          {currentTab === "list" && videos.length > 0 && (
+            <Space.Compact>
+              <Button
+                type={viewMode === "card" ? "primary" : "default"}
+                icon={<AppstoreOutlined />}
+                onClick={() => setViewMode("card")}
               >
+                卡片
+              </Button>
+              <Button
+                type={viewMode === "table" ? "primary" : "default"}
+                icon={<UnorderedListOutlined />}
+                onClick={() => setViewMode("table")}
+              >
+                表格
+              </Button>
+            </Space.Compact>
+          )}
+        </div>
+
+        <Spin spinning={isLoading} tip="正在加载视频...">
+          {error && (
+            <div style={{ textAlign: "center", padding: "64px 0" }}>
+              <Title level={5} style={{ color: "#ff4d4f", marginBottom: 16 }}>
+                加载视频时出错: {(error as Error).message}
+              </Title>
+              <Button type="primary" onClick={() => refetch()}>
+                重试
+              </Button>
+            </div>
+          )}
+
+          {currentTab === "list" && !isLoading && !error && videos.length === 0 && (
+            <ProtoEmpty
+              title={selectedCourseId ? "该课程暂无视频" : "请先选择一个课程"}
+              description="选择课程后新建视频或上传解析。"
+            />
+          )}
+
+          {currentTab === "analysis" && (
+            <VideoAnalysisTasks
+              videos={videos as any}
+              courseId={selectedCourseId}
+              tenant={currentTenant?.schemaName || ""}
+              headers={getAuthHeaders(user) as Record<string, string>}
+              onOpenAnalysis={(v) => openAnalysis(v as VideoResourceSchema)}
+            />
+          )}
+
+          {currentTab === "list" && !isLoading && !error && videos.length > 0 && (
+            viewMode === "card" ? (
+              <Row gutter={[12, 12]}>{videos.map(renderVideoCard)}</Row>
+            ) : (
+              <>
                 <Table
-                  className="theme-table"
                   columns={tableColumns}
                   dataSource={videos}
                   rowKey="id"
-                  pagination={{
-                    showSizeChanger: true,
-                    showTotal: (total) => `共 ${total} 条`,
-                  }}
+                  pagination={false}
+                  size="middle"
                 />
-              </Card>
-            )}
-          </>
-        )}
-      </Spin>
+                <div className="pu-table-footer">
+                  <span>共 {videos.length} 条</span>
+                </div>
+              </>
+            )
+          )}
+        </Spin>
+      </ProtoCard>
+
 
       {renderCreateDialog()}
       {renderEditDialog()}

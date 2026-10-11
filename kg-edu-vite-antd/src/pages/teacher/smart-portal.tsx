@@ -483,6 +483,7 @@ export default function TeacherSmartPortal() {
     <AppPage
       title="智慧门户"
       description="为学生配置 AI 实践门户：按学生分配门户，学生端即可看到对应功能"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;智慧门户</>}
       actions={
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
           新建门户

@@ -25,7 +25,8 @@ import {
   EyeOutlined,
   FileTextOutlined,
   BarChartOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import {
   listExams,
@@ -40,7 +41,7 @@ import { useCourses } from "@/hooks/use-courses";
 import dayjs from "dayjs";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -77,6 +78,7 @@ export default function ExamManagementPage() {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [searchText, setSearchText] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState<string | undefined>();
+  const [subtab, setSubtab] = useState("all");
   const [examDateRange, setExamDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
   const [deadlineFilter, setDeadlineFilter] = useState<"before" | "after" | undefined>();
   const [formData, setFormData] = useState<{
@@ -510,45 +512,60 @@ export default function ExamManagementPage() {
       title="试卷管理"
       description="创建与管理考试试卷"
       className="exam-management-wrap"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;考试管理</>}
       actions={
         <Button
-          type="text"
-          className="teacher-page-back-btn"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            resetForm();
+            setCreateModalOpen(true);
+          }}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          创建考试
+        </Button>
       }
     >
       <style>{`@media(max-width:768px){.exam-management-wrap{padding:12px!important}.exam-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space wrap>
-          <Text strong>选择课程：</Text>
+
+      <ProtoCard>
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部记录" },
+            { id: "recent", label: "最近更新" },
+          ]}
+          active={subtab}
+          onChange={setSubtab}
+        />
+        <div className="pu-filters">
           <Select
             placeholder="请选择课程"
             allowClear
-            style={{ width: 180 }}
+            style={{ width: 200 }}
             value={selectedCourseId}
             onChange={setSelectedCourseId}
             options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
             loading={coursesLoading}
           />
-          <Input.Search
+          <Input
+            className="pu-search"
             placeholder="搜索考试名称"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
             allowClear
-            onSearch={(value) => setSearchText(value)}
-            style={{ width: 200 }}
           />
-          <span>考试时间:</span>
           <DatePicker.RangePicker
             showTime
             format="YYYY-MM-DD HH:mm"
             onChange={(dates) => setExamDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
-            style={{ width: 340 }}
+            style={{ width: 320 }}
           />
           <Select
             placeholder="截止时间"
             allowClear
-            style={{ width: 120 }}
+            style={{ width: 130 }}
             value={deadlineFilter}
             onChange={setDeadlineFilter}
             options={[
@@ -556,36 +573,39 @@ export default function ExamManagementPage() {
               { value: "after", label: "未截止" },
             ]}
           />
-        </Space>
-      </div>
+          <Button
+            onClick={() => {
+              setSelectedCourseId(undefined);
+              setSearchText("");
+              setExamDateRange([null, null]);
+              setDeadlineFilter(undefined);
+            }}
+          >
+            重置
+          </Button>
+        </div>
 
-      <Card>
-        <Table
-          className="theme-table"
-          columns={columns}
-          dataSource={filteredExams}
-          rowKey="id"
-          loading={examsLoading}
-          title={() => (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => {
-                    resetForm();
-                    setCreateModalOpen(true);
-                  }}
-                  style={canEdit ? undefined : { display: "none" }}
-                >
-                  创建考试
-                </Button>
-              </Space>
+        {filteredExams.length === 0 ? (
+          <ProtoEmpty
+            title="暂无考试"
+            description="点击右上角「创建考试」开始，或调整筛选条件。"
+          />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={filteredExams}
+              rowKey="id"
+              loading={examsLoading}
+              pagination={false}
+              size="middle"
+            />
+            <div className="pu-table-footer">
+              <span>共 {filteredExams.length} 条</span>
             </div>
-          )}
-          pagination={{ pageSize: 10 }}
-        />
-      </Card>
+          </>
+        )}
+      </ProtoCard>
 
       <Modal
         open={createModalOpen}
