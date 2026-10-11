@@ -54,6 +54,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
 import { AppPage, StatGrid } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 import * as XLSX from "xlsx";
 
 const { Text, Title, Paragraph } = Typography;
@@ -372,12 +373,18 @@ export default function TeacherKnowledgeResource() {
     if (!hierarchyData) return [];
 
     const flatRows: KnowledgeResourceRow[] = [];
+    const seen = new Set<string>();
 
     const flattenHierarchy = (
       node: any,
       parentPath: string[] = [],
       parentId: string | null = null,
     ): void => {
+      if (!node || node.id == null) return;
+      // 同一节点可能出现在多个子数组中，去重避免重复渲染
+      if (seen.has(String(node.id))) return;
+      seen.add(String(node.id));
+
       const currentPath = [...parentPath, node.name];
 
       flatRows.push({
@@ -1197,16 +1204,6 @@ export default function TeacherKnowledgeResource() {
 
   const columns: ColumnsType<TreeNode> = [
     {
-      title: "序号",
-      key: "index",
-      width: 80,
-      render: (_, record) => (
-        <Text style={{ fontSize: 13, color: "#8c8c8c" }}>
-          {getHierarchicalIndex(record)}
-        </Text>
-      ),
-    },
-    {
       title: "知识标题",
       key: "name",
       width: 350,
@@ -1228,57 +1225,23 @@ export default function TeacherKnowledgeResource() {
         };
 
         const isExpanded = expandedRowKeys.includes(record.id);
-        const hasChildren = record.children && record.children.length > 0;
+        const hasChildren =
+          (record as any)._hasChildren ?? (record.children && record.children.length > 0);
         const level = getLevel(record);
         const indentSize = (level - 1) * 24;
 
         const handleToggleExpand = () => {
           if (hasChildren) {
-            if (isExpanded) {
-              setExpandedRowKeys(
-                expandedRowKeys.filter((key) => key !== record.id),
-              );
-            } else {
-              setExpandedRowKeys([...expandedRowKeys, record.id]);
-            }
+            setExpandedRowKeys((prev) =>
+              prev.includes(record.id)
+                ? prev.filter((key) => key !== record.id)
+                : [...prev, record.id],
+            );
           }
         };
 
         return (
-          <div style={{ paddingLeft: indentSize, display: "flex", alignItems: "flex-start", gap: 8 }}>
-            {hasChildren ? (
-              <span
-                style={{
-                  cursor: "pointer",
-                  fontSize: 14,
-                  userSelect: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 20,
-                  height: 20,
-                  border: "1px solid #d9d9d9",
-                  borderRadius: 4,
-                  backgroundColor: "#fafafa",
-                  flexShrink: 0,
-                  marginTop: 2,
-                }}
-                onClick={handleToggleExpand}
-              >
-                {isExpanded ? <MinusOutlined style={{ fontSize: 10 }} /> : <PlusOutlined style={{ fontSize: 10 }} />}
-              </span>
-            ) : (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 20,
-                  height: 20,
-                  flexShrink: 0,
-                }}
-              />
-            )}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <Tooltip title={record.name} placement="topLeft">
@@ -1330,6 +1293,16 @@ export default function TeacherKnowledgeResource() {
           </div>
         );
       },
+    },
+    {
+      title: "序号",
+      key: "index",
+      width: 96,
+      render: (_, record) => (
+        <Text style={{ fontSize: 13, color: "#8c8c8c" }}>
+          {getHierarchicalIndex(record)}
+        </Text>
+      ),
     },
     {
       title: "类型",
@@ -1455,14 +1428,9 @@ export default function TeacherKnowledgeResource() {
       <AppPage
         title="知识点管理"
         description="维护课程知识点层级与认知标注"
+        breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识点管理</>}
         actions={
           <>
-            <Button
-              className="teacher-page-back-btn"
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/teacher/dashboard")}
-            />
             <Space wrap>
               <Button
                 icon={<DownloadOutlined />}
@@ -1511,7 +1479,7 @@ export default function TeacherKnowledgeResource() {
         <style>{`@media(max-width:768px){.kr-page-wrap{padding:8px!important}.kr-page-wrap .ant-table-cell{padding:6px 4px!important}.kr-page-wrap .kr-filter-row{flex-direction:column!important;align-items:stretch!important}.kr-page-wrap .kr-filter-row .ant-select{width:100%!important;margin-bottom:8px}}`}</style>
         <div className="kr-page-wrap" style={{ width: "100%" }}>
 
-          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div className="pu-filters">
             {coursesLoading ? (
               <Space>
                 <Spin size="small" />
@@ -1533,25 +1501,22 @@ export default function TeacherKnowledgeResource() {
               </Space>
             ) : (
               <>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Text type="secondary">请选择课程：</Text>
-                  <Select
-                    style={{ width: 280, maxWidth: 400 }}
-                    placeholder="选择课程"
-                    value={selectedCourseId || undefined}
-                    onChange={setSelectedCourseId}
-                    loading={coursesLoading}
-                    options={coursesData.map((course: any) => ({
-                      value: course.id,
-                      label: course.title,
-                    }))}
-                  />
-                </div>
+                <SwitchButton
+                  title="切换当前课程"
+                  buttonLabel="切换课程"
+                  options={(coursesData || []).map((course: any) => ({
+                    id: course.id,
+                    label: course.title,
+                  }))}
+                  value={selectedCourseId}
+                  onChange={(id) => setSelectedCourseId(id || "")}
+                  loading={coursesLoading}
+                />
                 {selectedCourseId && (
                   <Input
+                    className="pu-search"
                     placeholder="搜索知识点名称"
                     prefix={<SearchOutlined />}
-                    style={{ width: 220 }}
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     allowClear
@@ -1599,6 +1564,7 @@ export default function TeacherKnowledgeResource() {
             </div>
           ) : (
             <Table
+              key={`${selectedCourseId}-${filteredTreeData.length}`}
               columns={columns}
               dataSource={filteredTreeData}
               loading={hierarchyLoading}
@@ -1606,18 +1572,8 @@ export default function TeacherKnowledgeResource() {
               scroll={{ x: 1200, y: 500 }}
               rowClassName={(record) => `tree-row-level-${getLevel(record)}`}
               expandable={{
-                expandedRowKeys,
-                onExpand: (expanded, record) => {
-                  if (expanded) {
-                    setExpandedRowKeys([...expandedRowKeys, record.id]);
-                  } else {
-                    setExpandedRowKeys(
-                      expandedRowKeys.filter((key) => key !== record.id),
-                    );
-                  }
-                },
+                defaultExpandAllRows: true,
                 indentSize: 20,
-                showExpandColumn: false,
               }}
             />
           )}
