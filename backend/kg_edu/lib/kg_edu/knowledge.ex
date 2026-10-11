@@ -302,6 +302,7 @@ defmodule KgEdu.Knowledge do
     resource(KgEdu.Knowledge.Exercise)
     resource(KgEdu.Knowledge.PracticeAttempt)
     resource(KgEdu.Knowledge.PracticeSession)
+    resource(KgEdu.Knowledge.SmartPortalConfig)
     resource(KgEdu.Knowledge.Question)
     resource(KgEdu.Knowledge.QuestionConnection)
     resource(KgEdu.Knowledge.Homework)

@@ -1,9 +1,11 @@
 /**
  * 智慧门户 — 组件化 / 参数化的门户页面布局。
  *
- * 布局以全局单条 JSON 配置存储（`GET/PUT /api/smart-portal/layout`），
- * 由超级管理员在管理端编排；租户动态数据在渲染时按访问者租户拉取。
+ * 教师端配置存于租户 schema（每位教师一条），可分配给学生；
+ * 学生端读取分配给自己的配置。旧版全局布局接口保留兼容。
  */
+
+import { getCurrentTenant } from "@/lib/tenant";
 
 export type BlockType =
   | "text"
@@ -20,7 +22,8 @@ export type BlockType =
   | "date"
   | "ip"
   | "map"
-  | "plugin";
+  | "plugin"
+  | "ai-practice";
 
 export const BLOCK_TYPES: BlockType[] = [
   "text",
@@ -38,6 +41,7 @@ export const BLOCK_TYPES: BlockType[] = [
   "ip",
   "map",
   "plugin",
+  "ai-practice",
 ];
 
 export interface PortalBlock {
@@ -55,10 +59,17 @@ export interface SmartPortalLayout {
 }
 
 export interface SmartPortalConfig {
+  id?: string;
+  teacherId?: string;
   name: string;
   enabled: boolean;
   layout: SmartPortalLayout;
+  insertedAt?: string;
   updatedAt?: string;
+  /** 已分配该门户的学生 id 列表（教师端配置） */
+  studentIds?: string[];
+  /** 学生端读取时标记该门户是否为教师主动分配 */
+  assigned?: boolean;
 }
 
 export const DEFAULT_SPAN = 24;
@@ -106,14 +117,23 @@ export const EMPTY_CONFIG: SmartPortalConfig = {
   layout: EMPTY_LAYOUT,
 };
 
-function parseConfig(result: any): SmartPortalConfig {
-  const data = result?.data || {};
+function parseConfigData(data: any): SmartPortalConfig {
+  const d = data || {};
   return {
-    name: data.name || "智慧门户",
-    enabled: data.enabled !== false,
-    layout: normalizeLayout(data.layout),
-    updatedAt: data.updated_at,
+    id: d.id,
+    teacherId: d.teacher_id,
+    name: d.name || "智慧门户",
+    enabled: d.enabled !== false,
+    layout: normalizeLayout(d.layout),
+    insertedAt: d.inserted_at,
+    updatedAt: d.updated_at,
+    studentIds: Array.isArray(d.student_ids) ? d.student_ids.map(String) : [],
+    assigned: d.assigned === true,
   };
+}
+
+function parseConfig(result: any): SmartPortalConfig {
+  return parseConfigData(result?.data || {});
 }
 
 /** 公开读取智慧门户布局（学生端渲染） */
@@ -173,5 +193,152 @@ export async function saveSmartPortalLayout(
     return { ok: false, error: result?.error || `HTTP ${resp.status}` };
   } catch (e: any) {
     return { ok: false, error: e?.message || "网络错误" };
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 教师端 / 学生端智慧门户（租户内，每位教师可创建多个门户）
+ * ------------------------------------------------------------------ */
+
+function currentTenantSchema(): string {
+  if (typeof window === "undefined") return "";
+  return sessionStorage.getItem("tenant") || getCurrentTenant()?.schemaName || "";
+}
+
+function withTenant(url: string): string {
+  const t = currentTenantSchema();
+  if (!t) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}orgSchema=${encodeURIComponent(t)}`;
+}
+
+/** 新建门户时的默认模板（含 6 个 AI 实践 + 展示模块） */
+export async function fetchSmartPortalTemplate(
+  headers: Record<string, string>
+): Promise<SmartPortalConfig> {
+  try {
+    const resp = await fetch(withTenant("/api/smart-portal/config"), {
+      headers: { ...headers, Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    const result = await resp.json().catch(() => null);
+    if (!resp.ok || !result?.success || !result.data) return EMPTY_CONFIG;
+    return parseConfig(result);
+  } catch {
+    return EMPTY_CONFIG;
+  }
+}
+
+/** 教师端读取自己创建的门户列表 */
+export async function fetchTeacherPortals(
+  teacherId: string,
+  headers: Record<string, string>
+): Promise<SmartPortalConfig[]> {
+  const resp = await fetch(
+    withTenant(`/api/smart-portal/configs?teacherId=${encodeURIComponent(teacherId)}`),
+    {
+      headers: { ...headers, Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    }
+  );
+  const result = await resp.json().catch(() => null);
+  if (!resp.ok || !result?.success) {
+    throw new Error(result?.error || `HTTP ${resp.status}`);
+  }
+  return Array.isArray(result.data) ? result.data.map(parseConfigData) : [];
+}
+
+export interface TeacherPortalPayload {
+  teacherId?: string;
+  name: string;
+  enabled: boolean;
+  layout: SmartPortalLayout;
+  studentIds: string[];
+}
+
+/** 新建门户 */
+export async function createTeacherPortal(
+  payload: TeacherPortalPayload,
+  headers: Record<string, string>
+): Promise<{ ok: boolean; error?: string; data?: SmartPortalConfig }> {
+  return portalRequest("POST", "/api/smart-portal/configs", payload, headers);
+}
+
+/** 更新门户 */
+export async function updateTeacherPortal(
+  id: string,
+  payload: TeacherPortalPayload,
+  headers: Record<string, string>
+): Promise<{ ok: boolean; error?: string; data?: SmartPortalConfig }> {
+  return portalRequest("PUT", `/api/smart-portal/configs/${encodeURIComponent(id)}`, payload, headers);
+}
+
+/** 删除门户 */
+export async function deleteTeacherPortal(
+  id: string,
+  headers: Record<string, string>
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const resp = await fetch(withTenant(`/api/smart-portal/configs/${encodeURIComponent(id)}`), {
+      method: "DELETE",
+      headers,
+    });
+    const result = await resp.json().catch(() => null);
+    if (resp.ok && result?.success) return { ok: true };
+    return { ok: false, error: result?.error || `HTTP ${resp.status}` };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "网络错误" };
+  }
+}
+
+async function portalRequest(
+  method: "POST" | "PUT",
+  url: string,
+  payload: TeacherPortalPayload,
+  headers: Record<string, string>
+): Promise<{ ok: boolean; error?: string; data?: SmartPortalConfig }> {
+  try {
+    const resp = await fetch(withTenant(url), {
+      method,
+      headers,
+      body: JSON.stringify({
+        data: {
+          teacherId: payload.teacherId,
+          name: payload.name,
+          enabled: payload.enabled,
+          layout: normalizeLayout(payload.layout),
+          studentIds: payload.studentIds,
+        },
+      }),
+    });
+    const result = await resp.json().catch(() => null);
+    if (resp.ok && result?.success) {
+      return { ok: true, data: parseConfig(result) };
+    }
+    return { ok: false, error: result?.error || `HTTP ${resp.status}` };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "网络错误" };
+  }
+}
+
+/** 学生端读取被分配到的智慧门户（无分配时返回默认布局） */
+export async function fetchStudentSmartPortal(
+  studentId: string | undefined,
+  headers: Record<string, string>
+): Promise<SmartPortalConfig> {
+  try {
+    const qs = studentId ? `?studentId=${encodeURIComponent(studentId)}` : "";
+    const resp = await fetch(withTenant(`/api/smart-portal/student${qs}`), {
+      headers: { ...headers, Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!resp.ok) return EMPTY_CONFIG;
+    const result = await resp.json();
+    if (!result?.success || !result.data) return EMPTY_CONFIG;
+    return parseConfig(result);
+  } catch {
+    return EMPTY_CONFIG;
   }
 }

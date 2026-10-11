@@ -28,6 +28,7 @@ import TeacherExamPrint from "./pages/teacher/exam-print";
 // 旧的 course-video-analysis 路由已下线（重定向到 /teacher/dashboard/video），原文件保留以便回溯
 import TeacherCustomForm from "./pages/teacher/custom-form";
 import TeacherAiPractice from "./pages/teacher/ai-practice";
+import TeacherSmartPortal from "./pages/teacher/smart-portal";
 import TeacherFaceCheck from "./pages/teacher/face-check";
 import TeacherAssistantPlugins from "./pages/teacher/assistant-plugins";
 import TeacherResearchTrack from "./pages/teacher/research-track";
@@ -171,7 +172,6 @@ import AdminPortalConfig from "./pages/admin/portal-config";
 import AdminCourseCategories from "./pages/admin/course-categories";
 import AdminBranding from "./pages/admin/branding";
 import AdminManual from "./pages/admin/manual";
-import AdminSmartPortal from "./pages/admin/smart-portal";
 import AdminDataInsight from "./pages/admin/data-insight";
 
 // 旧路由重定向到新的学生管理页面
@@ -313,6 +313,7 @@ export default function App() {
         <Route path="course-video-analysis/:videoId" element={<Navigate to="/teacher/dashboard/video" replace />} />
         <Route path="custom-form" element={<TeacherCustomForm />} />
         <Route path="ai-practice" element={<TeacherAiPractice />} />
+        <Route path="smart-portal" element={<TeacherSmartPortal />} />
         <Route path="face-check" element={<TeacherFaceCheck />} />
         <Route path="assistant-plugins" element={<TeacherAssistantPlugins />} />
         <Route path="research-track" element={<TeacherResearchTrack />} />
@@ -477,7 +478,6 @@ export default function App() {
         <Route path="portal-config" element={<AdminPortalConfig />} />
         <Route path="course-categories" element={<AdminCourseCategories />} />
         <Route path="branding" element={<AdminBranding />} />
-        <Route path="smart-portal" element={<AdminSmartPortal />} />
         <Route path="data-insight" element={<AdminDataInsight />} />
         <Route path="manual" element={<AdminManual />} />
         <Route path="profile" element={<ProfilePage />} />

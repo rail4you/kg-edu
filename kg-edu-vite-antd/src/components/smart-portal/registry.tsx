@@ -14,6 +14,7 @@ import {
   GlobalOutlined,
   EnvironmentOutlined,
   ThunderboltOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import type { BlockType, PortalBlock } from "@/lib/smart-portal";
 import { createBlockId, DEFAULT_SPAN } from "@/lib/smart-portal";
@@ -33,6 +34,7 @@ import {
   IpWidget,
   MapWidget,
   PluginWidget,
+  AiPracticeWidget,
   METRIC_KEYS,
   type BlockRenderProps,
 } from "./widgets";
@@ -69,6 +71,55 @@ export interface BlockDef {
 }
 
 export const BLOCK_REGISTRY: Record<BlockType, BlockDef> = {
+  "ai-practice": {
+    type: "ai-practice",
+    label: "AI 实践",
+    icon: <RobotOutlined />,
+    defaultSpan: 12,
+    defaultTitle: "情景对话 · 餐厅点餐",
+    createDefault: () => ({
+      scenario: "dialogue",
+      preset: "餐厅点餐",
+      inputKind: "chat",
+      placeholder: "先设定一个情境，如：在餐厅点餐",
+      rolePrompt:
+        "你是餐厅服务员，正在接待一位顾客。请用热情、礼貌的语气接待，引导顾客点餐并介绍菜品，顾客点完后再确认订单。全程只用中文交流。",
+    }),
+    configFields: [
+      {
+        key: "scenario",
+        label: "实践场景",
+        type: "select",
+        options: [
+          { label: "情景对话", value: "dialogue" },
+          { label: "上传作品", value: "work_upload" },
+          { label: "思维阶梯", value: "thinking_ladder" },
+          { label: "思辨擂台", value: "debate_arena" },
+          { label: "代码编辑", value: "code_editor" },
+          { label: "互动故事", value: "interactive_story" },
+        ],
+      },
+      { key: "preset", label: "场景名称", type: "text", placeholder: "如：餐厅点餐" },
+      {
+        key: "rolePrompt",
+        label: "AI 角色 / 提示词",
+        type: "textarea",
+        placeholder: "为 AI 设定角色、语气与任务目标",
+      },
+      {
+        key: "inputKind",
+        label: "作答方式",
+        type: "select",
+        options: [
+          { label: "对话", value: "chat" },
+          { label: "代码", value: "code" },
+          { label: "作品文本", value: "upload" },
+        ],
+      },
+      { key: "placeholder", label: "输入框提示", type: "text" },
+    ],
+    Render: AiPracticeWidget,
+  },
   text: {
     type: "text",
     label: "文本 / 图文",

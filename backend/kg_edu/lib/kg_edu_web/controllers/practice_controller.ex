@@ -61,6 +61,49 @@ defmodule KgEduWeb.PracticeController do
     end
   end
 
+  @doc """
+  GET /api/practice/attempts?tenant=&scenario=&userId= — 教师端查看 AI 实践记录。
+  返回租户内学生的作答实录 + AI 评分报告，可按场景/学生过滤。
+  """
+  def list_attempts(conn, params) do
+    tenant = extract_tenant(conn, params)
+    scenario = params["scenario"]
+    user_id = params["userId"] || params["user_id"]
+
+    if is_nil(tenant) do
+      json(conn, %{success: false, error: "未设置租户上下文"})
+    else
+      case KgEdu.Knowledge.PracticeAttempt.list_practice_attempts(tenant: tenant, authorize?: false) do
+        {:ok, list} ->
+          filtered =
+            list
+            |> Enum.filter(fn a -> is_nil(scenario) or scenario == "" or to_string(a.scenario) == scenario end)
+            |> Enum.filter(fn a -> is_nil(user_id) or user_id == "" or a.user_id == user_id end)
+            |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+
+          json(conn, %{success: true, data: Enum.map(filtered, &attempt_map/1)})
+
+        {:error, e} ->
+          json(conn, %{success: false, error: inspect(e)})
+      end
+    end
+  end
+
+  defp attempt_map(a) do
+    %{
+      id: a.id,
+      scenario: to_string(a.scenario),
+      user_id: a.user_id,
+      course_id: a.course_id,
+      transcript: a.transcript || [],
+      score: a.score,
+      report: a.report,
+      status: to_string(a.status),
+      inserted_at: a.inserted_at,
+      updated_at: a.updated_at
+    }
+  end
+
   defp extract_tenant(conn, params) do
     params["orgSchema"] ||
       params["tenant"] ||

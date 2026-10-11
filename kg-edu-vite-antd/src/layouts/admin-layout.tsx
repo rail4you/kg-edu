@@ -58,7 +58,6 @@ export default function AdminLayout() {
           "/admin/dashboard/site-content",
           "/admin/dashboard/portal-config",
           "/admin/dashboard/course-categories",
-          "/admin/dashboard/smart-portal",
           "/admin/dashboard/data-insight",
           "/admin/dashboard/branding",
         ],

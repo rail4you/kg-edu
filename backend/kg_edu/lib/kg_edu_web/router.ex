@@ -110,6 +110,12 @@ defmodule KgEduWeb.Router do
     put "/portal-config/pages", PageController, :save_portal_pages
     get "/smart-portal/layout", PageController, :get_smart_portal_layout
     put "/smart-portal/layout", PageController, :update_smart_portal_layout
+    get "/smart-portal/config", SmartPortalController, :get_template
+    get "/smart-portal/configs", SmartPortalController, :list_configs
+    post "/smart-portal/configs", SmartPortalController, :create_config
+    put "/smart-portal/configs/:id", SmartPortalController, :update_config
+    delete "/smart-portal/configs/:id", SmartPortalController, :delete_config
+    get "/smart-portal/student", SmartPortalController, :get_student_config
     get "/course-categories", PageController, :get_course_categories
     get "/course-categories/admin", PageController, :get_course_categories_admin
     put "/course-categories", PageController, :save_course_categories
@@ -134,6 +140,7 @@ defmodule KgEduWeb.Router do
     # P3: 表单 AI（填表/公式）与实践评估
     post "/forms/ai-fill", FormsAiController, :ai_fill
     post "/forms/ai-formula", FormsAiController, :ai_formula
+    get "/practice/attempts", PracticeController, :list_attempts
     post "/practice/evaluate", PracticeController, :evaluate
     get "/practice-session/mine", PracticeSessionController, :mine
     get "/practice-session/tenant", PracticeSessionController, :list_tenant

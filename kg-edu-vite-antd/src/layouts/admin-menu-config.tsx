@@ -14,7 +14,6 @@ import {
   SafetyCertificateOutlined,
   TeamOutlined,
   UserOutlined,
-  AppstoreOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
 
@@ -69,13 +68,6 @@ const superAdminItems: AdminNavigationItem[] = [
     description: "配置首页推荐/新开等课程模块与课程列表 Tab（按租户选课）",
     icon: <TagsOutlined />,
     color: "#eb2f96",
-  },
-  {
-    path: "/admin/dashboard/smart-portal",
-    name: "智慧门户",
-    description: "拖放组合组件，配置学生端「智能门户」页面并实时预览",
-    icon: <AppstoreOutlined />,
-    color: "#1766d8",
   },
   {
     path: "/admin/dashboard/data-insight",

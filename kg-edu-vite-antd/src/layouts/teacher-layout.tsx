@@ -35,6 +35,7 @@ import {
   MenuOutlined,
   DownOutlined,
   RightOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -116,6 +117,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: "/teacher/dashboard/custom-form", label: "自定义表单", icon: <FileTextOutlined />, group: "邮件与表单" },
 
   { path: "/teacher/dashboard/ai-practice", label: "AI 实践", icon: <RobotOutlined />, group: "AI 工具" },
+  { path: "/teacher/dashboard/smart-portal", label: "智慧门户", icon: <AppstoreOutlined />, group: "AI 工具" },
   { path: "/teacher/dashboard/tts", label: "AI 语音合成", icon: <AudioOutlined />, group: "AI 工具" },
   { path: "/teacher/dashboard/research-track", label: "学术追踪", icon: <SearchOutlined />, group: "AI 工具" },
   { path: "/teacher/dashboard/assistant-plugins", label: "助教插件", icon: <MacCommandOutlined />, group: "AI 工具" },

@@ -17,6 +17,7 @@ import {
   Button,
   Space,
   Tooltip,
+  Modal,
 } from "antd";
 import {
   ReadOutlined,
@@ -30,6 +31,8 @@ import {
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import type { PortalBlock } from "@/lib/smart-portal";
+import { SCENARIOS, type ScenarioKey } from "@/lib/practice";
+import AiPracticeChat from "@/components/practice/AiPracticeChat";
 import type { SmartPortalData } from "./use-smart-portal-data";
 import { usePortalQuery } from "./portal-context";
 
@@ -671,6 +674,55 @@ export const PluginWidget: React.FC<BlockRenderProps> = ({ block }) => {
         </Button>
         <Tag>演示</Tag>
       </Space>
+    </div>
+  );
+};
+
+/* --------------------------- ai-practice ------------------------- */
+
+export const AiPracticeWidget: React.FC<BlockRenderProps> = ({ block }) => {
+  const [open, setOpen] = useState(false);
+  const scenario = ((block.config.scenario as ScenarioKey) || "dialogue") as ScenarioKey;
+  const meta = SCENARIOS.find((s) => s.key === scenario);
+  const preset = (block.config.preset as string) || "";
+  const rolePrompt = (block.config.rolePrompt as string) || meta?.systemPrompt || "";
+  const inputKind =
+    (block.config.inputKind as "chat" | "code" | "upload") || meta?.inputKind || "chat";
+  const placeholder = (block.config.placeholder as string) || meta?.placeholder || "";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, height: "100%" }}>
+      <Text type="secondary" style={{ fontSize: 13 }}>
+        {meta?.desc || "AI 实践场景"}
+      </Text>
+      {preset && <Tag color="blue" style={{ alignSelf: "flex-start" }}>{preset}</Tag>}
+      <Paragraph
+        type="secondary"
+        ellipsis={{ rows: 2 }}
+        style={{ margin: 0, fontSize: 12, flex: 1 }}
+      >
+        角色设定：{rolePrompt}
+      </Paragraph>
+      <Button type="primary" icon={<ThunderboltOutlined />} onClick={() => setOpen(true)}>
+        开始练习
+      </Button>
+
+      <Modal
+        open={open}
+        onCancel={() => setOpen(false)}
+        footer={null}
+        width={720}
+        destroyOnHidden
+        title={block.title || preset || meta?.name || "AI 实践"}
+      >
+        <AiPracticeChat
+          scenario={scenario}
+          systemPrompt={rolePrompt}
+          title={preset || meta?.name}
+          inputKind={inputKind}
+          placeholder={placeholder}
+        />
+      </Modal>
     </div>
   );
 };

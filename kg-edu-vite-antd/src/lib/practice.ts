@@ -225,3 +225,56 @@ export function evaluateFormula(expr: string, values: Record<string, any>): numb
   if (pos !== tokens.length) throw new Error("表达式有多余部分");
   return result;
 }
+
+/* ------------------------------------------------------------------ *
+ * AI 实践记录（教师端按门户 / 学生查看）
+ * ------------------------------------------------------------------ */
+
+export interface PracticeAttemptRecord {
+  id: string;
+  scenario: string;
+  userId?: string | null;
+  courseId?: string | null;
+  transcript: Array<{ role: string; content: string }>;
+  score?: number | null;
+  report?: string | null;
+  status: string;
+  insertedAt?: string;
+  updatedAt?: string;
+}
+
+/** 拉取租户内 AI 实践记录（可按场景 / 学生过滤） */
+export async function fetchPracticeAttempts(opts: {
+  tenant: string;
+  scenario?: string;
+  userId?: string;
+  headers?: Record<string, string>;
+}): Promise<PracticeAttemptRecord[]> {
+  const qs = new URLSearchParams();
+  if (opts.tenant) qs.set("tenant", opts.tenant);
+  if (opts.scenario) qs.set("scenario", opts.scenario);
+  if (opts.userId) qs.set("userId", opts.userId);
+  try {
+    const resp = await fetch(`/api/practice/attempts?${qs.toString()}`, {
+      headers: { ...(opts.headers || {}), Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    const r = await resp.json().catch(() => null);
+    if (!resp.ok || !r?.success) return [];
+    return (r.data || []).map((a: any) => ({
+      id: a.id,
+      scenario: a.scenario,
+      userId: a.user_id ?? null,
+      courseId: a.course_id ?? null,
+      transcript: Array.isArray(a.transcript) ? a.transcript : [],
+      score: a.score ?? null,
+      report: a.report ?? null,
+      status: a.status,
+      insertedAt: a.inserted_at,
+      updatedAt: a.updated_at,
+    }));
+  } catch {
+    return [];
+  }
+}
