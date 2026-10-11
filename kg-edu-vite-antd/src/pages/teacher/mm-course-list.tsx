@@ -517,14 +517,7 @@ export default function MicroMajorCourseList({ mmId, standalone = true }: MicroM
       <AppPage
         title={`${microMajor?.name || "微专业"} — 课程管理`}
         description="管理微专业下的课程"
-        actions={
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-          />
-        }
+        breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;课程管理</>}
       >
         {pageBody}
       </AppPage>

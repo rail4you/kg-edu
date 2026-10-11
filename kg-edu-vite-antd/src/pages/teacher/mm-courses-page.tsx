@@ -16,14 +16,7 @@ export default function MMCoursesPage() {
       className="mm-courses-page-wrap"
       title="课程管理"
       description="管理微专业课程"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;课程管理</>}
     >
 <style>{`@media(max-width:768px){.mm-courses-page-wrap{padding:12px!important}.mm-courses-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 

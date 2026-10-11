@@ -366,6 +366,7 @@ export default function EmailConfigManagement() {
     <AppPage
       title="邮箱配置管理"
       description="为教师配置邮箱发送设置"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;邮件配置</>}
       actions={
         <Text type="secondary">
           已配置: {userConfigMap.size} / {teachersWithConfigs.length} 位教师

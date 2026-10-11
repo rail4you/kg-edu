@@ -554,14 +554,9 @@ export default function KnowledgeRelationPage() {
     <AppPage
       title="知识关系管理"
       description="管理知识点之间的关联关系"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识关系管理</>}
       actions={
         <Space>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
           <Button
             type="primary"
             icon={<PlusOutlined />}

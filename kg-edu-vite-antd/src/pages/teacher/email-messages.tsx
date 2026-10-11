@@ -643,6 +643,7 @@ export default function EmailMessagesList() {
     <AppPage
       title="邮件消息列表"
       description="管理与回复学生邮件"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;邮件消息</>}
       actions={
         unreadCount > 0 ? (
           <Button

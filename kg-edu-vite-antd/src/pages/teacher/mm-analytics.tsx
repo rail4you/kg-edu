@@ -286,14 +286,7 @@ export default function MMAnalyticsPage() {
       className="mm-analytics-wrap"
       title="微专业运营分析"
       description="微专业学习与运营数据"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;学习分析</>}
     >
 <style>{`@media(max-width:768px){.mm-analytics-wrap{padding:12px!important}.mm-analytics-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 

@@ -45,7 +45,7 @@ import {
 import { getSTSToken, uploadFileToOSS } from "@/lib/oss-upload";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage } from "@/components/proto";
+import { AppPage, ProtoCard } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -385,37 +385,31 @@ export default function MicroMajorDashboard() {
       className="mm-dashboard-wrap"
       title="微专业管理"
       description="管理微专业与课程体系"
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;微专业管理</>}
       actions={
-        <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-          />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateModalOpen(true)}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            创建微专业
-          </Button>
-        </>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setCreateModalOpen(true)}
+          style={canEdit ? undefined : { display: "none" }}
+        >
+          创建微专业
+        </Button>
       }
     >
 <style>{`@media(max-width:768px){.mm-dashboard-wrap{padding:12px!important}.mm-dashboard-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 
-      <Card>
+      <ProtoCard>
         <Table
           columns={columns}
           dataSource={microMajors}
           rowKey="id"
           loading={isLoading}
-          pagination={{ pageSize: 20 }}
+          pagination={false}
+          size="middle"
           scroll={{ x: 900 }}
         />
-      </Card>
+      </ProtoCard>
 
       {/* Create Modal */}
       <Modal

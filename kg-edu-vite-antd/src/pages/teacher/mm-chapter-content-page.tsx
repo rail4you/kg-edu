@@ -21,14 +21,7 @@ export default function MMChapterContentPage() {
       className="mm-chapter-content-page-wrap"
       title="章节内容关联"
       description="关联章节与课程内容"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;章节内容关联</>}
     >
 <style>{`@media(max-width:768px){.mm-chapter-content-page-wrap{padding:12px!important}.mm-chapter-content-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
       <ContextSelector showCourse />

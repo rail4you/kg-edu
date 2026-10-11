@@ -227,14 +227,9 @@ export default function TeacherJobCompetencyGraphs() {
       className="job-competency-graphs-wrap"
       title="岗位能力图谱"
       description="管理岗位能力图谱版本与激活"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程能力图谱</>}
       actions={
         <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
           <Select
             allowClear
             placeholder="按专业筛选"

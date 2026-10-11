@@ -10,47 +10,24 @@ import TeacherGraphTree from "./graph-tree";
 import TeacherGraphCircle from "./graph-circle";
 import TeacherGraphQuestion from "./graph-question";
 import { PageHead } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 import { useCourses } from "@/hooks/use-courses";
 import { useGraphCourse, type GraphTabType } from "@/hooks/use-graph-course";
 
 function CourseSelectorWrapper() {
-  const { courses, loading, retryCount, maxRetry } = useCourses({
+  const { courses, loading } = useCourses({
     fields: ["id", "title", "description"],
   });
   const { selectedCourseId, setSelectedCourseId } = useGraphCourse();
 
-  if (loading) {
-    return (
-      <Space>
-        <Spin size="small" />
-        <span style={{ color: "#888" }}>
-          {retryCount > 0
-            ? `加载课程中 (重试 ${retryCount}/${maxRetry})...`
-            : "加载课程中..."}
-        </span>
-      </Space>
-    );
-  }
-
-  if (courses.length === 0) {
-    return (
-      <Space>
-        <span style={{ color: "#888" }}>暂无课程数据</span>
-      </Space>
-    );
-  }
-
   return (
-    <Select
-      placeholder="请选择课程"
+    <SwitchButton
+      title="切换当前课程"
+      buttonLabel="切换课程"
+      options={courses.map((course) => ({ id: course.id, label: course.title }))}
       value={selectedCourseId}
-      onChange={setSelectedCourseId}
-      style={{ width: 280 }}
-      options={courses.map((course) => ({
-        label: course.title,
-        value: course.id,
-      }))}
-      allowClear
+      onChange={(id) => setSelectedCourseId(id || "")}
+      loading={loading}
     />
   );
 }
@@ -127,6 +104,7 @@ function GraphCourseContent() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)" }}>
+      <div className="pu-breadcrumb">智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;课程图谱</div>
       <PageHead
         title="知识图谱"
         description="可视化课程知识结构、能力与问题关联"

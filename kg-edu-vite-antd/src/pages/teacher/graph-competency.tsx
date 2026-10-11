@@ -60,6 +60,7 @@ import {
 } from "@/lib/ash_rpc";
 import KnowledgeResourcePanel from "@/components/KnowledgeResourcePanel";
 import { AppPage, PageHead } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -2709,6 +2710,9 @@ export default function TeacherGraphCompetencyView() {
           flexDirection: "column",
         }}
       >
+        <div className="pu-breadcrumb" style={{ padding: "16px 24px 0", marginBottom: 0 }}>
+          智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;能力图谱
+        </div>
         <PageHead
           title="能力图谱"
           description="构建课程能力节点与能力关系"
@@ -2724,26 +2728,18 @@ export default function TeacherGraphCompetencyView() {
         />
 
         {/* 课程选择独立一行 */}
-        <div style={{ padding: "12px 24px", backgroundColor: "white", borderBottom: "1px solid #e0e0e0" }}>
-          <Space>
-            <Text strong>课程选择：</Text>
-            <Select
-              value={selectedCourseId || undefined}
-              placeholder="请选择课程"
-              style={{ minWidth: 280 }}
-              onChange={(value) => setSelectedCourseId(value || "")}
-              allowClear
-              loading={coursesLoading}
-              options={
-                Array.isArray(coursesData) && coursesData.length > 0
-                  ? coursesData.map((course: Course) => ({
-                      label: course.title,
-                      value: course.id,
-                    }))
-                  : [{ label: "暂无课程", value: "" }]
-              }
-            />
-          </Space>
+        <div className="pu-filters" style={{ padding: "12px 24px", marginBottom: 0 }}>
+          <SwitchButton
+            title="切换当前课程"
+            buttonLabel="切换课程"
+            options={(Array.isArray(coursesData) ? coursesData : []).map((course: Course) => ({
+              id: course.id,
+              label: course.title,
+            }))}
+            value={selectedCourseId}
+            onChange={(id) => setSelectedCourseId(id || "")}
+            loading={coursesLoading}
+          />
         </div>
 
         <Tabs

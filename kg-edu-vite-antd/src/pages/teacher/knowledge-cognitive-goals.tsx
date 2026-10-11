@@ -45,6 +45,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { useCourses } from "@/hooks/use-courses";
 import { AppPage } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text, Title } = Typography;
 
@@ -651,33 +652,21 @@ export default function KnowledgeCognitiveGoals() {
     <AppPage
       title="知识点认知维度管理"
       description="按布鲁姆认知层级为知识点设置维度"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;认知目标管理</>}
     >
       {/* 课程选择独立一行 */}
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <Space>
-          <Text strong style={{ fontSize: 16 }}>
-            课程选择：
-          </Text>
-          <Select
-            style={{ minWidth: 280, fontSize: 15 }}
-            placeholder={coursesLoading ? "加载中..." : "请选择课程"}
-            value={selectedCourseId || undefined}
-            onChange={handleCourseSelect}
-            allowClear
-            loading={coursesLoading}
-            showSearch
-            optionFilterProp="children"
-            options={(
-              courses.length > 0
-                ? courses.map((course: any) => ({
-                    label: course.title || `课程 (${course.id})`,
-                    value: course.id,
-                  }))
-                : [{ label: "暂无课程", value: "no-course", disabled: true }]
-            ) as any}
-            disabled={coursesLoading || courses.length === 0}
-          />
-        </Space>
+      <div className="pu-filters">
+        <SwitchButton
+          title="切换当前课程"
+          buttonLabel="切换课程"
+          options={courses.map((course: any) => ({
+            id: course.id,
+            label: course.title || `课程 (${course.id})`,
+          }))}
+          value={selectedCourseId}
+          onChange={(id) => handleCourseSelect(id)}
+          loading={coursesLoading}
+        />
       </div>
 
       {selectedCourseId && (

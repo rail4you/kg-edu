@@ -21,14 +21,7 @@ export default function MMExercisesPage() {
       className="mm-exercises-page-wrap"
       title="习题管理"
       description="管理课程习题"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;习题管理</>}
     >
 <style>{`@media(max-width:768px){.mm-exercises-page-wrap{padding:12px!important}.mm-exercises-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 

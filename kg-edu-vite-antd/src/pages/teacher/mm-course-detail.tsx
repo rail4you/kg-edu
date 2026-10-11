@@ -138,23 +138,16 @@ export default function MicroMajorCourseDetail() {
       className="mm-course-detail-wrap"
       title={course?.title || "课程管理"}
       description="管理课程章节、视频、习题与资源"
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;课程内容</>}
       actions={
-        <>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() =>
-              navigate(`/micro-major/${microMajorId}/courses`)
-            }
-          >
-            返回课程列表
-          </Button>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-          />
-        </>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() =>
+            navigate(`/micro-major/${microMajorId}/courses`)
+          }
+        >
+          返回课程列表
+        </Button>
       }
     >
 <style>{`@media(max-width:768px){.mm-course-detail-wrap{padding:12px!important}.mm-course-detail-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>

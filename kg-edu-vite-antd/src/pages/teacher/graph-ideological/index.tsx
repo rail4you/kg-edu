@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { SwitchButton } from "@/components/teacher/switch-button";
+import { PageHead } from "@/components/proto";
 import {
   Typography,
   Table,
@@ -767,22 +769,29 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
     >
       {/* 课程选择独立一行 */}
       {!hideManagement && (
-        <div style={{ padding: isMobile ? "8px 8px" : "12px 24px", backgroundColor: "white", borderBottom: "1px solid var(--pu-line)" }}>
-          <Space direction={isMobile ? "vertical" : "horizontal"} style={{ width: isMobile ? "100%" : "auto" }}>
-            <Text strong style={{ fontSize: isMobile ? 13 : 14 }}>课程选择：</Text>
-            <Select
-              value={selectedCourseId || undefined}
-              placeholder="请选择课程"
-              style={{ width: isMobile ? "100%" : 280, minWidth: isMobile ? "100%" : 280 }}
-              onChange={(value) => setInternalCourseId(value)}
-              allowClear
-              options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
-                label: course.title,
-                value: course.id,
-              }))}
+        <>
+          <div className="pu-breadcrumb" style={{ padding: isMobile ? "12px 8px 0" : "16px 24px 0", marginBottom: 0 }}>
+            智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;思政图谱
+          </div>
+          <div style={{ padding: isMobile ? "8px 8px 0" : "12px 24px 0" }}>
+            <PageHead
+              title="思政图谱"
+              description="将课程思政元素与知识点关联，构建思政育人体系"
+              actions={
+                <SwitchButton
+                  title="切换当前课程"
+                  buttonLabel="切换课程"
+                  options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
+                    id: course.id,
+                    label: course.title,
+                  }))}
+                  value={selectedCourseId}
+                  onChange={(id) => setInternalCourseId(id)}
+                />
+              }
             />
-          </Space>
-        </div>
+          </div>
+        </>
       )}
 
       {/* 子 Tab 切换：思政图谱 / 思政知识点 / 思政案例 / 思政关系配置 */}

@@ -303,14 +303,9 @@ export default function MMCertificateManagement() {
       className="mm-certificate-management-wrap"
       title={`${microMajor?.name || "微专业"} - 证书管理`}
       description="设计证书模板并管理证书"
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;证书模板</>}
       actions={
         <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/micro-major/dashboard")}
-          />
           <Button icon={<SettingOutlined />} onClick={openTemplateEditor} style={canEdit ? undefined : { display: "none" }}>
             {template ? "编辑证书模板" : "设计证书模板"}
           </Button>

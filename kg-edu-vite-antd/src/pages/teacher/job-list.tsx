@@ -226,14 +226,9 @@ export default function TeacherJobList() {
       className="job-list-wrap"
       title="岗位管理"
       description="管理专业岗位与能力图谱"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;岗位管理</>}
       actions={
         <>
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
           <Select
             allowClear
             placeholder="按专业筛选"

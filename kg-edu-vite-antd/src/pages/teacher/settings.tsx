@@ -197,6 +197,7 @@ export default function TeacherSettingsPage() {
     <AppPage
       title={t("pages.settings.title")}
       description="维护应用偏好与账户安全"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;系统设置</>}
       actions={
         <>
           <Tag

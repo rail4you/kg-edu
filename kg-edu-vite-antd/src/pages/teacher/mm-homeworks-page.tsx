@@ -21,14 +21,7 @@ export default function MMHomeworksPage() {
       className="mm-homeworks-page-wrap"
       title="作业管理"
       description="管理微专业课程作业"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;作业管理</>}
     >
 <style>{`@media(max-width:768px){.mm-homeworks-page-wrap{padding:12px!important}.mm-homeworks-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
       <ContextSelector showCourse />

@@ -6,6 +6,7 @@ import { listMicroMajors, listCoursesByMicroMajor } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
 
@@ -136,72 +137,22 @@ export default function ContextSelector({ showCourse = false }: ContextSelectorP
   );
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
-        flexWrap: "wrap",
-        marginBottom: 16,
-        padding: "12px 16px",
-        background: "#fafafa",
-        borderRadius: 8,
-        border: "1px solid #f0f0f0",
-      }}
-    >
-      <Text strong style={{ whiteSpace: "nowrap", fontSize: 13 }}>
-        当前专业:
-      </Text>
-
-      {/* Micro major selector */}
-      <Select
-        style={{ minWidth: 200 }}
-        placeholder="选择微专业..."
-        value={mmId || undefined}
-        onChange={handleMMChange}
-        showSearch
-        optionFilterProp="label"
-        allowClear
-        size="small"
-        options={microMajors.map((m) => ({
-          value: m.id,
-          label: m.name,
-        }))}
+    <div className="pu-filters">
+      <SwitchButton
+        title="切换微专业"
+        buttonLabel="切换微专业"
+        options={microMajors.map((m) => ({ id: m.id, label: m.name }))}
+        value={mmId}
+        onChange={(id) => handleMMChange(id)}
       />
-
-      {/* Course selector (only when showCourse=true) */}
       {showCourse && mmId && (
-        <Select
-          style={{ minWidth: 200 }}
-          placeholder="选择课程..."
-          value={courseId || undefined}
-          onChange={handleCourseChange}
-          showSearch
-          optionFilterProp="label"
-          allowClear
-          size="small"
-          notFoundContent={
-            <div style={{ padding: 8, textAlign: "center", color: "#999" }}>
-              暂无课程
-            </div>
-          }
-          options={courses.map((c) => ({
-            value: c.id,
-            label: c.title,
-          }))}
+        <SwitchButton
+          title="切换课程"
+          buttonLabel="切换课程"
+          options={courses.map((c) => ({ id: c.id, label: c.title }))}
+          value={courseId}
+          onChange={(id) => handleCourseChange(id)}
         />
-      )}
-
-      {/* Status tags */}
-      {mmId && (
-        <Tag color="purple" style={{ margin: 0 }}>
-          {currentMM?.name || "微专业"}
-        </Tag>
-      )}
-      {courseId && (
-        <Tag color="blue" style={{ margin: 0 }}>
-          {currentCourse?.title || "课程"}
-        </Tag>
       )}
     </div>
   );

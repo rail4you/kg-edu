@@ -497,9 +497,7 @@ export default function CustomForm() {
     <AppPage
       title="自定义表单"
       description="自定义表单模板与分配"
-      actions={
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: "#1890ff" }} />
-      }
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;自定义表单</>}
     >
       <Tabs
           defaultActiveKey="templates"

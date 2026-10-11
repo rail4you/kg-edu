@@ -21,14 +21,7 @@ export default function MMVideosPage() {
       className="mm-videos-page-wrap"
       title="视频管理"
       description="管理课程视频资源"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;视频管理</>}
     >
 <style>{`@media(max-width:768px){.mm-videos-page-wrap{padding:12px!important}.mm-videos-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 

@@ -913,14 +913,7 @@ export default function MicroMajorStudentManagement() {
       className="mm-student-management-wrap"
       title="微专业学生管理"
       description="管理报名、结业与证书"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
-      }
+      breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;微专业学生管理</>}
     >
 <style>{`@media(max-width:768px){.mm-student-management-wrap{padding:12px!important}.mm-student-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
       <ContextSelector />

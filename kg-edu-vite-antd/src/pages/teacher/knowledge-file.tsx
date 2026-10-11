@@ -118,6 +118,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
 import { AppPage } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
 
@@ -2889,14 +2890,7 @@ export default function KnowledgeFilePage() {
       fill
       title="知识资源管理"
       description="为知识点关联文件、练习、作业、视频与链接"
-      actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/teacher/dashboard")}
-        />
-      }
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识点课程资源</>}
     >
       <style>{`@media(max-width:768px){.kf-page-wrap{height:auto!important}.kf-page-wrap .kf-header{padding:12px 16px!important}.kf-page-wrap .kf-body{flex-direction:column!important;padding:12px!important}.kf-page-wrap .kf-sidebar{width:100%!important;min-width:100%!important;height:auto!important;max-height:300px!important}.kf-page-wrap .kf-course-select{padding:8px 16px!important}.kf-page-wrap .kf-course-select .ant-space{display:flex!important;flex-direction:column!important;width:100%!important}.kf-page-wrap .kf-course-select .ant-select{min-width:0!important;width:100%!important}}`}</style>
       <div className="kf-page-wrap" style={{
@@ -2905,23 +2899,15 @@ export default function KnowledgeFilePage() {
         flex: 1,
         minHeight: 0,
       }}>
-        <div className="kf-course-select" style={{ padding: "12px 0" }}>
-          <Space>
-            <Text strong style={{ fontSize: 16, lineHeight: "24px" }}>课程选择：</Text>
-            <Select
-              style={{ minWidth: 320, fontSize: 15 }}
-              placeholder="请选择课程"
-              value={selectedCourseId || undefined}
-              onChange={handleCourseChange}
-              loading={coursesLoading}
-              disabled={coursesLoading}
-              allowClear
-              options={courses.map((course) => ({
-                value: course.id,
-                label: course.title,
-              }))}
-            />
-          </Space>
+        <div className="pu-filters">
+          <SwitchButton
+            title="切换当前课程"
+            buttonLabel="切换课程"
+            options={courses.map((course) => ({ id: course.id, label: course.title }))}
+            value={selectedCourseId}
+            onChange={(id) => handleCourseChange(id)}
+            loading={coursesLoading}
+          />
         </div>
 
       <div className="kf-body" style={{ display: "flex", flex: 1, overflow: "hidden", padding: "24px", gap: 16 }}>
