@@ -227,6 +227,113 @@ export function evaluateFormula(expr: string, values: Record<string, any>): numb
 }
 
 /* ------------------------------------------------------------------ *
+ * AI 实践会话（学生端：持久化进行中的对话，支持「继续练习」）
+ * ------------------------------------------------------------------ */
+
+export interface PracticeSessionRecord {
+  id: string;
+  scenario: string;
+  userId?: string | null;
+  courseId?: string | null;
+  transcript: Array<{ role: string; content: string }>;
+  score?: number | null;
+  report?: string | null;
+  status: string;
+}
+
+/** 读取当前学生在指定场景 / 课程下最近的一条实践会话（不存在返回 null） */
+export async function fetchPracticeSession(opts: {
+  tenant: string;
+  scenario: string;
+  userId?: string;
+  courseId?: string;
+  headers?: Record<string, string>;
+}): Promise<PracticeSessionRecord | null> {
+  const qs = new URLSearchParams();
+  if (opts.tenant) qs.set("tenant", opts.tenant);
+  if (opts.scenario) qs.set("scenario", opts.scenario);
+  if (opts.userId) qs.set("userId", opts.userId);
+  if (opts.courseId) qs.set("courseId", opts.courseId);
+  try {
+    const resp = await fetch(`/api/practice/session?${qs.toString()}`, {
+      headers: { ...(opts.headers || {}), Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    const r = await resp.json().catch(() => null);
+    if (!resp.ok || !r?.success || !r?.data) return null;
+    const a = r.data;
+    return {
+      id: a.id,
+      scenario: a.scenario,
+      userId: a.user_id ?? null,
+      courseId: a.course_id ?? null,
+      transcript: Array.isArray(a.transcript) ? a.transcript : [],
+      score: a.score ?? null,
+      report: a.report ?? null,
+      status: a.status,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** 增量保存实践会话（草稿），返回 attempt_id；失败返回 null */
+export async function savePracticeSession(opts: {
+  tenant: string;
+  scenario: string;
+  userId?: string;
+  courseId?: string;
+  transcript: Array<{ role: string; content: string }>;
+  headers?: Record<string, string>;
+}): Promise<string | null> {
+  try {
+    const resp = await fetch("/api/practice/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+      body: JSON.stringify({
+        tenant: opts.tenant,
+        scenario: opts.scenario,
+        userId: opts.userId,
+        courseId: opts.courseId,
+        transcript: opts.transcript,
+      }),
+    });
+    const r = await resp.json().catch(() => null);
+    if (!resp.ok || !r?.success) return null;
+    return r.attempt_id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** 重置实践会话（清空对话记录、分数与报告） */
+export async function resetPracticeSession(opts: {
+  tenant: string;
+  scenario: string;
+  userId?: string;
+  courseId?: string;
+  headers?: Record<string, string>;
+}): Promise<boolean> {
+  try {
+    const resp = await fetch("/api/practice/session/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+      body: JSON.stringify({
+        tenant: opts.tenant,
+        scenario: opts.scenario,
+        userId: opts.userId,
+        courseId: opts.courseId,
+      }),
+    });
+    const r = await resp.json().catch(() => null);
+    return !!(resp.ok && r?.success);
+  } catch {
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * AI 实践记录（教师端按门户 / 学生查看）
  * ------------------------------------------------------------------ */
 

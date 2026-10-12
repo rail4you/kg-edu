@@ -13,7 +13,6 @@ import {
   ExperimentOutlined,
   BarChartOutlined,
   VideoCameraOutlined,
-  ReadOutlined,
   SearchOutlined,
   MenuOutlined,
   HomeOutlined,
@@ -91,7 +90,6 @@ const navGroups: NavGroup[] = [
     label: "智慧功能",
     items: [
       { key: "/dashboard/smart-portal", label: "智能门户", icon: <AppstoreOutlined /> },
-      { key: "/dashboard/ai-qa", label: "互动故事", icon: <ReadOutlined /> },
     ],
   },
 ];

@@ -36,12 +36,21 @@ export const SmartPortalRenderer: React.FC<SmartPortalRendererProps> = ({
             const hydrated = hydrateBlock(block);
             const Render = def.Render;
             return (
-              <Col xs={24} md={hydrated.span} key={block.id}>
+              <Col span={24} key={block.id}>
                 <Card
                   size="small"
-                  title={hydrated.title || undefined}
-                  style={{ height: "100%" }}
-                  styles={{ body: { height: hydrated.title ? "calc(100% - 39px)" : "100%" } }}
+                  title={
+                    block.type === "ai-practice" ? undefined : hydrated.title || undefined
+                  }
+                  style={{ height: "100%", borderLeft: "none" }}
+                  styles={{
+                    body: {
+                      height:
+                        block.type === "ai-practice" || !hydrated.title
+                          ? "100%"
+                          : "calc(100% - 39px)",
+                    },
+                  }}
                 >
                   <Render block={hydrated} data={data} onNavigate={onNavigate} />
                 </Card>

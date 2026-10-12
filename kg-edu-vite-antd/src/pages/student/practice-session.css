@@ -1,0 +1,221 @@
+/* ============================================================
+   AI 实践会话页 —— 与教师端「AI 智能体助手」对话体验保持一致
+   ============================================================ */
+
+.practice-session-page {
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 24px;
+  gap: 16px;
+  min-height: 0;
+}
+
+.practice-session-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.practice-session-head h1 {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--pu-ink, #202f47);
+  margin: 0;
+}
+
+.practice-session-head p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.practice-session-head__back {
+  margin-left: auto;
+}
+
+.practice-session-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--pu-line, #e3e9f1);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.practice-session-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--pu-line-soft, #edf0f5);
+  flex-shrink: 0;
+}
+
+.practice-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8eeff;
+  color: var(--pu-blue, #2859df);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.practice-session-card__header h3 {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--pu-ink, #202f47);
+  margin: 0;
+}
+
+.practice-session-card__header small {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.practice-session-card__guide {
+  flex-shrink: 0;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--pu-line-soft, #edf0f5);
+  background: #e7eefb;
+}
+
+.practice-session-card__guide-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--pu-blue, #2859df);
+  margin-bottom: 6px;
+}
+
+.practice-session-card__guide p {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #42546e;
+}
+
+.practice-session-card__guide strong {
+  color: #202f47;
+}
+
+.practice-session-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: #fbfcfe;
+}
+
+.practice-msg-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.practice-msg-row--user {
+  flex-direction: row-reverse;
+}
+
+.practice-msg-bubble {
+  max-width: 80%;
+  padding: 14px 18px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #202f47;
+  word-break: break-word;
+}
+
+.practice-msg-bubble--ai {
+  background: #f1f5fc;
+  border-radius: 0 14px 14px 14px;
+}
+
+.practice-msg-bubble--user {
+  background: #eaf0ff;
+  border-radius: 14px 0 14px 14px;
+}
+
+.practice-msg-bubble p {
+  margin: 6px 0;
+}
+
+.practice-msg-bubble p:first-child {
+  margin-top: 0;
+}
+
+.practice-msg-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.practice-msg-bubble pre {
+  background: #f6f8fa;
+  padding: 12px;
+  border-radius: 8px;
+  overflow: auto;
+  margin: 8px 0;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.practice-msg-bubble code {
+  background: #eef2f7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.practice-session-empty {
+  margin: auto;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.practice-composer {
+  flex-shrink: 0;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #edf0f5;
+  background: #fff;
+}
+
+.practice-composer__row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.practice-composer textarea {
+  resize: none;
+}
+
+.practice-composer__send {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .practice-session-page {
+    height: auto;
+  }
+
+  .practice-session-card {
+    min-height: 70vh;
+  }
+
+  .practice-msg-bubble {
+    max-width: 90%;
+  }
+}

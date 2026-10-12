@@ -141,6 +141,9 @@ defmodule KgEduWeb.Router do
     post "/forms/ai-fill", FormsAiController, :ai_fill
     post "/forms/ai-formula", FormsAiController, :ai_formula
     get "/practice/attempts", PracticeController, :list_attempts
+    get "/practice/session", PracticeController, :session
+    post "/practice/session", PracticeController, :save_session
+    post "/practice/session/reset", PracticeController, :reset_session
     post "/practice/evaluate", PracticeController, :evaluate
     get "/practice-session/mine", PracticeSessionController, :mine
     get "/practice-session/tenant", PracticeSessionController, :list_tenant

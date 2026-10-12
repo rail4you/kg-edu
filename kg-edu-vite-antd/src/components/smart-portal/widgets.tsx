@@ -1,5 +1,7 @@
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import * as echarts from "echarts";
 import {
   Row,
@@ -17,7 +19,6 @@ import {
   Button,
   Space,
   Tooltip,
-  Modal,
 } from "antd";
 import {
   ReadOutlined,
@@ -31,10 +32,13 @@ import {
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import type { PortalBlock } from "@/lib/smart-portal";
-import { SCENARIOS, type ScenarioKey } from "@/lib/practice";
-import AiPracticeChat from "@/components/practice/AiPracticeChat";
+import { SCENARIOS, fetchPracticeSession, type ScenarioKey } from "@/lib/practice";
+import { useAuth } from "@/auth/auth-context";
+import { getAuthHeaders } from "@/lib/auth";
+import { getCurrentTenant } from "@/lib/tenant";
 import type { SmartPortalData } from "./use-smart-portal-data";
 import { usePortalQuery } from "./portal-context";
+import "./smart-portal-widgets.css";
 
 const { Text, Paragraph } = Typography;
 
@@ -204,7 +208,7 @@ export const CourseListWidget: React.FC<BlockRenderProps> = ({ block, data, onNa
 
   return (
     <Row gutter={[12, 12]}>
-      {courses.map((c, i) => (
+      {courses.map((c) => (
         <Col xs={24} sm={12} key={c.id}>
           <div
             onClick={() => onNavigate?.(`/dashboard/course-info/${c.id}`)}
@@ -214,18 +218,12 @@ export const CourseListWidget: React.FC<BlockRenderProps> = ({ block, data, onNa
               alignItems: "center",
               padding: 12,
               border: "1px solid #eef1f6",
+              borderLeft: "none",
               borderRadius: 10,
               cursor: "pointer",
               height: "100%",
             }}
           >
-            <Avatar
-              shape="square"
-              size={40}
-              style={{ background: ["#1766d8", "#7a4a12", "#0f9d58", "#722ed1"][i % 4] }}
-            >
-              {c.title.charAt(0)}
-            </Avatar>
             <div style={{ minWidth: 0 }}>
               <Text strong ellipsis style={{ display: "block" }}>
                 {c.title}
@@ -242,15 +240,6 @@ export const CourseListWidget: React.FC<BlockRenderProps> = ({ block, data, onNa
 };
 
 /* ----------------------- knowledge-points ------------------------ */
-
-const KP_COLORS = ["blue", "geekblue", "cyan", "purple", "magenta", "green", "gold", "volcano"];
-
-function courseColor(id?: string): string {
-  if (!id) return "blue";
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return KP_COLORS[h % KP_COLORS.length];
-}
 
 export const KnowledgePointsWidget: React.FC<BlockRenderProps> = ({ block, data }) => {
   const limit = asNumber(block.config.limit, 12);
@@ -276,7 +265,7 @@ export const KnowledgePointsWidget: React.FC<BlockRenderProps> = ({ block, data 
         renderItem={(k) => (
           <List.Item>
             <List.Item.Meta
-              avatar={<Tag color={courseColor(k.courseId)}>KP</Tag>}
+              avatar={<Tag color="blue">KP</Tag>}
               title={<Text style={{ fontSize: 13 }}>{k.name}</Text>}
               description={
                 k.courseTitle ? (
@@ -296,7 +285,7 @@ export const KnowledgePointsWidget: React.FC<BlockRenderProps> = ({ block, data 
     <Space size={[8, 8]} wrap>
       {points.map((k) => (
         <Tooltip key={k.id} title={k.courseTitle ? `所属课程：${k.courseTitle}` : undefined}>
-          <Tag color={courseColor(k.courseId)} style={{ fontSize: 13, padding: "2px 10px" }}>
+          <Tag color="blue" style={{ fontSize: 13, padding: "2px 10px" }}>
             {k.name}
           </Tag>
         </Tooltip>
@@ -572,7 +561,7 @@ export const IpWidget: React.FC<BlockRenderProps> = ({ block }) => {
     <Space size={8}>
       <GlobalOutlined style={{ color: "#1766d8" }} />
       <span>{label}：</span>
-      <Tag>{ip}</Tag>
+      <Tag color="blue">{ip}</Tag>
     </Space>
   );
 };
@@ -672,7 +661,7 @@ export const PluginWidget: React.FC<BlockRenderProps> = ({ block }) => {
         <Button icon={<ThunderboltOutlined />} disabled>
           {label}
         </Button>
-        <Tag>演示</Tag>
+        <Tag color="blue">演示</Tag>
       </Space>
     </div>
   );
@@ -680,49 +669,53 @@ export const PluginWidget: React.FC<BlockRenderProps> = ({ block }) => {
 
 /* --------------------------- ai-practice ------------------------- */
 
-export const AiPracticeWidget: React.FC<BlockRenderProps> = ({ block }) => {
-  const [open, setOpen] = useState(false);
+export const AiPracticeWidget: React.FC<BlockRenderProps> = ({ block, onNavigate }) => {
+  const { user } = useAuth();
+  const tenant = getCurrentTenant()?.schemaName || "";
+  const headers = getAuthHeaders(user) as Record<string, string>;
+  const [searchParams] = useSearchParams();
+  const courseId = searchParams.get("courseId") || undefined;
+
   const scenario = ((block.config.scenario as ScenarioKey) || "dialogue") as ScenarioKey;
   const meta = SCENARIOS.find((s) => s.key === scenario);
   const preset = (block.config.preset as string) || "";
   const rolePrompt = (block.config.rolePrompt as string) || meta?.systemPrompt || "";
-  const inputKind =
-    (block.config.inputKind as "chat" | "code" | "upload") || meta?.inputKind || "chat";
-  const placeholder = (block.config.placeholder as string) || meta?.placeholder || "";
+
+  const { data: session } = useQuery({
+    queryKey: ["practice-session", tenant, scenario, user?.id, courseId],
+    queryFn: () => fetchPracticeSession({ tenant, scenario, userId: user?.id, courseId, headers }),
+    enabled: !!tenant && !!user?.id,
+    staleTime: 30 * 1000,
+  });
+  const started = !!session?.transcript?.length;
+  const sceneName = meta?.name || "AI 实践";
+  const sceneTitle = preset || block.title || "";
+  const showTitle = !!sceneTitle && sceneTitle !== sceneName;
+
+  const startPractice = () => {
+    const params = new URLSearchParams();
+    params.set("blockId", block.id);
+    if (courseId) params.set("courseId", courseId);
+    onNavigate?.(`/dashboard/practice/${scenario}?${params.toString()}`);
+  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, height: "100%" }}>
-      <Text type="secondary" style={{ fontSize: 13 }}>
-        {meta?.desc || "AI 实践场景"}
-      </Text>
-      {preset && <Tag color="blue" style={{ alignSelf: "flex-start" }}>{preset}</Tag>}
-      <Paragraph
-        type="secondary"
-        ellipsis={{ rows: 2 }}
-        style={{ margin: 0, fontSize: 12, flex: 1 }}
+    <div className="sp-ai-practice">
+      <div className="sp-ai-practice__main">
+        <div className="sp-ai-practice__head">
+          <span className="sp-ai-practice__scene">{sceneName}</span>
+          {showTitle && <h4 className="sp-ai-practice__title">{sceneTitle}</h4>}
+        </div>
+        <p className="sp-ai-practice__desc">{meta?.desc || "与 AI 角色对话完成实践任务"}</p>
+        {rolePrompt && <p className="sp-ai-practice__role">角色设定：{rolePrompt}</p>}
+      </div>
+      <Button
+        type="primary"
+        className="sp-ai-practice__cta"
+        onClick={startPractice}
       >
-        角色设定：{rolePrompt}
-      </Paragraph>
-      <Button type="primary" icon={<ThunderboltOutlined />} onClick={() => setOpen(true)}>
-        开始练习
+        {started ? "继续练习" : "开始练习"}
       </Button>
-
-      <Modal
-        open={open}
-        onCancel={() => setOpen(false)}
-        footer={null}
-        width={720}
-        destroyOnHidden
-        title={block.title || preset || meta?.name || "AI 实践"}
-      >
-        <AiPracticeChat
-          scenario={scenario}
-          systemPrompt={rolePrompt}
-          title={preset || meta?.name}
-          inputKind={inputKind}
-          placeholder={placeholder}
-        />
-      </Modal>
     </div>
   );
 };

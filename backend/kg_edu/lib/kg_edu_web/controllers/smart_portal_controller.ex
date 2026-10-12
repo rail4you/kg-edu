@@ -105,7 +105,8 @@ defmodule KgEduWeb.SmartPortalController do
             "title" => "AI 实践智慧门户",
             "span" => 24,
             "config" => %{
-              "content" => "完成以下 6 项 AI 实践任务，与 AI 角色对话/提交作品后即可获得实时评估结果。",
+              "content" =>
+                "完成以下任务即可，任务可能不止 6 项；与 AI 角色对话或提交作品后，即可获得实时评估结果。",
               "align" => "left"
             }
           }

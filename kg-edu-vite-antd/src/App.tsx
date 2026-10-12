@@ -152,6 +152,7 @@ import StudentMMCoursePage from "./pages/student/mm-course-page";
 import StudentMMTimeline from "./pages/student/mm-timeline";
 import StudentCurriculum from "./pages/student/curriculum";
 import StudentSmartPortal from "./pages/student/smart-portal";
+import StudentPracticeSession from "./pages/student/practice-session";
 import StudentAiQa from "./pages/student/ai-qa";
 import StudentDataForms from "./pages/student/data-forms";
 import MicroMajorsPage from "./pages/micro-majors";
@@ -414,6 +415,7 @@ export default function App() {
         <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<StudentOverview />} />
         <Route path="smart-portal" element={<StudentSmartPortal />} />
+        <Route path="practice/:scenario" element={<StudentPracticeSession />} />
         <Route path="ai-qa" element={<StudentAiQa />} />
         
         {/* 核心学习功能 */}

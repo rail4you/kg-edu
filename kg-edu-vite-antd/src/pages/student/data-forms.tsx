@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card, Button, Typography, Spin, Input, Select, Radio, Checkbox,
-  Upload, message, Tag, Space, Empty, Tabs, Modal, Alert, Row, Col,
+  Upload, message, Tag, Space, Empty, Alert, Row, Col,
 } from "antd";
 import {
   ArrowLeftOutlined, UploadOutlined, RobotOutlined, SendOutlined,
@@ -416,56 +416,52 @@ export default function StudentDataForms() {
   const pendingList = assignments.filter((a) => a.status === "pending");
   const submittedList = assignments.filter((a) => a.status === "submitted");
 
-  const renderAssignmentCard = (a: Assignment, mode: "pending" | "submitted") => {
+  const renderAssignmentRow = (a: Assignment) => {
     const f = formsById[a.formId];
     const title = f?.title || a.formId.slice(0, 8) + "…";
     const category = f?.category;
     const fieldCount = Array.isArray(f?.schema) ? f.schema.length : 0;
+    const pending = a.status === "pending";
     return (
       <section
         key={a.id}
         className="pu-card"
         onClick={() => openAssignment(a)}
         style={{
-          height: "100%",
-          padding: 20,
+          padding: 18,
           cursor: "pointer",
           display: "flex",
-          flexDirection: "column",
-          transition: "transform .2s ease, box-shadow .2s ease",
+          alignItems: "center",
+          gap: 16,
+          transition: "box-shadow .2s ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-3px)";
           e.currentTarget.style.boxShadow = "0 12px 30px rgba(21,50,84,0.08)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
           e.currentTarget.style.boxShadow = "";
         }}
       >
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-            <h3 style={{ fontSize: 17, fontWeight: 650, lineHeight: 1.5, color: "#202f47" }}>{title}</h3>
-            <ProtoTag tone={mode === "pending" ? "amber" : "green"}>
-              {mode === "pending" ? "待填写" : "已提交"}
-            </ProtoTag>
-          </div>
-          <div style={{ marginTop: 12 }} className="pu-tags">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ fontSize: 17, fontWeight: 650, lineHeight: 1.5, color: "#202f47", margin: 0 }}>
+            {title}
+          </h3>
+          <div style={{ marginTop: 10 }} className="pu-tags">
             {category && <ProtoTag tone="blue">{category}</ProtoTag>}
             {fieldCount > 0 && <ProtoTag tone="gray">{fieldCount} 个字段</ProtoTag>}
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {a.dueAt ? `截止：${dayjs(a.dueAt).format("YYYY-MM-DD")}` : "不限截止时间"}
+            </Text>
           </div>
-          <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 12 }}>
-            {a.dueAt ? `截止：${dayjs(a.dueAt).format("YYYY-MM-DD")}` : "不限截止时间"}
-          </Text>
         </div>
         <Button
-          type={mode === "pending" ? "primary" : "default"}
-          icon={mode === "pending" ? <EditOutlined /> : <FileTextOutlined />}
-          block
-          style={{ marginTop: 16 }}
+          type={pending ? "primary" : "default"}
+          icon={pending ? <EditOutlined /> : <FileTextOutlined />}
+          size="large"
+          style={{ flexShrink: 0, minWidth: 120 }}
           onClick={(e) => { e.stopPropagation(); openAssignment(a); }}
         >
-          {mode === "pending" ? "去填写" : "查看详情"}
+          {pending ? "去填写" : "查看详情"}
         </Button>
       </section>
     );
@@ -478,34 +474,45 @@ export default function StudentDataForms() {
           返回
         </Button>
         <PageHead
-          title={activeForm.title}
-          description="填写表单内容并提交，等待教师审核"
+          title={
+            <Space size={8} align="center">
+              {activeForm.title}
+              {submission && (
+                <Tag
+                  color={
+                    submission.status === "approved"
+                      ? "green"
+                      : submission.status === "rejected"
+                        ? "red"
+                        : "orange"
+                  }
+                  style={{ marginInlineEnd: 0 }}
+                >
+                  {submission.status === "approved"
+                    ? "已批准"
+                    : submission.status === "rejected"
+                      ? "已驳回"
+                      : "待审核"}
+                </Tag>
+              )}
+            </Space>
+          }
+          description={
+            submission?.reviewNote
+              ? `教师备注：${submission.reviewNote}`
+              : "填写表单内容并提交，等待教师审核"
+          }
         />
         <ProtoCard>
-          {submission && (
-            <Card
-              size="small"
-              style={{ marginBottom: 16, background: "#f6ffed", borderColor: "#b7eb8f" }}
-              title={
-                <Space>
-                  <Text strong>提交状态：</Text>
-                  <Tag color={submission.status === "approved" ? "green" : submission.status === "rejected" ? "red" : "orange"}>
-                    {submission.status === "approved" ? "已批准" : submission.status === "rejected" ? "已驳回" : "待审核"}
-                  </Tag>
-                </Space>
-              }
-            >
-              {submission.reviewNote && (
-                <Text type="secondary">教师备注：{submission.reviewNote}</Text>
-              )}
-            </Card>
-          )}
-
           {!readOnly && (
             <Card
               size="small"
-              title={<span><RobotOutlined /> AI 填表（自然语言回填）</span>}
-              style={{ marginBottom: 16, background: "#f6f0ff" }}
+              title={
+                <span style={{ color: "var(--pu-blue, #2859df)" }}>
+                  <RobotOutlined /> AI 填表（自然语言回填）
+                </span>
+              }
+              style={{ marginBottom: 16, background: "#f2f6ff", borderColor: "#d6e4ff" }}
             >
               <Input.TextArea
                 rows={2}
@@ -522,7 +529,7 @@ export default function StudentDataForms() {
 
           <Row gutter={[16, 16]}>
             {(activeForm.schema || []).map((f: any) => (
-              <Col xs={24} md={12} key={f.key}>
+              <Col span={24} key={f.key}>
                 <div style={{ border: "1px solid var(--pu-line)", borderRadius: 10, padding: "14px 16px", background: "#f9fbff" }}>
                   <Text strong>
                     {f.required && <span style={{ color: "red" }}>* </span>}
@@ -554,9 +561,6 @@ export default function StudentDataForms() {
 
 return (
     <div className="pu-page">
-      <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ paddingLeft: 0, marginBottom: 8 }}>
-        返回
-      </Button>
       <PageHead
         title="数据表单"
         description="填写教师分配的表单，并跟踪提交审核状态。"
@@ -586,43 +590,13 @@ return (
         />
       )}
       <ProtoCard>
-        <Tabs
-          defaultActiveKey="pending"
-          items={[
-            {
-              key: "pending",
-              label: <span><EditOutlined /> 待填写 <Tag color="orange">{pendingList.length}</Tag></span>,
-              children:
-                pendingList.length === 0 ? (
-                  <Empty description="暂无待填写的表单" />
-                ) : (
-                  <Row gutter={[20, 20]}>
-                    {pendingList.map((a) => (
-                      <Col xs={24} sm={12} md={8} key={a.id}>
-                        {renderAssignmentCard(a, "pending")}
-                      </Col>
-                    ))}
-                  </Row>
-                ),
-            },
-            {
-              key: "submitted",
-              label: <span><FileTextOutlined /> 已提交 <Tag color="green">{submittedList.length}</Tag></span>,
-              children:
-                submittedList.length === 0 ? (
-                  <Empty description="暂无已提交的表单" />
-                ) : (
-                  <Row gutter={[20, 20]}>
-                    {submittedList.map((a) => (
-                      <Col xs={24} sm={12} md={8} key={a.id}>
-                        {renderAssignmentCard(a, "submitted")}
-                      </Col>
-                    ))}
-                  </Row>
-                ),
-            },
-          ]}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {assignments.length === 0 ? (
+            <Empty description="暂无分配的表单" />
+          ) : (
+            [...pendingList, ...submittedList].map((a) => renderAssignmentRow(a))
+          )}
+        </div>
       </ProtoCard>
     </div>
   );
