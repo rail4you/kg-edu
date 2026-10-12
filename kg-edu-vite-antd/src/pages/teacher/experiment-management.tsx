@@ -27,7 +27,8 @@ import {
   ExperimentOutlined,
   BookOutlined,
   ArrowLeftOutlined,
-  SearchOutlined
+  SearchOutlined,
+  FileTextOutlined
 } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -346,15 +347,17 @@ export default function ExperimentManagement() {
     {
       title: "指导书",
       key: "guideUrl",
-      width: 120,
+      width: 80,
       render: (_, record) =>
         record.guideUrl ? (
-          <a
-            onClick={() => handleGuideClick(record.guideUrl!)}
-            style={{ cursor: "pointer", color: "#1890ff" }}
-          >
-            {record.guideTitle || "实验指导书"}
-          </a>
+          <Tooltip title={record.guideTitle || "实验指导书"}>
+            <a
+              onClick={() => handleGuideClick(record.guideUrl!)}
+              style={{ cursor: "pointer", color: "#1890ff", fontSize: 16 }}
+            >
+              <FileTextOutlined />
+            </a>
+          </Tooltip>
         ) : (
           "-"
         ),
