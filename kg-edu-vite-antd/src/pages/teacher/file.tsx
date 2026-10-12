@@ -52,7 +52,8 @@ import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import {
   getSTSToken,
   uploadFileToOSS,
@@ -222,7 +223,7 @@ export default function FileManagement() {
   const { canEdit } = useEditPermission();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { courses, courseId: selectedCourseId } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [uploadProgress, setUploadProgress] = useState<{
@@ -248,18 +249,6 @@ export default function FileManagement() {
   const { user } = useAuth();
   const currentTenant = getCurrentTenant();
   const tenant = currentTenant?.schemaName || "";
-
-  // 使用统一的课程获取 hook
-  const { courses, loading: coursesLoading } = useCourses({
-    fields: ["id", "title", "description"],
-  });
-
-  // 自动选择第一个课程
-  useEffect(() => {
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
 
   const {
     data: filesData,
@@ -1045,16 +1034,7 @@ export default function FileManagement() {
       title="资源管理"
       description="管理课程资源文件与上传"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;资源管理</>}
-      actions={
-        <Button
-          type="primary"
-          icon={<CloudUploadOutlined />}
-          onClick={() => setUploadDialogOpen(true)}
-          style={canEdit ? undefined : { display: "none" }}
-        >
-          批量上传
-        </Button>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       {error && (
         <Alert
@@ -1075,18 +1055,6 @@ export default function FileManagement() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            value={selectedCourseId || undefined}
-            onChange={(value) => setSelectedCourseId(value || "")}
-            loading={coursesLoading}
-            placeholder="请选择课程"
-            style={{ width: 240 }}
-            allowClear
-            options={(Array.isArray(courses) ? courses : []).map((course: any) => ({
-              value: course.id,
-              label: course.title,
-            }))}
-          />
           <Input
             className="pu-search"
             placeholder="搜索文件名"
@@ -1139,6 +1107,14 @@ export default function FileManagement() {
               )}
             </span>
           )}
+          <Button
+            type="primary"
+            icon={<CloudUploadOutlined />}
+            onClick={() => setUploadDialogOpen(true)}
+            style={{ marginLeft: "auto", ...(canEdit ? {} : { display: "none" }) }}
+          >
+            批量上传
+          </Button>
         </div>
 
         {(() => {

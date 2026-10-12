@@ -42,8 +42,10 @@ body[data-theme="light"] {
     var(--home-page-bg);
 }
 
-/* 门户页：让页面至少撑满屏幕高度，使课程列表 0-2 门课程或无课程时，底部蓝色 footer 不露出 */
-.cl-page {
+/* 门户页：让页面至少撑满屏幕高度，使课程列表 0-2 门课程或无课程时，
+   footer 依然显示在页面底部（内容区撑满，footer 在外侧下方）。
+   注意：需覆盖 antd `.ant-layout{min-height:0}`，故用双类提升优先级。 */
+.cl-page.ant-layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -52,6 +54,8 @@ body[data-theme="light"] {
 
 .cl-page > .ant-layout-content {
   flex: 1 1 auto;
+  /* 即使没有任何课程，内容区也至少撑满一屏，页面保持高度，footer 落到外侧下方 */
+  min-height: calc(100vh - 76px);
 }
 
 .home-header {

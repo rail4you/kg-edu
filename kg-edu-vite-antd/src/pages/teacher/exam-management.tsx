@@ -37,7 +37,8 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData, getHeaders } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import dayjs from "dayjs";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
@@ -77,7 +78,7 @@ export default function ExamManagementPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [selectedCourseId, setSelectedCourseId] = useState<string | undefined>();
+  const { courses, courseId: selectedCourseId } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
   const [examDateRange, setExamDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
   const [deadlineFilter, setDeadlineFilter] = useState<"before" | "after" | undefined>();
@@ -102,18 +103,6 @@ export default function ExamManagementPage() {
   });
 
   const tenant = currentTenant?.schemaName || "";
-
-  // 使用统一的课程获取 hook
-  const { courses, loading: coursesLoading } = useCourses({
-    fields: ["id", "title"],
-  });
-
-  // 自动选择第一个课程
-  useEffect(() => {
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
 
   const { data: exams = [], isLoading: examsLoading } = useQuery({
     queryKey: ["exams", tenant],
@@ -513,19 +502,7 @@ export default function ExamManagementPage() {
       description="创建与管理考试试卷"
       className="exam-management-wrap"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;考试管理</>}
-      actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            resetForm();
-            setCreateModalOpen(true);
-          }}
-          style={canEdit ? undefined : { display: "none" }}
-        >
-          创建考试
-        </Button>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       <style>{`@media(max-width:768px){.exam-management-wrap{padding:12px!important}.exam-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 
@@ -539,15 +516,6 @@ export default function ExamManagementPage() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            placeholder="请选择课程"
-            allowClear
-            style={{ width: 200 }}
-            value={selectedCourseId}
-            onChange={setSelectedCourseId}
-            options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
-            loading={coursesLoading}
-          />
           <Input
             className="pu-search"
             placeholder="搜索考试名称"
@@ -575,13 +543,23 @@ export default function ExamManagementPage() {
           />
           <Button
             onClick={() => {
-              setSelectedCourseId(undefined);
               setSearchText("");
               setExamDateRange([null, null]);
               setDeadlineFilter(undefined);
             }}
           >
             重置
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              resetForm();
+              setCreateModalOpen(true);
+            }}
+            style={{ marginLeft: "auto", ...(canEdit ? {} : { display: "none" }) }}
+          >
+            创建考试
           </Button>
         </div>
 

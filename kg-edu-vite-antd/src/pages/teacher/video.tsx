@@ -54,16 +54,13 @@ import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { CourseSelect } from "@/components/course/CourseSelect";
-import { SwitchButton } from "@/components/teacher/switch-button";
 import VideoAnalysisDrawer from "./components/video-analysis-drawer";
 import VideoAnalysisTasks from "./components/video-analysis-tasks";
 import { getChapter } from "@/lib/ash_rpc";
-import type {
-  VideoResourceSchema,
-  CourseResourceSchema,
-} from "@/lib/ash_rpc";
+import type { VideoResourceSchema } from "@/lib/ash_rpc";
 
 const { Title, Text } = Typography;
 
@@ -108,7 +105,7 @@ export default function VideoManagementPage() {
     useState<AbortController | null>(null);
   const isUploadCancelledRef = useRef(false);
   const [isUploadCancelled, setIsUploadCancelled] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { courseId: selectedCourseId } = useCurrentCourse();
   const [searchText] = useState<string>("");
   const [chapterSearchText, setChapterSearchText] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -182,11 +179,6 @@ export default function VideoManagementPage() {
       }
     },
     enabled: !!currentTenant?.schemaName && !!user,
-  });
-
-  // 使用统一的课程获取 hook
-  const { courses: coursesData, loading: coursesLoading } = useCourses({
-    fields: ["id", "title"],
   });
 
   // 新建/编辑弹窗中使用的课程ID（新建时从formData取，编辑时用当前已选课程）
@@ -544,7 +536,6 @@ export default function VideoManagementPage() {
     !searchText || video.title?.toLowerCase().includes(searchText.toLowerCase())
   );
   const chapters = extractArrayData(chaptersData);
-  const courses = extractArrayData(coursesData);
 
   // 递归过滤章节树（按搜索文本）
   const filterChapterTree = (list: any[], keyword: string): any[] => {
@@ -602,12 +593,6 @@ export default function VideoManagementPage() {
       ),
     },
   ];
-
-  React.useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
 
   if (authLoading) {
     return (
@@ -764,10 +749,6 @@ export default function VideoManagementPage() {
         setAnalysisCourseId((r as any).data.course.id);
       }
     }
-  };
-
-  const handleCourseSelect = (courseId: string | undefined) => {
-    setSelectedCourseId(courseId || "");
   };
 
   const tableColumns: ColumnsType<VideoResourceSchema> = [
@@ -1169,31 +1150,8 @@ export default function VideoManagementPage() {
       title="视频管理"
       description="管理课程视频与AI解析"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;视频管理</>}
-      actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => handleOpenCreateDialog()}
-          disabled={!selectedCourseId}
-          style={canEdit ? undefined : { display: "none" }}
-        >
-          新建视频
-        </Button>
-      }
+      actions={<CurrentCourseSwitch />}
     >
-      <div className="pu-filters">
-        <SwitchButton
-          title="切换当前课程"
-          buttonLabel="切换课程"
-          options={courses.map((course: CourseResourceSchema) => ({
-            id: course.id,
-            label: course.title,
-          }))}
-          value={selectedCourseId}
-          onChange={(id) => handleCourseSelect(id)}
-          loading={coursesLoading}
-        />
-      </div>
       <ProtoCard>
         <ProtoTabs
           items={[
@@ -1203,6 +1161,17 @@ export default function VideoManagementPage() {
           active={currentTab}
           onChange={setCurrentTab}
         />
+        <div className="pu-filters">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => handleOpenCreateDialog()}
+            disabled={!selectedCourseId}
+            style={{ marginLeft: "auto", ...(canEdit ? {} : { display: "none" }) }}
+          >
+            新建视频
+          </Button>
+        </div>
 
         <Spin spinning={isLoading} tip="正在加载视频...">
           {error && (

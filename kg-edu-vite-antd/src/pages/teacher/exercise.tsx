@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Typography,
-  Select,
   Space,
   Tag,
   message,
@@ -45,7 +44,8 @@ import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { updateAnswerExplanation } from "@/lib/agent_api";
 
 const { Text } = Typography;
@@ -248,7 +248,7 @@ export default function ExercisePage() {
   const currentTenant = getCurrentTenant();
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { courseId: selectedCourseId } = useCurrentCourse();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -273,16 +273,11 @@ export default function ExercisePage() {
 
   const tenant = currentTenant?.schemaName || "";
 
-  const { courses, loading: coursesLoading } = useCourses({
-    fields: ["id", "title"],
-  });
-
-  // 自动选择第一个课程
+  // 切换课程时清空已选行与搜索
   useEffect(() => {
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
+    setSelectedRowKeys([]);
+    setSearchText("");
+  }, [selectedCourseId]);
 
   const { data: exercises = [], isLoading: exercisesLoading } = useQuery({
     queryKey: ["exercises", selectedCourseId, tenant, searchText],
@@ -888,33 +883,7 @@ export default function ExercisePage() {
       title="习题管理"
       description="管理课程习题"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;题库管理</>}
-      actions={
-        <Space>
-          <Button
-            icon={<UploadOutlined />}
-            onClick={() => setImportModalOpen(true)}
-            disabled={!selectedCourseId}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            导入习题
-          </Button>
-          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
-            下载模板
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              resetForm();
-              setCreateModalOpen(true);
-            }}
-            disabled={!selectedCourseId}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            添加习题
-          </Button>
-        </Space>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
@@ -928,18 +897,6 @@ export default function ExercisePage() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            style={{ width: 240 }}
-            placeholder="选择课程"
-            value={selectedCourseId || undefined}
-            onChange={(val) => {
-              setSelectedCourseId(val);
-              setSelectedRowKeys([]);
-              setSearchText("");
-            }}
-            loading={coursesLoading}
-            options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
-          />
           <Input
             className="pu-search"
             placeholder="搜索习题标题或内容"
@@ -959,6 +916,31 @@ export default function ExercisePage() {
               </Button>
             </Popconfirm>
           )}
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setImportModalOpen(true)}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              导入习题
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+              下载模板
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                resetForm();
+                setCreateModalOpen(true);
+              }}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              添加习题
+            </Button>
+          </div>
         </div>
 
         {!selectedCourseId ? (

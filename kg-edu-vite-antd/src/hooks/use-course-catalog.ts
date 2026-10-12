@@ -358,10 +358,11 @@ function resolveStandardSubject(course: {
   description?: string | null;
 }) {
   const rawSubject = course.subjectCategory?.name?.trim() || "";
+  // 仅使用「学科门类名称 + 专业 + 课程名称」进行匹配。
+  // 不加入 description（含学科门类 description），否则描述中的
+  // 「哲学/数学/物理」等词会造成误匹配（如风景园林被归为哲学）。
   const sourceText = normalizeText(
-    [rawSubject, course.major, course.title, course.description, course.subjectCategory?.description]
-      .filter(Boolean)
-      .join(" | "),
+    [rawSubject, course.major, course.title].filter(Boolean).join(" | "),
   );
 
   let bestMatch = SUBJECT_TEMPLATE_BY_CODE.get("interdisciplinary")!;

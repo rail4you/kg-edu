@@ -43,9 +43,9 @@ import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { AppPage } from "@/components/proto";
-import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text, Title } = Typography;
 
@@ -133,23 +133,17 @@ export default function KnowledgeCognitiveGoals() {
   const tenant = currentTenant?.schemaName || "";
   const { canEdit } = useEditPermission();
 
-  const [selectedCourseId, setSelectedCourseId] = React.useState<string>("");
+  const { courseId: selectedCourseId, loading: coursesLoading } = useCurrentCourse();
   const [showAllDimensioned, setShowAllDimensioned] = React.useState(false);
   const [searchText, setSearchText] = React.useState<string>("");
   const [showOnlyDimensioned, setShowOnlyDimensioned] = React.useState(false);
   const [expandedRowKeys, setExpandedRowKeys] = React.useState<React.Key[]>([]);
 
-  const handleCourseSelect = (courseId: string | undefined) => {
-    const id = courseId || "";
-    setSelectedCourseId(id);
+  // 切换课程时重置筛选
+  React.useEffect(() => {
     setSearchText("");
     setShowOnlyDimensioned(false);
-  };
-
-  const { courses: coursesData, loading: coursesLoading } = useCourses({
-    fields: ["id", "title", "description"],
-  });
-  const courses = coursesData;
+  }, [selectedCourseId]);
 
   const {
     data: knowledgesData,
@@ -611,17 +605,6 @@ export default function KnowledgeCognitiveGoals() {
     })),
   ];
 
-  const currentCourse = React.useMemo(() => {
-    return courses.find((c) => c.id === selectedCourseId);
-  }, [courses, selectedCourseId]);
-
-  React.useEffect(() => {
-    if (selectedCourseId || courses.length === 0) return;
-    if (courses[0]?.id) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
-
   React.useEffect(() => {
     if (filteredRows.length > 0 && expandedRowKeys.length === 0) {
       const allIds = filteredRows
@@ -653,21 +636,8 @@ export default function KnowledgeCognitiveGoals() {
       title="知识点认知维度管理"
       description="按布鲁姆认知层级为知识点设置维度"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;认知目标管理</>}
+      actions={<CurrentCourseSwitch />}
     >
-      {/* 课程选择独立一行 */}
-      <div className="pu-filters">
-        <SwitchButton
-          title="切换当前课程"
-          buttonLabel="切换课程"
-          options={courses.map((course: any) => ({
-            id: course.id,
-            label: course.title || `课程 (${course.id})`,
-          }))}
-          value={selectedCourseId}
-          onChange={(id) => handleCourseSelect(id)}
-          loading={coursesLoading}
-        />
-      </div>
 
       {selectedCourseId && (
         <div style={{ marginBottom: 16 }}>

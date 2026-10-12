@@ -592,20 +592,35 @@ export default function TeacherGraphTreeView({ courseId: propCourseId, knowledge
   }, [positions]);
 
   const hasPannedRef = useRef(false);
-  const hasCenteredRef = useRef(false);
+
+  // 视图自适应：缩放至可容纳整棵图谱，并居中显示
+  const fitView = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || bounds.w === 0 || bounds.h === 0) return;
+    const cw = el.clientWidth;
+    const ch = el.clientHeight;
+    if (!cw || !ch) return;
+    const pad = 64;
+    const nextScale = Math.max(
+      0.2,
+      Math.min(1, (cw - pad) / bounds.w, (ch - pad) / bounds.h),
+    );
+    setScale(nextScale);
+    setPan({
+      x: cw / 2 - (bounds.minX + bounds.w / 2) * nextScale,
+      y: ch / 2 - (bounds.minY + bounds.h / 2) * nextScale,
+    });
+  }, [bounds]);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el || bounds.w === 0) return;
-    // 数据就绪后仅在首次居中视图，用户拖拽/展开节点后不再自动居中
-    if (!hasCenteredRef.current && !hasPannedRef.current) {
-      hasCenteredRef.current = true;
-      setPan({
-        x: el.clientWidth / 2 - (bounds.minX + bounds.w / 2) * scale,
-        y: el.clientHeight / 2 - (bounds.minY + bounds.h / 2) * scale,
-      });
-    }
-  }, [bounds]);
+    if (!selectedCourseId || bounds.w === 0) return;
+    // 用户手动平移/缩放前，布局变化（数据加载、展开/收起）后自动适应并居中
+    if (hasPannedRef.current) return;
+    const timer = setTimeout(() => {
+      if (!hasPannedRef.current) fitView();
+    }, 160);
+    return () => clearTimeout(timer);
+  }, [selectedCourseId, bounds.w, bounds.h, bounds.minX, bounds.minY, fitView]);
 
   // ─── Interaction ───────────────────────────────────────────────────────────
   // ─── Drag interaction ────────────────────────────────────────────────
@@ -691,6 +706,7 @@ export default function TeacherGraphTreeView({ courseId: propCourseId, knowledge
   }, []);
   const onWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
+    hasPannedRef.current = true;
     const delta = e.deltaY < 0 ? 1.1 : 0.9;
     setScale((s) => Math.max(0.2, Math.min(2.5, s * delta)));
   }, []);
@@ -813,7 +829,16 @@ export default function TeacherGraphTreeView({ courseId: propCourseId, knowledge
           {[["−", -0.15], ["+", 0.15], ["⟳", "reset"]].map(([label, val]) => (
             <button
               key={label as string}
-              onClick={() => val === "reset" ? setScale(1.0) : setScale((s) => Math.max(0.2, Math.min(2.5, s + (val as number))))}
+              title={val === "reset" ? "适应屏幕并居中" : undefined}
+              onClick={() => {
+                if (val === "reset") {
+                  hasPannedRef.current = false;
+                  fitView();
+                } else {
+                  hasPannedRef.current = true;
+                  setScale((s) => Math.max(0.2, Math.min(2.5, s + (val as number))));
+                }
+              }}
               style={{ background: "#fff", border: "1px solid var(--pu-line)", borderRadius: 4, color: "#333", padding: isMobile ? "3px 8px" : "4px 12px", cursor: "pointer", fontSize: isMobile ? 12 : 14, lineHeight: 1 }}
             >
               {label as string}
@@ -845,8 +870,7 @@ export default function TeacherGraphTreeView({ courseId: propCourseId, knowledge
           ) : filteredTree && allLayoutNodes.length > 0 ? (
             <div
               ref={(el) => { containerRef.current = el; canvasRef.current = el; }}
-              style={{ flex: 1, minHeight: 0, minWidth: 0, width: "100%", height: "100%", overflow: "hidden", cursor: "grab", background: "linear-gradient(135deg, #e8ecf1 0%, #f0f2f5 50%, #eef0f5 100%)" }}
-
+              style={{ position: "relative", flex: 1, minHeight: 0, minWidth: 0, width: "100%", height: "100%", overflow: "hidden", cursor: "grab", background: "linear-gradient(135deg, #e8ecf1 0%, #f0f2f5 50%, #eef0f5 100%)" }}
             >
               <div className="mindmap-transform" style={{
                 position: "absolute",

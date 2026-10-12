@@ -43,6 +43,7 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { UserManualModal } from "@/components/layout/user-manual-modal";
 import GlobalFooter from "@/components/layout/global-footer";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { CurrentCourseProvider } from "@/hooks/use-current-course";
 import { useBranding } from "@/hooks/use-branding";
 import { useResponsive } from "@/hooks/use-responsive";
 import { useAuth } from "@/auth/auth-context";
@@ -540,7 +541,9 @@ export default function TeacherLayout() {
             style={{ flex: 1, minHeight: "calc(100vh - 76px)", display: "flex", flexDirection: "column" }}
           >
             <div className="pu-app" style={{ flex: 1 }}>
-              <Outlet />
+              <CurrentCourseProvider>
+                <Outlet />
+              </CurrentCourseProvider>
             </div>
           </div>
           <GlobalFooter />

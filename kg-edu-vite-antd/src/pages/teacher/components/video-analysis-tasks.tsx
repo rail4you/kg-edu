@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, Progress, Space, Table, Tag, Tooltip, Typography, Empty } from "antd";
+import { Button, Progress, Space, Table, Tag, Typography, Empty } from "antd";
 import { ReloadOutlined, FundOutlined, EyeOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -135,12 +135,10 @@ export default function VideoAnalysisTasks({
                 <Space direction="vertical" size={2} style={{ width: "100%" }}>
                   <Space>
                     <Tag color={meta.color}>{meta.label}</Tag>
-                    {task?.status === "failed" && task.error_message && (
-                      <Tooltip title={task.error_message}>
-                        <Text type="danger" style={{ fontSize: 12 }}>
-                          查看错误
-                        </Text>
-                      </Tooltip>
+                    {task?.status === "failed" && (
+                      <Text type="danger" style={{ fontSize: 12 }}>
+                        视频解析错误
+                      </Text>
                     )}
                   </Space>
                   <Progress

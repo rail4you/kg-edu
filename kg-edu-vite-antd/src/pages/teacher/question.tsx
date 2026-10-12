@@ -58,7 +58,8 @@ import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { useQuestionLevelConfig } from "@/hooks/use-question-level-config";
 
 const { Title, Text } = Typography;
@@ -238,12 +239,12 @@ export default function TeacherQuestion() {
   // React 19 下 antd 静态 message/Modal.confirm 可能失效，统一使用 App 上下文
   const { message, modal } = App.useApp();
 
-  // 本地状态管理课程选择
-  const [selectedCourseId, setSelectedCourseId] = React.useState<string | undefined>(undefined);
-
-  const handleCourseChange = (courseId: string | undefined) => {
-    setSelectedCourseId(courseId);
-  };
+  // 统一「当前课程」：跨页面共享，默认选中第一门，不为空
+  const {
+    courses,
+    courseId: selectedCourseId,
+    setCourseId: handleCourseChange,
+  } = useCurrentCourse();
 
   const [createQuestionModalOpen, setCreateQuestionModalOpen] =
     React.useState(false);
@@ -319,19 +320,6 @@ export default function TeacherQuestion() {
     enabled:
       !!tenant && !!user && (!!selectedCourseId || selectedCourseId === ""),
   });
-
-  // 使用统一的课程获取 hook
-  const { courses: coursesData, loading: coursesLoading } = useCourses({
-    fields: ["id", "title"],
-  });
-
-  // 自动选择第一个课程
-  React.useEffect(() => {
-    const courses = Array.isArray(coursesData) ? coursesData : [];
-    if (courses.length > 0 && !selectedCourseId) {
-      handleCourseChange(courses[0].id);
-    }
-  }, [coursesData, selectedCourseId]);
 
   // 当课程变化时，自动创建默认层级配置
   React.useEffect(() => {
@@ -614,7 +602,6 @@ export default function TeacherQuestion() {
 
   const questions = extractArrayData(questionsData);
   const connections = extractArrayData(connectionsData);
-  const courses = extractArrayData(coursesData);
 
   if (!currentTenant?.schemaName) {
     return (
@@ -1268,59 +1255,7 @@ export default function TeacherQuestion() {
       title="问题管理"
       description="管理课程问题与知识关联"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;问题管理</>}
-      actions={
-        <Space>
-          {tabValue === "questions" ? (
-            <>
-              <Button icon={<SettingOutlined />} onClick={() => setConfigModalOpen(true)}>
-                层级配置
-              </Button>
-              <Button
-                icon={<UploadOutlined />}
-                onClick={() => setImportModalOpen(true)}
-                disabled={!selectedCourseId}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                导入
-              </Button>
-              <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
-                下载模板
-              </Button>
-              {selectedQuestionIds.length > 0 && (
-                <Button danger icon={<DeleteOutlined />} onClick={() => setBatchDeleteModalOpen(true)}>
-                  批量删除 ({selectedQuestionIds.length})
-                </Button>
-              )}
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setCreateQuestionModalOpen(true)}
-                disabled={!selectedCourseId}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                创建问题
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="primary"
-              icon={<LinkOutlined />}
-              onClick={() => {
-                setCreateConnectionModalOpen(true);
-                connectionForm.resetFields();
-                connectionForm.setFieldsValue({
-                  sourceQuestionId: undefined,
-                  targetQuestionIds: [],
-                  courseId: selectedCourseId || "",
-                  connectionType: "hierarchy",
-                });
-              }}
-            >
-              创建关联
-            </Button>
-          )}
-        </Space>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
@@ -1334,22 +1269,57 @@ export default function TeacherQuestion() {
           onChange={setTabValue}
         />
         <div className="pu-filters">
-          <Select
-            style={{ width: 240 }}
-            placeholder="请选择课程"
-            value={selectedCourseId || undefined}
-            onChange={(value) => handleCourseChange(value || undefined)}
-            loading={coursesLoading}
-            allowClear
-            showSearch
-            optionFilterProp="children"
-          >
-            {courses.map((course: CourseResourceSchema) => (
-              <Select.Option key={course.id} value={course.id}>
-                {course.title}
-              </Select.Option>
-            ))}
-          </Select>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {tabValue === "questions" ? (
+              <>
+                <Button icon={<SettingOutlined />} onClick={() => setConfigModalOpen(true)}>
+                  层级配置
+                </Button>
+                <Button
+                  icon={<UploadOutlined />}
+                  onClick={() => setImportModalOpen(true)}
+                  disabled={!selectedCourseId}
+                  style={canEdit ? undefined : { display: "none" }}
+                >
+                  导入
+                </Button>
+                <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+                  下载模板
+                </Button>
+                {selectedQuestionIds.length > 0 && (
+                  <Button danger icon={<DeleteOutlined />} onClick={() => setBatchDeleteModalOpen(true)}>
+                    批量删除 ({selectedQuestionIds.length})
+                  </Button>
+                )}
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setCreateQuestionModalOpen(true)}
+                  disabled={!selectedCourseId}
+                  style={canEdit ? undefined : { display: "none" }}
+                >
+                  创建问题
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="primary"
+                icon={<LinkOutlined />}
+                onClick={() => {
+                  setCreateConnectionModalOpen(true);
+                  connectionForm.resetFields();
+                  connectionForm.setFieldsValue({
+                    sourceQuestionId: undefined,
+                    targetQuestionIds: [],
+                    courseId: selectedCourseId || "",
+                    connectionType: "hierarchy",
+                  });
+                }}
+              >
+                创建关联
+              </Button>
+            )}
+          </div>
         </div>
 
         {!selectedCourseId ? (
@@ -1547,7 +1517,6 @@ export default function TeacherQuestion() {
             rules={[{ required: true, message: "请选择课程" }]}
           >
             <Select
-              loading={coursesLoading}
               showSearch
               optionFilterProp="children"
             >

@@ -67,7 +67,8 @@ import {
   reorderFiles,
   type ResourceResourceSchema,
 } from "@/lib/ash_rpc";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import FilePreview from "@/components/FilePreview";
 
 type CourseData = { id: string; title: string; description?: string | null };
@@ -120,7 +121,6 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
 import { AppPage } from "@/components/proto";
-import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
 
@@ -2146,11 +2146,12 @@ export default function KnowledgeFilePage() {
   const currentTenant = getCurrentTenant();
   const tenant = currentTenant?.schemaName || "";
 
-  const { courses, loading: coursesLoading } = useCourses({
-    fields: ["id", "title", "description"],
-  });
+  const {
+    courses,
+    loading: coursesLoading,
+    courseId: selectedCourseId,
+  } = useCurrentCourse();
 
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [knowledgeTreeItems, setKnowledgeTreeItems] = useState<
     KnowledgeTreeItem[]
   >([]);
@@ -2214,12 +2215,16 @@ export default function KnowledgeFilePage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  // 当课程加载完成后，自动选择第一个课程
+  // 切换课程时清空已选知识点与关联数据
   useEffect(() => {
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
+    setSelectedKnowledge(null);
+    setKnowledgeTreeItems([]);
+    setFiles([]);
+    setExercises([]);
+    setHomeworks([]);
+    setVideos([]);
+    setLinks([]);
+  }, [selectedCourseId]);
 
   useEffect(() => {
     if (!selectedCourseId) return;
@@ -2463,17 +2468,6 @@ export default function KnowledgeFilePage() {
     },
     [loadKnowledgeRelatedData],
   );
-
-  const handleCourseChange = (value: string) => {
-    setSelectedCourseId(value);
-    setSelectedKnowledge(null);
-    setKnowledgeTreeItems([]);
-    setFiles([]);
-    setExercises([]);
-    setHomeworks([]);
-    setVideos([]);
-    setLinks([]);
-  };
 
   const handleLinkSuccess = () => {
     if (selectedKnowledge) {
@@ -2785,6 +2779,7 @@ export default function KnowledgeFilePage() {
       title="知识资源管理"
       description="为知识点关联文件、练习、作业、视频与链接"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识点课程资源</>}
+      actions={<CurrentCourseSwitch />}
     >
       <style>{`
         .knowledge-file-page { height: calc(100vh - 60px); }
@@ -2826,17 +2821,6 @@ export default function KnowledgeFilePage() {
         flex: 1,
         minHeight: 0,
       }}>
-        <div className="pu-filters">
-          <SwitchButton
-            title="切换当前课程"
-            buttonLabel="切换课程"
-            options={courses.map((course) => ({ id: course.id, label: course.title }))}
-            value={selectedCourseId}
-            onChange={(id) => handleCourseChange(id)}
-            loading={coursesLoading}
-          />
-        </div>
-
       <div className="kf-body" style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden", gap: 16 }}>
         {/* 左侧知识树 */}
         <div className="kf-sidebar"

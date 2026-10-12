@@ -11,7 +11,8 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined } from "@
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getGroupsByCourse, createGroup, updateGroup, deleteGroup, listEnrollmentsByCourse, addMembers, removeMember, listUsers } from "@/lib/ash_rpc";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
@@ -45,7 +46,7 @@ export default function GroupManagement() {
   const { user, tenant } = useAuth();
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const { courseId: selectedCourseId } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -56,7 +57,6 @@ export default function GroupManagement() {
     memberIds: [] as string[],
   });
 
-  const { courses } = useCourses();
   const headers = getAuthHeaders(user) as Record<string, string>;
 
   const { data: groupsResult, isLoading } = useQuery({
@@ -260,23 +260,7 @@ export default function GroupManagement() {
       title="分组管理"
       description="按课程创建与管理学习小组"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;分组管理</>}
-      actions={
-        <>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            disabled={!selectedCourseId}
-            style={canEdit ? undefined : { display: "none" }}
-            onClick={() => {
-              setEditingGroup(null);
-              setFormData({ name: "", description: "", maxMembers: undefined, memberIds: [] });
-              setDialogOpen(true);
-            }}
-          >
-            创建小组
-          </Button>
-        </>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       <ProtoCard>
         <ProtoTabs
@@ -288,13 +272,21 @@ export default function GroupManagement() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            style={{ width: 240 }}
-            placeholder="选择课程"
-            value={selectedCourseId || undefined}
-            onChange={setSelectedCourseId}
-            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []}
-          />
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+              onClick={() => {
+                setEditingGroup(null);
+                setFormData({ name: "", description: "", maxMembers: undefined, memberIds: [] });
+                setDialogOpen(true);
+              }}
+            >
+              创建小组
+            </Button>
+          </div>
         </div>
 
         {!selectedCourseId ? (

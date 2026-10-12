@@ -13,7 +13,8 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getTasksByCourse, createTask, publishTask, closeTask, deleteTask, getGroupsByCourse, getSubmissionsByTask, gradeSubmission } from "@/lib/ash_rpc";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
@@ -97,7 +98,7 @@ export default function GroupTaskPage() {
   const { user, tenant } = useAuth();
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const { courseId: selectedCourseId } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
@@ -112,7 +113,6 @@ export default function GroupTaskPage() {
   const [gradeForm, setGradeForm] = useState({ score: null as number | null, feedback: "" });
 
   const headers = getAuthHeaders(user) as Record<string, string>;
-  const { courses } = useCourses();
 
   // ── Task list query ──
   const { data: tasksResult, isLoading } = useQuery({
@@ -357,20 +357,7 @@ export default function GroupTaskPage() {
       title="分组任务"
       description="为分组发布任务并跟踪完成进度"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;分组任务</>}
-      actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          disabled={!selectedCourseId}
-          style={canEdit ? undefined : { display: "none" }}
-          onClick={() => {
-            setFormData({ title: "", description: "", taskType: "submission", dueDate: null, groupId: null });
-            setDialogOpen(true);
-          }}
-        >
-          创建任务
-        </Button>
-      }
+      actions={<CurrentCourseSwitch />}
     >
 <style>{`@media(max-width:768px){.group-task-wrap{padding:12px!important}.group-task-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
       <ProtoCard>
@@ -383,13 +370,20 @@ export default function GroupTaskPage() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            style={{ width: 240 }}
-            placeholder="选择课程"
-            value={selectedCourseId || undefined}
-            onChange={setSelectedCourseId}
-            options={courses?.map((c: any) => ({ label: c.title, value: c.id })) || []}
-          />
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+              onClick={() => {
+                setFormData({ title: "", description: "", taskType: "submission", dueDate: null, groupId: null });
+                setDialogOpen(true);
+              }}
+            >
+              创建任务
+            </Button>
+          </div>
         </div>
 
         {!selectedCourseId ? (

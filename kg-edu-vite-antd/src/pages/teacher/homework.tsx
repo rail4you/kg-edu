@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -44,7 +44,8 @@ import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -57,7 +58,11 @@ export default function HomeworkManagementPage() {
   const { user, loading: authLoading } = useAuth();
   const currentTenant = getCurrentTenant();
   const { canEdit } = useEditPermission();
-  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const {
+    courses,
+    loading: coursesLoading,
+    courseId: selectedCourse,
+  } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -79,19 +84,6 @@ export default function HomeworkManagementPage() {
   } | null>(null);
 
   const tenant = currentTenant?.schemaName;
-
-  // 使用统一的课程获取 hook
-  const { courses: coursesData, loading: coursesLoading } = useCourses({
-    fields: ["id", "title", "description", "teacherId"],
-  });
-
-  // 自动选择第一个课程
-  useEffect(() => {
-    const courses = Array.isArray(coursesData) ? coursesData : [];
-    if (courses.length > 0 && !selectedCourse) {
-      setSelectedCourse(courses[0].id);
-    }
-  }, [coursesData, selectedCourse]);
 
   const {
     data: homeworksData,
@@ -306,7 +298,6 @@ export default function HomeworkManagementPage() {
     },
   });
 
-  const courses = extractArrayData(coursesData);
   const homeworks = homeworksData || [];
   const filteredHomeworks = homeworks.filter(
     (h) => !searchText || (h.title || "").toLowerCase().includes(searchText.trim().toLowerCase()),
@@ -544,9 +535,7 @@ export default function HomeworkManagementPage() {
       dataIndex: "score",
       key: "score",
       width: 100,
-      render: (score: string) => (
-        <Tag color="green">{score ? `${score}分` : "未设置"}</Tag>
-      ),
+      render: (score: string) => (score ? `${score}分` : "未设置"),
     },
     {
       title: "操作",
@@ -614,46 +603,9 @@ export default function HomeworkManagementPage() {
       title="作业管理"
       description="管理课程作业与批改"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;作业管理</>}
-      actions={
-        <Space>
-          <Button
-            icon={<UploadOutlined />}
-            onClick={() => setImportModalOpen(true)}
-            disabled={!selectedCourse}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            导入作业
-          </Button>
-          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
-            下载模板
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateModalOpen(true)}
-            disabled={!selectedCourse}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            创建作业
-          </Button>
-        </Space>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       {renderLoadingOverlay()}
-
-      {coursesData?.success === false && (
-        <div style={{ textAlign: "center", padding: 64 }}>
-          <Text type="danger" style={{ fontSize: 16, marginBottom: 16, display: "block" }}>
-            加载课程时出错: {coursesData.errors?.[0]?.message || "未知错误"}
-          </Text>
-          <Button
-            type="primary"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["courses", tenant] })}
-          >
-            重试
-          </Button>
-        </div>
-      )}
 
       {homeworksError && (
         <div style={{ textAlign: "center", padding: 64 }}>
@@ -676,14 +628,6 @@ export default function HomeworkManagementPage() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            style={{ width: 240 }}
-            placeholder="请选择课程"
-            value={selectedCourse || undefined}
-            onChange={(value) => setSelectedCourse(value)}
-            loading={coursesLoading}
-            options={courses.map((course: any) => ({ label: course.title, value: course.id }))}
-          />
           <Input
             className="pu-search"
             placeholder="搜索作业标题"
@@ -705,6 +649,28 @@ export default function HomeworkManagementPage() {
               </Button>
             </Popconfirm>
           )}
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setImportModalOpen(true)}
+              disabled={!selectedCourse}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              导入作业
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+              下载模板
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalOpen(true)}
+              disabled={!selectedCourse}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              创建作业
+            </Button>
+          </div>
         </div>
 
         {!selectedCourse ? (

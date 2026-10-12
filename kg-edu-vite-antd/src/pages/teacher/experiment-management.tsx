@@ -14,7 +14,6 @@ import {
   List,
   Empty,
   Tooltip,
-  Select,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -30,7 +29,7 @@ import {
   SearchOutlined,
   FileTextOutlined
 } from "@ant-design/icons";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders } from "@/utils/api-helpers";
@@ -38,7 +37,8 @@ import {
   getExperimentsByCourse,
   destroyExperiment,
 } from "@/lib/ash_rpc";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import ActionDropdown from "@/components/ActionDropdown";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
@@ -69,60 +69,9 @@ export default function ExperimentManagement() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { canEdit } = useEditPermission();
-  const [searchParams] = useSearchParams();
   const [searchText, setSearchText] = useState("");
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const { courses, courseId: selectedCourseId } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
-
-  // 从 URL 参数初始化 selectedCourseId
-  React.useEffect(() => {
-    const courseIdFromUrl = searchParams.get("courseId");
-    if (courseIdFromUrl) {
-      setSelectedCourseId(courseIdFromUrl);
-    }
-  }, [searchParams]);
-
-  // 获取课程列表（与教师端课程管理页面一致）
-  const { courses, loading: isLoadingCourses } = useCourses({
-    fields: ["id", "title", "description"],
-  });
-
-  // 获取所有课程的实验数量
-  const { data: allCoursesExperiments } = useQuery({
-    queryKey: ["experiments", "all-courses", tenant, courses],
-    queryFn: async () => {
-      const results = await Promise.all(
-        courses.map(async (course) => {
-          const result = await getExperimentsByCourse({
-            tenant,
-            fields: ["id"],
-            input: { courseId: course.id },
-            headers: getHeaders(user),
-          });
-          const experiments = result.success && result.data
-            ? (Array.isArray(result.data) ? result.data : (result.data as any).results || (result.data as any).data || [])
-            : [];
-          return { courseId: course.id, count: experiments.length };
-        })
-      );
-      return results;
-    },
-    enabled: !!user && !!tenant && courses.length > 0 && !searchParams.get("courseId"),
-  });
-
-  // 自动选择实验最多的课程
-  React.useEffect(() => {
-    if (!selectedCourseId && allCoursesExperiments && allCoursesExperiments.length > 0) {
-      const courseWithMostExperiments = allCoursesExperiments.reduce((prev, current) =>
-        current.count > prev.count ? current : prev
-      );
-      if (courseWithMostExperiments.count > 0) {
-        setSelectedCourseId(courseWithMostExperiments.courseId);
-      } else if (courses.length > 0) {
-        setSelectedCourseId(courses[0].id);
-      }
-    }
-  }, [allCoursesExperiments, selectedCourseId, courses]);
 
   // 获取选中课程的实验列表
   const { data: experimentsResult, isLoading } = useQuery({
@@ -403,16 +352,7 @@ export default function ExperimentManagement() {
       title="实验管理"
       description="管理各课程的实验内容与指导书"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;实验管理</>}
-      actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => navigate("/teacher/dashboard/experiment-form/new")}
-          style={canEdit ? undefined : { display: "none" }}
-        >
-          创建实验
-        </Button>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       {selectedCourse && (
         <StatGrid
@@ -435,15 +375,6 @@ export default function ExperimentManagement() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            value={selectedCourseId || undefined}
-            onChange={(value) => setSelectedCourseId(value || null)}
-            placeholder="请选择课程"
-            style={{ width: 240 }}
-            loading={isLoadingCourses}
-            allowClear
-            options={courses.map((course) => ({ value: course.id, label: course.title }))}
-          />
           <Input
             className="pu-search"
             placeholder="搜索实验名称"
@@ -453,6 +384,14 @@ export default function ExperimentManagement() {
             allowClear
           />
           <Button onClick={() => setSearchText("")}>重置</Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate("/teacher/dashboard/experiment-form/new")}
+            style={{ marginLeft: "auto", ...(canEdit ? {} : { display: "none" }) }}
+          >
+            创建实验
+          </Button>
         </div>
 
         {!selectedCourseId ? (

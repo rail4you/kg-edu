@@ -41,7 +41,8 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage } from "@/components/proto";
@@ -289,9 +290,8 @@ export default function KnowledgeRelationPage() {
   const currentTenant = getCurrentTenant();
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { courses, courseId: selectedCourseId } = useCurrentCourse();
   const [filterRelationTypeId, setFilterRelationTypeId] = useState<string>("");
-  const [filterCourseId, setFilterCourseId] = useState<string>("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     sourceKnowledgeId: "",
@@ -301,28 +301,12 @@ export default function KnowledgeRelationPage() {
 
   const tenant = currentTenant?.schemaName || "";
 
-  const { courses, loading: coursesLoading } = useCourses({
-    fields: ["id", "title"],
-  });
-
-  useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
-
-  useEffect(() => {
-    if (filterCourseId) {
-      setSelectedCourseId(filterCourseId);
-    }
-  }, [filterCourseId]);
-
   const { data: relations = [], isLoading: relationsLoading } = useQuery({
-    queryKey: ["relations", filterCourseId, filterRelationTypeId, tenant],
+    queryKey: ["relations", selectedCourseId, filterRelationTypeId, tenant],
     queryFn: async () => {
       const input: { courseId?: string; relationTypeId?: string } = {};
-      if (filterCourseId) {
-        input.courseId = filterCourseId;
+      if (selectedCourseId) {
+        input.courseId = selectedCourseId;
       }
       if (filterRelationTypeId) {
         input.relationTypeId = filterRelationTypeId;
@@ -555,29 +539,7 @@ export default function KnowledgeRelationPage() {
       title="知识关系管理"
       description="管理知识点之间的关联关系"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识关系管理</>}
-      actions={
-        <Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateModalOpen(true)}
-            disabled={!filterCourseId}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            添加关系
-          </Button>
-          {(filterCourseId || filterRelationTypeId) && (
-            <Button
-              onClick={() => {
-                setFilterCourseId("");
-                setFilterRelationTypeId("");
-              }}
-            >
-              清除过滤
-            </Button>
-          )}
-        </Space>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       <style>{`@media(max-width:768px){.kr-mobile-hide{display:none!important}.kr-action-text{display:none!important}.kr-page-wrap{padding:12px!important}.kr-page-wrap .ant-table-cell{padding:6px 4px!important}.kr-filter-bar{flex-direction:column;align-items:stretch!important}.kr-filter-bar .ant-select{width:100%!important;margin-bottom:8px}}`}</style>
       <div className="kr-page-wrap">
@@ -586,16 +548,7 @@ export default function KnowledgeRelationPage() {
           <Title level={5} style={{ margin: 0, marginBottom: 12 }}>
             关系列表 ({relations.length})
           </Title>
-          <Space>
-            <Select
-              style={{ width: 240 }}
-              placeholder="选择课程"
-              value={filterCourseId || undefined}
-              onChange={setFilterCourseId}
-              loading={coursesLoading}
-              allowClear
-              options={courses.map((c) => ({ value: c.id, label: c.title }))}
-            />
+          <Space wrap>
             <Select
               style={{ width: 180 }}
               placeholder="关系类型"
@@ -604,6 +557,18 @@ export default function KnowledgeRelationPage() {
               allowClear
               options={relationTypes.map((t: any) => ({ value: t.id, label: t.displayName || t.name }))}
             />
+            {filterRelationTypeId && (
+              <Button onClick={() => setFilterRelationTypeId("")}>清除过滤</Button>
+            )}
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalOpen(true)}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              添加关系
+            </Button>
           </Space>
         </div>
         <Table
@@ -628,10 +593,9 @@ export default function KnowledgeRelationPage() {
           <Form.Item label="课程" required>
             <Select
               value={selectedCourseId || undefined}
-              onChange={setSelectedCourseId}
-              loading={coursesLoading}
+              disabled
               options={courses.map((c) => ({ value: c.id, label: c.title }))}
-              placeholder="选择课程"
+              placeholder="当前课程"
             />
           </Form.Item>
           <Form.Item label="关系类型" required>

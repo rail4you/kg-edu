@@ -136,13 +136,75 @@ export default function CourseVideoPage() {
 
   const mainVideoRef = useRef<HTMLVideoElement>(null);
 
+  // 观看进度持久化：记录已观看视频、每个视频的播放位置、最后观看的视频
+  interface CourseProgress {
+    completed: string[];
+    positions: Record<string, number>;
+    lastVideoId?: string;
+  }
+  const emptyProgress: CourseProgress = { completed: [], positions: {} };
+  const progressKey =
+    user?.id && selectedCourseId
+      ? `course_video_progress:${currentTenant?.schemaName || ""}:${user.id}:${selectedCourseId}`
+      : "";
+  const [progress, setProgress] = useState<CourseProgress>(emptyProgress);
+  const progressRef = useRef<CourseProgress>(emptyProgress);
+
+  const updateProgress = useCallback(
+    (updater: (p: CourseProgress) => CourseProgress) => {
+      const next = updater(progressRef.current);
+      progressRef.current = next;
+      setProgress(next);
+      if (progressKey) {
+        try {
+          localStorage.setItem(progressKey, JSON.stringify(next));
+        } catch {
+          /* ignore quota errors */
+        }
+      }
+    },
+    [progressKey],
+  );
+
+  useEffect(() => {
+    let loaded: CourseProgress = emptyProgress;
+    if (progressKey) {
+      try {
+        const raw = localStorage.getItem(progressKey);
+        if (raw) loaded = { completed: [], positions: {}, ...JSON.parse(raw) };
+      } catch {
+        /* ignore */
+      }
+    }
+    progressRef.current = loaded;
+    setProgress(loaded);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressKey]);
+
+  const completedSet = useMemo(() => new Set(progress.completed), [progress.completed]);
+  const markCompleted = useCallback(
+    (videoId: string) => {
+      updateProgress((p) =>
+        p.completed.includes(videoId) ? p : { ...p, completed: [...p.completed, videoId] },
+      );
+    },
+    [updateProgress],
+  );
+
   const stopMainVideo = useCallback(() => {
-    if (mainVideoRef.current) {
-      mainVideoRef.current.pause();
-      mainVideoRef.current.currentTime = 0;
+    const el = mainVideoRef.current;
+    if (el) {
+      if (currentVideo) {
+        updateProgress((p) => ({
+          ...p,
+          positions: { ...p.positions, [currentVideo.id]: el.currentTime },
+        }));
+      }
+      el.pause();
+      el.currentTime = 0;
     }
     setIsPlaying(false);
-  }, []);
+  }, [currentVideo, updateProgress]);
 
   const [previewDialog, setPreviewDialog] = useState<{
     open: boolean;
@@ -441,10 +503,12 @@ export default function CourseVideoPage() {
   };
 
   useEffect(() => {
-    if (!currentVideo && allVideos.length > 0) {
-      setCurrentVideo(allVideos[0]);
-    }
-  }, [allVideos, currentVideo]);
+    if (currentVideo || allVideos.length === 0) return;
+    const saved = progress.lastVideoId
+      ? allVideos.find((v) => v.id === progress.lastVideoId)
+      : undefined;
+    setCurrentVideo(saved || allVideos[0]);
+  }, [allVideos, currentVideo, progress.lastVideoId]);
 
   const handleShare = () => {
     setShareModalVisible(true);
@@ -536,6 +600,25 @@ export default function CourseVideoPage() {
               autoPlay
               style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "contain" }}
               src={getVideoUrl(currentVideo)}
+              onLoadedMetadata={(e) => {
+                const el = e.currentTarget;
+                const pos = progressRef.current.positions[currentVideo.id] || 0;
+                if (pos > 0 && (!el.duration || pos < el.duration - 1)) {
+                  el.currentTime = pos;
+                }
+              }}
+              onTimeUpdate={(e) => {
+                const el = e.currentTarget;
+                const t = el.currentTime;
+                const saved = progressRef.current.positions[currentVideo.id] || 0;
+                if (Math.abs(t - saved) >= 5) {
+                  updateProgress((p) => ({
+                    ...p,
+                    positions: { ...p.positions, [currentVideo.id]: t },
+                  }));
+                }
+              }}
+              onEnded={() => markCompleted(currentVideo.id)}
             >
               您的浏览器不支持视频播放
             </video>
@@ -636,13 +719,26 @@ export default function CourseVideoPage() {
     if (currentTab === "1") {
       // === 两栏布局：左侧章节目录，右侧视频与元数据（原型风格） ===
       const currentFlatIndex = flatVideoItems.findIndex((it) => it.video.id === currentVideo?.id);
-      const completedCount = currentFlatIndex < 0 ? 0 : currentFlatIndex;
-      const progressPct = flatVideoItems.length > 0 ? Math.round((completedCount / flatVideoItems.length) * 100) : 0;
+      const watchedCount = flatVideoItems.filter((it) => completedSet.has(it.video.id)).length;
+      const progressPct = flatVideoItems.length > 0 ? Math.round((watchedCount / flatVideoItems.length) * 100) : 0;
       const currentChapterTitle = currentFlatIndex >= 0 ? flatVideoItems[currentFlatIndex]?.chapterTitle : undefined;
 
       const selectFlatVideo = (index: number) => {
         const item = flatVideoItems[index];
         if (!item) return;
+        const el = mainVideoRef.current;
+        // 点击/打开视频：保存当前播放位置，并把打开的视频记为已观看（进度随之更新）
+        updateProgress((p) => {
+          const next: CourseProgress = {
+            ...p,
+            positions: el && currentVideo ? { ...p.positions, [currentVideo.id]: el.currentTime } : p.positions,
+            lastVideoId: item.video.id,
+          };
+          if (!next.completed.includes(item.video.id)) {
+            next.completed = [...next.completed, item.video.id];
+          }
+          return next;
+        });
         setCurrentVideo(item.video);
         setIsPlaying(true);
       };
@@ -706,8 +802,8 @@ export default function CourseVideoPage() {
                         fontWeight: active ? 600 : 400,
                       }}
                     >
-                      <span style={{ width: 14, color: idx < completedCount ? colors.primary : "#c0c4cc" }}>
-                        {idx < completedCount ? "✓" : ""}
+                      <span style={{ width: 14, color: completedSet.has(item.video.id) ? colors.primary : "#c0c4cc" }}>
+                        {completedSet.has(item.video.id) ? "✓" : ""}
                       </span>
                       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {stripVideoNumber(item.video.title) || item.video.id.slice(0, 8)}
@@ -772,6 +868,7 @@ export default function CourseVideoPage() {
                 type="primary"
                 disabled={currentFlatIndex < 0 || currentFlatIndex >= flatVideoItems.length - 1}
                 onClick={() => {
+                  if (currentVideo) markCompleted(currentVideo.id);
                   if (currentFlatIndex >= 0 && currentFlatIndex < flatVideoItems.length - 1) {
                     selectFlatVideo(currentFlatIndex + 1);
                   }

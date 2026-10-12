@@ -39,7 +39,8 @@ import {
   getRecordsBySession,
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
@@ -113,7 +114,7 @@ export default function CheckInManagement() {
   const { user, tenant, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
-  const { courses } = useCourses();
+  const { courses, courseId: currentCourseId } = useCurrentCourse();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subtab, setSubtab] = useState("all");
   const [recordsDialogOpen, setRecordsDialogOpen] = useState(false);
@@ -446,19 +447,7 @@ export default function CheckInManagement() {
       title="签到管理"
       description="发起课堂签到并查看签到记录"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;签到管理</>}
-      actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setFormData({ title: "", description: "", courseId: "" });
-            setDialogOpen(true);
-          }}
-          style={canEdit ? undefined : { display: "none" }}
-        >
-          发起签到
-        </Button>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       <StatGrid
         columns={3}
@@ -478,6 +467,19 @@ export default function CheckInManagement() {
           active={subtab}
           onChange={setSubtab}
         />
+        <div className="pu-filters">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setFormData({ title: "", description: "", courseId: currentCourseId || "" });
+              setDialogOpen(true);
+            }}
+            style={{ marginLeft: "auto", ...(canEdit ? {} : { display: "none" }) }}
+          >
+            发起签到
+          </Button>
+        </div>
         {sessions.length === 0 ? (
           <ProtoEmpty title="暂无签到" description="点击右上角「发起签到」开始。" />
         ) : (

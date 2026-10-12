@@ -162,7 +162,7 @@ export default function CourseVideoAnalysis() {
         return;
       }
       if (r.data.status === "failed") {
-        message.error(r.data.error_message || "解析失败");
+        message.error("视频解析错误");
         return;
       }
     }

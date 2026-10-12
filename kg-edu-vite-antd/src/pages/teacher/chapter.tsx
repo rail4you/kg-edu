@@ -63,7 +63,8 @@ import {
   getFileTemplateBySection,
   generateChapterGraph,
 } from "@/lib/ash_rpc";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
@@ -183,7 +184,7 @@ export default function ChapterManagement() {
   const tenant = authTenant || currentTenant?.schemaName || "";
   const { canEdit } = useEditPermission();
 
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { courses, courseId: selectedCourseId } = useCurrentCourse();
   const [subtab, setSubtab] = useState("all");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<ChapterRow | null>(null);
@@ -202,10 +203,6 @@ export default function ChapterManagement() {
     message: string;
     errors?: string[];
   } | null>(null);
-
-  const { courses: coursesData } = useCourses({
-    fields: ["id", "title", "description"],
-  });
 
   const {
     data: chaptersData = [],
@@ -685,13 +682,6 @@ export default function ChapterManagement() {
     ]);
   }, [chaptersData, flattenChapters, reorderMutation]);
 
-  useEffect(() => {
-    const courses = Array.isArray(coursesData) ? coursesData : [];
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [coursesData, selectedCourseId]);
-
   const handleEditClick = (chapter: ChapterRow) => {
     setEditingChapter(chapter);
     form.setFieldsValue({
@@ -906,30 +896,7 @@ export default function ChapterManagement() {
       title="章节管理"
       description="维护课程章节层级与视频关联"
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;章节管理</>}
-      actions={
-        <Space>
-          <Button
-            icon={<UploadOutlined />}
-            onClick={() => setImportModalOpen(true)}
-            disabled={!selectedCourseId}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            导入章节
-          </Button>
-          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
-            下载模板
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => handleAddClick()}
-            disabled={!selectedCourseId}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            新建章节
-          </Button>
-        </Space>
-      }
+      actions={<CurrentCourseSwitch />}
     >
       {chaptersError && (
         <Alert
@@ -949,16 +916,28 @@ export default function ChapterManagement() {
           onChange={setSubtab}
         />
         <div className="pu-filters">
-          <Select
-            value={selectedCourseId || undefined}
-            onChange={setSelectedCourseId}
-            placeholder="请选择课程"
-            style={{ width: 240 }}
-            options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
-              value: course.id,
-              label: course.title,
-            }))}
-          />
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setImportModalOpen(true)}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              导入章节
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+              下载模板
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => handleAddClick()}
+              disabled={!selectedCourseId}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              新建章节
+            </Button>
+          </div>
         </div>
 
         {!selectedCourseId ? (
@@ -1156,7 +1135,7 @@ export default function ChapterManagement() {
           <Text type="secondary">
             当前课程:{" "}
             <Text strong>
-              {(Array.isArray(coursesData) ? coursesData : []).find((c: any) => c.id === selectedCourseId)?.title}
+              {courses.find((c: any) => c.id === selectedCourseId)?.title}
             </Text>
           </Text>
         </div>

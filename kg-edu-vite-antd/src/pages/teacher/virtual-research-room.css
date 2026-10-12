@@ -223,6 +223,238 @@
   color: var(--vr-muted);
 }
 
+/* ---------- 模块 ---------- */
+.virtual-room .module {
+  margin-bottom: 0;
+}
+
+.virtual-room .module-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: #eef2f9;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.virtual-room .module-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--vr-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.virtual-room .module-tabs button:hover {
+  color: var(--vr-blue);
+}
+
+.virtual-room .module-tabs button.active {
+  background: #fff;
+  color: var(--vr-blue);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(40, 89, 223, 0.16);
+}
+
+.virtual-room .module-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.virtual-room .module-toolbar .tabs {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* ---------- 课程分组 ---------- */
+.virtual-room .course-group {
+  background: #fff;
+  border: 1px solid var(--vr-line);
+  border-radius: var(--vr-radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.virtual-room .course-group:last-child {
+  margin-bottom: 0;
+}
+
+.virtual-room .course-group__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.virtual-room .course-group__head:hover {
+  background: #f7f9ff;
+}
+
+.virtual-room .course-group__arrow,
+.virtual-room .course-group__icon {
+  color: var(--vr-blue);
+  font-size: 15px;
+}
+
+.virtual-room .course-group__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vr-ink);
+}
+
+.virtual-room .course-group__count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--vr-muted);
+}
+
+.virtual-room .course-group__body {
+  padding: 0 20px 20px;
+}
+
+/* ---------- 教师卡片 ---------- */
+.virtual-room .teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.virtual-room .teacher-card {
+  display: flex;
+  background: #fff;
+  border: 1px solid var(--vr-line);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.virtual-room .teacher-card:hover {
+  border-color: #c6d3f7;
+  box-shadow: 0 6px 18px rgba(40, 89, 223, 0.1);
+}
+
+.virtual-room .teacher-card__side {
+  width: 128px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 12px;
+  background: #f6f8fe;
+  border-right: 1px solid var(--vr-line);
+}
+
+.virtual-room .teacher-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vr-ink);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.virtual-room .teacher-card__title {
+  font-size: 12px;
+  color: var(--vr-muted);
+  text-align: center;
+}
+
+.virtual-room .role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+
+.virtual-room .role-tag.primary {
+  background: #e8eeff;
+  color: var(--vr-blue);
+}
+
+.virtual-room .role-tag.assistant {
+  background: #e3f5ee;
+  color: #137b62;
+}
+
+.virtual-room .role-tag.guest {
+  background: #f3e8fd;
+  color: #6b3fa0;
+}
+
+.virtual-room .teacher-card__main {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.virtual-room .teacher-card__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #404040;
+  margin-bottom: 6px;
+}
+
+.virtual-room .teacher-card__label .anticon {
+  color: #8c8c8c;
+}
+
+.virtual-room .teacher-card__bio {
+  font-size: 13px;
+  color: var(--vr-muted);
+  line-height: 1.65;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.virtual-room .teacher-card__bio.empty {
+  font-style: italic;
+  color: #a8b4c4;
+}
+
+.virtual-room .teacher-card__foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.virtual-room .teacher-card__contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--vr-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.virtual-room .teacher-card__contact:hover {
+  color: var(--vr-blue);
+}
+
 /* ---------- Ant Design 按钮对齐原型 ---------- */
 .virtual-room .ant-btn {
   border-radius: 8px;

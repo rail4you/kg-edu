@@ -7,7 +7,6 @@ import {
   Typography,
   Card,
   Tag,
-  Spin,
   Modal,
   Input,
   Select,
@@ -52,9 +51,9 @@ import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getAuthHeaders } from "@/lib/auth";
-import { useCourses } from "@/hooks/use-courses";
+import { useCurrentCourse } from "@/hooks/use-current-course";
+import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { AppPage, StatGrid } from "@/components/proto";
-import { SwitchButton } from "@/components/teacher/switch-button";
 import * as XLSX from "xlsx";
 
 const { Text, Title, Paragraph } = Typography;
@@ -274,7 +273,7 @@ export default function TeacherKnowledgeResource() {
   const tenant = currentTenant?.schemaName || "";
   const actorId = (user as any)?.id || (user as any)?.actorId;
 
-  const [selectedCourseId, setSelectedCourseId] = React.useState<string>("");
+  const { courses, courseId: selectedCourseId } = useCurrentCourse();
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
   const [updateModalOpen, setUpdateModalOpen] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
@@ -338,16 +337,6 @@ export default function TeacherKnowledgeResource() {
     description: "",
     parentId: null as string | null,
   });
-
-  // 使用统一的课程获取 hook
-  const {
-    courses: coursesData,
-    loading: coursesLoading,
-    retryCount: coursesRetryCount,
-    maxRetry: MAX_COURSES_RETRY,
-    isMaxRetryReached,
-    resetAndRefetch: resetCoursesAndRefetch,
-  } = useCourses();
 
   const {
     data: hierarchyData,
@@ -1408,11 +1397,6 @@ export default function TeacherKnowledgeResource() {
     },
   ];
 
-  React.useEffect(() => {
-    if (!coursesData || coursesData.length === 0 || selectedCourseId) return;
-    setSelectedCourseId(coursesData[0].id);
-  }, [coursesData, selectedCourseId]);
-
   if (!user) {
     return (
       <AppPage title="知识点管理">
@@ -1439,13 +1423,51 @@ export default function TeacherKnowledgeResource() {
         title="知识点管理"
         description="维护课程知识点层级与认知标注"
         breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;知识点管理</>}
-        actions={
-          <>
-            <Space wrap>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleDownloadTemplate}
-              >
+        actions={<CurrentCourseSwitch />}
+      >
+        <style>{`@media(max-width:768px){.kr-page-wrap{padding:8px!important}.kr-page-wrap .ant-table-cell{padding:6px 4px!important}.kr-page-wrap .kr-filter-row{flex-direction:column!important;align-items:stretch!important}.kr-page-wrap .kr-filter-row .ant-select{width:100%!important;margin-bottom:8px}}`}</style>
+        <div className="kr-page-wrap" style={{ width: "100%" }}>
+
+          {selectedCourseId && (
+            <StatGrid
+              columns={4}
+              items={[
+                {
+                  label: "主题",
+                  value: filteredRows.filter((r) => r.knowledgeType === "subject").length,
+                  icon: <BookOutlined />,
+                },
+                {
+                  label: "知识单元",
+                  value: filteredRows.filter((r) => r.knowledgeType === "knowledge_unit").length,
+                  icon: <FolderOutlined />,
+                },
+                {
+                  label: "知识点",
+                  value: filteredRows.filter((r) => r.knowledgeType === "knowledge_cell").length,
+                  icon: <FileTextOutlined />,
+                },
+                {
+                  label: "总计",
+                  value: filteredRows.length,
+                  icon: <AppstoreOutlined />,
+                },
+              ]}
+            />
+          )}
+
+        <Card>
+          <div className="pu-filters">
+            <Input
+              className="pu-search"
+              placeholder="搜索知识点名称"
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              allowClear
+            />
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
                 下载模板
               </Button>
               <Button
@@ -1482,89 +1504,9 @@ export default function TeacherKnowledgeResource() {
               >
                 创建主题
               </Button>
-            </Space>
-          </>
-        }
-      >
-        <style>{`@media(max-width:768px){.kr-page-wrap{padding:8px!important}.kr-page-wrap .ant-table-cell{padding:6px 4px!important}.kr-page-wrap .kr-filter-row{flex-direction:column!important;align-items:stretch!important}.kr-page-wrap .kr-filter-row .ant-select{width:100%!important;margin-bottom:8px}}`}</style>
-        <div className="kr-page-wrap" style={{ width: "100%" }}>
-
-          <div className="pu-filters">
-            {coursesLoading ? (
-              <Space>
-                <Spin size="small" />
-                <Text type="secondary">
-                  {coursesRetryCount > 0
-                    ? `正在获取课程列表 (重试 ${coursesRetryCount}/${MAX_COURSES_RETRY})...`
-                    : "加载课程中..."}
-                </Text>
-              </Space>
-            ) : coursesData.length === 0 ? (
-              <Space>
-                <Text type="secondary">暂无课程数据</Text>
-                <Button
-                  size="small"
-                  onClick={resetCoursesAndRefetch}
-                >
-                  重新加载
-                </Button>
-              </Space>
-            ) : (
-              <>
-                <SwitchButton
-                  title="切换当前课程"
-                  buttonLabel="切换课程"
-                  options={(coursesData || []).map((course: any) => ({
-                    id: course.id,
-                    label: course.title,
-                  }))}
-                  value={selectedCourseId}
-                  onChange={(id) => setSelectedCourseId(id || "")}
-                  loading={coursesLoading}
-                />
-                {selectedCourseId && (
-                  <Input
-                    className="pu-search"
-                    placeholder="搜索知识点名称"
-                    prefix={<SearchOutlined />}
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    allowClear
-                  />
-                )}
-              </>
-            )}
+            </div>
           </div>
 
-          {selectedCourseId && (
-            <StatGrid
-              columns={4}
-              items={[
-                {
-                  label: "主题",
-                  value: filteredRows.filter((r) => r.knowledgeType === "subject").length,
-                  icon: <BookOutlined />,
-                },
-                {
-                  label: "知识单元",
-                  value: filteredRows.filter((r) => r.knowledgeType === "knowledge_unit").length,
-                  icon: <FolderOutlined />,
-                },
-                {
-                  label: "知识点",
-                  value: filteredRows.filter((r) => r.knowledgeType === "knowledge_cell").length,
-                  icon: <FileTextOutlined />,
-                },
-                {
-                  label: "总计",
-                  value: filteredRows.length,
-                  icon: <AppstoreOutlined />,
-                },
-              ]}
-            />
-          )}
-
-        <Card>
           {!selectedCourseId ? (
             <div style={{ textAlign: "center", padding: 40 }}>
               <Title level={5} type="secondary">
@@ -1781,7 +1723,7 @@ export default function TeacherKnowledgeResource() {
             <Text type="secondary">
               当前课程:{" "}
               <Text strong>
-                {coursesData.find((c: any) => c.id === selectedCourseId)?.title}
+                {courses.find((c: any) => c.id === selectedCourseId)?.title}
               </Text>
             </Text>
           </div>
@@ -2089,7 +2031,7 @@ export default function TeacherKnowledgeResource() {
                 <Text type="secondary">
                   当前课程:{" "}
                   <Text strong>
-                    {coursesData.find((c: any) => c.id === selectedCourseId)?.title}
+                    {courses.find((c: any) => c.id === selectedCourseId)?.title}
                   </Text>
                 </Text>
               </div>
@@ -2190,7 +2132,7 @@ export default function TeacherKnowledgeResource() {
             description={
               <div>
                 <Text>
-                  确定要删除课程 "{coursesData.find((c: any) => c.id === selectedCourseId)?.title}" 的所有知识点吗？
+                  确定要删除课程 "{courses.find((c: any) => c.id === selectedCourseId)?.title}" 的所有知识点吗？
                 </Text>
                 <div style={{ marginTop: 8 }}>
                   <Text type="secondary">

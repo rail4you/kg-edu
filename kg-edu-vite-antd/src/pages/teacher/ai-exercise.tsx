@@ -857,80 +857,198 @@ export default function AiExercisePage() {
     >
       <style>{`@media(max-width:900px){.ai-exercise-split{grid-template-columns:1fr!important}}`}</style>
       <div className="ai-exercise-split">
-        {/* 左：出题要求 */}
-        <ProtoCard title="出题要求" className="ai-exercise-form">
-          <div className="ai-field-grid">
-            <div className="ai-field full">
-              <span className="ai-field__label">课程</span>
-              {coursesLoading ? (
-                <Spin />
-              ) : courses.length === 0 ? (
-                <Empty description="暂无可用课程" />
-              ) : (
-                <Select
-                  placeholder="请选择课程"
-                  value={selectedCourse?.id || undefined}
-                  onChange={(value) => {
-                    const course = courses.find(
-                      (c: CourseResourceSchema) => c.id === value,
-                    );
-                    if (course) handleCourseSelect(course);
-                  }}
-                  options={courses.map((course: CourseResourceSchema) => ({
-                    value: course.id,
-                    label: course.title,
-                  }))}
-                />
-              )}
-            </div>
+        {/* 左：出题要求（恢复此前的表单 UI） */}
+        <Card
+          className="ai-exercise-form"
+          style={{ height: "100%", display: "flex", flexDirection: "column" }}
+          styles={{ body: { flexGrow: 1, overflow: "auto" } }}
+        >
+          <Title
+            level={5}
+            style={{
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <RocketOutlined />
+            课程选择
+          </Title>
 
-            {selectedCourse && (
-              <>
-                <div className="ai-field full">
-                  <span className="ai-field__label">知识范围</span>
-                  {Array.isArray(chapters) && chapters.length > 0 && chapterTree.length > 0 ? (
+          <div style={{ marginBottom: 24 }}>
+            <Text
+              style={{ marginBottom: 8, display: "block", fontWeight: 500 }}
+            >
+              选择课程
+            </Text>
+            {coursesLoading ? (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: 16,
+                }}
+              >
+                <Spin />
+              </div>
+            ) : courses.length === 0 ? (
+              <Empty description="暂无可用课程" />
+            ) : (
+              <Select
+                style={{ width: "100%", marginBottom: 16 }}
+                placeholder="请选择课程..."
+                value={selectedCourse?.id || undefined}
+                onChange={(value) => {
+                  const course = courses.find(
+                    (c: CourseResourceSchema) => c.id === value,
+                  );
+                  if (course) handleCourseSelect(course);
+                }}
+                options={courses.map((course: CourseResourceSchema) => ({
+                  value: course.id,
+                  label: course.title,
+                }))}
+              />
+            )}
+          </div>
+
+          {selectedCourse && (
+            <>
+              <Divider style={{ margin: "16px 0" }} />
+
+              {Array.isArray(chapters) && chapters.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <Title
+                    level={5}
+                    style={{
+                      marginBottom: 16,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "#1890ff",
+                    }}
+                  >
+                    <BookOutlined />
+                    章节选择
+                  </Title>
+                  {chapterTree.length > 0 ? (
                     <Tree
                       treeData={chapterTree}
                       onSelect={(selectedKeys, info) => {
                         if (info.node && info.node.data) {
-                          const chapterData = info.node.data as unknown as ChapterResourceSchema;
+                          const chapterData =
+                            info.node.data as unknown as ChapterResourceSchema;
                           handleChapterSelect(chapterData);
                         }
                       }}
                       selectedKeys={selectedChapter ? [selectedChapter.id] : []}
                       defaultExpandLevel={1}
+                      style={{ marginBottom: 8 }}
                     />
-                  ) : subjects.length > 0 && knowledgeTree.length > 0 ? (
+                  ) : (
+                    <Text type="secondary">暂无章节数据</Text>
+                  )}
+                </div>
+              )}
+
+              {subjects.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <Title
+                    level={5}
+                    style={{
+                      marginBottom: 16,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "#722ed1",
+                    }}
+                  >
+                    <BulbOutlined />
+                    知识体系选择
+                  </Title>
+                  {knowledgeTree.length > 0 ? (
                     <Tree
                       treeData={knowledgeTree}
                       onSelect={handleTreeSelect}
-                      selectedKeys={selectedKnowledge ? [selectedKnowledge.id] : []}
+                      selectedKeys={
+                        selectedKnowledge ? [selectedKnowledge.id] : []
+                      }
                       defaultExpandLevel={1}
+                      style={{ marginBottom: 8 }}
                     />
                   ) : (
-                    <Controller
-                      name="customInput"
-                      control={control}
-                      render={({ field }) => (
-                        <TextArea
-                          {...field}
-                          rows={3}
-                          placeholder="请描述课程内容、主题或特定知识领域..."
-                          onChange={(e) => handleCustomInputChange(e.target.value)}
-                        />
-                      )}
-                    />
+                    <Text type="secondary">暂无知识体系数据</Text>
                   )}
                 </div>
+              )}
 
-                <div className="ai-field">
-                  <span className="ai-field__label">题型</span>
+              {((!Array.isArray(chapters) || chapters.length === 0) &&
+                subjects.length === 0) ||
+              useCustomInput ? (
+                <div style={{ marginBottom: 24 }}>
+                  <Title
+                    level={5}
+                    style={{
+                      marginBottom: 16,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "#faad14",
+                    }}
+                  >
+                    <StarOutlined />
+                    自定义内容
+                  </Title>
+                  <Text
+                    type="secondary"
+                    style={{ marginBottom: 8, display: "block" }}
+                  >
+                    未找到章节或知识项目，请描述课程内容：
+                  </Text>
                   <Controller
-                    name="exerciseType"
+                    name="customInput"
                     control={control}
                     render={({ field }) => (
+                      <TextArea
+                        {...field}
+                        rows={3}
+                        placeholder="请描述课程内容、主题或特定知识领域..."
+                        onChange={(e) =>
+                          handleCustomInputChange(e.target.value)
+                        }
+                      />
+                    )}
+                  />
+                </div>
+              ) : null}
+
+              <div style={{ marginBottom: 24 }}>
+                <Title
+                  level={5}
+                  style={{
+                    marginBottom: 16,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "#52c41a",
+                  }}
+                >
+                  <StarOutlined />
+                  练习设置
+                </Title>
+
+                <Controller
+                  name="exerciseType"
+                  control={control}
+                  render={({ field }) => (
+                    <div style={{ marginBottom: 16 }}>
+                      <Text style={{ marginBottom: 8, display: "block" }}>
+                        练习类型
+                      </Text>
                       <Select
                         {...field}
+                        style={{ width: "100%" }}
                         options={[
                           { value: "multiple_choice", label: "单选题" },
                           { value: "multiple_response", label: "多选题" },
@@ -941,88 +1059,94 @@ export default function AiExercisePage() {
                           { value: "case_study", label: "案例题" },
                         ]}
                       />
-                    )}
-                  />
-                </div>
+                    </div>
+                  )}
+                />
 
-                <div className="ai-field">
-                  <span className="ai-field__label">难度</span>
-                  <Controller
-                    name="difficulty"
-                    control={control}
-                    render={({ field }) => (
+                <Controller
+                  name="difficulty"
+                  control={control}
+                  render={({ field }) => (
+                    <div style={{ marginBottom: 16 }}>
+                      <Text style={{ marginBottom: 8, display: "block" }}>
+                        难度
+                      </Text>
                       <Select
                         {...field}
+                        style={{ width: "100%" }}
                         options={[
                           { value: 1, label: "容易" },
                           { value: 2, label: "中等" },
                           { value: 3, label: "困难" },
                         ]}
                       />
-                    )}
-                  />
-                </div>
+                    </div>
+                  )}
+                />
 
-                <div className="ai-field">
-                  <span className="ai-field__label">题目数量</span>
-                  <Controller
-                    name="number"
-                    control={control}
-                    rules={{ min: 1, max: 10 }}
-                    render={({ field }) => (
+                <Controller
+                  name="number"
+                  control={control}
+                  rules={{ min: 1, max: 10 }}
+                  render={({ field }) => (
+                    <div style={{ marginBottom: 16 }}>
+                      <Text style={{ marginBottom: 8, display: "block" }}>
+                        练习数量
+                      </Text>
                       <InputNumber
                         {...field}
+                        style={{ width: "100%" }}
                         min={1}
                         max={10}
-                        style={{ width: "100%" }}
                         status={errors.number ? "error" : undefined}
                       />
-                    )}
-                  />
-                  {errors.number && (
-                    <Text type="danger">请输入1-10之间的数字</Text>
+                      {errors.number && (
+                        <Text type="danger">请输入1-10之间的数字</Text>
+                      )}
+                    </div>
                   )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {selectedCourse && (
-            <div className="ai-form-actions">
-              <Button
-                type="primary"
-                onClick={handleSubmit(onSubmit)}
-                disabled={
-                  generateExerciseMutation.isPending || !watch("knowledgeName")
-                }
-                loading={generateExerciseMutation.isPending}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                生成试题草稿
-              </Button>
-
-              {generateExerciseMutation.error && (
-                <Alert
-                  type="error"
-                  message="生成试题失败，请重试。"
-                  style={{ marginTop: 12 }}
                 />
-              )}
 
-              {generateExerciseMutation.data &&
-                generateExerciseMutation.data.success && (
+                <Button
+                  type="primary"
+                  icon={<StarOutlined />}
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={
+                    generateExerciseMutation.isPending ||
+                    !(watch("knowledgeName") || watch("chapterName"))
+                  }
+                  loading={generateExerciseMutation.isPending}
+                  block
+                  style={canEdit ? undefined : { display: "none" }}
+                >
+                  {generateExerciseMutation.isPending
+                    ? "生成中..."
+                    : "生成练习题"}
+                </Button>
+
+                {generateExerciseMutation.error && (
                   <Alert
-                    type="success"
-                    message={
-                      generateExerciseMutation.data.message ||
-                      "成功生成AI试题"
-                    }
-                    style={{ marginTop: 12 }}
+                    type="error"
+                    message="生成练习题失败，请重试。"
+                    style={{ marginTop: 16 }}
                   />
                 )}
-            </div>
+
+                {generateExerciseMutation.data &&
+                  generateExerciseMutation.data.success && (
+                    <Alert
+                      type="success"
+                      message={
+                        generateExerciseMutation.data.message ||
+                        "成功生成AI练习题"
+                      }
+                      style={{ marginTop: 16 }}
+                    />
+                  )}
+              </div>
+            </>
           )}
-        </ProtoCard>
+        </Card>
 
         {/* 右：试题预览 */}
         <ProtoCard title="试题预览" className="ai-exercise-preview">
