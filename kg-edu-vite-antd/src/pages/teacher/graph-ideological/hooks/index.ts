@@ -6,5 +6,6 @@ export {
   useResourcesQuery,
   useRelationTypesQuery,
   useRelationsQuery,
+  useIdeologicalCourseIdsQuery,
 } from "./useDataQueries";
 export { useGraphData } from "./useGraphData";

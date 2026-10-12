@@ -59,7 +59,7 @@ import {
   destroyAbilityRelation,
 } from "@/lib/ash_rpc";
 import KnowledgeResourcePanel from "@/components/KnowledgeResourcePanel";
-import { AppPage, PageHead } from "@/components/proto";
+import { AppPage } from "@/components/proto";
 import { SwitchButton } from "@/components/teacher/switch-button";
 
 const { Text } = Typography;
@@ -330,6 +330,37 @@ export default function TeacherGraphCompetencyView() {
   const { courses: coursesData, loading: coursesLoading } = useCourses({
     fields: ["id", "title", "description"],
   });
+
+  // 找出拥有能力图谱（主能力）的课程，用于默认选中
+  const { data: competencyCourseIds, isLoading: competencyCourseIdsLoading } = useQuery({
+    queryKey: ["competency-course-ids", tenant, user?.id],
+    queryFn: async () => {
+      const result = await listMainAbilities({
+        tenant,
+        fields: ["id", "courseId"],
+        page: { limit: 2000 },
+        headers: getHeaders(user),
+      });
+      const rows = extractArrayData(result);
+      const ids = new Set<string>();
+      rows.forEach((r: any) => {
+        if (r.courseId) ids.add(r.courseId);
+      });
+      return Array.from(ids);
+    },
+    enabled: !!tenant && !!user,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // 默认选中：优先显示一个有能力的课程
+  useEffect(() => {
+    if (selectedCourseId) return;
+    if (competencyCourseIdsLoading) return;
+    const courses = Array.isArray(coursesData) ? coursesData : [];
+    if (courses.length === 0) return;
+    const preferred = courses.find((c) => (competencyCourseIds || []).includes(c.id));
+    setSelectedCourseId((preferred || courses[0]).id);
+  }, [coursesData, competencyCourseIds, competencyCourseIdsLoading, selectedCourseId]);
 
   useEffect(() => {
     console.log("viewingKnowledge changed:", viewingKnowledge);
@@ -2697,38 +2728,22 @@ export default function TeacherGraphCompetencyView() {
   ];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-      }}
-    >
-      <div
-        style={{
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div className="pu-breadcrumb" style={{ padding: "16px 24px 0", marginBottom: 0 }}>
-          智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;能力图谱
-        </div>
-        <PageHead
-          title="能力图谱"
-          description="构建课程能力节点与能力关系"
-          actions={
-            activeTab === "graph" ? (
-              <Button
-                type="text"
-                icon={<FilterOutlined />}
-                onClick={() => setShowPanel(!showPanel)}
-              />
-            ) : undefined
-          }
-        />
-
-        {/* 课程选择独立一行 */}
-        <div className="pu-filters" style={{ padding: "12px 24px", marginBottom: 0 }}>
+    <AppPage
+      fill
+      className="competency-graph-page"
+      title="能力图谱"
+      description="构建课程能力节点与能力关系"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;能力图谱</>}
+      actions={
+        <Space>
+          {activeTab === "graph" && (
+            <Button
+              icon={<FilterOutlined />}
+              onClick={() => setShowPanel(!showPanel)}
+            >
+              筛选
+            </Button>
+          )}
           <SwitchButton
             title="切换当前课程"
             buttonLabel="切换课程"
@@ -2740,16 +2755,28 @@ export default function TeacherGraphCompetencyView() {
             onChange={(id) => setSelectedCourseId(id || "")}
             loading={coursesLoading}
           />
-        </div>
-
+        </Space>
+      }
+    >
+      <style>{`.competency-graph-page { height: calc(100vh - 60px); }`}</style>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          background: "#fff",
+          borderRadius: 14,
+          border: "1px solid var(--pu-line)",
+          overflow: "auto",
+        }}
+      >
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={tabItems}
           style={{
-            paddingLeft: 24,
-            paddingRight: 24,
-            backgroundColor: "white",
+            padding: "0 16px",
           }}
         />
       </div>
@@ -3349,6 +3376,6 @@ export default function TeacherGraphCompetencyView() {
         }}
         knowledge={currentKnowledgeResource || viewingKnowledge}
       />
-    </div>
+    </AppPage>
   );
 }

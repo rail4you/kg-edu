@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { SwitchButton } from "@/components/teacher/switch-button";
-import { PageHead } from "@/components/proto";
+import { AppPage } from "@/components/proto";
 import {
   Typography,
   Table,
@@ -48,6 +48,7 @@ import {
   useRelationMutations,
   useKnowledgeMutations,
   useGraphData,
+  useIdeologicalCourseIdsQuery,
 } from "./hooks";
 import {
   IdeopoliticalNode,
@@ -128,6 +129,18 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
 
   // Data queries
   const { data: coursesData, isLoading: coursesLoading } = useCoursesQuery(user, tenantValue);
+  const { data: ideologicalCourseIds, isLoading: ideologicalCourseIdsLoading } = useIdeologicalCourseIdsQuery(user, tenantValue);
+
+  // 默认选中：优先显示一个有思政图谱（含"课程思政"知识点）的课程
+  useEffect(() => {
+    if (externalCourseId || internalCourseId) return;
+    if (ideologicalCourseIdsLoading) return;
+    const courses = Array.isArray(coursesData) ? coursesData : [];
+    if (courses.length === 0) return;
+    const preferred = courses.find((c: any) => (ideologicalCourseIds || []).includes(c.id));
+    setInternalCourseId((preferred || courses[0]).id);
+  }, [coursesData, ideologicalCourseIds, ideologicalCourseIdsLoading, internalCourseId, externalCourseId]);
+
   const {
     data: knowledgeData,
     isLoading: knowledgeLoading,
@@ -756,44 +769,49 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
     flexDirection: "column",
   } as React.CSSProperties;
 
-  return (
-    <div
-      style={{
-        height: "100%",
-        minHeight: hideManagement ? 0 : "calc(100vh - 60px)",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        backgroundColor: "#fff",
-      }}
-    >
-      {/* 课程选择独立一行 */}
-      {!hideManagement && (
-        <>
-          <div className="pu-breadcrumb" style={{ padding: isMobile ? "12px 8px 0" : "16px 24px 0", marginBottom: 0 }}>
-            智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;思政图谱
-          </div>
-          <div style={{ padding: isMobile ? "8px 8px 0" : "12px 24px 0" }}>
-            <PageHead
-              title="思政图谱"
-              description="将课程思政元素与知识点关联，构建思政育人体系"
-              actions={
-                <SwitchButton
-                  title="切换当前课程"
-                  buttonLabel="切换课程"
-                  options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
-                    id: course.id,
-                    label: course.title,
-                  }))}
-                  value={selectedCourseId}
-                  onChange={(id) => setInternalCourseId(id)}
-                />
-              }
-            />
-          </div>
-        </>
-      )}
+  const cardStyle: React.CSSProperties = {
+    flex: 1,
+    minHeight: 0,
+    display: "flex",
+    flexDirection: "column",
+    ...(hideManagement
+      ? {}
+      : { background: "#fff", borderRadius: 14, border: "1px solid var(--pu-line)", overflow: "hidden" }),
+  };
 
+  const wrap = (children: React.ReactNode) =>
+    hideManagement ? (
+      <div style={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {children}
+      </div>
+    ) : (
+      <AppPage
+        fill
+        className="ideological-graph-page"
+        title="思政图谱"
+        description="将课程思政元素与知识点关联，构建思政育人体系"
+        breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;思政图谱</>}
+        actions={
+          <SwitchButton
+            title="切换当前课程"
+            buttonLabel="切换课程"
+            options={(Array.isArray(coursesData) ? coursesData : []).map((course: any) => ({
+              id: course.id,
+              label: course.title,
+            }))}
+            value={selectedCourseId}
+            onChange={(id) => setInternalCourseId(id)}
+          />
+        }
+      >
+        <style>{`.ideological-graph-page { height: calc(100vh - 60px); }`}</style>
+        {children}
+      </AppPage>
+    );
+
+  return wrap(
+    <>
+      <div style={cardStyle}>
       {/* 子 Tab 切换：思政图谱 / 思政知识点 / 思政案例 / 思政关系配置 */}
       {/* Tab 栏 */}
       <div style={{
@@ -913,6 +931,7 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Case Dialog */}
@@ -1067,6 +1086,6 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
         onClose={() => setKnowledgeDrawerOpen(false)}
         knowledge={selectedKnowledgePoint}
       />
-    </div>
+    </>
   );
 }

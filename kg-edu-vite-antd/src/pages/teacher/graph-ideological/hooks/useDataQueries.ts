@@ -26,6 +26,28 @@ export const useCoursesQuery = (user: any, tenantValue: string) => {
   });
 };
 
+export const useIdeologicalCourseIdsQuery = (user: any, tenantValue: string) => {
+  return useQuery({
+    queryKey: ["ideological-course-ids", user?.id, tenantValue],
+    queryFn: async () => {
+      const result = await listKnowledges({
+        tenant: tenantValue,
+        fields: ["id", "tag", "courseId"],
+        page: { limit: 2000 },
+        headers: getHeaders(user),
+      });
+      const allData = extractArrayData(result);
+      const ids = new Set<string>();
+      allData.forEach((k: any) => {
+        if (k.courseId && k.tag && k.tag.includes("课程思政")) ids.add(k.courseId);
+      });
+      return Array.from(ids);
+    },
+    enabled: !!tenantValue && !!user,
+    staleTime: 10 * 60 * 1000,
+  });
+};
+
 export const useKnowledgeQuery = (
   selectedCourseId: string,
   user: any,

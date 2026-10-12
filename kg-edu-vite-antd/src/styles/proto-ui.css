@@ -861,6 +861,19 @@
   border-color: var(--pu-blue-strong);
 }
 
+/* ghost（描边）主色按钮：透明底 + 主色描边/文字，避免被上面的实心样式覆盖导致看不清 */
+:is(.pu-page, .pu-page-fill, .pu-app) .ant-btn-primary.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled) {
+  background: transparent;
+  border-color: var(--pu-blue);
+  color: var(--pu-blue);
+}
+
+:is(.pu-page, .pu-page-fill, .pu-app) .ant-btn-primary.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover {
+  background: var(--pu-blue-soft);
+  border-color: var(--pu-blue);
+  color: var(--pu-blue);
+}
+
 /* 页头操作按钮：对齐原型按钮尺寸（约 9px 纵向内边距） */
 :is(.pu-page, .pu-page-fill, .pu-app) .pu-head__actions .ant-btn {
   min-height: 38px;
