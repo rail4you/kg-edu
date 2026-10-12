@@ -562,7 +562,7 @@ export default function ExamTaking() {
       if (!examId || !user?.id) return null;
       const result = await getStudentExamsByStudent({
         tenant: currentTenant?.schemaName || '',
-        fields: ['id', 'status', 'score', 'passed', 'startedAt', 'submittedAt', { exam: ['id', 'courseId'] }],
+        fields: ['id', 'status', 'score', 'totalScore', 'passingScore', 'passed', 'startedAt', 'submittedAt', { exam: ['id', 'courseId', 'totalScore', 'passingScore'] }],
         input: { studentId: user.id },
         headers: getAuthHeaders(user),
       });
@@ -754,7 +754,8 @@ export default function ExamTaking() {
   };
 
   const handleSubmitExam = () => {
-    if (!studentExamId) return;
+    // 成绩查看模式（已交卷/已批改）不允许再交卷
+    if (viewMode || !studentExamId) return;
 
     const unanswered = checkUnansweredQuestions();
     setUnansweredQuestions(unanswered);
@@ -957,7 +958,9 @@ export default function ExamTaking() {
                 {exam.title}
               </Title>
               <Text type="secondary" style={{ fontSize: isMobile ? 11 : 13 }}>
-                共 {exerciseAnswers.length} 题 | 总分 {exam.totalScore || 0} 分
+                {viewMode
+                  ? `得分 ${currentStudentExam?.score ?? '-'} / 总分 ${currentStudentExam?.totalScore || exam.totalScore || 100} 分`
+                  : `共 ${exerciseAnswers.length} 题 | 总分 ${currentStudentExam?.totalScore || exam.totalScore || 100} 分`}
               </Text>
             </div>
           </Space>
@@ -972,22 +975,33 @@ export default function ExamTaking() {
                 {isMobile ? formatTime(timeRemaining) : `剩余时间: ${formatTime(timeRemaining)}`}
               </Tag>
             )}
-            <Button
-              type="primary"
-              onClick={handleSubmitExam}
-              loading={isSubmitting || submitExamMutation.isPending}
-              icon={<CheckCircleOutlined />}
-              size={isMobile ? 'small' : 'middle'}
-              style={{
-                background: 'linear-gradient(135deg, #2859df, #1846bc)',
-                borderColor: '#1846bc',
-                borderRadius: 8,
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(82,196,26,0.3)',
-              }}
-            >
-              {isMobile ? '提交' : '提交考试'}
-            </Button>
+            {viewMode ? (
+              <Tag
+                color={currentStudentExam?.passed ? 'success' : 'default'}
+                style={{ fontSize: isMobile ? 12 : 14, padding: isMobile ? '2px 8px' : '4px 12px' }}
+              >
+                {currentStudentExam?.score != null
+                  ? `得分 ${currentStudentExam.score}`
+                  : '已提交（只读查看）'}
+              </Tag>
+            ) : (
+              <Button
+                type="primary"
+                onClick={handleSubmitExam}
+                loading={isSubmitting || submitExamMutation.isPending}
+                icon={<CheckCircleOutlined />}
+                size={isMobile ? 'small' : 'middle'}
+                style={{
+                  background: 'linear-gradient(135deg, #2859df, #1846bc)',
+                  borderColor: '#1846bc',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(82,196,26,0.3)',
+                }}
+              >
+                {isMobile ? '提交' : '提交考试'}
+              </Button>
+            )}
           </Space>
         </div>
 
@@ -1012,7 +1026,11 @@ export default function ExamTaking() {
             </div>
           ) : exerciseAnswers.length === 0 ? (
             <div className="pu-card" style={{ textAlign: 'center', padding: 48 }}>
-              <Text type="secondary">该考试暂无题目</Text>
+              <Text type="secondary">
+                {viewMode
+                  ? `本次考试已交卷，得分 ${currentStudentExam?.score ?? '-'} 分（历史试卷快照不可用，仅供成绩查看）`
+                  : '该考试暂无题目'}
+              </Text>
             </div>
           ) : (
             <div style={{ maxWidth: 820, margin: '0 auto' }}>

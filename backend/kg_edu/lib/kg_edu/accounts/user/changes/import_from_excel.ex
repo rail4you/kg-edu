@@ -312,7 +312,7 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     find_result =
       try do
         # Read all classes and filter manually (simpler approach)
-        case Ash.read(KgEdu.Accounts.Class, tenant: tenant_schema) do
+        case Ash.read(KgEdu.Accounts.Class, tenant: tenant_schema, authorize?: false) do
           {:ok, classes} ->
             # Find matching class by name (and college/major if provided)
             matching_class =
@@ -384,7 +384,7 @@ defmodule KgEdu.Accounts.User.ImportFromExcel do
     try do
       case KgEdu.Accounts.Class
            |> Ash.Changeset.for_create(:create, class_attrs)
-           |> Ash.create(tenant: tenant_schema) do
+           |> Ash.create(tenant: tenant_schema, authorize?: false) do
         {:ok, class} ->
           Logger.info("Successfully created class with ID: #{class.id}")
           {:ok, class.id}

@@ -371,6 +371,9 @@ defmodule KgEdu.Accounts.User do
       # 仅超级管理员可修改编辑权限字段，教师/管理员修改自己资料时强制还原
       change {__MODULE__.Changes.ProtectEditPermission, []}
 
+      # 仅 admin / super_admin 可修改角色，防止学生/教师自行提权
+      change {__MODULE__.Changes.ProtectRole, []}
+
       require_atomic? false
     end
 
@@ -1089,7 +1092,15 @@ defmodule KgEdu.Accounts.User do
         sensitive? true
       end
 
-      run {AshAuthentication.Actions.SignOut, action: :sign_out}
+      run fn input, _context ->
+        case AshAuthentication.TokenResource.Actions.revoke(
+               KgEdu.Accounts.Token,
+               input.arguments.token
+             ) do
+          :ok -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
     end
 
     action :import_users_from_excel, :map do

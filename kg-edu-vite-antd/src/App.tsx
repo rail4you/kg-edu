@@ -7,6 +7,7 @@ import TemplatePage from "./pages/template-page";
 import TeacherLayout from "./layouts/teacher-layout";
 import StudentLayout from "./layouts/student-layout";
 import AdminLayout from "./layouts/admin-layout";
+import { RequireRole } from "./auth/require-role";
 import ProfilePage from "./pages/profile";
 import { StandaloneProfile } from "./pages/profile";
 
@@ -242,8 +243,22 @@ export default function App() {
       {/* 动态模板页（超级管理员新增的页面，访问 /page/<slug>） */}
       <Route path="/page/:slug" element={<TemplatePage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/teacher/module-home" element={<ModuleHome />} />
-      <Route path="/micro-major" element={<MicroMajorLayout />}>
+      <Route
+        path="/teacher/module-home"
+        element={
+          <RequireRole roles={["teacher"]}>
+            <ModuleHome />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/micro-major"
+        element={
+          <RequireRole roles={["teacher"]}>
+            <MicroMajorLayout />
+          </RequireRole>
+        }
+      >
         {/* Flat routes — sidebar items always navigate here */}
         <Route path="dashboard" element={<MicroMajorDashboard />} />
         <Route path="create" element={<MicroMajorDashboard />} />
@@ -274,7 +289,14 @@ export default function App() {
       <Route path="/micro-majors" element={<MicroMajorsPage />} />
       <Route path="/micro-majors/:tenant/:id" element={<MicroMajorDetailPage />} />
 
-      <Route path="/teacher/dashboard" element={<TeacherLayout />}>
+      <Route
+        path="/teacher/dashboard"
+        element={
+          <RequireRole roles={["teacher"]}>
+            <TeacherLayout />
+          </RequireRole>
+        }
+      >
         <Route index element={<TeacherDashboard />} />
 
         <Route path="course" element={<TeacherCourse />} />
@@ -411,7 +433,14 @@ export default function App() {
       <Route path="/student/discussion/:tenantSchema/:token" element={<StudentDiscussion />} />
       <Route path="/student/group-task/:tenantSchema/:token" element={<StudentGroupTask />} />
 
-      <Route path="/dashboard" element={<StudentLayout />}>
+      <Route
+        path="/dashboard"
+        element={
+          <RequireRole roles={["user"]}>
+            <StudentLayout />
+          </RequireRole>
+        }
+      >
         <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<StudentOverview />} />
         <Route path="smart-portal" element={<StudentSmartPortal />} />
@@ -462,9 +491,23 @@ export default function App() {
         <Route path="curriculum/:majorId" element={<StudentCurriculum />} />
       </Route>
 
-      <Route path="/dashboard/profile" element={<StandaloneProfile />} />
+      <Route
+        path="/dashboard/profile"
+        element={
+          <RequireRole roles={["user"]}>
+            <StandaloneProfile />
+          </RequireRole>
+        }
+      />
 
-      <Route path="/admin/dashboard" element={<AdminLayout />}>
+      <Route
+        path="/admin/dashboard"
+        element={
+          <RequireRole roles={["admin", "super_admin"]}>
+            <AdminLayout />
+          </RequireRole>
+        }
+      >
         <Route index element={<AdminDashboard />} />
         <Route path="organizations" element={<AdminOrganizations />} />
         <Route path="admins" element={<AdminAdmins />} />

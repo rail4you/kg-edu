@@ -51,7 +51,7 @@ defmodule KgEdu.Knowledge.StudentExam do
 
     update :grade_status do
       description "Update student exam score and passed status"
-      accept [:score, :passed, :status]
+      accept [:score, :passed, :status, :total_score, :passing_score]
       require_atomic? false
     end
 
@@ -93,10 +93,19 @@ defmodule KgEdu.Knowledge.StudentExam do
 
         # Load the exam to verify it exists
         case Ash.get(KgEdu.Knowledge.Exam, exam_id, tenant: tenant) do
-          {:ok, _exam} ->
+          {:ok, exam} ->
+            # 快照试卷满分与及格分，避免后续试题增删改影响历史成绩
+            snapshot_total =
+              KgEdu.Knowledge.ExamExercise
+              |> Ash.Query.filter(exam_id == ^exam_id)
+              |> Ash.read!(tenant: tenant, authorize?: false)
+              |> Enum.reduce(0, fn ee, acc -> acc + (ee.points || 0) end)
+
             changeset
             |> Ash.Changeset.change_attribute(:status, :in_progress)
             |> Ash.Changeset.change_attribute(:score, 0)
+            |> Ash.Changeset.change_attribute(:total_score, snapshot_total)
+            |> Ash.Changeset.change_attribute(:passing_score, exam.passing_score || 60)
             |> Ash.Changeset.change_attribute(:started_at, DateTime.utc_now())
             |> Ash.Changeset.after_action(fn _changeset, student_exam ->
               # Create empty answers for all exercises in the exam
@@ -416,7 +425,9 @@ defmodule KgEdu.Knowledge.StudentExam do
                      tenant: tenant
                    ) do
                 {:ok, student_exam} ->
-                  passing_score = student_exam.exam.passing_score
+                  # 使用开考时快照的及格分，回退到考试当前配置
+                  passing_score =
+                    student_exam.passing_score || student_exam.exam.passing_score || 60
 
                   Logger.info(
                     "Grading exam #{student_exam_id}, total score: #{total_score}, passing score: #{passing_score}"
@@ -427,7 +438,8 @@ defmodule KgEdu.Knowledge.StudentExam do
                   |> Ash.Changeset.for_update(:grade_status, %{
                     score: total_score || 0,
                     passed: (total_score || 0) >= passing_score,
-                    status: :graded
+                    status: :graded,
+                    passing_score: passing_score
                   })
                   |> Ash.update(tenant: tenant)
                   |> case do
@@ -493,6 +505,20 @@ defmodule KgEdu.Knowledge.StudentExam do
       allow_nil? false
       default 0
       description "Total score achieved by the student"
+      public? true
+    end
+
+    attribute :total_score, :integer do
+      allow_nil? false
+      default 0
+      description "试卷满分快照（开始时记录，避免试题变动导致历史成绩失真）"
+      public? true
+    end
+
+    attribute :passing_score, :integer do
+      allow_nil? false
+      default 60
+      description "及格分快照"
       public? true
     end
 

@@ -38,6 +38,7 @@ import {
   listExercises,
   listHomeworks,
   listLinks,
+  listActivityLogsByUser,
   logFileView,
   logVideoView,
   logExerciseSubmit,
@@ -471,11 +472,32 @@ export default function KnowledgeResourcePanel({ open, onClose, knowledge }: Kno
     setShowExerciseAnswer(false);
   };
 
-  // 开始作业
-  const handleStartHomework = (homework: ResourceItem) => {
+  // 开始作业（若已提交过，则恢复答案与已提交状态）
+  const handleStartHomework = async (homework: ResourceItem) => {
     setSelectedHomework(homework);
     setHomeworkAnswer("");
     setShowHomeworkAnswer(false);
+
+    if (!user?.id || !tenant) return;
+    try {
+      const result = await listActivityLogsByUser({
+        tenant,
+        fields: ["id", "actionType", "resourceId", "metadata", "insertedAt"],
+        input: { userId: user.id },
+        headers: getHeaders(user),
+      });
+      const logs = extractArrayData(result) as any[];
+      const latest = logs
+        .filter((l) => l.actionType === "homework_submit" && l.resourceId === homework.id)
+        .sort((a, b) => String(b.insertedAt || "").localeCompare(String(a.insertedAt || "")))[0];
+      const answer = latest?.metadata?.answer;
+      if (answer) {
+        setHomeworkAnswer(answer);
+        setShowHomeworkAnswer(true);
+      }
+    } catch {
+      /* 恢复失败不影响重新作答 */
+    }
   };
 
   // 提交作业答案

@@ -180,7 +180,7 @@ export default function StudentProfile() {
         tenant: tenant!,
         input: { studentId: selectedStudentId! },
         fields: [
-          "id", "score", "passed", "submittedAt",
+          "id", "score", "totalScore", "passingScore", "passed", "submittedAt",
           { exam: ["id", "title", "examDate", "totalScore"] },
         ],
         sort: "submittedAt",
@@ -252,7 +252,7 @@ export default function StudentProfile() {
       .map((se: any) => ({
         exam: se.exam?.title || "考试",
         score: se.score,
-        fullScore: se.exam?.totalScore || 100,
+        fullScore: se.totalScore || se.exam?.totalScore || 100,
         passed: se.passed,
         date: se.submittedAt ? new Date(se.submittedAt).toLocaleDateString("zh-CN") : "-",
       }))

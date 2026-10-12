@@ -926,7 +926,7 @@ export default function ExamExercises() {
         columns={3}
         items={[
           { label: "已添加习题", value: examExercisesResult?.length || 0 },
-          { label: "总分", value: (examData as any)?.data?.totalScore || 0 },
+          { label: "总分", value: (examData as any)?.data?.totalScore || 100 },
           { label: "及格分", value: (examData as any)?.data?.passingScore || 0 },
         ]}
       />

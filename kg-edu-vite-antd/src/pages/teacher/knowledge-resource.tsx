@@ -214,18 +214,28 @@ const buildTree = (flatRows: KnowledgeResourceRow[]): TreeNode[] => {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
+  // 去重：同一 id 只保留一条，避免重复渲染（曾出现 405 行 / 43 个唯一键）
+  const uniqueRows: KnowledgeResourceRow[] = [];
+  const seen = new Set<string>();
   flatRows.forEach((row) => {
+    if (!row?.id || seen.has(row.id)) return;
+    seen.add(row.id);
+    uniqueRows.push(row);
+  });
+
+  uniqueRows.forEach((row) => {
     map.set(row.id, { ...row, key: row.id, children: [] });
   });
 
-  flatRows.forEach((row) => {
+  uniqueRows.forEach((row) => {
     const node = map.get(row.id)!;
-    if (row.parentId && map.has(row.parentId)) {
+    if (row.parentId && map.has(row.parentId) && row.parentId !== row.id) {
       const parent = map.get(row.parentId)!;
       if (!parent.children) parent.children = [];
-      parent.children.push(node);
+      // 同一节点不重复挂到同一父节点
+      if (!parent.children.includes(node)) parent.children.push(node);
     } else {
-      roots.push(node);
+      if (!roots.includes(node)) roots.push(node);
     }
   });
 

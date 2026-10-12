@@ -5,25 +5,43 @@ defmodule KgEduWeb.Plugs.LoadActor do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, %{"tenant" => tenant, "sub" => subject}} <- verify_and_extract_claims(token),
-         {:ok, user} <- load_user(subject, tenant) do
-      conn
-      |> put_private(:ash_actor, user)
-      |> assign(:actor, user)
-      |> assign(:tenant, tenant)
-      |> assign(:current_user, user)
-    else
+    case get_req_header(conn, "authorization") do
+      ["Bearer " <> token] ->
+        with {:ok, %{"tenant" => tenant, "sub" => subject}} <- verify_and_extract_claims(token),
+             {:ok, user} <- load_user(subject, tenant) do
+          conn
+          |> put_private(:ash_actor, user)
+          |> assign(:actor, user)
+          |> assign(:tenant, tenant)
+          |> assign(:current_user, user)
+        else
+          # 签名无效 / 已过期 / 已注销：必须清除上游 set_actor 设置的 actor
+          _ -> clear_actor(conn)
+        end
+
       _ ->
         conn
     end
   end
 
+  defp clear_actor(conn) do
+    conn
+    |> assign(:actor, nil)
+    |> assign(:current_user, nil)
+    |> put_private(:ash_actor, nil)
+    |> put_private(:ash, Map.put(conn.private[:ash] || %{}, :actor, nil))
+  end
+
   defp verify_and_extract_claims(token) do
+    # 解析 token 声明；若 jti 已被注销则拒绝（防止「注销后仍可用」）
     case AshAuthentication.Jwt.peek(token) do
-      {:ok, %{"tenant" => tenant, "sub" => subject}}
+      {:ok, %{"tenant" => tenant, "sub" => subject} = claims}
       when not is_nil(tenant) and not is_nil(subject) ->
-        {:ok, %{"tenant" => tenant, "sub" => subject}}
+        if revoked?(claims) do
+          {:error, :revoked}
+        else
+          {:ok, %{"tenant" => tenant, "sub" => subject}}
+        end
 
       {:ok, _claims} ->
         {:error, :missing_fields}
@@ -32,6 +50,14 @@ defmodule KgEduWeb.Plugs.LoadActor do
         error
     end
   end
+
+  defp revoked?(%{"jti" => jti}) when is_binary(jti) do
+    AshAuthentication.TokenResource.Actions.jti_revoked?(KgEdu.Accounts.Token, jti)
+  rescue
+    _ -> false
+  end
+
+  defp revoked?(_), do: false
 
   defp load_user(nil, _), do: {:error, :no_subject}
 
@@ -89,6 +115,16 @@ defmodule KgEduWeb.Router do
     plug :load_from_bearer
     plug :set_actor, :user
     plug KgEduWeb.Plugs.LoadActor
+  end
+
+  # RPC 管道：在 api 基础上增加管理动作的角色校验
+  pipeline :api_rpc do
+    plug :accepts, ["json"]
+    plug KgEduWeb.Plug.SetTenantFromToken
+    plug :load_from_bearer
+    plug :set_actor, :user
+    plug KgEduWeb.Plugs.LoadActor
+    plug KgEduWeb.Plugs.AuthorizeRpc
   end
 
   # JSON API 写操作守卫：只读教师禁止 POST/PATCH/PUT/DELETE
@@ -281,7 +317,7 @@ defmodule KgEduWeb.Router do
   end
 
   scope "/rpc" do
-    pipe_through :api
+    pipe_through :api_rpc
     post "/run", KgEduWeb.AshTypescriptRpcController, :run
     post "/validate", KgEduWeb.AshTypescriptRpcController, :validate
   end

@@ -97,7 +97,7 @@ defmodule KgEdu.Accounts.Class do
 
         case KgEdu.Accounts.Class
              |> Ash.Changeset.for_action(:create, class_attrs)
-             |> Ash.create(tenant: context.tenant) do
+             |> Ash.create(tenant: context.tenant, authorize?: false) do
           {:ok, class} ->
             # Create students if provided
             students_result =
@@ -166,8 +166,23 @@ defmodule KgEdu.Accounts.Class do
   end
 
   policies do
-    policy always() do
-      authorize_if(always())
+    # 仅管理员 / 超管可增删改班级（服务端强制，前端路由守卫仅作补充）
+    policy action([:create, :update, :destroy]) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if actor_attribute_equals(:role, :super_admin)
+    end
+
+    # 批量建班（含学生）同为管理员专属
+    policy action(:create_class_with_students) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if actor_attribute_equals(:role, :super_admin)
+    end
+
+    # 管理员 / 超管 / 教师可读班级；学生通过自身 class 关系字段获取，不直接读班级表
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if actor_attribute_equals(:role, :super_admin)
+      authorize_if actor_attribute_equals(:role, :teacher)
     end
   end
 

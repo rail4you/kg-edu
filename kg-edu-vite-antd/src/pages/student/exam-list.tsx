@@ -137,7 +137,7 @@ export default function ExamList() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <span style={{ color: '#64748b' }}>总分</span>
-                    <Text strong>{exam.totalScore || 0} 分</Text>
+                    <Text strong>{exam.totalScore || 100} 分</Text>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <span style={{ color: '#64748b' }}>及格分</span>

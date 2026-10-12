@@ -486,7 +486,7 @@ export default function ExamCourses() {
                           </div>
                           <div>
                             <div style={{ fontSize: 12, color: '#8c8c8c' }}>总分</div>
-                            <div style={{ fontSize: 15, fontWeight: 600, color: colors.primary }}>{exam.totalScore || 0}</div>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: colors.primary }}>{exam.totalScore || 100}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: 12, color: '#8c8c8c' }}>及格线</div>
@@ -649,7 +649,7 @@ export default function ExamCourses() {
                     title: isMobile ? '总分/及格' : '总分/及格分',
                     key: 'scores',
                     responsive: ['md'],
-                    render: (_: any, exam: Exam) => `${exam.totalScore || 0} / ${exam.passingScore || 0}`,
+                    render: (_: any, exam: Exam) => `${exam.totalScore || 100} / ${exam.passingScore || 60}`,
                   },
                   {
                     title: '得分',

@@ -149,12 +149,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     const currentRole = user?.role || sessionStorage.getItem("user_role") || "";
-    clearAuthStorage();
-    setUser(null);
-    setTenant("");
+    const token = sessionStorage.getItem("jwt_access_token");
+    const userId = (user as any)?.id as string | undefined;
+    const tenant = sessionStorage.getItem("tenant") || "";
 
-    const redirectPath = getLoginRedirectPath(currentRole);
-    window.location.href = redirectPath;
+    const finish = () => {
+      clearAuthStorage();
+      setUser(null);
+      setTenant("");
+      window.location.href = getLoginRedirectPath(currentRole);
+    };
+
+    // 先通知服务端吊销 token，再清理本地状态；带超时兜底，避免网络卡住无法登出
+    if (token && userId) {
+      const revoke = import("@/lib/ash_rpc").then(({ signOut }) =>
+        signOut({ tenant, input: { id: userId, token } })
+      );
+      const timeout = new Promise((resolve) => setTimeout(resolve, 1500));
+      Promise.race([revoke, timeout])
+        .catch(() => undefined)
+        .finally(finish);
+    } else {
+      finish();
+    }
   }, [user]);
 
   const clearAuthState = useCallback(() => {

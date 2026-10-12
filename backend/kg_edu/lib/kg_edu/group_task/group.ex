@@ -63,6 +63,21 @@ defmodule KgEdu.GroupTask.Group do
         description "Initial member student IDs"
       end
 
+      # 初始成员数不得超过上限
+      change fn changeset, _context ->
+        max = Ash.Changeset.get_attribute(changeset, :max_members)
+        incoming = Ash.Changeset.get_argument(changeset, :member_ids) || []
+
+        if is_integer(max) and length(Enum.uniq(incoming)) > max do
+          Ash.Changeset.add_error(changeset,
+            field: :member_ids,
+            message: "成员人数超过上限 #{max}"
+          )
+        else
+          changeset
+        end
+      end
+
       change manage_relationship(:member_ids, :members, type: :append)
     end
 
@@ -80,6 +95,35 @@ defmodule KgEdu.GroupTask.Group do
       argument :member_ids, {:array, :uuid} do
         allow_nil? false
         description "Student IDs to add"
+      end
+
+      # 服务端强制成员上限（防止界面/并发绕过）
+      change fn changeset, _context ->
+        group = changeset.data
+        max = group.max_members
+        incoming = Ash.Changeset.get_argument(changeset, :member_ids) || []
+
+        if is_integer(max) do
+          current_ids =
+            KgEdu.GroupTask.GroupMember
+            |> Ash.Query.filter(group_id == ^group.id)
+            |> Ash.read!(tenant: changeset.tenant, authorize?: false)
+            |> Enum.map(& &1.student_id)
+
+          new_ids = incoming |> Enum.uniq() |> Enum.reject(&(&1 in current_ids))
+
+          if length(current_ids) + length(new_ids) > max do
+            Ash.Changeset.add_error(changeset,
+              field: :member_ids,
+              message:
+                "成员人数将超过上限 #{max}（当前 #{length(current_ids)} 人，最多还可添加 #{max(max - length(current_ids), 0)} 人）"
+            )
+          else
+            changeset
+          end
+        else
+          changeset
+        end
       end
 
       change manage_relationship(:member_ids, :members, type: :append)

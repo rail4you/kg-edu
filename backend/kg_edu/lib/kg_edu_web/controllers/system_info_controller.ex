@@ -6,17 +6,26 @@ defmodule KgEduWeb.SystemInfoController do
   Returns real-time system metrics using built-in Erlang functions (zero deps).
   """
   def get_info(conn, _params) do
-    info = %{
-      memory: get_memory_info(),
-      cpu: get_cpu_info(),
-      disk: get_disk_info(),
-      system: get_system_info(),
-      process_count: :erlang.system_info(:process_count),
-      uptime_ms: get_uptime_ms(),
-      node: node() |> Atom.to_string()
-    }
+    case conn.assigns[:actor] do
+      %{role: role} when role in [:admin, :super_admin] ->
+        info = %{
+          memory: get_memory_info(),
+          cpu: get_cpu_info(),
+          disk: get_disk_info(),
+          system: get_system_info(),
+          process_count: :erlang.system_info(:process_count),
+          uptime_ms: get_uptime_ms(),
+          node: node() |> Atom.to_string()
+        }
 
-    json(conn, %{success: true, data: info})
+        json(conn, %{success: true, data: info})
+
+      _ ->
+        # 沿用前端约定：避免 HTTP 403 被 401/403 拦截器误判为登录失效
+        conn
+        |> put_status(200)
+        |> json(%{success: false, error: "无权限访问系统状态"})
+    end
   end
 
   # ── Memory ──────────────────────────────────────────────────────────
