@@ -266,7 +266,7 @@ export default function ResearchTrack() {
                         ]}
                       >
                         <List.Item.Meta
-                          title={<a href={w.id} target="_blank" rel="noreferrer">{w.title}</a>}
+                          title={<span>{w.title}</span>}
                           description={`${(w.authors || []).join(", ")} · ${w.venue || ""} ${w.year || ""} · 被引 ${w.cited_by_count}`}
                         />
                       </List.Item>

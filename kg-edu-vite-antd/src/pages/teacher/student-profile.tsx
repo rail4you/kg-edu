@@ -30,15 +30,18 @@ import {
   ExperimentOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  DownloadOutlined
 } from "@ant-design/icons";
 import * as echarts from "echarts";
+import * as XLSX from "xlsx";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
 import {
   listEnrollmentsByCourse,
   listUsers,
+  listClasses,
   getStudentProfileOverview,
   getActivityDistribution,
   getGroupTaskStats,
@@ -47,6 +50,7 @@ import {
 } from "@/lib/ash_rpc";
 import { AppPage, StatGrid } from "@/components/proto";
 import { SwitchButton } from "@/components/teacher/switch-button";
+import { StudentSelectButton } from "@/components/teacher/student-select-button";
 
 const { Text } = Typography;
 
@@ -112,7 +116,7 @@ export default function StudentProfile() {
 
       const usersResult = await listUsers({
         tenant,
-        fields: ["id", "name", "email"],
+        fields: ["id", "name", "email", "classId"],
         filter: { id: { in: memberIds } },
         sort: "+name",
         headers,
@@ -126,6 +130,23 @@ export default function StudentProfile() {
   });
 
   const students = useMemo(() => (enrollmentsData || []).filter(Boolean), [enrollmentsData]);
+
+  // 班级列表（用于学生选择弹窗的班级过滤）
+  const { data: classes = [] } = useQuery({
+    queryKey: ["classes", tenant],
+    queryFn: async () => {
+      const r = await listClasses({
+        tenant,
+        fields: ["id", "name"],
+        sort: "+name",
+        headers,
+      });
+      if (!r.success) return [];
+      const data = (r as any).data;
+      return (Array.isArray(data) ? data : data?.results || []) as { id: string; name: string }[];
+    },
+    enabled: !!tenant,
+  });
 
   // ── Real API calls ──
 
@@ -458,6 +479,102 @@ export default function StudentProfile() {
     },
   ];
 
+  const submissionStatusText = (v: string) => {
+    const map: Record<string, string> = {
+      graded: "已评分",
+      submitted: "已提交",
+      not_submitted: "未提交",
+      pending: "未提交",
+    };
+    return map[v] || v;
+  };
+
+  const exportBehavior = () => {
+    const wb = XLSX.utils.book_new();
+    const studentName = students.find((s: any) => s.id === selectedStudentId)?.name || "学生";
+    const courseName = courses?.find((c: any) => c.id === selectedCourseId)?.title || "课程";
+
+    const overviewRows: (string | number)[][] = [
+      ["学生学情画像 · 学习行为"],
+      ["学生", studentName],
+      ["课程", courseName],
+      ["导出时间", new Date().toLocaleString("zh-CN")],
+      [],
+      ["指标", "数值"],
+      ["知识掌握度(%)", mastery ?? "-"],
+      ["学习活跃度(/100)", activityIndex ?? "-"],
+      ["活动总次数", totalActivities ?? 0],
+      ["考试平均分", examAvg ?? "-"],
+      ["最高分", examHigh ?? "-"],
+      ["最低分", examLow ?? "-"],
+      ["考试次数", totalExams ?? examScores?.length ?? 0],
+      ["通过率(%)", passRate ?? "-"],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(overviewRows), "概览");
+
+    if (activityDist && activityDist.length > 0) {
+      const rows = [["行为类型", "次数"], ...activityDist.map((d: any) => [d.type, d.count])];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "学习行为分布");
+    }
+    if (sevenDayData) {
+      const rows = [
+        ["日期", "学习次数"],
+        ...sevenDayData.days.map((d: string, i: number) => [d, sevenDayData.counts[i]]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "近7天趋势");
+    }
+    if (examScores && examScores.length > 0) {
+      const rows = [
+        ["考试/测验", "日期", "得分", "满分", "是否通过"],
+        ...examScores.map((e: any) => [e.exam, e.date, e.score, e.fullScore, e.passed ? "通过" : "未通过"]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "考试成绩");
+    }
+
+    XLSX.writeFile(wb, `学习行为_${studentName}.xlsx`);
+  };
+
+  const exportGroupTask = () => {
+    const wb = XLSX.utils.book_new();
+    const studentName = students.find((s: any) => s.id === selectedStudentId)?.name || "学生";
+    const courseName = courses?.find((c: any) => c.id === selectedCourseId)?.title || "课程";
+    const s = groupTaskStats?.summary || {};
+
+    const overviewRows: (string | number)[][] = [
+      ["学生学情画像 · 分组任务表现"],
+      ["学生", studentName],
+      ["课程", courseName],
+      ["导出时间", new Date().toLocaleString("zh-CN")],
+      [],
+      ["指标", "数值"],
+      ["分组任务数", s.totalTasks ?? "-"],
+      ["已提交", s.submittedCount ?? "-"],
+      ["已评分", s.gradedCount ?? "-"],
+      ["任务平均分", s.averageScore ?? "-"],
+      ["班级平均分", s.classAverageScore ?? "-"],
+      ["所属小组", s.group?.groupName || "未加入小组"],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(overviewRows), "概览");
+
+    const tasks = groupTaskStats?.tasks || [];
+    if (tasks.length > 0) {
+      const rows = [
+        ["任务名称", "提交时间", "提交状态", "我的得分", "班级平均", "教师反馈"],
+        ...tasks.map((t: any) => [
+          t.taskTitle,
+          t.submittedAt ? new Date(t.submittedAt).toLocaleString("zh-CN") : "-",
+          submissionStatusText(t.submissionStatus),
+          t.score ?? "-",
+          t.classAverage ?? "-",
+          t.feedback || "-",
+        ]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "任务评分明细");
+    }
+
+    XLSX.writeFile(wb, `分组任务表现_${studentName}.xlsx`);
+  };
+
   const noStudent = !selectedStudentId || !selectedCourseId;
 
   // ── Tabs ──
@@ -467,6 +584,11 @@ export default function StudentProfile() {
       label: <Space><BarChartOutlined /><span>学习行为</span></Space>,
       children: (
         <>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <Button icon={<DownloadOutlined />} onClick={exportBehavior} disabled={!selectedStudentId}>
+              导出数据
+            </Button>
+          </div>
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={10}>
               <Card title={<Space><RiseOutlined style={{ color: "#5B8FF9" }} /><span>学习行为分布</span></Space>}>
@@ -523,6 +645,11 @@ export default function StudentProfile() {
       label: <Space><TeamOutlined /><span>分组任务表现</span></Space>,
       children: (
         <>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <Button icon={<DownloadOutlined />} onClick={exportGroupTask} disabled={!selectedStudentId}>
+              导出数据
+            </Button>
+          </div>
           <StatGrid
             columns={4}
             items={[
@@ -604,10 +731,16 @@ export default function StudentProfile() {
             value={selectedCourseId}
             onChange={(id) => { setSelectedCourseId(id ?? null); setSelectedStudentId(null); }}
           />
-          <SwitchButton
-            title="切换学生"
+          <StudentSelectButton
+            title="选择学生"
             buttonLabel="切换学生"
-            options={students.map((s: any) => ({ id: s.id, label: s.name || s.email || s.id }))}
+            students={students.map((s: any) => ({
+              id: s.id,
+              name: s.name,
+              email: s.email,
+              classId: s.classId,
+            }))}
+            classes={classes}
             value={selectedStudentId}
             onChange={(id) => setSelectedStudentId(id ?? null)}
           />

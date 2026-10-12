@@ -31,7 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
-import { listUsers } from "@/lib/ash_rpc";
+import { listUsers, listClasses } from "@/lib/ash_rpc";
 import {
   createTeacherPortal,
   deleteTeacherPortal,
@@ -52,14 +52,13 @@ import { ConfigForm } from "@/components/smart-portal/ConfigForm";
 import { SmartPortalRenderer } from "@/components/smart-portal/SmartPortalRenderer";
 import { useSmartPortalData } from "@/components/smart-portal/use-smart-portal-data";
 import { AppPage } from "@/components/proto";
+import {
+  StudentTableSelect,
+  type StudentOption,
+  type ClassOption,
+} from "@/components/teacher/student-table-select";
 
 const { Text, Paragraph } = Typography;
-
-interface StudentOption {
-  id: string;
-  name?: string;
-  email?: string;
-}
 
 const WIDTH_OPTIONS = [
   { label: "1/2 宽（12）", value: 12 },
@@ -178,10 +177,10 @@ const ComponentsEditor: React.FC<ComponentsEditorProps> = ({ blocks, onChange, o
                 >
                   <span style={{ color: "#1766d8" }}>{def?.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {block.title || def?.label}
                     </div>
-                    <Text type="secondary" style={{ fontSize: 11 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
                       {def?.label}
                     </Text>
                   </div>
@@ -223,7 +222,7 @@ const ComponentsEditor: React.FC<ComponentsEditorProps> = ({ blocks, onChange, o
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <Space>
                 <span style={{ color: "#1766d8", fontSize: 16 }}>{BLOCK_REGISTRY[selected.type]?.icon}</span>
-                <Text strong>{BLOCK_REGISTRY[selected.type]?.label}</Text>
+                <Text strong style={{ fontSize: 15 }}>{BLOCK_REGISTRY[selected.type]?.label}</Text>
               </Space>
               <Space size={4}>
                 <Tooltip title="上移">
@@ -242,7 +241,7 @@ const ComponentsEditor: React.FC<ComponentsEditorProps> = ({ blocks, onChange, o
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 13 }}>标题</Text>
+              <Text style={{ fontSize: 14 }}>标题</Text>
               <Input
                 style={{ marginTop: 6 }}
                 value={selected.title}
@@ -250,7 +249,7 @@ const ComponentsEditor: React.FC<ComponentsEditorProps> = ({ blocks, onChange, o
               />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 13 }}>宽度</Text>
+              <Text style={{ fontSize: 14 }}>宽度</Text>
               <Select
                 style={{ width: "100%", marginTop: 6 }}
                 value={selected.span}
@@ -306,7 +305,7 @@ export default function TeacherSmartPortal() {
     queryFn: async () => {
       const r = await listUsers({
         tenant,
-        fields: ["id", "name", "email"],
+        fields: ["id", "name", "email", "classId"],
         filter: { role: { eq: "user" } },
         sort: "+name",
         headers,
@@ -316,6 +315,27 @@ export default function TeacherSmartPortal() {
       return (Array.isArray(data) ? data : []) as StudentOption[];
     },
   });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ["smart-portal-classes", tenant],
+    enabled: !!tenant,
+    queryFn: async () => {
+      const r = await listClasses({ tenant, fields: ["id", "name"], sort: "+name", headers });
+      if (!(r as any)?.success) return [];
+      const data = (r as any).data;
+      return (Array.isArray(data) ? data : data?.results || []) as ClassOption[];
+    },
+  });
+
+  // 每个学生只能分配到一个门户：过滤掉已分配到其他门户的学生
+  const candidateStudents = useMemo(() => {
+    const assignedElsewhere = new Set<string>();
+    portals.forEach((p) => {
+      if (p.id === editing?.id) return;
+      (p.studentIds || []).forEach((id) => assignedElsewhere.add(id));
+    });
+    return students.filter((s) => !assignedElsewhere.has(s.id));
+  }, [students, portals, editing]);
 
   const load = async () => {
     if (!teacherId) {
@@ -504,6 +524,7 @@ export default function TeacherSmartPortal() {
       />
 
       <Modal
+        className="smart-portal-form-modal"
         open={modalOpen}
         title={editing ? "编辑智慧门户" : "新建智慧门户"}
         width={1040}
@@ -515,6 +536,35 @@ export default function TeacherSmartPortal() {
         destroyOnHidden
         styles={{ body: { maxHeight: "68vh", overflowY: "auto", paddingTop: 8 } }}
       >
+        <style>{`
+          .smart-portal-form-modal .ant-modal-title { font-size: 18px; }
+          .smart-portal-form-modal .ant-tabs-tab { font-size: 15px; }
+          .smart-portal-form-modal .ant-input,
+          .smart-portal-form-modal .ant-input-affix-wrapper,
+          .smart-portal-form-modal .ant-select-single .ant-select-selector {
+            height: 40px; font-size: 15px;
+          }
+          .smart-portal-form-modal .ant-select-single .ant-select-selection-item,
+          .smart-portal-form-modal .ant-select-single .ant-select-selection-placeholder {
+            font-size: 15px; line-height: 38px;
+          }
+          .smart-portal-form-modal .ant-select-multiple .ant-select-selector {
+            min-height: 40px; font-size: 15px;
+          }
+          .smart-portal-form-modal .ant-space-compact .ant-btn,
+          .smart-portal-form-modal .ant-space-compact .ant-select-single .ant-select-selector,
+          .smart-portal-form-modal .ant-space-compact .ant-input { height: 40px; }
+          .smart-portal-form-modal .ant-btn { font-size: 15px; height: 40px; }
+          .smart-portal-form-modal .ant-btn-sm { height: 28px; font-size: 13px; }
+          .smart-portal-form-modal .ant-tag { font-size: 13px; }
+          .smart-portal-form-modal .ant-form-item-label > label { font-size: 15px; }
+          .smart-portal-form-modal .ant-form-item-explain,
+          .smart-portal-form-modal .ant-form-item-extra { font-size: 13px; }
+          .smart-portal-form-modal .ant-table { font-size: 15px; }
+          .smart-portal-form-modal .ant-table-thead > tr > th,
+          .smart-portal-form-modal .ant-table-tbody > tr > td { font-size: 15px; padding: 13px 16px; }
+          .smart-portal-form-modal .ant-empty-description { font-size: 14px; }
+        `}</style>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -525,7 +575,7 @@ export default function TeacherSmartPortal() {
               children: (
                 <div style={{ maxWidth: 520 }}>
                   <div style={{ marginBottom: 16 }}>
-                    <Text style={{ fontSize: 13 }}>门户名称</Text>
+                    <Text style={{ fontSize: 15 }}>门户名称</Text>
                     <Input
                       style={{ marginTop: 6 }}
                       value={name}
@@ -534,10 +584,10 @@ export default function TeacherSmartPortal() {
                     />
                   </div>
                   <Space>
-                    <Text style={{ fontSize: 13 }}>启用</Text>
+                    <Text style={{ fontSize: 15 }}>启用</Text>
                     <Switch checked={enabled} onChange={setEnabled} />
                   </Space>
-                  <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12 }}>
+                  <Paragraph type="secondary" style={{ fontSize: 13, marginTop: 12 }}>
                     启用后，被分配到的学生才能在学生端看到该门户。
                   </Paragraph>
                 </div>
@@ -559,23 +609,19 @@ export default function TeacherSmartPortal() {
               label: `分配学生（${studentIds.length}）`,
               children: (
                 <div>
-                  <Text style={{ fontSize: 13 }}>选择可查看该门户的学生</Text>
-                  <Select
-                    mode="multiple"
-                    allowClear
-                    style={{ width: "100%", marginTop: 8 }}
-                    placeholder="搜索并选择学生"
-                    value={studentIds}
-                    onChange={setStudentIds}
-                    optionFilterProp="label"
-                    maxTagCount="responsive"
-                    options={students.map((s) => ({
-                      label: s.name ? `${s.name}${s.email ? `（${s.email}）` : ""}` : s.email || s.id,
-                      value: s.id,
-                    }))}
-                  />
-                  <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12 }}>
-                    未分配学生的门户仅用于配置/预览，学生端不会展示。
+                  <Text style={{ fontSize: 15 }}>选择可查看该门户的学生</Text>
+                  <div style={{ marginTop: 8 }}>
+                    <StudentTableSelect
+                      students={candidateStudents}
+                      classes={classes}
+                      value={studentIds}
+                      onChange={setStudentIds}
+                      loading={loading}
+                      emptyText="暂无可分配的学生（可能已分配到其他门户）"
+                    />
+                  </div>
+                  <Paragraph type="secondary" style={{ fontSize: 13, marginTop: 12 }}>
+                    每个学生只能分配到一个门户，已分配到其他门户的学生不再显示；未分配学生的门户仅用于配置/预览。
                   </Paragraph>
                 </div>
               ),

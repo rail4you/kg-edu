@@ -29,6 +29,8 @@ const LANGUAGE_OPTIONS = [
   // cosyvoice-v3-flash 不支持西班牙语（仅支持中英日韩印尼）
 ];
 
+const LANGUAGE_LABELS: Record<string, string> = { zh: "中文", en: "英语", ja: "日语" };
+
 /** cosyvoice-v3-flash 情感指令（instruction 须为中文固定格式） */
 const EMOTIONS = [
   { value: "", label: "无（自然语气）" },
@@ -122,20 +124,28 @@ export default function TtsSynthesis() {
     setSynthesizing(true);
     setAudioUrl("");
     try {
-      // 选了日语音色 且 输入文本不是日语（不含平假名/片假名），则先翻译为日语
-      const isJaVoice = selectedVoice?.language === "ja";
-      const hasJapaneseKana = /[\u3040-\u309F\u30A0-\u30FF]/.test(t);
+      // 选择了非中文语言、且输入文本不是该语言时，先自动翻译
+      // - 日语：文本不含假名则翻译为日语
+      // - 英语：文本含中文/日文则翻译为英语
+      const hasCJK = /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(t);
+      const hasKana = /[\u3040-\u30FF]/.test(t);
+      let needsTranslation = false;
+      if (language === "ja") {
+        needsTranslation = !hasKana;
+      } else if (language === "en") {
+        needsTranslation = hasCJK || hasKana;
+      }
       let actualText = t;
-      if (isJaVoice && !hasJapaneseKana) {
+      if (needsTranslation) {
         try {
           const tr = await fetch("/api/tts/translate", {
             method: "POST",
             headers: { "Content-Type": "application/json", ...headers, "x-org-schema": tenant },
-            body: JSON.stringify({ text: t, target: "ja" }),
+            body: JSON.stringify({ text: t, target: language }),
           }).then((x) => x.json());
           if (tr.success) {
             actualText = tr.data.translated;
-            message.info(`已自动翻译为日语：${actualText}`);
+            message.info(`已自动翻译为${LANGUAGE_LABELS[language] || language}：${actualText}`);
           } else {
             message.error(`翻译失败：${tr.error || "未知错误"}`);
             return;
