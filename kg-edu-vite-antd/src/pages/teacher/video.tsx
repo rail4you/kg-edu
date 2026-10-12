@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Card,
   Typography,
   Button,
   Row,
@@ -31,8 +30,6 @@ import {
   CheckOutlined,
   ArrowLeftOutlined,
   FundOutlined,
-  AppstoreOutlined,
-  UnorderedListOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -59,11 +56,13 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { CourseSelect } from "@/components/course/CourseSelect";
+import { SwitchButton } from "@/components/teacher/switch-button";
 import VideoAnalysisDrawer from "./components/video-analysis-drawer";
 import VideoAnalysisTasks from "./components/video-analysis-tasks";
 import { getChapter } from "@/lib/ash_rpc";
 import type {
   VideoResourceSchema,
+  CourseResourceSchema,
 } from "@/lib/ash_rpc";
 
 const { Title, Text } = Typography;
@@ -101,7 +100,6 @@ export default function VideoManagementPage() {
     useState<VideoResourceSchema | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState("list");
-  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -187,7 +185,7 @@ export default function VideoManagementPage() {
   });
 
   // 使用统一的课程获取 hook
-  const { courses: coursesData } = useCourses({
+  const { courses: coursesData, loading: coursesLoading } = useCourses({
     fields: ["id", "title"],
   });
 
@@ -841,14 +839,14 @@ export default function VideoManagementPage() {
       dataIndex: "chapter",
       key: "chapter",
       render: (chapter: { title: string } | null) =>
-        chapter ? <Tag color="blue">{chapter.title}</Tag> : "-",
+        chapter ? <Text>{chapter.title}</Text> : "-",
     },
     {
       title: "知识资源",
       dataIndex: "knowledgeResource",
       key: "knowledgeResource",
       render: (resource: { name: string } | null) =>
-        resource ? <Tag color="purple">{resource.name}</Tag> : "-",
+        resource ? <Text>{resource.name}</Text> : "-",
     },
     {
       title: "操作",
@@ -893,133 +891,6 @@ export default function VideoManagementPage() {
       ),
     },
   ];
-
-  const renderVideoCard = (video: VideoResourceSchema) => (
-    <Col xs={24} md={12} xl={6} key={video.id}>
-      <Card
-        hoverable
-        style={{ height: "100%" }}
-        styles={{
-          body: { padding: 12 },
-        }}
-        cover={
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              height: 140,
-              backgroundColor: "#000",
-              overflow: "hidden",
-            }}
-          >
-            {video.thumbnail ? (
-              <img
-                src={video.thumbnail}
-                alt={video.title || ""}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <PlayCircleOutlined
-                  style={{ fontSize: 32, color: "white" }}
-                />
-              </div>
-            )}
-            {video.duration && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 8,
-                  right: 8,
-                  backgroundColor: "rgba(0, 0, 0, 0.8)",
-                  color: "white",
-                  padding: "2px 6px",
-                  borderRadius: 3,
-                  fontSize: "0.7rem",
-                  fontWeight: 500,
-                }}
-              >
-                {Math.floor(video.duration / 60)}:
-                {Math.round(video.duration % 60)
-                  .toString()
-                  .padStart(2, "0")}
-              </div>
-            )}
-          </div>
-        }
-        actions={[
-          <Button
-            key="preview"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handlePreviewVideo(video)}
-          >
-            预览
-          </Button>,
-          <Button
-            key="analyze"
-            size="small"
-            type="primary"
-            icon={<FundOutlined />}
-            onClick={() => openAnalysis(video)}
-          >
-            AI 解析
-          </Button>,
-          <ReadonlyActionButton
-            key="edit"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEditVideo(video)}
-          >
-            编辑
-          </ReadonlyActionButton>,
-          <Popconfirm
-            key="delete"
-            title="确定要删除这个视频吗?"
-            onConfirm={() => handleDeleteVideo(video.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <ReadonlyActionButton size="small" danger icon={<DeleteOutlined />}>
-              删除
-            </ReadonlyActionButton>
-          </Popconfirm>,
-        ]}
-      >
-        <Title
-          level={5}
-          ellipsis={{ rows: 2 }}
-          style={{ marginBottom: 8, minHeight: 36 }}
-        >
-          {video.title}
-        </Title>
-        <Space wrap size={[4, 4]}>
-          {(video as any).chapter && (
-            <Tag color="blue" style={{ margin: 0 }}>{(video as any).chapter.title}</Tag>
-          )}
-          {(video as any).knowledgeResource && (
-            <Tag color="purple" style={{ margin: 0 }}>
-              {(video as any).knowledgeResource.name}
-            </Tag>
-          )}
-        </Space>
-      </Card>
-    </Col>
-  );
 
   const renderCreateDialog = () => (
     <Modal
@@ -1310,6 +1181,19 @@ export default function VideoManagementPage() {
         </Button>
       }
     >
+      <div className="pu-filters">
+        <SwitchButton
+          title="切换当前课程"
+          buttonLabel="切换课程"
+          options={courses.map((course: CourseResourceSchema) => ({
+            id: course.id,
+            label: course.title,
+          }))}
+          value={selectedCourseId}
+          onChange={(id) => handleCourseSelect(id)}
+          loading={coursesLoading}
+        />
+      </div>
       <ProtoCard>
         <ProtoTabs
           items={[
@@ -1319,31 +1203,6 @@ export default function VideoManagementPage() {
           active={currentTab}
           onChange={setCurrentTab}
         />
-        <div className="pu-filters">
-          <CourseSelect
-            style={{ minWidth: 240 }}
-            value={selectedCourseId}
-            onChange={handleCourseSelect}
-          />
-          {currentTab === "list" && videos.length > 0 && (
-            <Space.Compact>
-              <Button
-                type={viewMode === "card" ? "primary" : "default"}
-                icon={<AppstoreOutlined />}
-                onClick={() => setViewMode("card")}
-              >
-                卡片
-              </Button>
-              <Button
-                type={viewMode === "table" ? "primary" : "default"}
-                icon={<UnorderedListOutlined />}
-                onClick={() => setViewMode("table")}
-              >
-                表格
-              </Button>
-            </Space.Compact>
-          )}
-        </div>
 
         <Spin spinning={isLoading} tip="正在加载视频...">
           {error && (
@@ -1375,22 +1234,18 @@ export default function VideoManagementPage() {
           )}
 
           {currentTab === "list" && !isLoading && !error && videos.length > 0 && (
-            viewMode === "card" ? (
-              <Row gutter={[12, 12]}>{videos.map(renderVideoCard)}</Row>
-            ) : (
-              <>
-                <Table
-                  columns={tableColumns}
-                  dataSource={videos}
-                  rowKey="id"
-                  pagination={false}
-                  size="middle"
-                />
-                <div className="pu-table-footer">
-                  <span>共 {videos.length} 条</span>
-                </div>
-              </>
-            )
+            <Table
+              className="theme-table"
+              columns={tableColumns}
+              dataSource={videos}
+              rowKey="id"
+              size="middle"
+              pagination={{
+                pageSize: 25,
+                showSizeChanger: true,
+                showTotal: (t) => `共 ${t} 条`,
+              }}
+            />
           )}
         </Spin>
       </ProtoCard>

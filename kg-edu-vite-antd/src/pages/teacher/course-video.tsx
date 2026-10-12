@@ -2,38 +2,24 @@ import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Card,
   Typography,
   Button,
-  Row,
-  Col,
   Modal,
-  Input,
   Select,
-  Tag,
   Space,
   message,
   Popconfirm,
-  Tabs,
   Table,
   Progress,
   Spin,
-  Empty,
   Alert,
-  Tooltip,
-  Upload,
 } from "antd";
 import {
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
   PlayCircleOutlined,
-  EyeOutlined,
   PictureOutlined,
   VideoCameraOutlined,
   UploadOutlined,
-  ArrowLeftOutlined,
-  FundOutlined
 } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload/interface";
 import {
@@ -48,7 +34,8 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
+import { SwitchButton } from "@/components/teacher/switch-button";
 import {
   getSTSToken,
   uploadFileToOSS,
@@ -132,7 +119,6 @@ export default function CourseVideoManagementPage() {
   const [selectedCourseVideo, setSelectedCourseVideo] =
     useState<CourseVideoResourceSchema | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState("0");
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -526,99 +512,7 @@ export default function CourseVideoManagementPage() {
     </Space>
   );
 
-  const isVideo = (cv: CourseVideoResourceSchema) => (cv.mediaType || "video") === "video";
   const isImage = (cv: CourseVideoResourceSchema) => cv.mediaType === "image";
-
-  // Card component
-  const renderCourseVideoCard = (courseVideo: CourseVideoResourceSchema) => {
-    const isImg = isImage(courseVideo);
-    return (
-      <Col xs={24} sm={12} lg={8} xl={6} key={courseVideo.id}>
-        <Card
-          hoverable
-          style={{
-            borderRadius: 12,
-            overflow: "hidden",
-            border: "1px solid #f0f0f0",
-          }}
-          styles={{ body: { padding: 12 } }}
-          cover={
-            <div
-              style={{
-                position: "relative",
-                width: "100%",
-                paddingTop: "56.25%",
-                cursor: "pointer",
-              }}
-              onClick={() => handlePreviewVideo(courseVideo)}
-            >
-              {courseVideo.imageUrl ? (
-                <img
-                  src={courseVideo.imageUrl}
-                  alt={courseVideo.name}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    background: isImg
-                      ? "linear-gradient(135deg, #13c2c2 0%, #08979c 100%)"
-                      : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {isImg ? (
-                    <PictureOutlined style={{ fontSize: 40, color: "white" }} />
-                  ) : (
-                    <PlayCircleOutlined style={{ fontSize: 40, color: "white" }} />
-                  )}
-                </div>
-              )}
-              <Tag
-                color={isImg ? "cyan" : "purple"}
-                style={{ position: "absolute", top: 8, left: 8, margin: 0 }}
-              >
-                {isImg ? "图片" : "视频"}
-              </Tag>
-              <Tag
-                color="blue"
-                style={{ position: "absolute", top: 8, right: 8, margin: 0 }}
-              >
-                {courseVideo.name}
-              </Tag>
-            </div>
-          }
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text ellipsis style={{ flex: 1, marginRight: 8 }}>
-              {getCourseTitle(courseVideo.course)}
-            </Text>
-            {renderVideoActions(courseVideo)}
-          </div>
-        </Card>
-      </Col>
-    );
-  };
 
   // Table columns
   const tableColumns = [
@@ -675,9 +569,9 @@ export default function CourseVideoManagementPage() {
       width: 80,
       onCell: () => ({ style: { verticalAlign: "middle" as const } }),
       render: (_: unknown, record: CourseVideoResourceSchema) => (
-        <Tag color={isImage(record) ? "cyan" : "purple"}>
+        <Text style={{ color: "var(--theme-primary, #2573E6)" }}>
           {isImage(record) ? "图片" : "视频"}
-        </Tag>
+        </Text>
       ),
     },
     {
@@ -685,13 +579,10 @@ export default function CourseVideoManagementPage() {
       dataIndex: "course",
       key: "course",
       onCell: () => ({ style: { verticalAlign: "middle" as const } }),
-      render: (course?: { title?: string } | null, record: CourseVideoResourceSchema) => (
-        <Space wrap size={4}>
-          <Text ellipsis={{ tooltip: course?.title }} style={{ maxWidth: 200 }}>
-            {course?.title || "未分配"}
-          </Text>
-          <Tag color="blue" style={{ marginInlineEnd: 0 }}>{record.name}</Tag>
-        </Space>
+      render: (course?: { title?: string } | null) => (
+        <Text ellipsis={{ tooltip: course?.title }} style={{ maxWidth: 240 }}>
+          {course?.title || "未分配"}
+        </Text>
       ),
     },
     {
@@ -699,69 +590,6 @@ export default function CourseVideoManagementPage() {
       key: "action",
       width: 220,
       render: (_: unknown, record: CourseVideoResourceSchema) => renderVideoActions(record),
-    },
-  ];
-
-  // Tab items
-  const tabItems = [
-    {
-      key: "0",
-      label: "卡片视图",
-      children: (
-        <div>
-          <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Space>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setCreateDialogOpen(true)}
-                style={canEdit ? undefined : { display: "none" }}
-              >
-                上传媒体
-              </Button>
-            </Space>
-          </div>
-          {courseVideos.length > 0 ? (
-            <Row gutter={[16, 16]}>{courseVideos.map(renderCourseVideoCard)}</Row>
-          ) : (
-            <Empty description={activeCourseId ? "暂无课程媒体" : "请先选择一个课程"} />
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "1",
-      label: "表格视图",
-      children: (
-        <Table
-          className="theme-table"
-          columns={tableColumns}
-          dataSource={courseVideos}
-          rowKey="id"
-          title={() => (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setCreateDialogOpen(true)}
-                >
-                  上传媒体
-                </Button>
-              </Space>
-            </div>
-          )}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (t) => `共 ${t} 条`,
-          }}
-          locale={{
-            emptyText: activeCourseId ? "暂无课程媒体" : "请先选择一个课程",
-          }}
-          size="middle"
-        />
-      ),
     },
   ];
 
@@ -781,52 +609,35 @@ export default function CourseVideoManagementPage() {
         </Button>
       }
     >
-      <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "0", label: "卡片视图" },
-            { id: "1", label: "表格视图" },
-          ]}
-          active={currentTab}
-          onChange={(id) => setCurrentTab(id)}
+      <div className="pu-filters">
+        <SwitchButton
+          title="切换当前课程"
+          buttonLabel="切换课程"
+          options={courses.map((course: CourseResourceSchema) => ({
+            id: course.id,
+            label: course.title,
+          }))}
+          value={activeCourseId}
+          onChange={(id) => setSelectedCourseId(id)}
+          loading={coursesLoading}
         />
-        <div className="pu-filters">
-          <Select
-            value={selectedCourseId === "" ? undefined : activeCourseId || undefined}
-            onChange={(value) => setSelectedCourseId(value)}
-            placeholder="请选择课程"
-            style={{ width: 240 }}
-            loading={coursesLoading}
-            allowClear
-            options={courses.map((course: CourseResourceSchema) => ({
-              value: course.id,
-              label: course.title,
-            }))}
-          />
-        </div>
+      </div>
 
-        {currentTab === "0" ? (
-          courseVideos.length > 0 ? (
-            <Row gutter={[16, 16]}>{courseVideos.map(renderCourseVideoCard)}</Row>
-          ) : (
-            <ProtoEmpty
-              title={activeCourseId ? "暂无课程媒体" : "请先选择一个课程"}
-              description="选择课程后上传视频或图片媒体。"
-            />
-          )
-        ) : courseVideos.length > 0 ? (
-          <>
-            <Table
-              columns={tableColumns}
-              dataSource={courseVideos}
-              rowKey="id"
-              pagination={false}
-              size="middle"
-            />
-            <div className="pu-table-footer">
-              <span>共 {courseVideos.length} 条</span>
-            </div>
-          </>
+      <ProtoCard>
+        {courseVideos.length > 0 ? (
+          <Table
+            className="theme-table"
+            columns={tableColumns}
+            dataSource={courseVideos}
+            rowKey="id"
+            loading={isLoading}
+            size="middle"
+            pagination={{
+              pageSize: 25,
+              showSizeChanger: true,
+              showTotal: (t) => `共 ${t} 条`,
+            }}
+          />
         ) : (
           <ProtoEmpty
             title={activeCourseId ? "暂无课程媒体" : "请先选择一个课程"}
@@ -834,11 +645,6 @@ export default function CourseVideoManagementPage() {
           />
         )}
 
-        {isLoading && (
-          <div style={{ textAlign: "center", padding: 24 }}>
-            <Spin size="large" />
-          </div>
-        )}
         {error && (
           <div style={{ textAlign: "center", padding: 24 }}>
             <Text type="danger">加载失败</Text>
@@ -1162,9 +968,9 @@ export default function CourseVideoManagementPage() {
             <div style={{ marginTop: 16, display: "flex", gap: 24 }}>
               <Text type="secondary">
                 <strong>类型:</strong>{" "}
-                <Tag color={isImage(selectedCourseVideo) ? "cyan" : "purple"}>
+                <span style={{ color: "var(--theme-primary, #2573E6)" }}>
                   {isImage(selectedCourseVideo) ? "图片" : "视频"}
-                </Tag>
+                </span>
               </Text>
               <Text type="secondary">
                 <strong>分类:</strong> {selectedCourseVideo.name}
