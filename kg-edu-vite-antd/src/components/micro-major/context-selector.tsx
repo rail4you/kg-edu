@@ -2,7 +2,7 @@ import { useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Select, Typography, Space, Tag } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { listMicroMajors, listCoursesByMicroMajor } from "@/lib/ash_rpc";
+import { listMicroMajors, listCoursesByMicroMajor, listMmChapters } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -16,6 +16,8 @@ const COURSE_STORAGE_KEY = "mm_context_courseId";
 interface ContextSelectorProps {
   /** Whether to show the course selector (needed for chapters/videos/exercises/resources) */
   showCourse?: boolean;
+  /** Only list courses that already have chapters */
+  coursesWithChaptersOnly?: boolean;
 }
 
 /**
@@ -23,7 +25,7 @@ interface ContextSelectorProps {
  * Reads/writes ?mmId and ?courseId search params in the URL.
  * Persists selection across pages via sessionStorage.
  */
-export default function ContextSelector({ showCourse = false }: ContextSelectorProps) {
+export default function ContextSelector({ showCourse = false, coursesWithChaptersOnly = false }: ContextSelectorProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -126,6 +128,29 @@ export default function ContextSelector({ showCourse = false }: ContextSelectorP
   });
   const courses = (coursesData as { id: string; title: string }[]) || [];
 
+  // When required, only keep courses that already have chapters
+  const courseIds = useMemo(() => courses.map((c) => c.id), [courses]);
+  const { data: chapterCourseIds } = useQuery({
+    queryKey: ["mm-ctx-chapter-courses", mmId, courseIds],
+    queryFn: async () => {
+      const result = await listMmChapters({
+        tenant: tenant!,
+        fields: ["id", "microMajorCourseId"],
+        filter: { microMajorCourseId: { in: courseIds } },
+        page: { limit: 1000 },
+        headers,
+      });
+      const rows = extractArrayData(result) as { microMajorCourseId?: string | null }[];
+      return new Set(rows.map((r) => r.microMajorCourseId).filter(Boolean) as string[]);
+    },
+    enabled: !!tenant && !!mmId && coursesWithChaptersOnly && courseIds.length > 0,
+  });
+
+  const courseOptions = useMemo(() => {
+    if (!coursesWithChaptersOnly || !chapterCourseIds) return courses;
+    return courses.filter((c) => chapterCourseIds.has(c.id));
+  }, [courses, coursesWithChaptersOnly, chapterCourseIds]);
+
   // Find current names
   const currentMM = useMemo(
     () => microMajors.find((m) => m.id === mmId),
@@ -149,7 +174,7 @@ export default function ContextSelector({ showCourse = false }: ContextSelectorP
         <SwitchButton
           title="切换课程"
           buttonLabel="切换课程"
-          options={courses.map((c) => ({ id: c.id, label: c.title }))}
+          options={courseOptions.map((c) => ({ id: c.id, label: c.title }))}
           value={courseId}
           onChange={(id) => handleCourseChange(id)}
         />

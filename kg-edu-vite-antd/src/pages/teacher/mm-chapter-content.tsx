@@ -19,7 +19,6 @@ import {
 } from "antd";
 import type { TableColumnsType } from "antd";
 import {
-  FolderOutlined,
   LinkOutlined,
   DisconnectOutlined,
   VideoCameraOutlined,
@@ -42,6 +41,7 @@ import {
 import { extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
+import { themeColors } from "@/styles/theme";
 
 interface MMChapterContentManagerProps {
   tenant: string;
@@ -451,13 +451,13 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
   ];
 
   return (
-    <div className="pu-app" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 16, marginTop: 16 }}>
+    <div className="pu-app" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 16, marginTop: 16, height: isMobile ? undefined : "calc(100vh - 250px)", minHeight: isMobile ? undefined : 420 }}>
       {/* Left panel: chapter tree */}
       <Card
         title="章节列表"
         size="small"
-        style={{ width: isMobile ? "100%" : 300, flexShrink: 0, boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
-        bodyStyle={{ padding: 0, maxHeight: isMobile ? 200 : "calc(100vh - 280px)", overflow: "auto" }}
+        style={{ width: isMobile ? "100%" : 300, flexShrink: 0, height: isMobile ? undefined : "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
+        styles={{ body: { padding: 0, flex: 1, overflow: "auto" } }}
       >
         {chaptersLoading ? (
           <div style={{ textAlign: "center", padding: 24 }}><Spin /></div>
@@ -469,19 +469,18 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
               key={ch.id}
               onClick={() => setSelectedChapterId(ch.id)}
               style={{
-                padding: "8px 12px 8px " + (16 + ch.level * 20) + "px",
+                padding: "8px 12px 8px " + (12 + ch.level * 20) + "px",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                backgroundColor: selectedChapterId === ch.id ? "#f0f0ff" : "transparent",
-                borderLeft: selectedChapterId === ch.id ? "3px solid #722ed1" : "3px solid transparent",
+                backgroundColor: selectedChapterId === ch.id ? themeColors.primaryLightBg : "transparent",
+                borderLeft: selectedChapterId === ch.id ? `3px solid ${themeColors.primary}` : "3px solid transparent",
                 transition: "all 0.2s",
               }}
               onMouseEnter={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "#f9f9f9"; }}
               onMouseLeave={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "transparent"; }}
             >
-              <FolderOutlined style={{ color: "#722ed1", fontSize: 14 }} />
               <Text style={{ fontSize: 13, flex: 1 }} ellipsis>
                 {generateChapterNumber(ch.path) ? `${generateChapterNumber(ch.path)} ` : ""}{ch.title}
               </Text>
@@ -494,8 +493,8 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
       <Card
         title={selectedChapter ? `章节内容: ${selectedChapter.title}` : "请选择一个章节"}
         size={isMobile ? "small" : "small"}
-        style={{ flex: 1, boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
-        bodyStyle={{ padding: isMobile ? 8 : 12 }}
+        style={{ flex: 1, height: isMobile ? undefined : "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
+        styles={{ body: { padding: isMobile ? 8 : 12, flex: 1, overflow: "auto" } }}
       >
         {!selectedChapterId ? (
           <Empty description="请从左侧选择一个章节" style={{ padding: 48 }} />
