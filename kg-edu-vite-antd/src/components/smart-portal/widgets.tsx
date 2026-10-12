@@ -685,7 +685,9 @@ export const AiPracticeWidget: React.FC<BlockRenderProps> = ({ block, onNavigate
     queryKey: ["practice-session", tenant, scenario, user?.id, courseId],
     queryFn: () => fetchPracticeSession({ tenant, scenario, userId: user?.id, courseId, headers }),
     enabled: !!tenant && !!user?.id,
-    staleTime: 30 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
   const started = !!session?.transcript?.length;
   const sceneName = meta?.name || "AI 实践";

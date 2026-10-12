@@ -106,7 +106,7 @@ defmodule KgEduWeb.SmartPortalController do
             "span" => 24,
             "config" => %{
               "content" =>
-                "完成以下任务即可，任务可能不止 6 项；与 AI 角色对话或提交作品后，即可获得实时评估结果。",
+                "完成以下任务即可；与 AI 角色对话或提交作品后，即可获得实时评估结果。",
               "align" => "left"
             }
           }
