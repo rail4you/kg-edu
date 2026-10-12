@@ -44,6 +44,8 @@ import {
   PlusOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  EyeOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import {
   listFiles,
@@ -66,6 +68,7 @@ import {
   type ResourceResourceSchema,
 } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
+import FilePreview from "@/components/FilePreview";
 
 type CourseData = { id: string; title: string; description?: string | null };
 type FileData = {
@@ -254,6 +257,24 @@ function FilesTable({
   const [internalSearchText, setInternalSearchText] = useState("");
   const actualSearchText = searchText ?? internalSearchText;
   const handleSearchChange = onSearchChange ?? setInternalSearchText;
+  const [previewFile, setPreviewFile] = useState<FileData | null>(null);
+
+  const handlePreview = (file: FileData) => {
+    if (!file.path) return;
+    setPreviewFile(file);
+  };
+
+  const handleDownload = (file: FileData) => {
+    if (!file.path) return;
+    const link = document.createElement("a");
+    link.href = file.path;
+    link.download = file.filename || "file";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const filteredFiles = useMemo(() => {
     if (!files) return [];
@@ -342,7 +363,7 @@ function FilesTable({
           {
             title: "操作",
             key: "action",
-            width: onMove ? 160 : 110,
+            width: onMove ? 280 : 230,
             render: (_: unknown, file) => (
               <Space size={4}>
                 {onMove && (
@@ -358,6 +379,24 @@ function FilesTable({
                 <Button
                   type="link"
                   size="small"
+                  icon={<EyeOutlined />}
+                  disabled={!file.path}
+                  onClick={() => handlePreview(file)}
+                >
+                  预览
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<DownloadOutlined />}
+                  disabled={!file.path}
+                  onClick={() => handleDownload(file)}
+                >
+                  下载
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
                   danger
                   icon={<DisconnectOutlined />}
                   onClick={() => onUnlink(file.id, file.filename)}
@@ -370,6 +409,21 @@ function FilesTable({
         ]}
       />
       <div className="pu-table-footer"><span>共 {filteredFiles.length} 条</span></div>
+      <FilePreview
+        open={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        file={
+          previewFile
+            ? {
+                url: previewFile.path || "",
+                name: previewFile.filename,
+                type: (previewFile.filename || "").split(".").pop()?.toLowerCase() || previewFile.fileType,
+                size: previewFile.size,
+              }
+            : { url: "", name: "", type: "" }
+        }
+        onDownload={() => previewFile && handleDownload(previewFile)}
+      />
     </>
   );
 }
@@ -2319,7 +2373,7 @@ export default function KnowledgeFilePage() {
       try {
         const filesResult = await listFiles({
           tenant,
-          fields: ["id", "filename", "fileType", "size", "purpose", "source", "sortOrder"],
+          fields: ["id", "filename", "fileType", "size", "path", "purpose", "source", "sortOrder"],
           filter: { knowledgeResourceId: { eq: knowledgeId } },
         });
         if (filesResult.success) {
