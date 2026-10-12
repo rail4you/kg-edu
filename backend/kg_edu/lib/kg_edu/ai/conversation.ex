@@ -23,6 +23,7 @@ defmodule KgEdu.AI.Conversation do
     define :get_conversation, action: :by_id
     define :list_conversations, action: :read
     define :create_conversation, action: :create
+    define :update_conversation, action: :update
     define :delete_conversation, action: :destroy
   end
 
@@ -60,7 +61,7 @@ defmodule KgEdu.AI.Conversation do
 
     update :update do
       description "Update an AI conversation"
-      accept [:title]
+      accept [:title, :ai_command_id]
     end
   end
 

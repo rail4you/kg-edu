@@ -7,7 +7,7 @@ import {
   Select, InputNumber,
 } from "antd";
 import type { TableColumnsType } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getGroupsByCourse, createGroup, updateGroup, deleteGroup, listEnrollmentsByCourse, addMembers, removeMember, listUsers } from "@/lib/ash_rpc";
@@ -274,9 +274,6 @@ export default function GroupManagement() {
             }}
           >
             创建小组
-          </Button>
-          <Button icon={<SwapOutlined />} disabled={!selectedCourseId} style={canEdit ? undefined : { display: "none" }}>
-            随机分组
           </Button>
         </>
       }

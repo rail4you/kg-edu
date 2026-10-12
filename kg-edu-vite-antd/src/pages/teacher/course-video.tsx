@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Typography,
@@ -107,7 +106,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function CourseVideoManagementPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const currentTenant = getCurrentTenant();
@@ -481,15 +479,6 @@ export default function CourseVideoManagementPage() {
       >
         预览
       </Button>
-      {!isImage(courseVideo) && (
-        <Button
-          size="small"
-          type="link"
-          onClick={() => navigate(`/teacher/dashboard/course-video-analysis/${courseVideo.id}`)}
-        >
-          AI 解析
-        </Button>
-      )}
       <ReadonlyActionButton
         size="small"
         type="link"

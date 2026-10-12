@@ -312,13 +312,28 @@ defmodule KgEduWeb.ChatController do
   defp build_opts(_agent_type, tenant, params) do
     opts = KgEdu.Chat.edu_config()
 
-    # Honor a caller-supplied system prompt (used by AI practice scenarios and
-    # other custom role-play agents). Falls back to the built-in assistant prompt.
-    custom_prompt = params["systemPrompt"] || (params["forwardedProps"] || %{})["systemPrompt"]
+    # Honor a caller-supplied command/system prompt (used by AI commands and
+    # AI practice scenarios). The frontend sends these under
+    # `forwardedProps.runConfig`; also accept a flat `systemPrompt` for
+    # backward compatibility.
+    fp = params["forwardedProps"] || %{}
+    run_config = fp["runConfig"] || %{}
+
+    system_prompt =
+      run_config["systemPrompt"] || params["systemPrompt"] || fp["systemPrompt"]
+
+    prompt_parts =
+      [
+        system_prompt,
+        run_config["userPrompt"] && "参考提问模板：\n" <> run_config["userPrompt"],
+        run_config["assistantExample"] && "参考回答示例：\n" <> run_config["assistantExample"]
+      ]
+      |> Enum.filter(&(is_binary(&1) and &1 != ""))
+      |> Enum.join("\n\n")
 
     opts =
-      if is_binary(custom_prompt) and custom_prompt != "" do
-        Keyword.put(opts, :system_prompt, custom_prompt)
+      if prompt_parts != "" do
+        Keyword.put(opts, :system_prompt, prompt_parts)
       else
         opts
       end

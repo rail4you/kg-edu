@@ -2,7 +2,7 @@
  * 自定义聊天组件 - 直接使用 Pi Agent 流式响应
  * 不依赖 AG-UI 协议，直接消费 SSE 事件
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { Avatar } from "antd";
 import { LoadingOutlined, RobotOutlined, SendOutlined, UserOutlined } from "@ant-design/icons";
 import ReactMarkdown from "react-markdown";
@@ -58,12 +58,17 @@ const TOOL_NAME_MAP: Record<string, string> = {
   GetCoursesByMajor: "按专业获取课程",
   GetCoursesBySemester: "按学期获取课程",
   GetPublishedCourses: "获取已发布课程",
+  GetChapters: "获取章节",
+  GetChapterById: "获取章节详情",
   GetKnowledgeResources: "获取知识资源",
   GetKnowledgeResourceById: "获取知识资源详情",
   GetExercises: "获取练习题",
+  GetExams: "获取考试",
   CreateExercise: "创建练习题",
   GenerateExercises: "批量生成练习题",
   GenerateExam: "生成试卷",
+  GenerateCompetencyGraph: "生成能力图谱",
+  GenerateCurriculum: "生成课程体系",
   GeneratePowerPointWithShapeCrawler: "生成PPT课件",
   SaveAsDocxAndUpload: "生成Word文档",
   GenerateLessonPlan: "生成教案",
@@ -158,12 +163,16 @@ function MessageBubble({
   onToggleKnowledge,
   disabled,
   hideToolCalls = false,
+  userName,
+  assistantName,
 }: {
   msg: Message;
   onSelectKnowledge?: (ids: string[]) => void;
   onToggleKnowledge?: (msgId: string, knowledgeId: string) => void;
   disabled?: boolean;
   hideToolCalls?: boolean;
+  userName?: string;
+  assistantName?: string;
 }) {
   const isUser = msg.role === "user";
 
@@ -179,6 +188,7 @@ function MessageBubble({
         }}
       />
       <div className={`aui-message-column ${isUser ? "aui-message-column-user" : "aui-message-column-assistant"}`}>
+        <div className="aui-message-name">{isUser ? userName || "我" : assistantName || "AI 教学助手"}</div>
         {/* Tool calls — hidden on the student side so only the final result shows */}
         {!hideToolCalls && msg.toolCalls && msg.toolCalls.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
@@ -194,7 +204,7 @@ function MessageBubble({
                   <span className="aui-tool-call-name" style={{ fontWeight: 500 }}>{getToolDisplayName(tc.toolName)}</span>
                 </div>
                 {/* Live preview of what the tool is composing (e.g. PPT/教案 content) */}
-                {tc.preview && (
+                {tc.preview && !/^%?\s*\{\s*\}$/.test(tc.preview.trim()) && (
                   <div
                     style={{
                       marginTop: 6,
@@ -462,6 +472,9 @@ interface AssistantChatProps {
   /** Inject text into the composer (e.g. from quick-prompt buttons).
    *  `nonce` must change each time so repeated clicks re-apply. */
   presetPrompt?: { text: string; nonce: number } | null;
+  /** Optional control rendered to the left of the composer input
+   *  (e.g. the AI command selector). */
+  leadingControl?: ReactNode;
 }
 
 export default function AssistantChat({
@@ -470,6 +483,7 @@ export default function AssistantChat({
   aiCommand,
   hideToolCalls = false,
   presetPrompt,
+  leadingControl,
 }: AssistantChatProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -841,7 +855,9 @@ export default function AssistantChat({
               // plan content being composed) so the user sees generation progress.
               const toolCallId = (event.toolCallId as string) || "";
               const delta = typeof event.delta === "string" ? event.delta : "";
-              if (toolCallId && toolCallMap.has(toolCallId) && delta.trim()) {
+              // 跳过空参数（Elixir inspect 的空 map：%{} / {}），避免显示无意义内容
+              const isEmptyArgs = /^%?\s*\{\s*\}$/.test(delta.trim());
+              if (toolCallId && toolCallMap.has(toolCallId) && delta.trim() && !isEmptyArgs) {
                 const existing = toolCallMap.get(toolCallId)!;
                 toolCallMap.set(toolCallId, { ...existing, preview: delta.slice(0, 600) });
               }
@@ -1126,6 +1142,8 @@ export default function AssistantChat({
             onToggleKnowledge={handleToggleKnowledge}
             disabled={busy}
             hideToolCalls={hideToolCalls}
+            userName={(user as any)?.displayName || user?.name || "我"}
+            assistantName={aiCommand?.title || "AI 教学助手"}
           />
         ))}
       </div>
@@ -1133,6 +1151,7 @@ export default function AssistantChat({
       {/* Composer */}
       <div className="aui-composer-root">
         <div className="aui-composer-shell">
+          {leadingControl ? <div className="aui-composer-leading">{leadingControl}</div> : null}
           <textarea
             ref={inputRef as any}
             className="aui-composer-input"

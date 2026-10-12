@@ -1,12 +1,12 @@
 /**
  * AI 智能体助手
- * 参照「易课程-完整交互原型」#/teacher/AI智能体助手：
- * 左侧「课程助手」快捷提示面板 + 右侧对话卡片。
- * 对话仍由 assistant-ui（AG-UI）驱动真实后端。
+ * 左侧：会话列表（可重命名 / 删除，重命名为 inplace 编辑）。
+ * 右侧：对话；提问框左侧可切换「AI 命令」，基于该命令的提示词进行问答。
+ * 对话由 assistant-ui（AG-UI）驱动真实后端。
  */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Button, Select, message } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Button, Select, message, Input, Popconfirm } from "antd";
+import { PlusOutlined, EditOutlined, CloseOutlined } from "@ant-design/icons";
 import AssistantChat from "@/components/assistant-ui/AssistantChat";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
@@ -15,7 +15,9 @@ import {
   listCommands,
   createConversation as rpcCreateConversation,
   listConversations as rpcListConversations,
+  deleteConversation as rpcDeleteConversation,
 } from "@/lib/ash_rpc";
+import { updateConversation } from "@/lib/ai-conversation";
 import "./ai-assistant.css";
 
 function generateUUID(): string {
@@ -41,16 +43,8 @@ interface Conversation {
   id: string;
   title: string;
   threadId: string | null;
-  aiCommand: AICommand | null;
   aiCommandId?: string | null;
 }
-
-const QUICK_PROMPTS = [
-  { label: "课程答疑", prompt: "请解释本章的核心概念" },
-  { label: "教案设计", prompt: "请帮我设计一节视觉语言课程" },
-  { label: "知识点提炼", prompt: "请提炼本章的核心知识点" },
-  { label: "学习建议", prompt: "如何安排本周学习计划" },
-];
 
 export default function AIAssistantPage() {
   const { user } = useAuth();
@@ -58,8 +52,12 @@ export default function AIAssistantPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [presetPrompt, setPresetPrompt] = useState<{ text: string; nonce: number } | null>(null);
+  const [commandId, setCommandId] = useState<string | undefined>(undefined);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
   const currentConversationIdRef = useRef<string | null>(null);
+
+  const headers = user ? (getAuthHeaders(user) as Record<string, string>) : {};
 
   useEffect(() => {
     const loadAiCommands = async () => {
@@ -98,7 +96,6 @@ export default function AIAssistantPage() {
           id: c.id,
           title: c.title,
           threadId: c.threadId || null,
-          aiCommand: null,
           aiCommandId: c.aiCommandId || null,
         }));
         setConversations(convs);
@@ -109,6 +106,7 @@ export default function AIAssistantPage() {
             setCurrentConversationId(lastConv.id);
             currentConversationIdRef.current = lastConv.id;
             setThreadId(lastConv.threadId);
+            setCommandId(lastConv.aiCommandId || undefined);
           } else {
             localStorage.removeItem("ai_assistant_current_conversation");
           }
@@ -129,60 +127,41 @@ export default function AIAssistantPage() {
     }
   }, [currentConversationId]);
 
-  // 命令详情填充会话
-  useEffect(() => {
-    if (conversations.length > 0 && aiCommands.length > 0) {
-      setConversations((prev) =>
-        prev.map((conv) => {
-          if (conv.aiCommandId) {
-            const cmd = aiCommands.find((c) => c.id === conv.aiCommandId);
-            return cmd ? { ...conv, aiCommand: cmd } : conv;
-          }
-          return conv;
-        }),
-      );
-    }
-  }, [aiCommands, conversations.length > 0]);
-
-  const createConversation = useCallback(
-    async (command?: AICommand | null) => {
-      if (!user) return;
-      const newThreadId = generateUUID();
-      const title = command?.title ? `${command.title}` : `会话 ${conversations.length + 1}`;
-      try {
-        const result = await rpcCreateConversation({
-          input: {
-            title,
-            threadId: newThreadId,
-            aiCommandId: command?.id || undefined,
-            createdById: user.id,
-          },
-          fields: ["id", "title", "threadId", "aiCommandId"],
-          headers: getAuthHeaders(user) as Record<string, string>,
-        });
-        if (result.success && result.data) {
-          const data = result.data as any;
-          const newConv: Conversation = {
-            id: data.id,
-            title: data.title,
-            threadId: data.threadId || null,
-            aiCommand: command || null,
-            aiCommandId: data.aiCommandId || null,
-          };
-          setConversations((prev) => [newConv, ...prev]);
-          setCurrentConversationId(data.id);
-          currentConversationIdRef.current = data.id;
-          setThreadId(newThreadId);
-        } else {
-          message.error("创建会话失败");
-        }
-      } catch (error) {
-        console.error("创建会话失败:", error);
+  const createConversation = useCallback(async () => {
+    if (!user) return;
+    const newThreadId = generateUUID();
+    const title = `会话 ${conversations.length + 1}`;
+    try {
+      const result = await rpcCreateConversation({
+        input: {
+          title,
+          threadId: newThreadId,
+          createdById: user.id,
+        },
+        fields: ["id", "title", "threadId", "aiCommandId"],
+        headers: getAuthHeaders(user) as Record<string, string>,
+      });
+      if (result.success && result.data) {
+        const data = result.data as any;
+        const newConv: Conversation = {
+          id: data.id,
+          title: data.title,
+          threadId: data.threadId || null,
+          aiCommandId: data.aiCommandId || null,
+        };
+        setConversations((prev) => [newConv, ...prev]);
+        setCurrentConversationId(data.id);
+        currentConversationIdRef.current = data.id;
+        setThreadId(newThreadId);
+        setCommandId(undefined);
+      } else {
         message.error("创建会话失败");
       }
-    },
-    [user, conversations.length],
-  );
+    } catch (error) {
+      console.error("创建会话失败:", error);
+      message.error("创建会话失败");
+    }
+  }, [user, conversations.length]);
 
   const switchConversation = useCallback(
     (convId: string) => {
@@ -191,20 +170,65 @@ export default function AIAssistantPage() {
         setCurrentConversationId(convId);
         currentConversationIdRef.current = convId;
         setThreadId(conv.threadId);
+        setCommandId(conv.aiCommandId || undefined);
       }
     },
     [conversations],
   );
 
-  const handleQuickPrompt = async (prompt: string) => {
-    if (!currentConversationId) {
-      await createConversation(null);
-    }
-    setPresetPrompt({ text: prompt, nonce: Date.now() });
+  // 提问框左侧切换 AI 命令（并持久化到当前会话）
+  const handleCommandChange = useCallback(
+    async (id?: string) => {
+      setCommandId(id);
+      if (!currentConversationId) return;
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === currentConversationId ? { ...c, aiCommandId: id || null } : c,
+        ),
+      );
+      await updateConversation({
+        primaryKey: currentConversationId,
+        input: { aiCommandId: id || null },
+        headers,
+      });
+    },
+    [currentConversationId, headers],
+  );
+
+  const startRename = (conv: Conversation) => {
+    setEditingId(conv.id);
+    setDraftTitle(conv.title);
   };
 
-  const activeConversation = conversations.find((c) => c.id === currentConversationId);
-  const subtitle = activeConversation?.aiCommand?.title || "通用课程教学助手";
+  const saveRename = async (conv: Conversation) => {
+    setEditingId(null);
+    const title = draftTitle.trim();
+    if (!title || title === conv.title) return;
+    setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, title } : c)));
+    const res = await updateConversation({ primaryKey: conv.id, input: { title }, headers });
+    if (!res.success) {
+      message.error("重命名失败");
+      loadConversations();
+    }
+  };
+
+  const removeConversation = async (conv: Conversation) => {
+    const res = await rpcDeleteConversation({ primaryKey: conv.id, headers });
+    if (res.success) {
+      message.success("会话已删除");
+      setConversations((prev) => prev.filter((c) => c.id !== conv.id));
+      if (currentConversationId === conv.id) {
+        setCurrentConversationId(null);
+        setThreadId(null);
+        setCommandId(undefined);
+        localStorage.removeItem("ai_assistant_current_conversation");
+      }
+    } else {
+      message.error("删除失败");
+    }
+  };
+
+  const activeCommand = aiCommands.find((c) => c.id === commandId) || null;
 
   return (
     <AppPage
@@ -218,29 +242,72 @@ export default function AIAssistantPage() {
           title="AI 智能体助手"
           description="围绕课程内容，辅助备课、答疑与知识梳理。"
           actions={
-            <Button onClick={() => createConversation(null)}>
-              <PlusOutlined /> 新建对话
+            <Button type="primary" onClick={() => createConversation()}>
+              <PlusOutlined /> 新建会话
             </Button>
           }
         />
 
         <div className="ai-split">
           <aside className="ai-card ai-tree">
-            <h3>课程助手</h3>
-            <div className="ai-tree__list">
-              {QUICK_PROMPTS.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => handleQuickPrompt(item.prompt)}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="ai-note">
-              助手会结合课程内容作答，结果仅供参考，请自行核对。
+            <h3>会话</h3>
+            <div className="ai-tree__list ai-conv-list">
+              {conversations.length === 0 ? (
+                <div className="ai-note" style={{ margin: 0 }}>
+                  暂无会话，点击右上角「新建会话」开始。
+                </div>
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    className={`ai-conv${conv.id === currentConversationId ? " is-active" : ""}`}
+                    title={conv.title}
+                    onClick={() => {
+                      if (editingId !== conv.id) switchConversation(conv.id);
+                    }}
+                  >
+                    {editingId === conv.id ? (
+                      <Input
+                        size="small"
+                        autoFocus
+                        value={draftTitle}
+                        maxLength={100}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setDraftTitle(e.target.value)}
+                        onPressEnter={() => saveRename(conv)}
+                        onBlur={() => saveRename(conv)}
+                      />
+                    ) : (
+                      <>
+                        <span className="ai-conv__title">{conv.title}</span>
+                        <span className="ai-conv__actions">
+                          <EditOutlined
+                            className="ai-conv__btn"
+                            title="重命名"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startRename(conv);
+                            }}
+                          />
+                          <Popconfirm
+                            title="删除该会话？"
+                            okText="删除"
+                            cancelText="取消"
+                            okButtonProps={{ danger: true }}
+                            onConfirm={() => removeConversation(conv)}
+                          >
+                            <CloseOutlined
+                              className="ai-conv__btn ai-conv__btn--danger"
+                              title="删除"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </Popconfirm>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </aside>
 
@@ -249,18 +316,8 @@ export default function AIAssistantPage() {
               <span className="ai-avatar">AI</span>
               <div>
                 <h3>易课程智能助手</h3>
-                <small>{subtitle}</small>
+                <small>{activeCommand?.title || "通用课程教学助手"}</small>
               </div>
-              {conversations.length > 0 && (
-                <Select
-                  className="ai-chat__switch"
-                  size="small"
-                  value={currentConversationId || undefined}
-                  placeholder="选择会话"
-                  onChange={switchConversation}
-                  options={conversations.map((c) => ({ label: c.title, value: c.id }))}
-                />
-              )}
             </div>
 
             <div className="ai-chat__body">
@@ -269,14 +326,26 @@ export default function AIAssistantPage() {
                   key={currentConversationId}
                   threadId={threadId}
                   conversationId={currentConversationId}
-                  aiCommand={activeConversation?.aiCommand || null}
-                  presetPrompt={presetPrompt}
+                  aiCommand={activeCommand}
+                  leadingControl={
+                    <Select
+                      style={{ width: 160 }}
+                      allowClear
+                      placeholder="通用助手"
+                      value={commandId || undefined}
+                      onChange={(v) => handleCommandChange(v)}
+                      options={aiCommands.map((c) => ({
+                        value: c.id,
+                        label: c.title || "未命名命令",
+                      }))}
+                    />
+                  }
                 />
               ) : (
                 <div className="ai-chat__empty">
                   <div>
                     <span className="ai-avatar ai-avatar--lg">AI</span>
-                    <p>点击右上角「新建对话」，开始与智能助手交流。</p>
+                    <p>点击右上角「新建会话」，开始与智能助手交流。</p>
                   </div>
                 </div>
               )}

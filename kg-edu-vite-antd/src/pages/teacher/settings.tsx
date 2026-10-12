@@ -89,7 +89,6 @@ export default function TeacherSettingsPage() {
 
   const languageOptions = [
     { value: "zh", label: t("pages.settings.language.zh") },
-    { value: "en", label: t("pages.settings.language.en") },
   ];
 
   useEffect(() => {
@@ -97,7 +96,7 @@ export default function TeacherSettingsPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setSettings({ ...defaultSettings, ...parsed });
+        setSettings({ ...defaultSettings, ...parsed, language: "zh" });
       } catch (e) {
         console.error("Failed to parse saved settings:", e);
       }
@@ -283,10 +282,10 @@ export default function TeacherSettingsPage() {
                     {t("pages.settings.language")}
                   </Text>
                   <Select
-                    value={settings.language}
-                    onChange={(value) => handleSettingChange("language", value)}
+                    value="zh"
                     style={{ width: "100%", marginTop: 10 }}
                     size="large"
+                    disabled
                     options={languageOptions}
                   />
                 </div>
@@ -304,7 +303,7 @@ export default function TeacherSettingsPage() {
                     应用说明
                   </Text>
                   <Text type="secondary" style={{ fontSize: 13, lineHeight: "21px" }}>
-                    语言设置会优先影响教师端界面文案与后续本地配置读取行为。
+                    当前暂仅支持简体中文。
                   </Text>
                 </div>
               </Card>

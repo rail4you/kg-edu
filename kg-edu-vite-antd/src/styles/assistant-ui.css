@@ -55,6 +55,13 @@
   align-items: flex-start;
 }
 
+.aui-message-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8a97a8;
+  padding: 0 2px;
+}
+
 .aui-message-bubble {
   border-radius: 16px;
   padding: 10px 16px;
@@ -108,6 +115,28 @@
 .aui-composer-shell:focus-within {
   border-color: #1677ff;
   box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+}
+
+/* Composer 左侧控件（如 AI 命令选择） */
+.aui-composer-leading {
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  flex-shrink: 0;
+}
+
+/* 与输入框高度保持一致（40px） */
+.aui-composer-leading .ant-select-single {
+  height: 40px;
+}
+
+.aui-composer-leading .ant-select-single .ant-select-selector {
+  height: 40px;
+}
+
+.aui-composer-leading .ant-select-single .ant-select-selection-item,
+.aui-composer-leading .ant-select-single .ant-select-selection-placeholder {
+  line-height: 38px;
 }
 
 /* Composer 输入框 */

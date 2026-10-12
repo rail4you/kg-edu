@@ -1579,7 +1579,7 @@ export default function TeacherKnowledgeResource() {
               dataSource={filteredTreeData}
               loading={hierarchyLoading}
               pagination={false}
-              scroll={{ x: 1200, y: 500 }}
+              scroll={{ x: 1200 }}
               rowClassName={(record) => `tree-row-level-${getLevel(record)}`}
               expandable={{
                 defaultExpandAllRows: true,

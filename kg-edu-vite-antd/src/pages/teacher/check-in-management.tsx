@@ -10,6 +10,7 @@ import {
   Tag,
   Modal,
   Input,
+  Select,
   Space,
   Spin,
   message,
@@ -38,6 +39,7 @@ import {
   getRecordsBySession,
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
+import { useCourses } from "@/hooks/use-courses";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
 
@@ -52,6 +54,11 @@ interface CheckInSession {
   token?: string;
   startedAt: string;
   endedAt?: string;
+  courseId?: string | null;
+  course?: {
+    id: string;
+    title: string;
+  } | null;
   createdBy?: {
     id: string;
     name?: string;
@@ -106,6 +113,7 @@ export default function CheckInManagement() {
   const { user, tenant, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
+  const { courses } = useCourses();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subtab, setSubtab] = useState("all");
   const [recordsDialogOpen, setRecordsDialogOpen] = useState(false);
@@ -113,9 +121,10 @@ export default function CheckInManagement() {
   const [selectedSession, setSelectedSession] = useState<CheckInSession | null>(
     null,
   );
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ title: string; description: string; courseId: string }>({
     title: "",
     description: "",
+    courseId: "",
   });
 
   const { data: sessionsResult, isLoading } = useQuery({
@@ -131,6 +140,8 @@ export default function CheckInManagement() {
           "token",
           "startedAt",
           "endedAt",
+          "courseId",
+          { course: ["id", "title"] },
           { createdBy: ["id", "name"] },
           { checkInRecords: ["id"] },
         ],
@@ -188,10 +199,11 @@ export default function CheckInManagement() {
     mutationFn: async (data: typeof formData) => {
       return createSession({
         tenant: tenant!,
-        fields: ["id", "title", "description", "status", "token", "startedAt"],
+        fields: ["id", "title", "description", "status", "token", "startedAt", "courseId"],
         input: {
           title: data.title,
           description: data.description || undefined,
+          courseId: data.courseId || undefined,
           createdById: user!.id,
         },
         headers: getAuthHeaders(user) as Record<string, string>,
@@ -201,7 +213,7 @@ export default function CheckInManagement() {
       message.success("签到创建成功");
       queryClient.invalidateQueries({ queryKey: ["checkin-sessions"] });
       setDialogOpen(false);
-      setFormData({ title: "", description: "" });
+      setFormData({ title: "", description: "", courseId: "" });
     },
     onError: (error: any) => {
       message.error(error?.message || "创建失败");
@@ -296,6 +308,10 @@ export default function CheckInManagement() {
       message.error("请输入签到名称");
       return;
     }
+    if (!formData.courseId) {
+      message.error("请选择课程");
+      return;
+    }
     createMutation.mutate(formData);
   };
 
@@ -310,6 +326,23 @@ export default function CheckInManagement() {
           <Text strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{text}</Text>
         </Tooltip>
       ),
+    },
+    {
+      title: "课程",
+      dataIndex: "courseId",
+      key: "course",
+      width: 180,
+      ellipsis: true,
+      render: (_: unknown, record: CheckInSession) =>
+        record.course?.title ? (
+          <Tooltip title={record.course.title} mouseEnterDelay={0.3}>
+            <Text style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {record.course.title}
+            </Text>
+          </Tooltip>
+        ) : (
+          <Text type="secondary">-</Text>
+        ),
     },
     {
       title: "状态",
@@ -417,7 +450,10 @@ export default function CheckInManagement() {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => setDialogOpen(true)}
+          onClick={() => {
+            setFormData({ title: "", description: "", courseId: "" });
+            setDialogOpen(true);
+          }}
           style={canEdit ? undefined : { display: "none" }}
         >
           发起签到
@@ -469,7 +505,7 @@ export default function CheckInManagement() {
         okText="发起签到"
         cancelText="取消"
         confirmLoading={createMutation.isPending}
-        okButtonProps={{ disabled: !formData.title }}
+        okButtonProps={{ disabled: !formData.title || !formData.courseId }}
       >
         <div
           style={{
@@ -490,6 +526,25 @@ export default function CheckInManagement() {
                 setFormData({ ...formData, title: e.target.value })
               }
               style={{ marginTop: 8 }}
+            />
+          </div>
+          <div>
+            <Text>
+              课程 <Text type="danger">*</Text>
+            </Text>
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="请选择课程"
+              value={formData.courseId || undefined}
+              onChange={(courseId) => setFormData({ ...formData, courseId })}
+              style={{ marginTop: 8, width: "100%" }}
+              options={
+                (Array.isArray(courses) ? courses : []).map((c: any) => ({
+                  label: c.title,
+                  value: c.id,
+                }))
+              }
             />
           </div>
           <div>

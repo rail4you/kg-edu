@@ -11,7 +11,8 @@ defmodule KgEduWeb.GenerationController do
               :generate_curriculum,
               :create_curriculum_job,
               :upload_curriculum_document,
-              :ai_generate_job_graph
+              :ai_generate_job_graph,
+              :update_answer_explanation
             ]
 
   @doc """
@@ -62,6 +63,58 @@ defmodule KgEduWeb.GenerationController do
         {:error, reason} ->
           json(conn, %{success: false, error: reason})
       end
+    end
+  end
+
+  @doc """
+  POST /update_answer_explanation
+  使用 AI 生成/更新某道习题的答案解析。
+  body: { orgSchema, exerciseId }
+  """
+  def update_answer_explanation(conn, params) do
+    input = params["input"] || params
+    tenant = extract_tenant(conn, params)
+    exercise_id = input["exerciseId"] || params["exerciseId"]
+
+    cond do
+      is_nil(tenant) ->
+        json(conn, %{success: false, message: "未设置租户上下文"})
+
+      is_nil(exercise_id) or exercise_id == "" ->
+        json(conn, %{success: false, message: "缺少 exerciseId"})
+
+      true ->
+        case Ash.get(KgEdu.Knowledge.Exercise, exercise_id,
+               tenant: tenant,
+               authorize?: false
+             ) do
+          {:ok, exercise} ->
+            case generate_explanation(exercise) do
+              {:ok, explanation} ->
+                exercise
+                |> Ash.Changeset.for_update(:update_exercise, %{answer_explanation: explanation})
+                |> Ash.update(tenant: tenant, authorize?: false)
+                |> case do
+                  {:ok, updated} ->
+                    json(conn, %{
+                      success: true,
+                      message: "答案解析生成成功",
+                      data: %{id: updated.id, answerExplanation: updated.answer_explanation}
+                    })
+
+                  {:error, error} ->
+                    Logger.error("Failed to update exercise explanation: #{inspect(error)}")
+                    json(conn, %{success: false, message: "保存答案解析失败"})
+                end
+
+              {:error, reason} ->
+                json(conn, %{success: false, message: reason})
+            end
+
+          {:error, error} ->
+            Logger.error("Exercise not found: #{inspect(error)}")
+            json(conn, %{success: false, message: "未找到该习题"})
+        end
     end
   end
 
@@ -452,5 +505,84 @@ defmodule KgEduWeb.GenerationController do
       (params["forwardedProps"] || %{})["orgSchema"] ||
       get_req_header(conn, "x-org-schema") |> List.first() ||
       conn.assigns[:org_schema]
+  end
+
+  # ── 答案解析生成 ──────────────────────────────────────────────────────
+
+  defp generate_explanation(exercise) do
+    config = Application.get_env(:kg_edu, :reqllm)
+    model = config[:model] || "alibaba_cn:qwen-plus"
+
+    # 每次调用前确保 Qwen API Key 已从数据库加载
+    KgEdu.Agent.ApiKeyProvider.ensure_key()
+
+    options_text = format_options(exercise.options)
+
+    prompt = """
+    你是一位资深教师。请针对下面这道题，给出详细、准确、便于学生理解的答案解析。
+    要求：先给出最终答案，再分步骤解释原因与相关知识点，必要时指出易错点。
+    直接输出答案解析文本，不要使用 Markdown 代码块。
+
+    【题型】#{exercise.question_type}
+    【题干】#{exercise.title}
+    #{if exercise.question_content && exercise.question_content != "", do: "【题目内容】#{exercise.question_content}\n", else: ""}#{if options_text != "", do: "【选项】\n#{options_text}\n", else: ""}【正确答案】#{exercise.answer}
+    """
+
+    case ReqLLM.generate_text(model, prompt) do
+      {:ok, response} ->
+        text =
+          response
+          |> ReqLLM.Response.text()
+          |> to_string()
+          |> strip_code_fence()
+          |> String.trim()
+
+        if text == "", do: {:error, "AI 未返回内容"}, else: {:ok, text}
+
+      {:error, %ReqLLM.Error.API.Request{} = err} ->
+        {:error, "AI 服务调用失败 (#{err.status})"}
+
+      {:error, %ReqLLM.Error.API.Response{} = err} ->
+        {:error, "AI 服务响应失败 (#{err.status})"}
+
+      {:error, reason} ->
+        {:error, "AI 服务调用失败: #{inspect(reason)}"}
+
+      _ ->
+        {:error, "AI 服务调用失败，请检查 API Key 配置"}
+    end
+  end
+
+  defp format_options(nil), do: ""
+
+  defp format_options(options) when is_binary(options) do
+    case Jason.decode(options) do
+      {:ok, decoded} -> format_options(decoded)
+      _ -> options
+    end
+  end
+
+  defp format_options(%{"choices" => choices}) when is_list(choices) do
+    choices
+    |> Enum.with_index()
+    |> Enum.map_join("\n", fn {choice, idx} ->
+      label = String.slice(choice, 0, 2)
+
+      if Regex.match?(~r/^[A-Z][\.、:：)\s]/, label) do
+        choice
+      else
+        "#{<<?A + idx>>}. #{choice}"
+      end
+    end)
+  end
+
+  defp format_options(list) when is_list(list), do: Enum.join(list, "\n")
+  defp format_options(_), do: ""
+
+  defp strip_code_fence(text) do
+    text
+    |> String.replace(~r/^```[a-zA-Z]*\s*/, "")
+    |> String.replace(~r/\s*```$/, "")
+    |> String.trim()
   end
 end

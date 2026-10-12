@@ -14,6 +14,7 @@ defmodule KgEdu.AI do
       rpc_action :create_conversation, :create
       rpc_action :get_conversation, :by_id
       rpc_action :list_conversations, :read
+      rpc_action :update_conversation, :update
       rpc_action :delete_conversation, :destroy
     end
 
@@ -51,6 +52,7 @@ defmodule KgEdu.AI do
       define :create_conversation, action: :create
       define :get_conversation, action: :read, get_by: [:id]
       define :list_conversations, action: :read
+      define :update_conversation, action: :update
       define :delete_conversation, action: :destroy
     end
 

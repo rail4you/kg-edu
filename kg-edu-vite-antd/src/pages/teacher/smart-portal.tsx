@@ -296,8 +296,15 @@ export default function TeacherSmartPortal() {
   const [studentIds, setStudentIds] = useState<string[]>([]);
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBlocks, setPreviewBlocks] = useState<PortalBlock[]>([]);
   const previewData = useSmartPortalData();
   const previewLayout = useMemo(() => ({ version: 1, blocks }), [blocks]);
+  const previewModalLayout = useMemo(() => ({ version: 1, blocks: previewBlocks }), [previewBlocks]);
+
+  const openPreview = (blocksToPreview: PortalBlock[]) => {
+    setPreviewBlocks(blocksToPreview);
+    setPreviewOpen(true);
+  };
 
   const { data: students = [] } = useQuery({
     queryKey: ["smart-portal-students", tenant],
@@ -433,7 +440,12 @@ export default function TeacherSmartPortal() {
       key: "name",
       render: (_: unknown, p: SmartPortalConfig) => (
         <Space>
-          <span style={{ fontWeight: 500 }}>{p.name}</span>
+          <a
+            style={{ fontWeight: 500 }}
+            onClick={() => openPreview(p.layout.blocks.map(hydrateBlock))}
+          >
+            {p.name}
+          </a>
           {!p.enabled && <Tag color="default">已停用</Tag>}
         </Space>
       ),
@@ -600,7 +612,7 @@ export default function TeacherSmartPortal() {
                 <ComponentsEditor
                   blocks={blocks}
                   onChange={setBlocks}
-                  onPreview={() => setPreviewOpen(true)}
+                  onPreview={() => openPreview(blocks)}
                 />
               ),
             },
@@ -640,7 +652,7 @@ export default function TeacherSmartPortal() {
         styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         <SmartPortalRenderer
-          layout={previewLayout}
+          layout={previewModalLayout}
           data={
             previewData.data ?? {
               courses: [],

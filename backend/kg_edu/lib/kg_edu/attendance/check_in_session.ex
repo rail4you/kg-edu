@@ -62,7 +62,7 @@ defmodule KgEdu.Attendance.CheckInSession do
 
     create :create do
       description "Create a new check-in session"
-      accept [:title, :description]
+      accept [:title, :description, :course_id]
 
       argument :created_by_id, :uuid do
         allow_nil? false
@@ -152,6 +152,12 @@ defmodule KgEdu.Attendance.CheckInSession do
       allow_nil? false
       public? true
       description "User who created the session"
+    end
+
+    belongs_to :course, KgEdu.Courses.Course do
+      allow_nil? true
+      public? true
+      description "Course this check-in session belongs to"
     end
 
     has_many :check_in_records, KgEdu.Attendance.CheckInRecord do

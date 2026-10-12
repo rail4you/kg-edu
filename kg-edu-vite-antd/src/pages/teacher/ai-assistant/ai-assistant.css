@@ -76,6 +76,78 @@
   color: var(--pu-blue, #2859df);
 }
 
+.ai-tree__list button.is-active {
+  background: #eaf0fd;
+  color: var(--pu-blue, #2859df);
+  font-weight: 600;
+}
+
+/* ---------- 会话列表 ---------- */
+.ai-conv-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  gap: 2px;
+}
+
+.ai-conv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #202f47;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-conv:hover {
+  background: #f2f5fb;
+}
+
+.ai-conv.is-active {
+  background: #eaf0fd;
+  color: var(--pu-blue, #2859df);
+  font-weight: 600;
+}
+
+.ai-conv__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-conv__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ai-conv:hover .ai-conv__actions,
+.ai-conv.is-active .ai-conv__actions {
+  opacity: 1;
+}
+
+.ai-conv__btn {
+  color: #8a97a8;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ai-conv__btn:hover {
+  color: var(--pu-blue, #2859df);
+}
+
+.ai-conv__btn--danger:hover {
+  color: #ff4d4f;
+}
+
 .ai-note {
   margin-top: auto;
   padding: 14px 16px;

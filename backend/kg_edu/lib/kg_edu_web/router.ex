@@ -218,6 +218,7 @@ defmodule KgEduWeb.Router do
     post "/curriculum/generate", GenerationController, :generate_curriculum
     post "/exam/preview", GenerationController, :preview_exam
     post "/api/job-competency-graph/ai-generate", GenerationController, :ai_generate_job_graph
+    post "/update_answer_explanation", GenerationController, :update_answer_explanation
   end
 
   # Excel import endpoints (compatible with agent-server format)

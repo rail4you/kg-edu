@@ -80,39 +80,91 @@ const cleanOptionPrefix = (text: string, letter: string): string => {
   return trimmed;
 };
 
-// 渲染题目详情（用于 Tooltip 显示）
-const renderExerciseDetail = (exercise: Exercise): React.ReactNode => {
-  const lines: React.ReactNode[] = [];
+// 悬停预览的通用样式（浅色、可读）
+const previewLabelStyle: React.CSSProperties = {
+  color: "#8a94a6",
+  fontSize: 12,
+  fontWeight: 600,
+  marginBottom: 4,
+};
+const previewBodyStyle: React.CSSProperties = {
+  fontSize: 13,
+  lineHeight: 1.65,
+  color: "#1f2937",
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
+};
 
-  // 题目内容
-  lines.push(
-    <div key="content" style={{ marginBottom: 8 }}>
-      <strong>题目：</strong>
-      <div style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>
-        {exercise.questionContent}
-      </div>
+const EXPLANATION_PREVIEW_LEN = 180;
+
+// 渲染题目详情（用于 Tooltip 显示）——浅色排版、内容截断
+const renderExerciseDetail = (exercise: Exercise): React.ReactNode => {
+  const sections: React.ReactNode[] = [];
+
+  // 题目
+  sections.push(
+    <div key="content" style={{ marginBottom: 10 }}>
+      <div style={previewLabelStyle}>题目</div>
+      <div style={previewBodyStyle}>{exercise.questionContent || exercise.title}</div>
     </div>
   );
 
-  // 选择题/多选题/判断题 显示选项和答案
   const isChoiceType = ["multiple_choice", "multiple_response", "true_false"].includes(exercise.questionType);
   const isTrueFalse = exercise.questionType === "true_false";
+  const isMultipleResponse = exercise.questionType === "multiple_response";
+
   if (isChoiceType && exercise.options) {
     try {
       const opts = typeof exercise.options === "string"
         ? JSON.parse(exercise.options)
         : exercise.options;
-      const isMultipleResponse = exercise.questionType === "multiple_response";
+
       const correctIndices: number[] = isMultipleResponse
         ? (Array.isArray(opts.correctAnswers) ? opts.correctAnswers : [])
         : (typeof opts.correctAnswer === "number" ? [opts.correctAnswer] : []);
 
+      let choices: string[] | null = null;
       if (opts && Array.isArray(opts.choices)) {
-        lines.push(
-          <div key="options" style={{ marginBottom: 8 }}>
-            <strong>选项：</strong>
-            <div style={{ marginTop: 4 }}>
-              {opts.choices.map((choice: string, idx: number) => {
+        choices = opts.choices;
+      } else {
+        const letters = Object.keys(opts || {}).filter((k: string) => /^[A-Z]$/.test(k)).sort();
+        if (letters.length > 0) {
+          choices = letters.map((l) => opts[l]);
+          const answerStr = exercise.answer || "";
+          const answerLetters = answerStr.split(/[,，\s]+/).map((s) => s.trim()).filter(Boolean);
+          for (let i = 0; i < letters.length; i++) {
+            if (isMultipleResponse ? answerLetters.includes(letters[i]) : letters[i] === answerStr) {
+              correctIndices.push(i);
+            }
+          }
+        }
+      }
+
+      if (choices) {
+        // 若无 correctAnswer，则用 answer 文本推断正确选项
+        if (correctIndices.length === 0 && exercise.answer) {
+          const ans = exercise.answer.trim();
+          const letterMatch = ans.match(/^([A-Z])[\.、:：)\s]/);
+          const ansLetter = letterMatch ? letterMatch[1] : null;
+          const ansText = ans.replace(/^[A-Z][\.、:：)\s]+/, "").trim();
+          choices.forEach((c, idx) => {
+            const letter = String.fromCharCode(65 + idx);
+            const cleaned = cleanOptionPrefix(String(c), letter).trim();
+            if (
+              (!isTrueFalse && ansLetter === letter) ||
+              cleaned === ansText ||
+              cleaned === ans
+            ) {
+              correctIndices.push(idx);
+            }
+          });
+        }
+
+        sections.push(
+          <div key="options" style={{ marginBottom: 10 }}>
+            <div style={previewLabelStyle}>选项</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {choices.map((choice: string, idx: number) => {
                 const letter = String.fromCharCode(65 + idx);
                 const cleaned = cleanOptionPrefix(String(choice), letter);
                 const isCorrect = correctIndices.includes(idx);
@@ -120,8 +172,9 @@ const renderExerciseDetail = (exercise: Exercise): React.ReactNode => {
                   <div
                     key={idx}
                     style={{
-                      color: isCorrect ? "#52c41a" : "inherit",
-                      fontWeight: isCorrect ? "bold" : "normal",
+                      ...previewBodyStyle,
+                      color: isCorrect ? "#16a34a" : "#1f2937",
+                      fontWeight: isCorrect ? 600 : 400,
                     }}
                   >
                     {isTrueFalse ? cleaned : `${letter}. ${cleaned || choice}`}
@@ -132,95 +185,62 @@ const renderExerciseDetail = (exercise: Exercise): React.ReactNode => {
             </div>
           </div>
         );
-        if (correctIndices.length > 0) {
-          const answerText = isTrueFalse
-            ? (correctIndices[0] === 0 ? "正确" : "错误")
-            : correctIndices.map(idx => {
-                const letter = String.fromCharCode(65 + idx);
-                const cleaned = cleanOptionPrefix(String(opts.choices[idx]), letter);
-                return `${letter}. ${cleaned || opts.choices[idx]}`;
-              }).join("；");
-          lines.push(
-            <div key="answer" style={{ marginBottom: 8 }}>
-              <strong>答案：</strong>
-              <span style={{ color: "#52c41a", fontWeight: "bold" }}>
-                {answerText}
-              </span>
-            </div>
-          );
-        }
-      } else {
-        const letters = Object.keys(opts || {}).filter((k: string) => /^[A-Z]$/.test(k)).sort();
-        if (letters.length > 0) {
-          const answerStr = exercise.answer || "";
-          const answerLetters = answerStr.split(/[,，\s]+/).map(s => s.trim()).filter(Boolean);
-          lines.push(
-            <div key="options" style={{ marginBottom: 8 }}>
-              <strong>选项：</strong>
-              <div style={{ marginTop: 4 }}>
-                {letters.map((l: string) => {
-                  const cleaned = cleanOptionPrefix(opts[l], l);
-                  const isCorrect = isMultipleResponse
-                    ? answerLetters.includes(l)
-                    : l === answerStr;
-                  return (
-                    <div
-                      key={l}
-                      style={{
-                        color: isCorrect ? "#52c41a" : "inherit",
-                        fontWeight: isCorrect ? "bold" : "normal",
-                      }}
-                    >
-                      {isTrueFalse ? cleaned : `${l}. ${cleaned || opts[l]}`}
-                      {isCorrect && " ✓"}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-          if (answerStr) {
-            const displayAnswer = isTrueFalse
-              ? (answerStr.toUpperCase() === 'A' ? '正确' : '错误')
-              : answerStr;
-            lines.push(
-              <div key="answer" style={{ marginBottom: 8 }}>
-                <strong>答案：</strong>
-                <span style={{ color: "#52c41a", fontWeight: "bold" }}>
-                  {displayAnswer}
-                </span>
-              </div>
-            );
-          }
-        }
+      }
+
+      if (correctIndices.length > 0) {
+        const answerText = isTrueFalse
+          ? (correctIndices[0] === 0 ? "正确" : "错误")
+          : correctIndices
+              .map((idx) => `${String.fromCharCode(65 + idx)}`)
+              .join("、");
+        sections.push(
+          <div key="answer" style={{ marginBottom: 10 }}>
+            <div style={previewLabelStyle}>答案</div>
+            <div style={{ ...previewBodyStyle, color: "#16a34a", fontWeight: 600 }}>{answerText}</div>
+          </div>
+        );
       }
     } catch {
       // 解析失败
     }
   } else if (exercise.answer) {
-    lines.push(
-      <div key="answer" style={{ marginBottom: 8 }}>
-        <strong>答案：</strong>
-        <div style={{ marginTop: 4, whiteSpace: "pre-wrap", color: "#52c41a" }}>
-          {exercise.answer}
-        </div>
+    sections.push(
+      <div key="answer" style={{ marginBottom: 10 }}>
+        <div style={previewLabelStyle}>答案</div>
+        <div style={{ ...previewBodyStyle, color: "#16a34a" }}>{exercise.answer}</div>
       </div>
     );
   }
 
   if (exercise.answerExplanation) {
-    lines.push(
-      <div key="explanation" style={{ marginTop: 8 }}>
-        <strong>答案解析：</strong>
-        <div style={{ marginTop: 4, whiteSpace: "pre-wrap", color: "#1890ff" }}>
-          {exercise.answerExplanation}
-        </div>
+    const text = exercise.answerExplanation;
+    const preview = text.length > EXPLANATION_PREVIEW_LEN
+      ? text.slice(0, EXPLANATION_PREVIEW_LEN) + " …"
+      : text;
+    sections.push(
+      <div
+        key="explanation"
+        style={{ paddingTop: 10, borderTop: "1px dashed #e5e7eb" }}
+      >
+        <div style={previewLabelStyle}>答案解析</div>
+        <div style={{ ...previewBodyStyle, color: "#475569" }}>{preview}</div>
       </div>
     );
   }
 
-  return <div style={{ maxWidth: 400 }}>{lines}</div>;
+  return <div style={{ width: 380, maxWidth: "46vw" }}>{sections}</div>;
 };
+
+// 浅色 Tooltip 样式
+const EXERCISE_TOOLTIP_STYLE: React.CSSProperties = {
+  background: "#ffffff",
+  color: "#1f2937",
+  padding: "12px 14px",
+  borderRadius: 10,
+  boxShadow: "0 8px 28px rgba(15, 23, 42, 0.16)",
+  border: "1px solid #eef2f7",
+};
+
 
 export default function ExercisePage() {
   const navigate = useNavigate();
@@ -636,7 +656,13 @@ export default function ExercisePage() {
       align: "left",
       ellipsis: true,
       render: (title, record) => (
-        <Tooltip title={renderExerciseDetail(record)} placement="right" overlayStyle={{ maxWidth: 500 }}>
+        <Tooltip
+          title={renderExerciseDetail(record)}
+          placement="right"
+          color="#ffffff"
+          overlayStyle={{ maxWidth: 460 }}
+          styles={{ body: EXERCISE_TOOLTIP_STYLE }}
+        >
           <span style={{ cursor: "pointer" }}>{title}</span>
         </Tooltip>
       ),
@@ -659,7 +685,13 @@ export default function ExercisePage() {
       key: "questionContent",
       ellipsis: true,
       render: (content, record) => (
-        <Tooltip title={renderExerciseDetail(record)} placement="right" overlayStyle={{ maxWidth: 500 }}>
+        <Tooltip
+          title={renderExerciseDetail(record)}
+          placement="right"
+          color="#ffffff"
+          overlayStyle={{ maxWidth: 460 }}
+          styles={{ body: EXERCISE_TOOLTIP_STYLE }}
+        >
           <span style={{ cursor: "pointer" }}>{content}</span>
         </Tooltip>
       ),

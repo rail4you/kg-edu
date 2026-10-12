@@ -255,7 +255,7 @@ export default function ResourcePage() {
     queryFn: async () => {
       const result = await listExercises({
         tenant,
-        fields: ["id", "title", "questionContent", "questionType", "options", "answer", "aiType", "knowledgeResourceId"],
+        fields: ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "aiType", "knowledgeResourceId"],
         filter: selectedCourseId ? { courseId: { eq: selectedCourseId } } : undefined,
         sort: "-title",
         page: { limit: 100, offset: 0 },
@@ -745,6 +745,28 @@ export default function ResourcePage() {
                         <div style={{ marginTop: 4, fontSize: 13, color: colors.primary, fontWeight: "bold" }}>{answerDisplay}</div>
                       </div>
                     )}
+                    {exerciseData.answerExplanation && (
+                      <div style={{ marginBottom: 12 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>答案解析:</Text>
+                        <div
+                          style={{
+                            marginTop: 4,
+                            fontSize: 13,
+                            lineHeight: 1.65,
+                            color: "#475569",
+                            whiteSpace: "pre-wrap",
+                            maxHeight: 200,
+                            overflow: "auto",
+                            background: "#fafafa",
+                            border: "1px solid #e8e8e8",
+                            borderRadius: 6,
+                            padding: "8px 10px",
+                          }}
+                        >
+                          {exerciseData.answerExplanation}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 }
                 trigger="hover"
@@ -1229,6 +1251,17 @@ export default function ResourcePage() {
                       })()
                     : (studyDialog.resource as any).answer || "暂无参考答案"}
                 </Paragraph>
+                {studyDialog.type === "exercise" && (studyDialog.resource as any).answerExplanation && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #b7eb8f" }}>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+                      <BulbOutlined style={{ color: colors.primary, marginRight: 8 }} />
+                      <Text strong>答案解析：</Text>
+                    </div>
+                    <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", color: "#475569" }}>
+                      {(studyDialog.resource as any).answerExplanation}
+                    </Paragraph>
+                  </div>
+                )}
               </Card>
             )}
           </div>
