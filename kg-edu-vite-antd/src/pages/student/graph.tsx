@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -19,7 +19,6 @@ import {
   Pagination,
   Space,
   Statistic,
-  Timeline,
   Select,
   Grid,
   Segmented,
@@ -39,13 +38,10 @@ import {
   PlayCircleOutlined,
   FileTextOutlined,
   FileOutlined,
-  VideoCameraOutlined,
-  SolutionOutlined,
   LeftOutlined,
   ReadOutlined,
   ClusterOutlined,
 } from "@ant-design/icons";
-import * as echarts from "echarts";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { listCourses, listRelations, listExercises, listFiles, listActivityLogs, getVideo, getExercise, getHomework } from "@/lib/ash_rpc";
@@ -93,35 +89,6 @@ const simplifyFileType = (filename: string, fileType?: string): string => {
   return ext || fileType;
 };
 
-function EChartsChart({ options, height = 300 }: { options: any; height?: number }) {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstance = useRef<echarts.ECharts | null>(null);
-
-  useEffect(() => {
-    if (!chartRef.current) return;
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current);
-    }
-    chartInstance.current.setOption(options, true);
-    chartInstance.current.resize();
-
-    const handleResize = () => chartInstance.current?.resize();
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [options]);
-
-  useEffect(() => {
-    if (!chartRef.current) return;
-    const resizeObserver = new ResizeObserver(() => chartInstance.current?.resize());
-    resizeObserver.observe(chartRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  return <div ref={chartRef} style={{ width: "100%", height }} />;
-}
-
 /** 顶级同级 Tab：知识图谱 / 岗位能力图谱 */
 const MAIN_TABS = [
   { value: "knowledge", label: "知识图谱" },
@@ -158,18 +125,8 @@ const getActionTypeLabel = (actionType: string) => {
 };
 
 const getActionTypeColor = (actionType: string) => {
-  switch (actionType) {
-    case "video_view":
-      return "blue";
-    case "exercise_submit":
-      return "green";
-    case "homework_submit":
-      return "orange";
-    case "file_view":
-      return "cyan";
-    default:
-      return "default";
-  }
+  void actionType;
+  return "blue";
 };
 
 const getResourceTypeLabel = (resourceType: string) => {
@@ -188,18 +145,8 @@ const getResourceTypeLabel = (resourceType: string) => {
 };
 
 const getResourceTypeColor = (resourceType: string) => {
-  switch (resourceType?.toLowerCase()) {
-    case "video":
-      return "orange";
-    case "exercise":
-      return "green";
-    case "homework":
-      return "magenta";
-    case "file":
-      return "blue";
-    default:
-      return "default";
-  }
+  void resourceType;
+  return "blue";
 };
 
 const getQuestionTypeLabel = (questionType: string) => {
@@ -357,45 +304,6 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
     if (Array.isArray(data)) return data;
     return [];
   }, [activityLogsData]);
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const logs = allActivityLogs;
-    const totalCount = logs.length;
-    const videoCount = logs.filter((l: any) => l.resourceType?.toLowerCase() === "video").length;
-    const exerciseCount = logs.filter((l: any) => l.resourceType?.toLowerCase() === "exercise").length;
-    const homeworkCount = logs.filter((l: any) => l.resourceType?.toLowerCase() === "homework").length;
-    const fileCount = logs.filter((l: any) => l.resourceType?.toLowerCase() === "file").length;
-
-    const dateMap = new Map<string, number>();
-    logs.forEach((log: any) => {
-      const date = new Date(log.insertedAt).toLocaleDateString("zh-CN");
-      dateMap.set(date, (dateMap.get(date) || 0) + 1);
-    });
-
-    const recentActivities = logs.slice(0, 5);
-
-    const now = new Date();
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(now);
-      d.setDate(d.getDate() - (6 - i));
-      return d.toLocaleDateString("zh-CN");
-    });
-    const last7DaysCount = last7Days.map(date => ({
-      date,
-      count: dateMap.get(date) || 0
-    }));
-
-    return {
-      totalCount,
-      videoCount,
-      exerciseCount,
-      homeworkCount,
-      fileCount,
-      recentActivities,
-      last7DaysCount,
-    };
-  }, [allActivityLogs]);
 
   // Filter logs by search term and filters
   const filteredLogs = useMemo(() => {
@@ -595,7 +503,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         {selectedLog.resourceType?.toLowerCase() === "video" && (
           <div>
             <Title level={5}>
-              <PlayCircleOutlined style={{ marginRight: 8, color: "#faad14" }} />
+              <PlayCircleOutlined style={{ marginRight: 8, color: "#2573E6" }} />
               视频详情
             </Title>
             <div style={{ marginTop: 12 }}>
@@ -621,7 +529,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         {selectedLog.resourceType?.toLowerCase() === "file" && (
           <div>
             <Title level={5}>
-              <FileOutlined style={{ marginRight: 8, color: "#2859df" }} />
+              <FileOutlined style={{ marginRight: 8, color: "#2573E6" }} />
               文件详情
             </Title>
             <div style={{ marginTop: 12 }}>
@@ -642,7 +550,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
               <Col span={12}>
                 <Text type="secondary">活动状态</Text>
                 <div>
-                  <Tag color="green">已查看</Tag>
+                  <Tag color="blue">已查看</Tag>
                 </div>
               </Col>
             </Row>
@@ -653,7 +561,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         {selectedLog.resourceType?.toLowerCase() === "exercise" && (
           <div>
             <Title level={5}>
-              <FileTextOutlined style={{ marginRight: 8, color: "#52c41a" }} />
+              <FileTextOutlined style={{ marginRight: 8, color: "#2573E6" }} />
               练习题详情
             </Title>
             <div style={{ marginTop: 12 }}>
@@ -669,7 +577,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                 <Col span={12}>
                   <Text type="secondary">题目类型</Text>
                   <div>
-                    <Tag color="green">
+                    <Tag color="blue">
                       {getQuestionTypeLabel(details.questionType)}
                     </Tag>
                   </div>
@@ -706,10 +614,10 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                         size="small"
                         style={{
                           background:
-                            details.answer === choice ? "rgba(82, 196, 26, 0.1)" : "#fafafa",
+                            details.answer === choice ? "rgba(37, 115, 230, 0.1)" : "#fafafa",
                           border:
                             details.answer === choice
-                              ? "1px solid #52c41a"
+                              ? "1px solid #2573E6"
                               : "1px solid #edf0f5",
                         }}
                       >
@@ -730,7 +638,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                   size="small"
                   style={{ marginTop: 8, background: "rgba(24, 144, 255, 0.05)" }}
                 >
-                  <Text style={{ color: "#2859df" }}>{selectedLog.metadata.answer}</Text>
+                  <Text style={{ color: "#2573E6" }}>{selectedLog.metadata.answer}</Text>
                 </Card>
               </div>
             )}
@@ -740,14 +648,14 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
               {details.answer ? (
                 <Card
                   size="small"
-                  style={{ marginTop: 8, background: "rgba(82, 196, 26, 0.05)" }}
+                  style={{ marginTop: 8, background: "rgba(37, 115, 230, 0.05)" }}
                 >
                   {(() => {
                     const answerLetter = details.answer.toString().toUpperCase();
                     const options = details.options;
                     
                     if (!options) {
-                      return <Text style={{ color: "#52c41a" }}>{details.answer}</Text>;
+                      return <Text style={{ color: "#2573E6" }}>{details.answer}</Text>;
                     }
 
                     const getOptionText = (letter: string): string => {
@@ -761,7 +669,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                       return `${letter}. ${optionText}`;
                     }).join('，');
 
-                    return <Text style={{ color: "#52c41a" }}>{answerText}</Text>;
+                    return <Text style={{ color: "#2573E6" }}>{answerText}</Text>;
                   })()}
                 </Card>
               ) : (
@@ -780,7 +688,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         {selectedLog.resourceType?.toLowerCase() === "homework" && (
           <div>
             <Title level={5}>
-              <FileTextOutlined style={{ marginRight: 8, color: "#eb2f96" }} />
+              <FileTextOutlined style={{ marginRight: 8, color: "#2573E6" }} />
               作业详情
             </Title>
             <div style={{ marginTop: 12 }}>
@@ -798,13 +706,13 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
                 style={{
                   marginTop: 12,
                   textAlign: "center",
-                  background: "rgba(235, 47, 150, 0.05)",
+                  background: "rgba(37, 115, 230, 0.05)",
                   maxWidth: 150,
                 }}
               >
                 <Text type="secondary">满分</Text>
                 <div>
-                  <Text strong style={{ fontSize: 24, color: "#eb2f96" }}>
+                  <Text strong style={{ fontSize: 24, color: "#2573E6" }}>
                     {details.score}
                   </Text>
                   <Text type="secondary"> 分</Text>
@@ -852,48 +760,6 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
       </div>
     );
   };
-
-  // Chart options
-  const pieChartOption = useMemo(() => ({
-    tooltip: { trigger: "item" },
-    legend: {
-      orient: "vertical",
-      left: 0,
-      top: "center",
-      itemWidth: 10,
-      itemHeight: 10,
-      textStyle: { fontSize: 14 },
-    },
-    series: [{
-      type: "pie",
-      radius: ["35%", "65%"],
-      center: ["65%", "50%"],
-      avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 },
-      label: { show: false },
-      emphasis: { label: { show: true, fontSize: 16, fontWeight: "bold" } },
-      labelLine: { show: false },
-      data: [
-        { value: stats.videoCount, name: "视频", itemStyle: { color: "#faad14" } },
-        { value: stats.exerciseCount, name: "练习", itemStyle: { color: "#52c41a" } },
-        { value: stats.homeworkCount, name: "作业", itemStyle: { color: "#eb2f96" } },
-        { value: stats.fileCount, name: "文件", itemStyle: { color: "#2859df" } },
-      ].filter(d => d.value > 0),
-    }],
-  }), [stats]);
-
-  const trendChartOption = useMemo(() => ({
-    tooltip: { trigger: "axis" },
-    grid: { left: 40, right: 20, top: 20, bottom: 30 },
-    xAxis: { type: "category", data: stats.last7DaysCount.map(d => d.date.slice(5)), axisLabel: { fontSize: 12 } },
-    yAxis: { type: "value", axisLabel: { fontSize: 12 } },
-    series: [{
-      data: stats.last7DaysCount.map(d => d.count),
-      type: "bar",
-      barWidth: "60%",
-      itemStyle: { color: "#2859df", borderRadius: [4, 4, 0, 0] },
-    }],
-  }), [stats.last7DaysCount]);
 
   const columns: ColumnsType<any> = [
     {
@@ -944,161 +810,73 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
       ) : allActivityLogs.length === 0 ? (
         <Empty description="暂无活动记录" style={{ padding: 48 }} />
       ) : (
-        <Row gutter={isMobile ? [4, 8] : [16, 16]} align="stretch" style={{ maxWidth: "100%" }}>
-          {/* Left Column - Stats (compact) */}
-          <Col xs={24} lg={9} style={{ display: "flex", flexDirection: "column" }}>
-            {/* 学习概览 - Bento Grid 横排统计 */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: isMobile ? 6 : 10, marginBottom: isMobile ? 6 : 12 }}>
-              <div
-                style={{
-                  background: `linear-gradient(135deg, ${colors.primary} 0%, #1E3A8A 100%)`,
-                  borderRadius: isMobile ? 8 : 12,
-                  padding: isMobile ? "8px 10px" : "14px 18px",
-                  color: "#fff",
-                  position: "relative",
-                  overflow: "hidden",
+        <div style={{ width: "100%" }}>
+          {/* 搜索过滤栏 */}
+          <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", padding: isMobile ? 8 : 14, marginBottom: isMobile ? 6 : 12, boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: 10,
+              }}
+            >
+              <Input
+                placeholder="搜索活动..."
+                prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
                 }}
-              >
-                <div style={{ fontSize: isMobile ? 10 : 13, fontWeight: 700, letterSpacing: 0.5, opacity: 0.8 }}>总活动</div>
-                <div style={{ fontSize: isMobile ? 22 : 30, fontWeight: 800, lineHeight: 1.1 }}>{stats.totalCount}</div>
-                <div style={{ position: "absolute", right: -6, bottom: -6, opacity: 0.1 }}>
-                  <HistoryOutlined style={{ fontSize: isMobile ? 32 : 48 }} />
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "rgba(82, 196, 26, 0.08)",
-                  borderRadius: isMobile ? 8 : 12,
-                  padding: isMobile ? "8px 10px" : "14px 18px",
-                }}
-              >
-                <div style={{ fontSize: isMobile ? 10 : 13, fontWeight: 700, letterSpacing: 0.5, color: "#757780" }}>本周活跃</div>
-                <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, lineHeight: 1.1, color: "#191c1d" }}>{stats.last7DaysCount.reduce((sum, d) => sum + d.count, 0)}</div>
-              </div>
-            </div>
-
-            {/* 图表卡片 */}
-            <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", padding: isMobile ? 8 : 16, marginBottom: isMobile ? 6 : 12, boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
-              <Row gutter={isMobile ? [0, 8] : [12, 12]}>
-                <Col xs={24} md={12}>
-                  <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: colors.primary, letterSpacing: 0.5, marginBottom: 2 }}>资源类型分布</div>
-                  <EChartsChart options={pieChartOption} height={isMobile ? 120 : 160} />
-                </Col>
-                <Col xs={24} md={12}>
-                  <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: colors.primary, letterSpacing: 0.5, marginBottom: 2 }}>近7天趋势</div>
-                  <EChartsChart options={trendChartOption} height={isMobile ? 120 : 160} />
-                </Col>
-              </Row>
-            </div>
-
-            {/* 分类统计 - 色调背景条 */}
-            <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", padding: isMobile ? 8 : 14, marginBottom: isMobile ? 6 : 12, boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: isMobile ? 4 : 8 }}>
-                {[
-                  { icon: <VideoCameraOutlined />, label: "视频观看", count: stats.videoCount, bg: "rgba(250, 173, 20, 0.08)", color: "#d48806" },
-                  { icon: <FileTextOutlined />, label: "练习提交", count: stats.exerciseCount, bg: "rgba(82, 196, 26, 0.08)", color: "#389e0d" },
-                  { icon: <SolutionOutlined />, label: "作业提交", count: stats.homeworkCount, bg: "rgba(235, 47, 150, 0.08)", color: "#c41d7f" },
-                  { icon: <FileOutlined />, label: "文件查看", count: stats.fileCount, bg: "rgba(40, 89, 223, 0.08)", color: colors.primary },
-                ].map((item) => (
-                  <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: item.bg, borderRadius: isMobile ? 5 : 8, padding: isMobile ? "4px 8px" : "6px 12px" }}>
-                    <Space size={isMobile ? 2 : 4}>
-                      {React.cloneElement(item.icon as React.ReactElement, { style: { color: item.color, fontSize: isMobile ? 12 : 14 } })}
-                      <Text style={{ fontSize: isMobile ? 12 : 14, color: "#424754" }}>{item.label}</Text>
-                    </Space>
-                    <span style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: item.color }}>{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 最近活动 */}
-            <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", padding: isMobile ? 8 : 14, flex: 1, minHeight: 0, boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
-              <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: colors.primary, letterSpacing: 0.5, marginBottom: isMobile ? 4 : 8 }}>最近活动</div>
-              <Timeline
-                items={stats.recentActivities.slice(0, 3).map((log: any) => ({
-                  color: getActionTypeColor(log.actionType),
-                  children: (
-                    <div>
-                      <Text strong style={{ fontSize: 14, color: "#191c1d" }}>{getResourceDisplay(log).name}</Text>
-                      <div>
-                        <Text style={{ fontSize: 13, color: "#757780" }}>{formatDate(log.insertedAt)}</Text>
-                      </div>
-                    </div>
-                  ),
-                }))}
+                style={{ width: isMobile ? "100%" : 250, borderRadius: 8 }}
+                allowClear
+              />
+              <Select
+                placeholder="筛选活动类型"
+                value={activityTypeFilter}
+                onChange={(v) => { setActivityTypeFilter(v); setPage(1); }}
+                style={{ width: isMobile ? "100%" : 130 }}
+                options={[
+                  { value: "all", label: "全部" },
+                  { value: "video_view", label: "视频观看" },
+                  { value: "exercise_submit", label: "练习提交" },
+                  { value: "homework_submit", label: "作业提交" },
+                  { value: "file_view", label: "文件查看" },
+                ]}
               />
             </div>
-          </Col>
+          </div>
 
-          {/* Right Column - Activity List */}
-          <Col xs={24} lg={15}>
-            {/* 搜索过滤栏 */}
-            <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", padding: isMobile ? 8 : 14, marginBottom: isMobile ? 6 : 12, boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: isMobile ? "column" : "row",
-                  gap: 10,
-                }}
-              >
-                <Input
-                  placeholder="搜索活动..."
-                  prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(1);
-                  }}
-                  style={{ width: isMobile ? "100%" : 250, borderRadius: 8 }}
-                  allowClear
-                />
-                <Select
-                  placeholder="筛选活动类型"
-                  value={activityTypeFilter}
-                  onChange={(v) => { setActivityTypeFilter(v); setPage(1); }}
-                  style={{ width: isMobile ? "100%" : 130 }}
-                  options={[
-                    { value: "all", label: "全部" },
-                    { value: "video_view", label: "视频观看" },
-                    { value: "exercise_submit", label: "练习提交" },
-                    { value: "homework_submit", label: "作业提交" },
-                    { value: "file_view", label: "文件查看" },
-                  ]}
+          {/* 活动表格 */}
+          <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
+            <Table
+              columns={columns}
+              dataSource={activityLogs}
+              rowKey="id"
+              pagination={false}
+              size="small"
+              scroll={isMobile ? { x: 640 } : undefined}
+              onRow={(record) => ({
+                onClick: () => handleRowClick(record),
+                style: { cursor: "pointer" },
+              })}
+            />
+
+            {totalCount > pageSize && (
+              <div style={{ textAlign: "center", marginTop: 16, paddingBottom: 12 }}>
+                <Pagination
+                  current={page}
+                  pageSize={pageSize}
+                  total={totalCount}
+                  onChange={setPage}
+                  showSizeChanger={false}
+                  showTotal={(total) => `共 ${total} 条记录`}
+                  size="small"
                 />
               </div>
-            </div>
-
-            {/* 活动表格 */}
-            <div style={{ borderRadius: isMobile ? 6 : 12, background: "#fff", boxShadow: isMobile ? "none" : "0 4px 16px rgba(0, 88, 190, 0.04)" }}>
-              <Table
-                columns={columns}
-                dataSource={activityLogs}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                scroll={isMobile ? { x: 640 } : undefined}
-                onRow={(record) => ({
-                  onClick: () => handleRowClick(record),
-                  style: { cursor: "pointer" },
-                })}
-              />
-
-              {totalCount > pageSize && (
-                <div style={{ textAlign: "center", marginTop: 16, paddingBottom: 12 }}>
-                  <Pagination
-                    current={page}
-                    pageSize={pageSize}
-                    total={totalCount}
-                    onChange={setPage}
-                    showSizeChanger={false}
-                    showTotal={(total) => `共 ${total} 条记录`}
-                    size="small"
-                  />
-                </div>
-              )}
-            </div>
-          </Col>
-        </Row>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Resource Detail Modal */}
@@ -1115,16 +893,16 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
           selectedLog && (
             <Space>
               {selectedLog.resourceType?.toLowerCase() === "video" && (
-                <PlayCircleOutlined style={{ color: "#faad14" }} />
+                <PlayCircleOutlined style={{ color: "#2573E6" }} />
               )}
               {selectedLog.resourceType?.toLowerCase() === "exercise" && (
-                <FileTextOutlined style={{ color: "#52c41a" }} />
+                <FileTextOutlined style={{ color: "#2573E6" }} />
               )}
               {selectedLog.resourceType?.toLowerCase() === "homework" && (
-                <FileTextOutlined style={{ color: "#eb2f96" }} />
+                <FileTextOutlined style={{ color: "#2573E6" }} />
               )}
               {selectedLog.resourceType?.toLowerCase() === "file" && (
-                <FileOutlined style={{ color: "#2859df" }} />
+                <FileOutlined style={{ color: "#2573E6" }} />
               )}
               <span>{selectedLog ? getActionTypeLabel(selectedLog.actionType) : ""} - 资源详情</span>
             </Space>
@@ -1141,7 +919,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         footer={
           <Button
             type="primary"
-            style={{ background: "#eb2f96", borderColor: "#eb2f96" }}
+            style={{ background: "#2573E6", borderColor: "#2573E6" }}
             onClick={() => setHomeworkAnswerModal({ open: false, answer: "", title: "" })}
           >
             我已了解
@@ -1150,7 +928,7 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         width={600}
         title={
           <Space>
-            <FileTextOutlined style={{ color: "#eb2f96" }} />
+            <FileTextOutlined style={{ color: "#2573E6" }} />
             <span>{homeworkAnswerModal.title}</span>
           </Space>
         }
@@ -1160,17 +938,17 @@ function ActivityHistoryView({ courseId }: { courseId: string }) {
         </div>
         <Card
           style={{
-            background: "rgba(235, 47, 150, 0.02)",
+            background: "rgba(37, 115, 230, 0.02)",
             maxHeight: 300,
             overflow: "auto",
           }}
         >
-          <Text style={{ whiteSpace: "pre-wrap", color: "#eb2f96" }}>
+          <Text style={{ whiteSpace: "pre-wrap", color: "#2573E6" }}>
             {homeworkAnswerModal.answer}
           </Text>
         </Card>
         <div style={{ marginTop: 16, padding: 12, background: "#eaf0ff", borderRadius: 4 }}>
-          <Text style={{ color: "#2859df" }}>
+          <Text style={{ color: "#2573E6" }}>
             答案解析
           </Text>
         </div>

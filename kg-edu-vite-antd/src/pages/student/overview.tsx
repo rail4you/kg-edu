@@ -1,21 +1,17 @@
-import { useState, useEffect, useMemo, type CSSProperties } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Typography,
-  Row,
-  Col,
   Spin,
   Alert,
   Button,
   Avatar,
   Empty,
+  Space,
 } from "antd";
 import {
-  DownloadOutlined,
   BookOutlined,
-  PaperClipOutlined,
-  FolderOutlined,
   UserOutlined,
   FileTextOutlined,
   RightOutlined,
@@ -35,10 +31,34 @@ import {
   ProtoTag,
   ProtoTabs,
   ListItem,
+  MetricList,
+  StatGrid,
 } from "@/components/proto";
 import FilePreview from "@/components/FilePreview";
 
 const { Text, Paragraph } = Typography;
+
+/** 将一段“编号式”课程结构文本解析为列表项（编号 / 标题 / 说明）。 */
+function parseStructureItems(text?: string | null): { title: string; desc: string }[] {
+  const raw = (text || "").trim();
+  if (!raw) return [];
+
+  const matches = [...raw.matchAll(/(\d+)\s*[.、)．)]\s*(.*?)(?=(?:\d+\s*[.、)．)])|$)/gs)];
+  let segments = matches.map((m) => m[2]).filter((s) => s && s.trim());
+  if (segments.length === 0) {
+    segments = raw.split(/[\n；;]/).map((s) => s.trim()).filter(Boolean);
+  }
+
+  return segments
+    .map((seg) => {
+      const body = seg.replace(/[；;，,。\s]+$/, "").trim();
+      if (!body) return null;
+      const paren = body.match(/^(.*?)[（(](.*?)[)）]\s*$/s);
+      if (paren) return { title: paren[1].trim(), desc: paren[2].trim() };
+      return { title: body, desc: "" };
+    })
+    .filter((it): it is { title: string; desc: string } => !!it && !!it.title);
+}
 
 interface CourseOverviewProps {
   params?: {
@@ -214,28 +234,6 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
     guest_teacher: "客座教师",
   };
 
-  /** 原型风格的「字段块」：小标题 + 浅底值 */
-  const fieldBoxStyle: CSSProperties = {
-    padding: "12px 16px",
-    background: "#f6f8fb",
-    borderRadius: 10,
-    fontSize: 15,
-    color: "#202f47",
-    lineHeight: 1.7,
-    minHeight: 46,
-    display: "flex",
-    alignItems: "center",
-  };
-
-  const fieldLabelStyle: CSSProperties = {
-    fontSize: 12,
-    fontWeight: 600,
-    color: colors.textSecondary,
-    letterSpacing: 0.4,
-    marginBottom: 8,
-    lineHeight: 1.5,
-  };
-
   const allTeachers = useMemo(() => {
     const list: Array<{
       id: string;
@@ -345,13 +343,6 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
 
   // 递归渲染嵌套章节
   const renderChapterCards = (nodes: any[], level: number = 0) => {
-    const levelStyles = [
-      { bg: "rgba(40, 89, 223, 0.08)", color: "#1d4fc4", accent: "#2859df" },
-      { bg: "rgba(40, 89, 223, 0.055)", color: "#3f74e6", accent: "#4f82e8" },
-      { bg: "rgba(40, 89, 223, 0.035)", color: "#5b8bef", accent: "#6f9cf2" },
-      { bg: "rgba(40, 89, 223, 0.02)", color: "#7aa4f4", accent: "#8fb2f6" },
-    ];
-    const style = levelStyles[level % levelStyles.length];
     const leftPadding = level * 20;
 
     return nodes.map((node: any, index: number) => {
@@ -359,53 +350,29 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       const chapterNumber = level === 0 ? `${index + 1}` : generateChapterNumber(node.path);
 
       return (
-        <div key={node.id} style={{ marginBottom: level === 0 ? 6 : 3 }}>
-          <div style={{ paddingLeft: leftPadding }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: level === 0 ? "10px 16px" : "7px 14px",
-                borderRadius: 10,
-                backgroundColor: style.bg,
-              }}
-            >
-              {hasChildren ? (
-                <FolderOutlined style={{ color: style.color, fontSize: 15 }} />
-              ) : (
-                <BookOutlined style={{ color: style.color, fontSize: 15 }} />
-              )}
-              {chapterNumber && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#fff",
-                    background: style.accent,
-                    borderRadius: 6,
-                    padding: "1px 8px",
-                    lineHeight: "20px",
-                  }}
-                >
-                  {chapterNumber}
-                </span>
-              )}
-              <Text strong={level === 0} style={{ flex: 1, fontSize: level === 0 ? 14 : 13, color: "#202f47" }}>
-                {node.title}
-              </Text>
-              {hasChildren && (
-                <span style={{ fontSize: 11, color: colors.textSecondary, fontWeight: 500 }}>
-                  {node.children.length} 节
-                </span>
-              )}
-            </div>
+        <div key={node.id}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: level === 0 ? "8px 0" : "6px 0",
+              paddingLeft: leftPadding,
+            }}
+          >
+            {chapterNumber && (
+              <span style={{ fontSize: 13, fontWeight: level === 0 ? 600 : 400, minWidth: 30 }}>
+                {chapterNumber}
+              </span>
+            )}
+            <Text strong={level === 0} style={{ flex: 1, fontSize: level === 0 ? 14 : 13 }}>
+              {node.title}
+            </Text>
+            {hasChildren && (
+              <span style={{ fontSize: 12 }}>{node.children.length} 节</span>
+            )}
           </div>
-          {hasChildren && (
-            <div style={{ marginTop: 2 }}>
-              {renderChapterCards(node.children, level + 1)}
-            </div>
-          )}
+          {hasChildren && renderChapterCards(node.children, level + 1)}
         </div>
       );
     });
@@ -441,103 +408,57 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       case "basic-info":
         return (
           <div>
-            <div className="pu-section-title">基本信息</div>
+            <h2>基本信息</h2>
+            {course?.description && (
+              <Paragraph style={{ margin: "16px 0 0", fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                {course.description}
+              </Paragraph>
+            )}
 
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <div>
-                  <div style={fieldLabelStyle}>课程标题</div>
-                  <div style={fieldBoxStyle}>
-                    <Text strong style={{ fontSize: 15, color: "#202f47" }}>{course?.title}</Text>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div>
-                  <div style={fieldLabelStyle}>专业</div>
-                  <div style={fieldBoxStyle}>
-                    <Text style={{ fontSize: 15, color: "#202f47" }}>{course?.major || "未指定"}</Text>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div>
-                  <div style={fieldLabelStyle}>学期</div>
-                  <div style={fieldBoxStyle}>
-                    <Text style={{ fontSize: 15, color: "#202f47" }}>{course?.semester || "未指定"}</Text>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div>
-                  <div style={fieldLabelStyle}>授课教师</div>
-                  <div style={{ ...fieldBoxStyle, gap: 10 }}>
-                    <Avatar
-                      size={28}
-                      src={courseCreator?.avatarUrl || undefined}
-                      style={{ backgroundColor: courseCreator?.avatarUrl ? undefined : colors.primary, flexShrink: 0 }}
-                    >
-                      {courseCreator?.name?.charAt(0) || <UserOutlined />}
-                    </Avatar>
-                    <div>
-                      <Text strong style={{ fontSize: 15, color: "#202f47" }}>{courseCreator?.name || "未指定"}</Text>
-                      {courseCreator?.jobTitle && (
-                        <Text style={{ marginLeft: 8, fontSize: 13, color: colors.textSecondary }}>{courseCreator.jobTitle}</Text>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24}>
-                <div>
-                  <div style={fieldLabelStyle}>课程描述</div>
-                  <div style={{ ...fieldBoxStyle, alignItems: "flex-start", display: "block" }}>
-                    <Paragraph style={{ margin: 0, fontSize: 15, lineHeight: 1.8, color: "#424754" }}>
-                      {course?.description || "暂无描述"}
-                    </Paragraph>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-
-            {/* 教学团队 */}
-            <div style={{ marginTop: 28 }}>
-              <div className="pu-section-title" style={{ marginBottom: 12 }}>教学团队</div>
-              <div style={{ padding: 16, background: "#f6f8fb", borderRadius: 10 }}>
-                {allTeachers.length > 0 ? (
-                  <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-                    {allTeachers.map((teacher) => (
-                      <div key={teacher.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <Avatar size={32} src={teacher.avatarUrl || undefined} style={{ backgroundColor: colors.primary }}>
-                          {teacher.name?.charAt(0) || <UserOutlined />}
-                        </Avatar>
-                        <div>
-                          <div style={{ fontSize: 14 }}>
-                            <Text strong style={{ color: "#202f47" }}>{teacher.name}</Text>
-                            {teacher.jobTitle && <span style={{ fontSize: 12, color: colors.textSecondary }}> · {teacher.jobTitle}</span>}
-                          </div>
-                          <div style={{ fontSize: 11, color: colors.textSecondary }}>
-                            {teacher.colledge || roleLabelMap[teacher.role] || ""}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Text style={{ color: colors.textSecondary }}>暂无教师信息</Text>
-                )}
-              </div>
+            <h3 style={{ marginTop: 24 }}>课程安排</h3>
+            <MetricList
+              items={[
+                { label: "课程学时", value: course?.semesterHours ?? "-" },
+                { label: "学分", value: course?.credits ?? "-" },
+                { label: "章节数量", value: chapters.length },
+                { label: "授课教师", value: allTeachers.length },
+              ]}
+            />
+            <div className="pu-note">
+              {[
+                course?.major && `专业：${course.major}`,
+                course?.semester && `学期：${course.semester}`,
+                courseCreator?.name && `授课教师：${courseCreator.name}`,
+              ]
+                .filter(Boolean)
+                .join("　·　") || "完善课程基本信息，帮助学生了解课程安排。"}
             </div>
 
+            <h3 style={{ marginTop: 24 }}>教学团队</h3>
+            {allTeachers.length > 0 ? (
+              allTeachers.map((teacher) => (
+                <ListItem
+                  key={teacher.id}
+                  title={teacher.name}
+                  description={[teacher.jobTitle, teacher.colledge, roleLabelMap[teacher.role]].filter(Boolean).join(" · ")}
+                  extra={
+                    <Avatar size={32} src={teacher.avatarUrl || undefined} style={{ backgroundColor: colors.primary }}>
+                      {teacher.name?.charAt(0) || <UserOutlined />}
+                    </Avatar>
+                  }
+                />
+              ))
+            ) : (
+              <Paragraph style={{ margin: 0, color: "var(--pu-muted)" }}>暂无教师信息</Paragraph>
+            )}
+
             {courseInfo?.background && (
-              <div style={{ marginTop: 24 }}>
-                <div style={fieldLabelStyle}>课程背景</div>
-                <div style={{ ...fieldBoxStyle, alignItems: "flex-start", display: "block" }}>
-                  <Paragraph style={{ margin: 0, fontSize: 15, lineHeight: 1.8, color: "#424754" }}>
-                    {courseInfo.background}
-                  </Paragraph>
-                </div>
-              </div>
+              <>
+                <h3 style={{ marginTop: 24 }}>课程背景</h3>
+                <Paragraph style={{ margin: 0, fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                  {courseInfo.background}
+                </Paragraph>
+              </>
             )}
           </div>
         );
@@ -545,65 +466,71 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       case "objectives":
         return (
           <div>
-            <div className="pu-section-title">教学目标</div>
-            <div className="pu-divider" style={{ marginTop: 0 }} />
+            <h2>教学目标</h2>
             {courseInfo?.objectives ? (
-              <div style={{ padding: 18, background: "#f6f8fb", borderRadius: 10 }}>
-                <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "#424754" }}>
-                  {courseInfo.objectives}
-                </Paragraph>
-              </div>
+              <Paragraph style={{ margin: "16px 0 0", whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                {courseInfo.objectives}
+              </Paragraph>
             ) : (
-              <Empty description="暂无教学目标信息" />
+              <Empty description="暂无教学目标信息" style={{ marginTop: 16 }} />
             )}
             {courseInfo?.target && (
               <>
-                <div className="pu-section-title" style={{ marginTop: 24 }}>目标学员</div>
-                <div style={{ padding: 18, background: "#f6f8fb", borderRadius: 10 }}>
-                  <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "#424754" }}>
-                    {courseInfo.target}
-                  </Paragraph>
-                </div>
+                <h3 style={{ marginTop: 24 }}>目标学员</h3>
+                <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                  {courseInfo.target}
+                </Paragraph>
               </>
             )}
           </div>
         );
 
-      case "structure":
+      case "structure": {
+        const structureItems = parseStructureItems(courseInfo?.courseStructure);
         return (
           <div>
-            <div className="pu-section-title">课程结构</div>
-            {courseInfo?.courseStructure ? (
-              <div style={{ padding: 18, background: "#f6f8fb", borderRadius: 10, marginBottom: 16 }}>
-                <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "#424754" }}>
-                  {courseInfo.courseStructure}
-                </Paragraph>
+            <h2>课程结构</h2>
+            {structureItems.length > 0 ? (
+              <div style={{ marginTop: 12 }}>
+                {structureItems.map((it, i) => (
+                  <ListItem
+                    key={i}
+                    index={String(i + 1).padStart(2, "0")}
+                    title={it.title}
+                    description={it.desc || undefined}
+                    extra={
+                      <Button size="small" onClick={() => setActiveSection("chapters")} style={{ borderRadius: 8 }}>
+                        查看章节
+                      </Button>
+                    }
+                  />
+                ))}
               </div>
+            ) : courseInfo?.courseStructure ? (
+              <Paragraph style={{ margin: "16px 0 0", whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                {courseInfo.courseStructure}
+              </Paragraph>
             ) : (
-              <Empty description="暂无课程结构信息" />
+              <Empty description="暂无课程结构信息" style={{ marginTop: 16 }} />
             )}
             {courseInfo?.courseHighlights && (
               <>
-                <div className="pu-section-title" style={{ marginTop: 24 }}>课程亮点</div>
-                <div style={{ padding: 18, background: "#f0f8f4", borderRadius: 10 }}>
-                  <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "#2f5a4c" }}>
-                    {courseInfo.courseHighlights}
-                  </Paragraph>
-                </div>
+                <h3 style={{ marginTop: 24 }}>课程亮点</h3>
+                <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                  {courseInfo.courseHighlights}
+                </Paragraph>
               </>
             )}
           </div>
         );
+      }
 
       case "chapters":
         return (
           <div>
             <div className="pu-card-title" style={{ marginBottom: 18 }}>
-              <div>
-                <div className="pu-section-title" style={{ marginBottom: 4 }}>教材章节</div>
-                <div style={{ fontSize: 12, color: colors.textSecondary }}>共 {chapters.length} 个章节</div>
-              </div>
-              <ProtoTag tone="blue">章节结构</ProtoTag>
+              <h2>教材章节</h2>
+              <ProtoTag tone="blue">共 {chapters.length} 个章节</ProtoTag>
             </div>
             {chapterTree && chapterTree.length > 0 ? (
               <div style={{ maxHeight: 620, overflowY: "auto", paddingRight: 8 }}>
@@ -618,66 +545,39 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       case "book-details":
         return (
           <div>
-            <div className="pu-section-title">教材信息</div>
-            <div className="pu-divider" style={{ marginTop: 0, marginBottom: 20 }} />
+            <h2>课程教材</h2>
             {book ? (
-              <Row gutter={[24, 16]}>
-                <Col xs={24} md={16}>
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={fieldLabelStyle}>教材名称</div>
-                    <div style={fieldBoxStyle}>
-                      <Text strong style={{ fontSize: 15, color: "#202f47" }}>{book.title}</Text>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={fieldLabelStyle}>出版社</div>
-                    <div style={fieldBoxStyle}>
-                      <Text style={{ fontSize: 15, color: "#202f47" }}>{book.publish || "未指定"}</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} md={8}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <img
-                      src={book.coverImage || "/book-placeholder.svg"}
-                      alt={book.title}
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: 280,
-                        objectFit: "cover",
-                        borderRadius: 12,
-                        border: `1px solid ${colors.border}`,
-                      }}
-                    />
-                    {book?.attachment && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                        <Button
-                          block
-                          icon={<PaperClipOutlined />}
-                          onClick={() => {
-                            const filename = book.attachment.split("/").pop() || "attachment";
-                            setPreviewFile({ url: book.attachment, name: filename, type: filename.split(".").pop() || "" });
-                          }}
-                          style={{ borderRadius: 8, height: 38 }}
-                        >
-                          预览
-                        </Button>
-                        <Button
-                          block
-                          type="primary"
-                          icon={<DownloadOutlined />}
-                          style={{ borderRadius: 8, height: 38 }}
-                          onClick={() => handleDownloadAttachment(book.attachment, book.title)}
-                        >
-                          下载
-                        </Button>
-                      </div>
+              <ListItem
+                title={book.title}
+                description={[book.publish, "课程教材"].filter(Boolean).join(" · ")}
+                extra={
+                  <Space size={4}>
+                    {book.attachment && (
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => {
+                          const filename = book.attachment.split("/").pop() || "attachment";
+                          setPreviewFile({ url: book.attachment, name: filename, type: filename.split(".").pop() || "" });
+                        }}
+                      >
+                        预览
+                      </Button>
                     )}
-                  </div>
-                </Col>
-              </Row>
+                    {book.attachment && (
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => handleDownloadAttachment(book.attachment, book.title)}
+                      >
+                        下载
+                      </Button>
+                    )}
+                  </Space>
+                }
+              />
             ) : (
-              <Empty description="本课程暂未指定教材" />
+              <Empty description="本课程暂未指定教材" style={{ marginTop: 16 }} />
             )}
           </div>
         );
@@ -685,16 +585,13 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
       case "graduation-requirements":
         return (
           <div>
-            <div className="pu-section-title">毕业要求</div>
-            <div className="pu-divider" style={{ marginTop: 0 }} />
+            <h2>毕业要求</h2>
             {courseInfo?.graduationRequirements ? (
-              <div style={{ padding: 18, background: "#f6f8fb", borderRadius: 10 }}>
-                <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "#424754" }}>
-                  {courseInfo.graduationRequirements}
-                </Paragraph>
-              </div>
+              <Paragraph style={{ margin: "16px 0 0", whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.85, color: "var(--pu-muted)" }}>
+                {courseInfo.graduationRequirements}
+              </Paragraph>
             ) : (
-              <Empty description="暂未设置毕业要求" />
+              <Empty description="暂未设置毕业要求" style={{ marginTop: 16 }} />
             )}
           </div>
         );
@@ -799,36 +696,14 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
           </div>
 
           {/* 指标概览 */}
-          <div className="pu-grid pu-grid--stats">
-            <div className="pu-stat">
-              <span className="pu-stat__icon"><BookOutlined /></span>
-              <div className="pu-stat__label">章节数量</div>
-              <div className="pu-stat__num">{chapters.length}<small>章</small></div>
-              <div className="pu-stat__desc">课程的章节结构</div>
-            </div>
-            <div className="pu-stat">
-              <span className="pu-stat__icon"><TeamOutlined /></span>
-              <div className="pu-stat__label">授课教师</div>
-              <div className="pu-stat__num">{allTeachers.length}<small>位</small></div>
-              <div className="pu-stat__desc">参与本课程教学</div>
-            </div>
-            <div className="pu-stat">
-              <span className="pu-stat__icon"><FileTextOutlined /></span>
-              <div className="pu-stat__label">教材</div>
-              <div className="pu-stat__num" style={{ fontSize: 22, lineHeight: "48px" }}>
-                {book ? "已配置" : "未配置"}
-              </div>
-              <div className="pu-stat__desc">{book?.title || "本课程暂未指定教材"}</div>
-            </div>
-            <div className="pu-stat">
-              <span className="pu-stat__icon"><PayCircleOutlined /></span>
-              <div className="pu-stat__label">毕业要求</div>
-              <div className="pu-stat__num" style={{ fontSize: 22, lineHeight: "48px" }}>
-                {courseInfo?.graduationRequirements ? "已设置" : "待完善"}
-              </div>
-              <div className="pu-stat__desc">课程的能力达成标准</div>
-            </div>
-          </div>
+          <StatGrid
+            items={[
+              { icon: <BookOutlined />, label: "章节数量", value: chapters.length, unit: "章", desc: "课程的章节结构" },
+              { icon: <TeamOutlined />, label: "授课教师", value: allTeachers.length, unit: "位", desc: "参与本课程教学" },
+              { icon: <FileTextOutlined />, label: "教材", value: book ? "已配置" : "未配置", desc: book?.title || "本课程暂未指定教材" },
+              { icon: <PayCircleOutlined />, label: "毕业要求", value: courseInfo?.graduationRequirements ? "已设置" : "待完善", desc: "课程的能力达成标准" },
+            ]}
+          />
 
           {/* 标签页 + 内容 */}
           <ProtoTabs
@@ -841,10 +716,9 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
             <ProtoCard>{renderContent()}</ProtoCard>
 
             <ProtoCard title="学习支持">
-              {supportItems.map((it, i) => (
+              {supportItems.map((it) => (
                 <ListItem
                   key={it.key}
-                  index={i + 1}
                   title={it.title}
                   description={it.desc}
                   extra={

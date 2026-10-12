@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Typography,
-  Tag,
   Button,
   Spin,
   Empty,
@@ -12,14 +11,12 @@ import {
   Input,
   message,
   Popconfirm,
-  Switch,
   Radio,
   Rate,
   Grid,
 } from "antd";
 import {
   PlayCircleOutlined,
-  FolderOutlined,
   ShareAltOutlined,
   LinkOutlined,
   VideoCameraOutlined,
@@ -29,14 +26,9 @@ import {
   UserOutlined,
   SearchOutlined,
   BulbOutlined,
-  ClockCircleOutlined,
-  UnorderedListOutlined,
   BookOutlined,
-  ArrowLeftOutlined,
-  HomeOutlined,
   EditOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -56,6 +48,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
 import FilePreview from "@/components/FilePreview";
 import VideoAnalysisPanel from "@/components/video/VideoAnalysisPanel";
+import { ProtoCard, ProgressBar, ProtoTag } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
 
 const { Title, Text, Paragraph } = Typography;
@@ -82,308 +75,6 @@ interface Chapter {
   subchapters?: Chapter[];
   children?: Chapter[];
 }
-
-// 统计卡片组件
-const StatCard: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  accent?: string;
-}> = ({ icon, label, value, accent }) => (
-  <div className="pu-stat" style={{ flex: 1, minWidth: 180 }}>
-    <span
-      className="pu-stat__icon"
-      style={accent ? { color: accent, background: `${accent}12` } : undefined}
-    >
-      {icon}
-    </span>
-    <div className="pu-stat__label">{label}</div>
-    <div className="pu-stat__num" style={{ fontSize: 28 }}>{value}</div>
-  </div>
-);
-
-// 表格化视频行 - 参照 Stitch 原型
-const VideoTableRow: React.FC<{
-  no: string;
-  video: Video;
-  onClick: () => void;
-}> = ({ no, video, onClick }) => (
-  <div
-    onClick={onClick}
-    style={{
-      display: "grid",
-      gridTemplateColumns: "100px 1fr",
-      alignItems: "center",
-      gap: 0,
-      padding: "8px 20px",
-      cursor: "pointer",
-      borderRadius: 8,
-      transition: "background 0.15s",
-    }}
-    onMouseEnter={(e) => {
-      (e.currentTarget as HTMLDivElement).style.background = "#f5f7fa";
-    }}
-    onMouseLeave={(e) => {
-      (e.currentTarget as HTMLDivElement).style.background = "transparent";
-    }}
-  >
-    {/* 缩略图 + 时长 */}
-    <div
-      style={{
-        width: 90,
-        height: 50,
-        borderRadius: 6,
-        overflow: "hidden",
-        background: video.thumbnail ? "#e2e8f0" : `linear-gradient(135deg, ${colors.primary}25 0%, ${colors.primary} 100%)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        position: "relative",
-      }}
-    >
-      {video.thumbnail ? (
-        <img src={video.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      ) : (
-        <PlayCircleOutlined style={{ color: "rgba(255,255,255,0.8)", fontSize: 20 }} />
-      )}
-      {video.duration && (
-        <div style={{
-          position: "absolute",
-          bottom: 3,
-          right: 3,
-          background: "rgba(0,0,0,0.65)",
-          borderRadius: 3,
-          padding: "0 4px",
-          fontSize: 10,
-          color: "#fff",
-          fontWeight: 500,
-          lineHeight: "15px",
-        }}>
-          {formatDuration(video.duration)}
-        </div>
-      )}
-    </div>
-
-    {/* 标题 + 播放 */}
-    <div style={{ minWidth: 0, paddingLeft: 14, display: "flex", alignItems: "center", gap: 12 }}>
-      <Text
-        style={{
-          fontSize: 15,
-          color: colors.textPrimary,
-          fontWeight: 600,
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {video.title || video.id.slice(0, 8)}
-      </Text>
-      <PlayCircleOutlined style={{ color: colors.primary, fontSize: 16, flexShrink: 0, opacity: 0.6 }} />
-    </div>
-  </div>
-);
-
-// 全宽章节卡片 - 参照 Stitch 原型，章节间有隔离
-const ChapterSectionCard: React.FC<{
-  chapter: any;
-  index: number;
-  onVideoSelect: (video: Video, chapter: any) => void;
-}> = ({ chapter, index, onVideoSelect }) => {
-  const [expanded, setExpanded] = useState(true);
-  const chapterVideos: Video[] = chapter.videos || [];
-  const children = chapter.children || [];
-  const totalDuration = chapterVideos.reduce((sum: number, v: Video) => sum + (v.duration || 0), 0);
-
-  // 计算子章节视频总数
-  const countAllVideos = (ch: any): number => {
-    let count = (ch.videos || []).length;
-    (ch.children || []).forEach((sub: any) => { count += countAllVideos(sub); });
-    return count;
-  };
-  const totalVideos = countAllVideos(chapter);
-
-  return (
-    <div
-      style={{
-        background: "#ffffff",
-        borderRadius: 14,
-        overflow: "hidden",
-        border: "1px solid var(--pu-line)",
-      }}
-    >
-      {/* 章节头部 */}
-      <div
-        onClick={() => setExpanded(!expanded)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          padding: "14px 20px",
-          cursor: "pointer",
-          transition: "background 0.15s",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.background = "#fafbfc";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.background = "transparent";
-        }}
-      >
-        {/* 章节序号 */}
-        <div
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            background: `${colors.primary}12`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Text style={{ fontSize: 13, fontWeight: 700, color: colors.primary }}>{index}</Text>
-        </div>
-
-        {/* 章节标题 */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: colors.textPrimary,
-              display: "block",
-            }}
-          >
-            {chapter.title}
-          </Text>
-        </div>
-
-        {/* 统计 */}
-        <Text style={{ fontSize: 12, color: colors.textSecondary, flexShrink: 0 }}>
-          {totalVideos} 个视频{totalDuration > 0 ? ` · ${formatTotalDuration(totalDuration)}` : ""}
-        </Text>
-
-        {/* 展开箭头 */}
-        <span
-          style={{
-            fontSize: 10,
-            color: colors.textSecondary,
-            transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-            transition: "transform 0.2s",
-            marginLeft: 4,
-            flexShrink: 0,
-          }}
-        >
-          ▶
-        </span>
-      </div>
-
-      {/* 展开内容 */}
-      {expanded && totalVideos > 0 && (
-        <div style={{ borderTop: "1px solid #edf0f5" }}>
-          {/* 视频行 */}
-          {chapterVideos.map((video, idx) => (
-            <VideoTableRow
-              key={video.id}
-              no={`${index}.${idx + 1}`}
-              video={video}
-              onClick={() => onVideoSelect(video, chapter)}
-            />
-          ))}
-
-          {/* 子章节 */}
-          {children.map((sub: any, subIdx: number) => {
-            const subNumber = `${index}.${subIdx + 1}`;
-            const subVideos: Video[] = sub.videos || [];
-            const subChildren = sub.children || [];
-            return (
-              <div key={sub.id}>
-                {/* 子章节标题行 */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 20px",
-                    marginTop: 4,
-                  }}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: 600, color: "#555" }}>
-                    {subNumber} {sub.title}
-                  </Text>
-                  {subVideos.length > 0 && (
-                    <Text style={{ fontSize: 11, color: "#bbb", marginLeft: "auto" }}>
-                      {subVideos.length} 个视频
-                    </Text>
-                  )}
-                </div>
-                {/* 子章节视频 */}
-                {subVideos.map((video, vIdx) => (
-                  <VideoTableRow
-                    key={video.id}
-                    no={`${subNumber}.${vIdx + 1}`}
-                    video={video}
-                    onClick={() => onVideoSelect(video, sub)}
-                  />
-                ))}
-                {/* 三级子章节 */}
-                {subChildren.map((sub2: any, sub2Idx: number) => {
-                  const sub2Number = `${subNumber}.${sub2Idx + 1}`;
-                  const sub2Videos: Video[] = sub2.videos || [];
-                  return (
-                    <div key={sub2.id}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "8px 20px 8px 36px",
-                        }}
-                      >
-                        <Text style={{ fontSize: 12, fontWeight: 500, color: "#999" }}>
-                          {sub2Number} {sub2.title}
-                        </Text>
-                      </div>
-                      {sub2Videos.map((video, vIdx) => (
-                        <VideoTableRow
-                          key={video.id}
-                          no={`${sub2Number}.${vIdx + 1}`}
-                          video={video}
-                          onClick={() => onVideoSelect(video, sub2)}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const generateChapterNumber = (path?: string): string => {
-  if (!path) return "";
-  const len = path.length;
-  if (len === 4) {
-    return path.charAt(2);
-  } else if (len === 8) {
-    const first = parseInt(path.substring(0, 4), 10).toString();
-    const second = parseInt(path.substring(4, 8), 10).toString();
-    return `${first}.${second}`;
-  } else if (len === 12) {
-    const first = parseInt(path.substring(0, 4), 10).toString();
-    const second = parseInt(path.substring(4, 8), 10).toString();
-    const third = parseInt(path.substring(8, 12), 10).toString();
-    return `${first}.${second}.${third}`;
-  }
-  return path;
-};
 
 const stripVideoNumber = (title: string | undefined): string => {
   if (!title) return "";
@@ -418,15 +109,6 @@ const formatDuration = (seconds?: number): string => {
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(Math.floor(seconds) % 60).padStart(2, "0")}`;
 };
 
-const formatTotalDuration = (seconds: number): string => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-};
-
 export default function CourseVideoPage() {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
@@ -441,18 +123,10 @@ export default function CourseVideoPage() {
   // 注意: selectedCourse 在 courses 查询完成后才可用，教师查询依赖 enabled 条件守卫
 
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
-  const [currentChapterVideos, setCurrentChapterVideos] = useState<Video[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTab, setCurrentTab] = useState("1");
   const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [filterHasVideo, setFilterHasVideo] = useState(false);
   const [chapterSearchText, setChapterSearchText] = useState("");
-
-  // 播放模式：点击视频后进入播放界面
-  const [playingVideo, setPlayingVideo] = useState<{
-    video: Video;
-    chapterPath: string[];
-  } | null>(null);
 
   const [discussionModalVisible, setDiscussionModalVisible] = useState(false);
   const [editDiscussionModalVisible, setEditDiscussionModalVisible] = useState(false);
@@ -534,8 +208,6 @@ export default function CourseVideoPage() {
 
   const allVideos: Video[] = chapters.flatMap((chapter) => chapter.videos || []);
 
-  const totalVideoDuration = allVideos.reduce((sum, v) => sum + (v.duration || 0), 0);
-
   const buildChapterTree = (chs: Chapter[]): any[] => {
     const chapterMap = new Map<string, any>();
     chs.forEach((chapter) => {
@@ -562,17 +234,6 @@ export default function CourseVideoPage() {
 
   const chapterTree = buildChapterTree(chapters);
 
-  const filterChaptersWithVideos = (nodes: any[]): any[] => {
-    return nodes.filter((node) => {
-      const hasVideos = node.videos && node.videos.length > 0;
-      if (node.children && node.children.length > 0) {
-        node.children = filterChaptersWithVideos(node.children);
-        return hasVideos || node.children.length > 0;
-      }
-      return hasVideos;
-    });
-  };
-
   const filterChaptersBySearch = (nodes: any[], keyword: string): any[] => {
     if (!keyword.trim()) return nodes;
     const lower = keyword.toLowerCase();
@@ -587,10 +248,23 @@ export default function CourseVideoPage() {
     }, []);
   };
 
-  const filteredChapterTree = filterHasVideo ? filterChaptersWithVideos(chapterTree) : chapterTree;
+  const filteredChapterTree = chapterTree;
   const searchedChapterTree = chapterSearchText.trim()
     ? filterChaptersBySearch(filteredChapterTree, chapterSearchText)
     : filteredChapterTree;
+
+  const flatVideoItems = useMemo(() => {
+    const items: { video: Video; chapterTitle: string; path: string[] }[] = [];
+    const walk = (nodes: any[], path: string[]) => {
+      for (const n of nodes) {
+        const p = [...path, n.title];
+        (n.videos || []).forEach((v: Video) => items.push({ video: v, chapterTitle: n.title, path: p }));
+        if (n.children?.length) walk(n.children, p);
+      }
+    };
+    walk(searchedChapterTree, []);
+    return items;
+  }, [searchedChapterTree]);
 
   // 课程详细信息（教学目标、课程结构等）
   const { data: courseInfoData } = useQuery({
@@ -772,40 +446,6 @@ export default function CourseVideoPage() {
     }
   }, [allVideos, currentVideo]);
 
-  const handleVideoSelect = (video: Video, chapter: any) => {
-    if (mainVideoRef.current) {
-      mainVideoRef.current.pause();
-    }
-    setCurrentVideo(video);
-    setIsPlaying(true);
-    // 收集章节下的所有视频
-    const chapterVids = chapter.videos || [];
-    if (chapterVids.length > 0) {
-      setCurrentChapterVideos(chapterVids);
-    }
-    // 进入播放模式
-    const chapterTitle = chapter.title || "";
-    setPlayingVideo({
-      video,
-      chapterPath: [chapterTitle],
-    });
-  };
-
-  // 查找视频所在的章节路径
-  const findChapterPathForVideo = (videoId: string, nodes: any[], pathTitles: string[] = []): string[] | null => {
-    for (const node of nodes) {
-      const title = node.title || "";
-      if (node.videos && node.videos.some((v: Video) => v.id === videoId)) {
-        return [...pathTitles, title];
-      }
-      if (node.children && node.children.length > 0) {
-        const result = findChapterPathForVideo(videoId, node.children, [...pathTitles, title]);
-        if (result) return result;
-      }
-    }
-    return null;
-  };
-
   const handleShare = () => {
     setShareModalVisible(true);
   };
@@ -862,11 +502,14 @@ export default function CourseVideoPage() {
 
   // ==================== 渲染视频播放器 ====================
   const renderVideoPlayer = () => {
+    // 限制播放区高度（按 16:9 反推最大宽度），避免视频过高把下方元数据挤出视口
+    const stageStyle: React.CSSProperties = { width: "min(100%, calc(48vh * 16 / 9))", margin: "0 auto" };
+
     if (allVideos.length === 0 || !currentVideo) {
       return (
         <div
           style={{
-            width: "100%",
+            ...stageStyle,
             aspectRatio: "16 / 9",
             display: "flex",
             flexDirection: "column",
@@ -884,7 +527,7 @@ export default function CourseVideoPage() {
 
     if (isPlaying) {
       return (
-        <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#000", width: "100%" }}>
+        <div style={{ ...stageStyle, position: "relative", borderRadius: 16, overflow: "hidden", background: "#000" }}>
           <div style={{ position: "relative", paddingTop: "56.25%" }}>
             <video
               ref={mainVideoRef}
@@ -904,11 +547,11 @@ export default function CourseVideoPage() {
     return (
       <div
         style={{
+          ...stageStyle,
           position: "relative",
           borderRadius: 16,
           overflow: "hidden",
           cursor: "pointer",
-          width: "100%",
         }}
         onClick={() => setIsPlaying(true)}
       >
@@ -991,257 +634,152 @@ export default function CourseVideoPage() {
   const renderTabContent = () => {
     // 课程视频 Tab（主 Tab）
     if (currentTab === "1") {
-      // === 播放模式 ===
-      if (playingVideo) {
-        return (
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
-            {/* 面包屑 + 返回 */}
-            <div style={{
-              padding: isMobile ? "8px 12px" : "12px 24px",
-              borderBottom: `1px solid ${colors.border}`,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexShrink: 0,
-              overflow: "hidden",
-            }}>
-              <Button
-                type="text"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => {
-                  stopMainVideo();
-                  setPlayingVideo(null);
-                  setIsPlaying(false);
-                }}
-                style={{ color: colors.primary, fontWeight: 600, fontSize: isMobile ? 13 : 14 }}
-              >
-                {isMobile ? "" : "返回章节"}
-              </Button>
-              <Breadcrumb
-                items={[
-                  { title: <><HomeOutlined /><span style={{ marginLeft: 4 }}>{selectedCourse?.title || "课程"}</span></> },
-                  ...playingVideo.chapterPath.map((seg, idx) => ({
-                    title: <span style={{ color: idx === playingVideo.chapterPath.length - 1 ? colors.primary : colors.textSecondary }}>{seg}</span>,
-                  })),
-                  { title: <span style={{ color: colors.primary, fontWeight: 600 }}>{stripVideoNumber(playingVideo.video.title) || "视频"}</span> },
-                ]}
-              />
-              <div style={{ flex: 1 }} />
-              <Button
-                type="text"
-                size="small"
-                icon={<ShareAltOutlined style={{ color: "#999" }} />}
-                onClick={handleShare}
-              />
-            </div>
+      // === 两栏布局：左侧章节目录，右侧视频与元数据（原型风格） ===
+      const currentFlatIndex = flatVideoItems.findIndex((it) => it.video.id === currentVideo?.id);
+      const completedCount = currentFlatIndex < 0 ? 0 : currentFlatIndex;
+      const progressPct = flatVideoItems.length > 0 ? Math.round((completedCount / flatVideoItems.length) * 100) : 0;
+      const currentChapterTitle = currentFlatIndex >= 0 ? flatVideoItems[currentFlatIndex]?.chapterTitle : undefined;
 
-            {/* 视频播放区 + 右侧章节视频列表 */}
-            <div style={{
-              flex: 1,
-              padding: isMobile ? "12px" : "20px 24px",
-              overflow: "auto",
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              gap: 16,
-              alignItems: "flex-start",
-            }}>
-              {/* 视频播放器 */}
-              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ width: "100%", maxWidth: 1000 }}>
-                  {renderVideoPlayer()}
-                </div>
-                {/* 视频标题信息 */}
-                {currentVideo && (
-                  <div style={{ width: "100%", maxWidth: 1000, marginTop: 14 }}>
-                    <Text style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary }}>
-                      {stripVideoNumber(currentVideo.title) || "未命名视频"}
-                    </Text>
-                    {currentVideo.duration && (
-                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginLeft: 12 }}>
-                        时长 {formatDuration(currentVideo.duration)}
-                      </Text>
-                    )}
-                  </div>
-                )}
-                {currentVideo && (
-                  <div style={{ width: "100%", maxWidth: 1000 }}>
-                    <VideoAnalysisPanel
-                      videoId={currentVideo.id}
-                      tenant={currentTenant?.schemaName || ""}
-                      headers={getAuthHeaders(user) as Record<string, string>}
-                      onSeek={(sec) => {
-                        if (mainVideoRef.current) {
-                          mainVideoRef.current.currentTime = sec;
-                          mainVideoRef.current.play().catch(() => {});
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+      const selectFlatVideo = (index: number) => {
+        const item = flatVideoItems[index];
+        if (!item) return;
+        setCurrentVideo(item.video);
+        setIsPlaying(true);
+      };
 
-              {/* 章节内视频列表 */}
-              {currentChapterVideos.length > 1 && (
-                <div style={{
-                  width: isMobile ? "100%" : 260,
-                  flexShrink: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  background: "#fafbfc",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  maxHeight: isMobile ? 200 : "calc(100vh - 180px)",
-                }}>
-                  <div style={{
-                    padding: "10px 14px 8px",
-                    borderBottom: `1px solid ${colors.border}`,
-                  }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: 600 }}>章节视频</Text>
-                    <Text style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>{currentChapterVideos.length}个</Text>
-                  </div>
-                  <div style={{ flex: 1, overflowY: "auto" }}>
-                    {currentChapterVideos.map((video) => {
-                      const isActive = video.id === currentVideo?.id;
-                      return (
-                        <div
-                          key={video.id}
-                          onClick={() => {
-                            const pathInfo = findChapterPathForVideo(video.id, searchedChapterTree);
-                            setPlayingVideo({
-                              video,
-                              chapterPath: pathInfo || playingVideo.chapterPath,
-                            });
-                            setCurrentVideo(video);
-                            setIsPlaying(true);
-                          }}
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            alignItems: "center",
-                            cursor: "pointer",
-                            borderLeft: isActive ? `3px solid ${colors.primary}` : "3px solid transparent",
-                            background: isActive ? `${colors.primary}06` : "transparent",
-                            padding: "8px 12px",
-                            transition: "all 0.15s",
-                          }}
-                        >
-                          {/* 缩略图 */}
-                          <div style={{
-                            width: 64,
-                            height: 38,
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            flexShrink: 0,
-                            background: isActive
-                              ? `linear-gradient(135deg, ${colors.primaryLight} 0%, ${colors.primary} 100%)`
-                              : "#e2e8f0",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}>
-                            {video.thumbnail ? (
-                              <img src={video.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            ) : (
-                              <PlayCircleOutlined style={{ color: isActive ? "#fff" : "#94a3b8", fontSize: 14 }} />
-                            )}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={{
-                              fontSize: 12,
-                              color: isActive ? colors.primary : colors.textSecondary,
-                              display: "block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              fontWeight: isActive ? 600 : 400,
-                              lineHeight: "18px",
-                            }}>
-                              {stripVideoNumber(video.title) || video.id.slice(0, 8)}
-                            </Text>
-                            {video.duration && (
-                              <Text style={{ fontSize: 11, color: "#94a3b8" }}>{formatDuration(video.duration)}</Text>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      // === 章节列表模式（全宽） ===
       return (
-        <div style={{ height: "100%", display: "flex", flexDirection: "column", background: colors.pageBg }}>
-          {/* 统计卡片 */}
-          <div style={{ padding: isMobile ? "12px 12px 0" : "16px 28px 0", flexShrink: 0 }}>
-            <div style={{ display: "flex", gap: isMobile ? 8 : 12, marginBottom: 12, flexWrap: "wrap" }}>
-              <StatCard
-                icon={<FolderOutlined style={{ fontSize: 18, color: colors.primary }} />}
-                label="章节数"
-                value={chapters.length}
-              />
-              <StatCard
-                icon={<VideoCameraOutlined style={{ fontSize: 18, color: "#2859df" }} />}
-                label="视频数"
-                value={allVideos.length}
-              />
-              <StatCard
-                icon={<ClockCircleOutlined style={{ fontSize: 18, color: "#D16900" }} />}
-                label="总时长"
-                value={totalVideoDuration > 0 ? formatTotalDuration(totalVideoDuration) : "0"}
-              />
-            </div>
-            {/* 搜索 + 筛选 */}
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 8 : 0, justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center" }}>
+        <div style={{ height: "100%", display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", background: colors.pageBg }}>
+          {/* 左侧：章节目录 */}
+          <div
+            style={{
+              width: isMobile ? "100%" : 280,
+              flexShrink: 0,
+              background: "#fff",
+              borderRight: isMobile ? undefined : `1px solid ${colors.border}`,
+              borderBottom: isMobile ? `1px solid ${colors.border}` : undefined,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              maxHeight: isMobile ? 260 : undefined,
+            }}
+          >
+            <div style={{ padding: "14px 16px", borderBottom: `1px solid ${colors.border}` }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650, color: colors.textPrimary }}>章节目录</h3>
+              <p style={{ margin: "6px 0 8px", fontSize: 12, color: colors.textSecondary }}>
+                共 {flatVideoItems.length} 个视频
+              </p>
               <Input
-                placeholder="搜索章节或视频..."
+                size="small"
+                placeholder="搜索视频..."
                 prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
                 allowClear
                 value={chapterSearchText}
                 onChange={(e) => setChapterSearchText(e.target.value)}
-                style={{ maxWidth: isMobile ? "100%" : 360, fontSize: 13, borderRadius: 8 }}
               />
-              <Space size={8}>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>只看有视频</Text>
-                <Switch size="small" checked={filterHasVideo} onChange={setFilterHasVideo} />
-              </Space>
+            </div>
+
+            <div style={{ flex: 1, overflow: "auto", padding: 8 }}>
+              {flatVideoItems.length === 0 ? (
+                <Empty description="暂无视频" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ marginTop: 24 }} />
+              ) : (
+                flatVideoItems.map((item, idx) => {
+                  const active = item.video.id === currentVideo?.id;
+                  return (
+                    <button
+                      key={item.video.id}
+                      type="button"
+                      onClick={() => selectFlatVideo(idx)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        width: "100%",
+                        textAlign: "left",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        marginBottom: 2,
+                        background: active ? `${colors.primary}12` : "transparent",
+                        color: active ? colors.primary : colors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: active ? 600 : 400,
+                      }}
+                    >
+                      <span style={{ width: 14, color: idx < completedCount ? colors.primary : "#c0c4cc" }}>
+                        {idx < completedCount ? "✓" : ""}
+                      </span>
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {stripVideoNumber(item.video.title) || item.video.id.slice(0, 8)}
+                      </span>
+                      {item.video.duration ? (
+                        <span style={{ fontSize: 11, color: colors.textSecondary }}>{formatDuration(item.video.duration)}</span>
+                      ) : null}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ padding: "12px 16px", borderTop: `1px solid ${colors.border}` }}>
+              <ProgressBar percent={progressPct} />
+              <div style={{ marginTop: 6, fontSize: 12, color: colors.textSecondary }}>课程完成进度 {progressPct}%</div>
             </div>
           </div>
 
-          {/* 章节卡片列表 - 全宽 */}
-          <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "8px 12px 16px" : "12px 28px 24px" }}>
-            {chaptersLoading ? (
-              <div style={{ padding: 48, textAlign: "center" }}>
-                <Spin size="large" />
+          {/* 右侧：视频 + 元数据 */}
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: "auto", padding: isMobile ? 12 : 20, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              {renderVideoPlayer()}
+            </div>
+
+            <ProtoCard>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 650, color: colors.textPrimary }}>
+                  {stripVideoNumber(currentVideo?.title) || "未命名视频"}
+                </h2>
+                <Button type="text" icon={<ShareAltOutlined />} onClick={handleShare} />
               </div>
-            ) : searchedChapterTree.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {searchedChapterTree.map((chapter: any, idx: number) => (
-                  <ChapterSectionCard
-                    key={chapter.id}
-                    chapter={chapter}
-                    index={idx + 1}
-                    onVideoSelect={handleVideoSelect}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                {currentVideo?.duration ? <ProtoTag tone="gray">时长 {formatDuration(currentVideo.duration)}</ProtoTag> : null}
+                {currentChapterTitle ? <ProtoTag tone="blue">{currentChapterTitle}</ProtoTag> : null}
+              </div>
+              {currentVideo && (
+                <div style={{ marginTop: 16 }}>
+                  <VideoAnalysisPanel
+                    videoId={currentVideo.id}
+                    tenant={currentTenant?.schemaName || ""}
+                    headers={getAuthHeaders(user) as Record<string, string>}
+                    onSeek={(sec) => {
+                      if (mainVideoRef.current) {
+                        mainVideoRef.current.currentTime = sec;
+                        mainVideoRef.current.play().catch(() => {});
+                      }
+                    }}
                   />
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "64px 24px",
-              }}>
-                <VideoCameraOutlined style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }} />
-                <Text style={{ fontSize: 14, color: colors.textSecondary }}>暂无课程章节</Text>
-                <Text style={{ fontSize: 12, color: "#bfbfbf", marginTop: 4 }}>课程章节和视频正在准备中</Text>
-              </div>
-            )}
+                </div>
+              )}
+            </ProtoCard>
+
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <Button
+                disabled={currentFlatIndex <= 0}
+                onClick={() => currentFlatIndex > 0 && selectFlatVideo(currentFlatIndex - 1)}
+              >
+                上一节
+              </Button>
+              <Button
+                type="primary"
+                disabled={currentFlatIndex < 0 || currentFlatIndex >= flatVideoItems.length - 1}
+                onClick={() => {
+                  if (currentFlatIndex >= 0 && currentFlatIndex < flatVideoItems.length - 1) {
+                    selectFlatVideo(currentFlatIndex + 1);
+                  }
+                }}
+              >
+                完成并播放下一节
+              </Button>
+            </div>
           </div>
         </div>
       );
@@ -1609,7 +1147,6 @@ export default function CourseVideoPage() {
                 onClick={() => {
                   if (currentTab === "1") {
                     stopMainVideo();
-                    setPlayingVideo(null);
                   }
                   setCurrentTab(tab.key);
                 }}

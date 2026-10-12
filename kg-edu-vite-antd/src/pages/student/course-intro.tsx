@@ -470,36 +470,59 @@ export default function CourseIntroPage() {
     <div className="pu-page">
       {/* ═══════════════════ 课程信息 ═══════════════════ */}
       <ProtoCard className="pu-intro-card">
-        <div className="pu-intro-grid">
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 650, color: "var(--pu-ink)", marginBottom: 10 }}>
-              {selectedCourse.title}
-            </h2>
-            <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.9, margin: 0 }}>
-              {selectedCourse.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}
-            </p>
-          </div>
-
-          <div className="pu-info">
-            {[
-              { label: "课程名称", value: selectedCourse.title },
-              { label: "所属专业", value: selectedCourse.major || "—" },
-              { label: "课程状态", value: "已发布" },
-              { label: "总学时", value: `${selectedCourse.semesterHours || "--"} 学时` },
-              { label: "章节数", value: `${chapters.length} 个章节` },
-              { label: "浏览次数", value: `${selectedCourse.browseCount || 0} 次` },
-              {
-                label: "授课教师",
-                value: teachers.length > 0 ? teachers.map((t: any) => t.name).join("、") : "教学团队",
-              },
-            ].map((row) => (
-              <div className="pu-info__row" key={row.label}>
-                <span className="pu-info__label">{row.label}</span>
-                <span className="pu-info__value">{row.value}</span>
-              </div>
-            ))}
-          </div>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 650, color: "var(--pu-ink)", marginBottom: 10 }}>
+            {selectedCourse.title}
+          </h2>
+          <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.9, margin: 0 }}>
+            {selectedCourse.description || "建立扎实的专业基础，在理解与实践中形成自己的知识体系。"}
+          </p>
         </div>
+
+        {(() => {
+          const infoRows = [
+            { label: "课程名称", value: selectedCourse.title },
+            { label: "所属专业", value: selectedCourse.major || "—" },
+            { label: "课程状态", value: "已发布" },
+            { label: "总学时", value: `${selectedCourse.semesterHours || "--"} 学时` },
+            { label: "章节数", value: `${chapters.length} 个章节` },
+            { label: "浏览次数", value: `${selectedCourse.browseCount || 0} 次` },
+            { label: "授课教师", value: teachers.length > 0 ? teachers.map((t: any) => t.name).join("、") : "教学团队" },
+          ];
+          const cellTh: React.CSSProperties = {
+            textAlign: "left",
+            fontWeight: 500,
+            fontSize: 13,
+            color: "var(--pu-muted)",
+            background: "#f6f8fb",
+            padding: "10px 14px",
+            width: 110,
+            whiteSpace: "nowrap",
+            borderBottom: "1px solid var(--pu-line-soft)",
+          };
+          const cellTd: React.CSSProperties = {
+            fontSize: 14,
+            color: "var(--pu-ink)",
+            padding: "10px 14px",
+            borderBottom: "1px solid var(--pu-line-soft)",
+          };
+          const pairs: (typeof infoRows)[] = [];
+          for (let i = 0; i < infoRows.length; i += 2) pairs.push(infoRows.slice(i, i + 2));
+          return (
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 20, tableLayout: "fixed" }}>
+              <tbody>
+                {pairs.map((pair, i) => (
+                  <tr key={i}>
+                    <th style={cellTh}>{pair[0]?.label}</th>
+                    <td style={cellTd}>{pair[0]?.value}</td>
+                    <th style={cellTh}>{pair[1]?.label || ""}</th>
+                    <td style={cellTd}>{pair[1]?.value || ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
+        })()}
       </ProtoCard>
 
       {/* ═══════════════════ 数据概览 ═══════════════════ */}
