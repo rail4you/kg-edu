@@ -307,6 +307,19 @@
   margin-top: 15px;
 }
 
+/* 课程描述：固定两行高度，超出截断 */
+.teacher-dashboard .course-card .course-card-desc {
+  margin: 8px 0 0;
+  min-height: 3.2em;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---------- Ant Design 按钮对齐原型 ---------- */
 .teacher-dashboard .ant-btn {
   border-radius: 8px;

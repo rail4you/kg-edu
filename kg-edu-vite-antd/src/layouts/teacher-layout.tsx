@@ -38,6 +38,7 @@ import {
   AppstoreOutlined,
 } from "@ant-design/icons";
 import { UserMenu } from "@/components/layout/user-menu";
+import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { UserManualModal } from "@/components/layout/user-manual-modal";
 import GlobalFooter from "@/components/layout/global-footer";
@@ -413,23 +414,23 @@ export default function TeacherLayout() {
       >
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
             alignItems: "center",
-            justifyContent: "space-between",
             padding: isMobile ? "0 12px" : "0 40px",
-            minHeight: isMobile ? 54 : 60,
-            gap: 8,
+            minHeight: isMobile ? 64 : 76,
+            columnGap: isMobile ? 8 : 16,
           }}
         >
           <div
             className="teacher-layout-brand"
-            style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 12, flexShrink: 0 }}
+            style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 12, minWidth: 0, overflow: "hidden" }}
             onClick={() => navigate("/teacher/dashboard")}
           >
             <img
               src={branding.logo_dark}
               alt={branding.app_name}
-              style={{ height: isMobile ? 36 : 44, objectFit: "contain" }}
+              style={{ height: isMobile ? 36 : 44, objectFit: "contain", flexShrink: 0 }}
             />
             <span
               className="teacher-layout-brand-text"
@@ -440,15 +441,22 @@ export default function TeacherLayout() {
                 color: colors.textPrimary,
                 letterSpacing: "-0.01em",
                 whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                minWidth: 0,
               }}
             >
               {branding.app_title} · 教师端
             </span>
           </div>
 
+          <div className="teacher-layout-center" style={{ justifySelf: "center" }}>
+            <ModuleSwitcher active="smart-course" />
+          </div>
+
           <div
             className="teacher-layout-actions"
-            style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 12, flexShrink: 0 }}
+            style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 12, justifySelf: "end" }}
           >
             <div
               onClick={() => {
@@ -523,13 +531,13 @@ export default function TeacherLayout() {
       )}
 
       {/* 主体：左侧导航 + 工作区 */}
-      <div className="pu-shell">
+      <div className="pu-shell pu-shell--teacher">
         {!isMobile && renderNav()}
 
         <main className="pu-workspace">
           <div
             data-scroll-container
-            style={{ flex: 1, minHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}
+            style={{ flex: 1, minHeight: "calc(100vh - 76px)", display: "flex", flexDirection: "column" }}
           >
             <div className="pu-app" style={{ flex: 1 }}>
               <Outlet />

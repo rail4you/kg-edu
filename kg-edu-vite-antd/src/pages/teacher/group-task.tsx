@@ -61,6 +61,37 @@ interface GroupWithMembers {
   members: Array<{ id: string; name?: string }>;
 }
 
+const SUBMISSION_RANK: Record<string, number> = { pending: 0, submitted: 1, graded: 2 };
+
+// 每个学生只保留"进度最靠前"的一条提交记录
+function buildSubmissionMap(submissions: any[]): Map<string, any> {
+  const map = new Map<string, any>();
+  for (const s of submissions) {
+    const prev = map.get(s.studentId);
+    const rank = SUBMISSION_RANK[s.status] ?? -1;
+    const prevRank = prev ? SUBMISSION_RANK[prev.status] ?? -1 : -1;
+    if (!prev || rank > prevRank) map.set(s.studentId, s);
+  }
+  return map;
+}
+
+// 以分组在册成员为准统计，避免出现负数或与成员数不一致
+function computeProgress(groups: GroupWithMembers[] | undefined, submissions: any[]) {
+  const map = buildSubmissionMap(submissions);
+  let totalMembers = 0;
+  let submittedCount = 0;
+  let gradedCount = 0;
+  for (const g of groups || []) {
+    for (const m of g.members || []) {
+      totalMembers += 1;
+      const s = map.get(m.id);
+      if (s && s.status !== "pending") submittedCount += 1;
+      if (s && s.status === "graded") gradedCount += 1;
+    }
+  }
+  return { totalMembers, submittedCount, gradedCount };
+}
+
 export default function GroupTaskPage() {
   const navigate = useNavigate();
   const { user, tenant } = useAuth();
@@ -148,18 +179,7 @@ export default function GroupTaskPage() {
 
   // ── Compute progress stats for each task in the list ──
   function getTaskProgress(task: any) {
-    const taskGroups: GroupWithMembers[] = task.groups || [];
-    const taskSubs: any[] = task.submissions || [];
-    // Count unique submitted/graded student IDs
-    const submittedIds = new Set(taskSubs.filter((s: any) => s.status === "submitted" || s.status === "graded").map((s: any) => s.studentId));
-    // Total members across all assigned groups
-    let totalMembers = 0;
-    for (const g of taskGroups) {
-      totalMembers += g.members?.length || 0;
-    }
-    const submittedCount = submittedIds.size;
-    const gradedCount = taskSubs.filter((s: any) => s.status === "graded").length;
-    return { totalMembers, submittedCount, gradedCount };
+    return computeProgress(task.groups, task.submissions || []);
   }
 
   // ── Mutations ──
@@ -264,13 +284,7 @@ export default function GroupTaskPage() {
   };
 
   // ── Build submission lookup for progress dialog ──
-  const submissionByStudent = useMemo(() => {
-    const map = new Map<string, SubmissionRecord>();
-    for (const s of submissions) {
-      map.set(s.studentId, s);
-    }
-    return map;
-  }, [submissions]);
+  const submissionByStudent = useMemo(() => buildSubmissionMap(submissions), [submissions]);
 
   // ── Grouped submissions for progress dialog ──
   const progressGroups = useMemo(() => {
@@ -447,7 +461,7 @@ export default function GroupTaskPage() {
           <>
             {/* Overall stats */}
             {progressTask && (() => {
-              const { totalMembers, submittedCount, gradedCount } = getTaskProgress(progressTask);
+              const { totalMembers, submittedCount, gradedCount } = computeProgress(progressTask.groups, submissions);
               const percent = totalMembers > 0 ? Math.round((submittedCount / totalMembers) * 100) : 0;
               return (
                 <Card size="small" style={{ marginBottom: 16, background: "#fafafa" }}>

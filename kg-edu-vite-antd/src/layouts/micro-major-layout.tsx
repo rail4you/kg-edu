@@ -19,6 +19,7 @@ import {
 } from "@ant-design/icons";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileFullMenu } from "@/components/layout/mobile-full-menu";
+import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { useAuth } from "@/auth/auth-context";
 import { themeColors as colors } from "@/styles/theme";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -98,23 +99,23 @@ export default function MicroMajorLayout() {
     }
     style.textContent = `
       .ant-pro-layout .ant-layout-sider {
-        top: ${isMobile ? 50 : 56}px !important;
-        height: calc(100vh - ${isMobile ? 50 : 56}px) !important;
+        top: ${isMobile ? 64 : 76}px !important;
+        height: calc(100vh - ${isMobile ? 64 : 76}px) !important;
       }
       .ant-pro-layout .ant-layout-sider .ant-layout-sider-children {
-        height: calc(100vh - ${isMobile ? 50 : 56}px) !important;
+        height: calc(100vh - ${isMobile ? 64 : 76}px) !important;
       }
     `;
     return () => {
       style.remove();
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <div className="mm-layout" style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <style>{`
 @media(max-width:768px){
-.mm-layout .mm-topbar{padding:0 12px!important;height:50px!important}
+.mm-layout .mm-topbar{padding:0 12px!important;height:64px!important}
 .mm-layout .mm-brand-text{display:none!important}
 .mm-layout .mm-topbar-title{font-size:14px!important}
 .mm-layout .mm-logo{height:36px!important}
@@ -128,17 +129,17 @@ export default function MicroMajorLayout() {
       <div
         className="mm-topbar"
         style={{
-          height: isMobile ? 50 : 60,
+          height: isMobile ? 64 : 76,
           flexShrink: 0,
           background: "#FFFFFF",
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
           alignItems: "center",
-          justifyContent: "space-between",
           padding: isMobile ? "0 12px" : "0 40px",
           zIndex: 1000,
           position: "relative",
           boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          gap: 8,
+          columnGap: 8,
         }}
       >
         <div
@@ -148,7 +149,7 @@ export default function MicroMajorLayout() {
             cursor: "pointer",
             gap: isMobile ? 6 : 8,
             minWidth: 0,
-            flex: 1,
+            overflow: "hidden",
           }}
           onClick={() => navigate("/teacher/module-home")}
         >
@@ -181,7 +182,10 @@ export default function MicroMajorLayout() {
             {isMobile ? "微专业管理" : `${branding.app_title} · 微专业管理`}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 12, flexShrink: 0 }}>
+        <div style={{ justifySelf: "center" }}>
+          <ModuleSwitcher active="micro-major" />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 12, justifySelf: "end" }}>
           <Button
               type="text"
               icon={<UserOutlined style={{ fontSize: 16, color: colors.textPrimary }} />}

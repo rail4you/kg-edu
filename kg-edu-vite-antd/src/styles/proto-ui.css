@@ -937,6 +937,11 @@
   overflow-y: auto;
 }
 
+.pu-shell--teacher .pu-aside {
+  top: 76px;
+  height: calc(100vh - 76px);
+}
+
 .pu-scope {
   border: 1px solid var(--pu-line);
   border-radius: 10px;

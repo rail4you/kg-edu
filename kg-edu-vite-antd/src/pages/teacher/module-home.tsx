@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import type { CSSProperties } from "react";
 import { Row, Col } from "antd";
 import {
   ReadOutlined,
@@ -11,12 +12,11 @@ import {
   TeamOutlined,
   BarChartOutlined,
   VideoCameraOutlined,
-  StarOutlined,
 } from "@ant-design/icons";
 import GlobalFooter from "@/components/layout/global-footer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useBranding } from "@/hooks/use-branding";
-import { PageHead, ProtoCard, ProtoTag } from "@/components/proto";
+import { PageHead, ProtoCard } from "@/components/proto";
 import "./module-home.css";
 
 const MODULES = [
@@ -25,7 +25,8 @@ const MODULES = [
     title: "智慧课程",
     description:
       "面向课程建设与教学运行的统一工作台，覆盖课程管理、知识图谱、教学资源、学习分析与 AI 辅助。",
-    icon: <ReadOutlined />,
+    eyebrow: "知识图谱 · 教学资源 · 学情分析",
+    hero: "/assets/decor/knowledge-bg_001.jpg",
     path: "/teacher/dashboard",
     accent: "#1766d8",
     dark: "#0f3f8c",
@@ -44,7 +45,8 @@ const MODULES = [
     title: "微专业",
     description:
       "围绕职业方向与能力目标组织短期项目，独立管理课程组合、章节视频、习题作业、学生与资源。",
-    icon: <ApartmentOutlined />,
+    eyebrow: "课程组合 · 项目训练 · 能力认证",
+    hero: "/assets/micro-major-hero.jpg",
     path: "/micro-major/dashboard",
     accent: "#7a4a12",
     dark: "#4f3211",
@@ -57,23 +59,6 @@ const MODULES = [
       { icon: <TeamOutlined />, label: "学员管理" },
     ],
     stats: ["能力导向项目", "独立运营体系"],
-  },
-];
-
-const SIDE_PANELS = [
-  {
-    key: "course",
-    label: "智慧课程",
-    text: "知识图谱 · 教学资源 · 学情分析",
-    image: "/assets/decor/knowledge-bg_001.jpg",
-    className: "module-home-side-left",
-  },
-  {
-    key: "micro-major",
-    label: "微专业",
-    text: "课程组合 · 项目训练 · 能力认证",
-    image: "/assets/micro-major-hero.jpg",
-    className: "module-home-side-right",
   },
 ];
 
@@ -106,78 +91,55 @@ export default function ModuleHome() {
           />
 
           <div className="module-home-portal">
-            <aside className={`module-home-side-panel ${SIDE_PANELS[0].className}`}>
-              <img src={SIDE_PANELS[0].image} alt="" />
-              <div className="module-home-side-copy">
-                <strong>{SIDE_PANELS[0].label}</strong>
-                <span>{SIDE_PANELS[0].text}</span>
-              </div>
-            </aside>
-
             <Row gutter={[28, 28]} justify="center" className="module-home-grid">
               {MODULES.map((mod) => (
                 <Col key={mod.key} xs={24} md={12}>
                   <ProtoCard
                     onClick={() => navigate(mod.path)}
                     className="module-home-module-card"
-                    style={{ height: "100%", cursor: "pointer" }}
-                    title={
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-                        <span
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 10,
-                            background: "var(--pu-blue-soft)",
-                            color: mod.accent,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 24,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {mod.icon}
-                        </span>
-                        <span>
-                          {mod.title}
-                        </span>
-                      </span>
+                    style={
+                      {
+                        height: "100%",
+                        cursor: "pointer",
+                        "--module-accent": mod.accent,
+                        "--module-dark": mod.dark,
+                        "--module-soft": mod.soft,
+                        "--module-border": mod.border,
+                      } as CSSProperties
                     }
                   >
-                    <p style={{ color: "var(--pu-muted)", lineHeight: 1.8, marginBottom: 18 }}>
-                      {mod.description}
-                    </p>
-
-                    <div className="pu-tags" style={{ marginBottom: 16 }}>
-                      {mod.stats.map((stat) => (
-                        <ProtoTag key={stat} tone="blue">
-                          <StarOutlined style={{ marginRight: 4 }} />
-                          {stat}
-                        </ProtoTag>
-                      ))}
+                    <div className="module-home-module-hero">
+                      <img src={mod.hero} alt="" />
+                      <div className="module-home-module-hero-copy">
+                        <strong>{mod.title}</strong>
+                        <span>{mod.eyebrow}</span>
+                      </div>
                     </div>
 
-                    <div className="pu-tags">
-                      {mod.features.map((feature) => (
-                        <ProtoTag key={feature.label} tone="gray">
-                          {feature.icon}
-                          <span style={{ marginLeft: 4 }}>{feature.label}</span>
-                        </ProtoTag>
-                      ))}
+                    <div className="module-home-module-body">
+                      <p className="module-home-module-desc">{mod.description}</p>
+
+                      <div className="module-home-module-stats">
+                        {mod.stats.map((stat) => (
+                          <span className="module-home-module-stat" key={stat}>
+                            {stat}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="module-home-module-features">
+                        {mod.features.map((feature) => (
+                          <div className="module-home-module-feature" key={feature.label}>
+                            <span className="module-home-module-feature-icon">{feature.icon}</span>
+                            <span className="module-home-module-feature-label">{feature.label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </ProtoCard>
                 </Col>
               ))}
             </Row>
-
-            <aside className={`module-home-side-panel ${SIDE_PANELS[1].className}`}>
-              <img src={SIDE_PANELS[1].image} alt="" />
-              <div className="module-home-side-copy">
-                <strong>{SIDE_PANELS[1].label}</strong>
-                <span>{SIDE_PANELS[1].text}</span>
-              </div>
-            </aside>
           </div>
         </section>
       </main>

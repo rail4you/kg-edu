@@ -865,11 +865,102 @@ defmodule KgEdu.Courses.Course do
             "Dashboard stats - students: #{student_count}, knowledge: #{knowledge_count}, homeworks: #{homework_count}"
           )
 
+          # ===== 本周学习活跃情况（最近 7 天，来自真实活动日志）=====
+          today = Date.utc_today()
+          week_start = Date.add(today, -6)
+          week_start_dt = DateTime.new!(week_start, ~T[00:00:00], "Etc/UTC")
+
+          week_logs =
+            case KgEdu.Activity.ActivityLog
+                 |> Ash.Query.filter(inserted_at >= ^week_start_dt)
+                 |> Ash.read(tenant: tenant, authorize?: false) do
+              {:ok, logs} ->
+                logs
+
+              {:error, error} ->
+                Logger.error("Failed to load week activity logs: #{inspect(error)}")
+                []
+            end
+
+          week_labels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+          week_counts =
+            Enum.reduce(week_logs, %{}, fn log, acc ->
+              Map.update(acc, DateTime.to_date(log.inserted_at), 1, &(&1 + 1))
+            end)
+
+          week_activity =
+            Enum.map(0..6, fn offset ->
+              date = Date.add(week_start, offset)
+
+              %{
+                date: Date.to_iso8601(date),
+                label: Enum.at(week_labels, Date.day_of_week(date) - 1),
+                count: Map.get(week_counts, date, 0)
+              }
+            end)
+
+          week_activity_total = Enum.reduce(week_activity, 0, fn day, acc -> acc + day.count end)
+
+          # ===== 待办事项（来自真实业务数据）=====
+          pending_group_submissions =
+            case KgEdu.GroupTask.TaskSubmission
+                 |> Ash.Query.filter(status == :submitted)
+                 |> Ash.read(tenant: tenant, authorize?: false) do
+              {:ok, records} -> length(records)
+              {:error, _} -> 0
+            end
+
+          pending_exam_grading =
+            case KgEdu.Knowledge.StudentExam
+                 |> Ash.Query.filter(status == :submitted)
+                 |> Ash.read(tenant: tenant, authorize?: false) do
+              {:ok, records} -> length(records)
+              {:error, _} -> 0
+            end
+
+          unreplied_discussions =
+            case KgEdu.Courses.Discussion
+                 |> Ash.Query.filter(status == :active and reply_count == 0)
+                 |> Ash.read(tenant: tenant, authorize?: false) do
+              {:ok, records} -> length(records)
+              {:error, _} -> 0
+            end
+
+          todos =
+            [
+              %{
+                key: "group-task",
+                title: "批阅分组任务",
+                desc: "#{pending_group_submissions} 份提交待批阅",
+                count: pending_group_submissions,
+                path: "/teacher/dashboard/group-task"
+              },
+              %{
+                key: "exam-grading",
+                title: "批阅考试答卷",
+                desc: "#{pending_exam_grading} 份答卷待批阅",
+                count: pending_exam_grading,
+                path: "/teacher/dashboard/exam-grading"
+              },
+              %{
+                key: "discussion",
+                title: "回复课程讨论",
+                desc: "#{unreplied_discussions} 条讨论待回复",
+                count: unreplied_discussions,
+                path: "/teacher/dashboard/discussion-session"
+              }
+            ]
+            |> Enum.filter(fn todo -> todo.count > 0 end)
+
           {:ok,
            %{
              studentCount: student_count,
              knowledgeCount: knowledge_count,
              homeworkCount: homework_count,
+             weekActivity: week_activity,
+             weekActivityTotal: week_activity_total,
+             todos: todos,
              calculatedAt: DateTime.utc_now()
            }}
         rescue

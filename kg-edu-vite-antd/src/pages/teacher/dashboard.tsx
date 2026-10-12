@@ -16,23 +16,31 @@ import "./dashboard.css";
 
 /* ────────────────────── types ────────────────────── */
 
+interface WeekActivityDay {
+  date: string;
+  label: string;
+  count: number;
+}
+
+interface TodoItem {
+  key: string;
+  title: string;
+  desc: string;
+  count: number;
+  path: string;
+}
+
 interface DashboardStats {
   studentCount: number;
   knowledgeCount: number;
   homeworkCount: number;
+  weekActivity?: WeekActivityDay[];
+  weekActivityTotal?: number;
+  todos?: TodoItem[];
   calculatedAt: string;
 }
 
 /* ────────────────────── static content（参照原型教师工作台） ────────────────────── */
-
-const WEEK_BARS = [35, 57, 42, 78, 61, 92, 72];
-const WEEK_DAYS = ["一", "二", "三", "四", "五", "六", "日"];
-
-const TODO_ITEMS = [
-  { title: "批阅：形态与构成作业", desc: "今天 · 优先处理", path: "/teacher/dashboard/homework" },
-  { title: "检查：第二章课程资源", desc: "本周教学安排", path: "/teacher/dashboard/file" },
-  { title: "回复：课程学习讨论", desc: "本周教学安排", path: "/teacher/dashboard/discussion-session" },
-];
 
 const COVER_THEMES = ["", " alt", " third"];
 
@@ -46,7 +54,7 @@ export default function TeacherDashboard() {
     fields: ["id", "title", "description", "major", "semester"],
   });
 
-  const { data: statsData } = useQuery({
+  const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboardStats", tenant],
     queryFn: async () => {
       const result = await getDashboardStats({
@@ -58,6 +66,12 @@ export default function TeacherDashboard() {
     },
     enabled: !!tenant && !!user,
   });
+
+  const weekActivity = statsData?.weekActivity ?? [];
+  const weekTotal = statsData?.weekActivityTotal ?? 0;
+  const weekMax = Math.max(1, ...weekActivity.map((day) => day.count));
+  const hasWeekData = weekActivity.length > 0 && weekTotal > 0;
+  const todos = statsData?.todos ?? [];
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "上午好" : hour < 18 ? "下午好" : "晚上好";
@@ -120,22 +134,34 @@ export default function TeacherDashboard() {
             <span className="tag blue">最近 7 天</span>
           </div>
           <div className="row">
-            <b style={{ fontSize: 26, lineHeight: 1.4 }}>{statsData?.studentCount ?? 128}</b>
+            <b style={{ fontSize: 26, lineHeight: 1.4 }}>{weekTotal}</b>
             <small style={{ color: "var(--td-muted)" }}>学习活动次数</small>
           </div>
-          <div className="chart" role="img" aria-label="最近七天学习趋势，数据为演示值">
-            {WEEK_BARS.map((n, i) => (
-              <div
-                key={i}
-                className="bar"
-                style={{ "--h": `${n}%` } as CSSProperties}
-                title={`周${WEEK_DAYS[i]}：${n} 次`}
-              >
-                <span>周{WEEK_DAYS[i]}</span>
+          {statsLoading ? (
+            <div className="legend">加载中…</div>
+          ) : hasWeekData ? (
+            <>
+              <div className="chart" role="img" aria-label="最近七天学习活动趋势">
+                {weekActivity.map((day) => (
+                  <div
+                    key={day.date}
+                    className="bar"
+                    style={{ "--h": `${Math.round((day.count / weekMax) * 100)}%` } as CSSProperties}
+                    title={`${day.label}：${day.count} 次`}
+                  >
+                    <span>{day.label}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="legend">柱高代表每日活动次数 · 演示数据</div>
+              <div className="legend">柱高代表每日活动次数 · 近 7 天真实数据</div>
+            </>
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="本周暂无学习活动记录"
+              style={{ margin: "12px 0" }}
+            />
+          )}
         </section>
 
         <section className="card">
@@ -143,16 +169,26 @@ export default function TeacherDashboard() {
             <h2>待办事项</h2>
             <a onClick={() => navigate("/teacher/dashboard/homework")}>查看全部 →</a>
           </div>
-          {TODO_ITEMS.map((item, i) => (
-            <div className="item" key={item.path}>
-              <span className="item-number">{i + 1}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h3>{item.title}</h3>
-                <p>{item.desc}</p>
+          {statsLoading ? (
+            <div className="legend">加载中…</div>
+          ) : todos.length === 0 ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="暂无待办事项"
+              style={{ margin: "12px 0" }}
+            />
+          ) : (
+            todos.map((item, i) => (
+              <div className="item" key={item.key}>
+                <span className="item-number">{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                </div>
+                <Button onClick={() => navigate(item.path)}>处理</Button>
               </div>
-              <Button onClick={() => navigate(item.path)}>处理</Button>
-            </div>
-          ))}
+            ))
+          )}
         </section>
       </div>
 
@@ -178,7 +214,9 @@ export default function TeacherDashboard() {
                 </div>
                 <h3>{course.title}</h3>
                 <p>{course.major || "智慧课程"}</p>
-                <p style={{ marginTop: 8 }}>{course.description || "查看课程内容与教学安排。"}</p>
+                <p className="course-card-desc">
+                  {course.description || "查看课程内容与教学安排。"}
+                </p>
                 <div className="row">
                   <span className="tag blue">已发布</span>
                   <Button
