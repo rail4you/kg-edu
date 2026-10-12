@@ -1,30 +1,33 @@
-import { useState } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Button, Card, Empty, message, Space, Typography, Modal, Upload, Input, Spin, Popconfirm,
+  Button, Card, Empty, message, Space, Typography, Upload, Spin, Popconfirm,
+  Radio, Input, Select, ColorPicker,
 } from "antd";
 import {
-  ArrowLeftOutlined, PlusOutlined, DeleteOutlined,
-  UploadOutlined, SettingOutlined,
+  DeleteOutlined, UploadOutlined, SaveOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { getSTSToken, uploadFileToOSS } from "@/lib/oss-upload";
 import ContextSelector from "@/components/micro-major/context-selector";
-import ScanTemplateEditor from "@/components/certificate/ScanTemplateEditor";
+import { ScanTemplateCanvas, ScanFieldSettings } from "@/components/certificate/ScanTemplateEditor";
+import CertificateCard from "@/components/certificate/CertificateCard";
 import { DEFAULT_NAME_FIELD, DEFAULT_CERT_NO_FIELD, type NameFieldConfig } from "@/components/certificate/name-field";
 import {
   getMicroMajor,
   getTemplateByMicroMajor, createCertificateTemplate, updateCertificateTemplate, deleteCertificateTemplate,
 } from "@/lib/ash_rpc";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage } from "@/components/proto";
 
 const { Text } = Typography;
+const { TextArea } = Input;
 
 // ─── Types ───
+
+type AssetKey = "background" | "logo" | "seal" | "signature";
 
 interface TemplateRecord {
   id: string;
@@ -96,22 +99,20 @@ function templateToCertNoField(t: TemplateRecord): NameFieldConfig {
   };
 }
 
-// ─── Style defaults ───
+const FONT_OPTIONS = [
+  { value: "ui-sans-serif, system-ui, sans-serif", label: "无衬线 (黑体)" },
+  { value: "serif", label: "衬线 (宋体)" },
+  { value: '"KaiTi", "STKaiti", serif', label: "楷体" },
+  { value: "monospace", label: "等宽" },
+];
 
+const STYLE_OPTIONS = [
+  { value: "simple", label: "简约风" },
+  { value: "classic", label: "学院经典" },
+  { value: "modern", label: "现代风" },
+];
 
-
-// ─── Helpers ───
-
-function extractArray(result: any): any[] {
-  if (!result?.success) return [];
-  const data = result.data;
-  if (Array.isArray(data)) return data;
-  return data?.results || [];
-}
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+const isOnlineStyle = (s: string) => s !== "scanned";
 
 // ─── Component ───
 
@@ -120,22 +121,28 @@ export default function MMCertificateManagement() {
   const [searchParams] = useSearchParams();
   // Support both route param (:microMajorId) and search param (?mmId=)
   const microMajorId = routeParams.microMajorId || searchParams.get("mmId") || undefined;
-  const navigate = useNavigate();
   const { user, tenant } = useAuth();
   const queryClient = useQueryClient();
   const headers = getAuthHeaders(user) as Record<string, string>;
   const { canEdit } = useEditPermission();
 
-
-
   // Template form state
-  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [editTemplateId, setEditTemplateId] = useState<string | null>(null);
+  const [templateStyle, setTemplateStyle] = useState("simple");
+  const [issuerName, setIssuerName] = useState("");
+  const [extraText, setExtraText] = useState("");
+  const [titleColor, setTitleColor] = useState("#2b2b28");
+  const [titleFont, setTitleFont] = useState("ui-sans-serif, system-ui, sans-serif");
+  const [borderColor, setBorderColor] = useState("#8a8a86");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [sealUrl, setSealUrl] = useState("");
+  const [signatureUrl, setSignatureUrl] = useState("");
   const [backgroundImageUrl, setBackgroundImageUrl] = useState("");
-  const [bgUploading, setBgUploading] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState<AssetKey | null>(null);
   const [nameFieldConfig, setNameFieldConfig] = useState<NameFieldConfig>(DEFAULT_NAME_FIELD);
   const [certNoFieldConfig, setCertNoFieldConfig] = useState<NameFieldConfig>(DEFAULT_CERT_NO_FIELD);
 
+  const online = isOnlineStyle(templateStyle);
 
   // ─── Data Queries ───
 
@@ -180,13 +187,59 @@ export default function MMCertificateManagement() {
     enabled: !!microMajorId && !!tenant,
   });
 
+  // Sync loaded template into local editable state (only when the template identity changes)
+  const appliedTemplateIdRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const id = template?.id ?? null;
+    if (appliedTemplateIdRef.current === id) return;
+    appliedTemplateIdRef.current = id;
+
+    if (template) {
+      setEditTemplateId(template.id);
+      setTemplateStyle(template.style || "simple");
+      setIssuerName(template.issuerName || "");
+      setExtraText(template.extraText || "");
+      setTitleColor(template.titleColor || "#2b2b28");
+      setTitleFont(template.titleFont || "ui-sans-serif, system-ui, sans-serif");
+      setBorderColor(template.borderColor || "#8a8a86");
+      setLogoUrl(template.logoUrl || "");
+      setSealUrl(template.sealUrl || "");
+      setSignatureUrl(template.signatureUrl || "");
+      setBackgroundImageUrl(template.backgroundImageUrl || "");
+      setNameFieldConfig(templateToNameField(template));
+      setCertNoFieldConfig(templateToCertNoField(template));
+    } else {
+      setEditTemplateId(null);
+      setTemplateStyle("simple");
+      setIssuerName("");
+      setExtraText("");
+      setTitleColor("#2b2b28");
+      setTitleFont("ui-sans-serif, system-ui, sans-serif");
+      setBorderColor("#8a8a86");
+      setLogoUrl("");
+      setSealUrl("");
+      setSignatureUrl("");
+      setBackgroundImageUrl("");
+      setNameFieldConfig(DEFAULT_NAME_FIELD);
+      setCertNoFieldConfig(DEFAULT_CERT_NO_FIELD);
+    }
+  }, [template]);
+
   // ─── Mutations ───
 
   const saveTemplateMutation = useMutation({
     mutationFn: async () => {
       const commonInput: any = {
-        style: "scanned",
-        backgroundImageUrl: backgroundImageUrl || null,
+        style: templateStyle,
+        issuerName: issuerName || null,
+        extraText: extraText || null,
+        titleColor,
+        titleFont,
+        borderColor,
+        logoUrl: logoUrl || null,
+        sealUrl: sealUrl || null,
+        signatureUrl: signatureUrl || null,
+        backgroundImageUrl: online ? null : (backgroundImageUrl || null),
         nameFieldX: String(nameFieldConfig.x),
         nameFieldY: String(nameFieldConfig.y),
         nameFieldWidth: String(nameFieldConfig.width),
@@ -229,15 +282,20 @@ export default function MMCertificateManagement() {
     onSuccess: () => {
       message.success(editTemplateId ? "模板已更新" : "模板已创建");
       queryClient.invalidateQueries({ queryKey: ["mm-cert-template", microMajorId] });
-      setShowTemplateEditor(false);
-      setEditTemplateId(null);
     },
     onError: (err: any) => message.error(err?.message || "保存失败"),
   });
 
   // ─── Upload handler ───
 
-  const handleUploadBackground = async (file: File) => {
+  const setAsset = (key: AssetKey, url: string) => {
+    if (key === "background") setBackgroundImageUrl(url);
+    else if (key === "logo") setLogoUrl(url);
+    else if (key === "seal") setSealUrl(url);
+    else setSignatureUrl(url);
+  };
+
+  const handleUploadImage = (key: AssetKey) => async (file: File) => {
     if (!file.type.startsWith("image/")) {
       message.error("仅支持图片格式");
       return false;
@@ -246,41 +304,19 @@ export default function MMCertificateManagement() {
       message.error("图片不能超过 20MB");
       return false;
     }
-    setBgUploading(true);
+    setUploadingAsset(key);
     try {
       const sts = await getSTSToken(file.name, file.size, file.type);
       const result = await uploadFileToOSS(sts, { file, onProgress: () => {} });
-      setBackgroundImageUrl(result.url);
-      message.success("背景图上传成功");
+      setAsset(key, result.url);
+      message.success("上传成功");
     } catch (err: any) {
       message.error(err?.message || "上传失败");
     } finally {
-      setBgUploading(false);
+      setUploadingAsset(null);
     }
     return false;
   };
-
-  // ─── Template editor initialization ───
-
-  const openTemplateEditor = () => {
-    if (template) {
-      setEditTemplateId(template.id);
-      setBackgroundImageUrl(template.backgroundImageUrl || "");
-      setNameFieldConfig(templateToNameField(template));
-      setCertNoFieldConfig(templateToCertNoField(template));
-    } else {
-      setEditTemplateId(null);
-      setBackgroundImageUrl("");
-      setNameFieldConfig(DEFAULT_NAME_FIELD);
-      setCertNoFieldConfig(DEFAULT_CERT_NO_FIELD);
-    }
-    setShowTemplateEditor(true);
-  };
-
-  // ─── Certificate template preview ───
-
-
-  // ─── Tables ───
 
   if (!microMajorId) return (
     <AppPage
@@ -298,106 +334,197 @@ export default function MMCertificateManagement() {
     </AppPage>
   );
 
+  const preview = online ? (
+    <CertificateCard
+      style={templateStyle}
+      titleColor={titleColor}
+      titleFont={titleFont}
+      borderColor={borderColor}
+      issuerName={issuerName}
+      extraText={extraText}
+      logoUrl={logoUrl || null}
+      sealUrl={sealUrl || null}
+      signatureUrl={signatureUrl || null}
+      studentName="示例学员"
+      certNo="DEMO-2026-001"
+      microMajorName={microMajor?.name || "微专业"}
+      width="100%"
+    />
+  ) : (
+    <ScanTemplateCanvas
+      backgroundUrl={backgroundImageUrl || null}
+      nameField={nameFieldConfig}
+      onNameFieldChange={canEdit ? setNameFieldConfig : undefined}
+      certNoField={certNoFieldConfig}
+      onCertNoFieldChange={canEdit ? setCertNoFieldConfig : undefined}
+      readOnly={!canEdit}
+    />
+  );
+
   return (
     <AppPage
       className="mm-certificate-management-wrap"
-      title={`${microMajor?.name || "微专业"} - 证书管理`}
-      description="设计证书模板并管理证书"
+      title={`${microMajor?.name || "微专业"} - 证书模板`}
+      description="设计证书模板，右侧实时预览效果"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;证书模板</>}
       actions={
-        <>
-          <Button icon={<SettingOutlined />} onClick={openTemplateEditor} style={canEdit ? undefined : { display: "none" }}>
-            {template ? "编辑证书模板" : "设计证书模板"}
-          </Button>
-        </>
+        canEdit ? (
+          <Space>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={saveTemplateMutation.isPending}
+              onClick={() => saveTemplateMutation.mutate()}
+            >
+              保存模板
+            </Button>
+            {editTemplateId && (
+              <Popconfirm title="确定删除模板？" onConfirm={async () => {
+                await deleteCertificateTemplate({ tenant: tenant!, primaryKey: editTemplateId, headers });
+                queryClient.invalidateQueries({ queryKey: ["mm-cert-template", microMajorId] });
+                message.success("模板已删除");
+              }}>
+                <Button danger icon={<DeleteOutlined />}>删除模板</Button>
+              </Popconfirm>
+            )}
+          </Space>
+        ) : undefined
       }
     >
-<style>{`@media(max-width:768px){.mm-certificate-management-wrap{padding:12px!important}.mm-certificate-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <style>{`@media(max-width:768px){.mm-certificate-management-wrap{padding:12px!important}.mm-cert-layout{grid-template-columns:1fr!important}}`}</style>
 
       <ContextSelector />
-      <Card>
-        <div>
-          {templateLoading ? (
-            <Spin />
-          ) : template ? (
-            <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-              <div style={{ flex: 1 }}>
-                <Space direction="vertical">
-                  <>
-                    <Text strong>模板类型: 扫描件模板</Text>
-                    <Text>背景图: {template.backgroundImageUrl ? "已上传" : "未上传"}</Text>
-                    <Text>姓名字号: {template.nameFontSize ?? 36}px</Text>
-                    <Text>姓名颜色: {template.nameColor || "#000000"}</Text>
-                  </>
-                  <Space style={{ marginTop: 12 }}>
-                    <ReadonlyActionButton icon={<SettingOutlined />} onClick={openTemplateEditor}>编辑模板</ReadonlyActionButton>
-                    <Popconfirm title="确定删除模板？" onConfirm={async () => {
-                      await deleteCertificateTemplate({ tenant: tenant!, primaryKey: template.id, headers });
-                      queryClient.invalidateQueries({ queryKey: ["mm-cert-template", microMajorId] });
-                      message.success("模板已删除");
-                    }}>
-                      <ReadonlyActionButton danger icon={<DeleteOutlined />}>删除模板</ReadonlyActionButton>
-                    </Popconfirm>
-                  </Space>
-                </Space>
+      {templateLoading ? (
+        <Card><Spin /></Card>
+      ) : (
+        <div className="mm-cert-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.7fr) minmax(320px,1fr)", gap: 20, alignItems: "start" }}>
+          <Card title="基本配置">
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <div>
+                <Text strong style={{ display: "block", marginBottom: 8 }}>模板类型</Text>
+                <Radio.Group
+                  value={online ? "online" : "scanned"}
+                  disabled={!canEdit}
+                  onChange={(e) => setTemplateStyle(e.target.value === "online" ? "simple" : "scanned")}
+                  optionType="button"
+                  buttonStyle="solid"
+                  options={[
+                    { value: "online", label: "在线排版" },
+                    { value: "scanned", label: "扫描件" },
+                  ]}
+                />
+                <Text type="secondary" style={{ display: "block", marginTop: 6, fontSize: 12 }}>
+                  {online ? "填写文字信息，系统自动排版生成证书" : "上传证书扫描图，拖动定位姓名与编号区域"}
+                </Text>
               </div>
-              <div style={{ width: 400 }}>
-                {template.backgroundImageUrl ? (
-                  <ScanTemplateEditor
-                    backgroundUrl={template.backgroundImageUrl}
-                    nameField={templateToNameField(template)}
-                    certNoField={templateToCertNoField(template)}
-                    readOnly
-                  />
-                ) : (
-                  <Empty description="未上传背景图" />
-                )}
-              </div>
-            </div>
-          ) : (
-            <Empty description={
-              <span>尚未设计证书模板<br />
-                <Button type="primary" icon={<PlusOutlined />} onClick={openTemplateEditor} style={canEdit ? { marginTop: 8 } : { display: "none" }}>
-                  设计证书模板
-                </Button>
-              </span>
-            } />
-          )}
-        </div>
-      </Card>
 
-      {/* ── Template Editor Modal ── */}
-      <Modal
-        title={editTemplateId ? "编辑证书模板" : "设计证书模板"}
-        open={showTemplateEditor}
-        onCancel={() => { setShowTemplateEditor(false); setEditTemplateId(null); }}
-        onOk={() => saveTemplateMutation.mutate()}
-        confirmLoading={saveTemplateMutation.isPending}
-        width={960}
-        destroyOnClose
-      >
-        <div>
-          <Space style={{ marginBottom: 12 }}>
-            <Upload beforeUpload={handleUploadBackground} showUploadList={false} accept="image/*">
-              <Button icon={<UploadOutlined />} loading={bgUploading}>
-                {backgroundImageUrl ? "更换背景图" : "上传背景图"}
-              </Button>
-            </Upload>
-            {backgroundImageUrl && <Text style={{ fontSize: 12, color: "green" }}>已上传背景图</Text>}
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              上传证书扫描图，拖动/缩放蓝色框（姓名）和绿色框（证书编号）定位字段区域
-            </Text>
-          </Space>
-          <ScanTemplateEditor
-            backgroundUrl={backgroundImageUrl || null}
-            nameField={nameFieldConfig}
-            onNameFieldChange={setNameFieldConfig}
-            certNoField={certNoFieldConfig}
-            onCertNoFieldChange={setCertNoFieldConfig}
-          />
+              {online ? (
+                <>
+                  <div>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>证书风格</Text>
+                    <Radio.Group
+                      value={templateStyle}
+                      disabled={!canEdit}
+                      onChange={(e) => setTemplateStyle(e.target.value)}
+                      optionType="button"
+                      options={STYLE_OPTIONS}
+                    />
+                  </div>
+                  <div>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>颁发单位</Text>
+                    <Input
+                      value={issuerName}
+                      disabled={!canEdit}
+                      onChange={(e) => setIssuerName(e.target.value)}
+                      placeholder="例如：示范教学中心"
+                    />
+                  </div>
+                  <div>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>证书说明</Text>
+                    <TextArea
+                      value={extraText}
+                      disabled={!canEdit}
+                      onChange={(e) => setExtraText(e.target.value)}
+                      placeholder="例如：已完成规定课程与项目考核。"
+                      autoSize={{ minRows: 2, maxRows: 4 }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                    <div>
+                      <Text strong style={{ display: "block", marginBottom: 8 }}>标题字体</Text>
+                      <Select
+                        value={titleFont}
+                        disabled={!canEdit}
+                        onChange={setTitleFont}
+                        options={FONT_OPTIONS}
+                        style={{ width: 200 }}
+                      />
+                    </div>
+                    <div>
+                      <Text strong style={{ display: "block", marginBottom: 8 }}>标题颜色</Text>
+                      <ColorPicker value={titleColor} disabled={!canEdit} onChange={(c) => setTitleColor(c.toHexString())} showText />
+                    </div>
+                    <div>
+                      <Text strong style={{ display: "block", marginBottom: 8 }}>边框颜色</Text>
+                      <ColorPicker value={borderColor} disabled={!canEdit} onChange={(c) => setBorderColor(c.toHexString())} showText />
+                    </div>
+                  </div>
+                  <div>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>素材图片</Text>
+                    <Space size="middle" wrap>
+                      {([
+                        { key: "logo", label: "Logo", url: logoUrl },
+                        { key: "seal", label: "印章", url: sealUrl },
+                        { key: "signature", label: "签名", url: signatureUrl },
+                      ] as { key: AssetKey; label: string; url: string }[]).map((item) => (
+                        <div key={item.key} style={{ textAlign: "center" }}>
+                          <div style={{ width: 72, height: 72, border: "1px dashed #d9d9d9", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: "#fafafa", marginBottom: 6 }}>
+                            {item.url ? (
+                              <img src={item.url} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            ) : (
+                              <Text type="secondary" style={{ fontSize: 12 }}>无</Text>
+                            )}
+                          </div>
+                          <Upload beforeUpload={handleUploadImage(item.key)} showUploadList={false} accept="image/*" disabled={!canEdit}>
+                            <Button size="small" icon={<UploadOutlined />} loading={uploadingAsset === item.key}>{item.label}</Button>
+                          </Upload>
+                        </div>
+                      ))}
+                    </Space>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>背景图</Text>
+                    <Space wrap>
+                      <Upload beforeUpload={handleUploadImage("background")} showUploadList={false} accept="image/*" disabled={!canEdit}>
+                        <Button icon={<UploadOutlined />} loading={uploadingAsset === "background"}>
+                          {backgroundImageUrl ? "更换背景图" : "上传背景图"}
+                        </Button>
+                      </Upload>
+                      {backgroundImageUrl && <Text style={{ fontSize: 12, color: "green" }}>已上传背景图</Text>}
+                    </Space>
+                    <Text type="secondary" style={{ display: "block", marginTop: 6, fontSize: 12 }}>
+                      在右侧预览图中拖动/缩放蓝色框（姓名）和绿色框（证书编号）定位字段区域
+                    </Text>
+                  </div>
+                  <ScanFieldSettings
+                    nameField={nameFieldConfig}
+                    onNameFieldChange={canEdit ? setNameFieldConfig : undefined}
+                    certNoField={certNoFieldConfig}
+                    onCertNoFieldChange={canEdit ? setCertNoFieldConfig : undefined}
+                  />
+                </>
+              )}
+            </Space>
+          </Card>
+
+          <Card title="证书预览">
+            {preview}
+          </Card>
         </div>
-      </Modal>
+      )}
     </AppPage>
   );
 }
-

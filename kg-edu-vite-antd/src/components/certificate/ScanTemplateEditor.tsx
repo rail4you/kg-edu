@@ -305,9 +305,9 @@ function FieldSettings({
 }
 
 /**
- * 扫描件证书模板编辑器：背景图 + 可拖拽/缩放的姓名定位框 + 证书编号定位框。
+ * 扫描件证书画布：背景图 + 可拖拽/缩放的姓名定位框 + 证书编号定位框。
  */
-const ScanTemplateEditor = forwardRef<HTMLDivElement, Props>(function ScanTemplateEditor(
+export const ScanTemplateCanvas = forwardRef<HTMLDivElement, Props>(function ScanTemplateCanvas(
   { backgroundUrl, nameField, onNameFieldChange, certNoField, onCertNoFieldChange, studentName, certNo, readOnly = false },
   ref,
 ) {
@@ -348,7 +348,7 @@ const ScanTemplateEditor = forwardRef<HTMLDivElement, Props>(function ScanTempla
     });
   }
 
-  const canvas = (
+  return (
     <div
       ref={ref}
       style={{
@@ -397,21 +397,51 @@ const ScanTemplateEditor = forwardRef<HTMLDivElement, Props>(function ScanTempla
       </div>
     </div>
   );
+});
+
+/**
+ * 扫描件字段样式设置面板：姓名字段 + 证书编号字段。
+ */
+export function ScanFieldSettings({
+  nameField,
+  onNameFieldChange,
+  certNoField,
+  onCertNoFieldChange,
+}: Pick<Props, "nameField" | "onNameFieldChange" | "certNoField" | "onCertNoFieldChange">) {
+  return (
+    <Space direction="vertical" style={{ width: "100%" }} size="middle">
+      <FieldSettings field={nameField} onChange={onNameFieldChange} label="姓名字段" />
+      {certNoField && onCertNoFieldChange && (
+        <>
+          <div style={{ borderTop: "1px solid #f0f0f0", margin: "4px 0" }} />
+          <FieldSettings field={certNoField} onChange={onCertNoFieldChange} label="证书编号字段" />
+        </>
+      )}
+    </Space>
+  );
+}
+
+/**
+ * 扫描件证书模板编辑器：画布 + 右侧字段设置（兼容旧用法）。
+ */
+const ScanTemplateEditor = forwardRef<HTMLDivElement, Props>(function ScanTemplateEditor(props, ref) {
+  const { nameField, onNameFieldChange, certNoField, onCertNoFieldChange, readOnly = false } = props;
+
+  const canvas = <ScanTemplateCanvas ref={ref} {...props} />;
 
   if (readOnly) return canvas;
 
   return (
     <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
       <div style={{ flex: 1, minWidth: 0 }}>{canvas}</div>
-      <Space direction="vertical" style={{ width: 200, flexShrink: 0 }} size="middle">
-        <FieldSettings field={nameField} onChange={onNameFieldChange} label="姓名字段" />
-        {certNoField && onCertNoFieldChange && (
-          <>
-            <div style={{ borderTop: "1px solid #f0f0f0", margin: "4px 0" }} />
-            <FieldSettings field={certNoField} onChange={onCertNoFieldChange} label="证书编号字段" />
-          </>
-        )}
-      </Space>
+      <div style={{ width: 200, flexShrink: 0 }}>
+        <ScanFieldSettings
+          nameField={nameField}
+          onNameFieldChange={onNameFieldChange}
+          certNoField={certNoField}
+          onCertNoFieldChange={onCertNoFieldChange}
+        />
+      </div>
     </div>
   );
 });
