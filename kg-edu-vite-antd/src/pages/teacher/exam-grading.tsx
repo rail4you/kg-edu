@@ -672,6 +672,7 @@ export default function ExamGrading() {
     <AppPage
       title="智能批改"
       description="AI 辅助批改学生答卷"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;考试管理&nbsp;&nbsp;/&nbsp;&nbsp;智能批改</>}
       actions={
         <Space>
           <Button

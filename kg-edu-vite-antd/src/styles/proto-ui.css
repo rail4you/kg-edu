@@ -1530,3 +1530,17 @@
   outline-offset: 2px;
   border-radius: 8px;
 }
+
+/* ---------- 弹窗表单字号放大（考试等模块） ---------- */
+.ant-modal .ant-form-item-label > label {
+  font-size: 15px;
+}
+
+.ant-modal .ant-form-item .ant-input,
+.ant-modal .ant-form-item .ant-input-affix-wrapper,
+.ant-modal .ant-form-item .ant-select-single .ant-select-selector,
+.ant-modal .ant-form-item .ant-select-multiple .ant-select-selector,
+.ant-modal .ant-form-item .ant-input-number,
+.ant-modal .ant-form-item .ant-picker {
+  font-size: 15px;
+}

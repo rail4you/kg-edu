@@ -7,8 +7,7 @@ import {
   BarChartOutlined,
   RiseOutlined,
   FallOutlined,
-  LineChartOutlined,
-  ArrowLeftOutlined
+  LineChartOutlined
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { useParams , useNavigate } from "react-router-dom";
@@ -278,7 +277,7 @@ export default function ExamStatistics() {
       <>
         <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
           <Col xs={24} md={12}>
-            <Card title={`题型统计（共 ${totalQ} 题 / ${totalScore} 分）`}>
+            <Card title={`题型统计（共 ${totalQ} 题 / ${totalScore} 分）`} style={{ height: "100%" }}>
               <Table
                 size="small"
                 pagination={false}
@@ -298,7 +297,7 @@ export default function ExamStatistics() {
             </Card>
           </Col>
           <Col xs={24} md={12}>
-            <Card title="难易度统计">
+            <Card title="难易度统计" style={{ height: "100%" }}>
               <Table
                 size="small"
                 pagination={false}
@@ -370,24 +369,19 @@ export default function ExamStatistics() {
       title="考试统计分析"
       description="考试成绩概览与试卷分析"
       className="exam-statistics-wrap"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;考试管理&nbsp;&nbsp;/&nbsp;&nbsp;考试统计分析</>}
       actions={
-        <>
-          <Button
-            type="text"
-            className="teacher-page-back-btn"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <Button onClick={() => navigate("/teacher/dashboard/exam-management")}>
-            回到考试
-          </Button>
-          <Button type="primary" onClick={() => navigate(`/teacher/dashboard/exam-print/${examId}`)}>
-            打印试卷
-          </Button>
-        </>
+        <Button onClick={() => navigate("/teacher/dashboard/exam-management")}>
+          回到考试
+        </Button>
       }
     >
       <style>{`@media(max-width:768px){.exam-statistics-wrap{padding:12px!important}.exam-statistics-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
+        <Button type="primary" onClick={() => navigate(`/teacher/dashboard/exam-print/${examId}`)}>
+          打印试卷
+        </Button>
+      </div>
       <StatGrid
         items={[
           {
@@ -426,7 +420,7 @@ export default function ExamStatistics() {
             </Card>
           </Col>
           <Col xs={24} md={8}>
-            <Card style={{ padding: 24 }}>
+            <Card style={{ padding: 24, height: "100%" }}>
               <Title level={5} style={{ marginBottom: 16 }}>
                 统计概览
               </Title>

@@ -400,7 +400,7 @@ export default function ExamManagementPage() {
     return (
       <Form layout="vertical" size="large" className="exam-form">
         <style>{`
-          .exam-form .ant-form-item-label > label { font-size: 15px; font-weight: 500; }
+          .exam-form .ant-form-item-label > label { font-size: 16px; font-weight: 500; }
           .exam-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
           .exam-form-grid .full { grid-column: 1 / -1; }
           @media (max-width: 560px) { .exam-form-grid { grid-template-columns: 1fr; } }

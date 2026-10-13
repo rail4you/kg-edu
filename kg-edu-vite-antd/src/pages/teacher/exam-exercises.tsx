@@ -31,6 +31,7 @@ import {
   ReloadOutlined,
   WarningOutlined,
   CloseCircleOutlined,
+  RobotOutlined,
   StarFilled,
   DeleteOutlined,
 } from "@ant-design/icons";
@@ -103,6 +104,15 @@ const questionTypeNames: Record<string, string> = {
   case_study: "案例题",
 };
 
+// 组卷大纲解析：关键词 → 题型
+const AI_OUTLINE_TYPES: Array<{ keys: string[]; type: string }> = [
+  { keys: ["单选", "选择"], type: "multiple_choice" },
+  { keys: ["多选"], type: "multiple_response" },
+  { keys: ["判断"], type: "true_false" },
+  { keys: ["填空"], type: "fill_in_blank" },
+  { keys: ["问答", "简答", "论述"], type: "essay" },
+];
+
 const questionTypeOptions = [
   { value: "all", label: "全部题型" },
   { value: "multiple_choice", label: "单选题" },
@@ -169,6 +179,9 @@ export default function ExamExercises() {
   >([]);
   const [loadingExerciseStats, setLoadingExerciseStats] = useState(false);
   const [composeConfig, setComposeConfig] = useState<ComposeConfigItem[]>([]);
+  const [aiComposeOpen, setAiComposeOpen] = useState(false);
+  const [aiOutline, setAiOutline] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   const tenant = currentTenant?.schemaName || "";
 
@@ -660,6 +673,112 @@ export default function ExamExercises() {
     setRemovedExerciseIds(new Set());
   };
 
+  const closeAiModal = () => {
+    setAiComposeOpen(false);
+    setAiOutline("");
+  };
+
+  // 解析组卷大纲：题型 + 数量 + 每题分值 + 难度（1-3）
+  const parseOutline = (
+    outline: string
+  ): Record<string, { count: number; points: number; difficulties: number[] }> => {
+    const cfg: Record<string, { count: number; points: number; difficulties: number[] }> = {};
+    for (const line of outline.split("\n").map((l) => l.trim()).filter(Boolean)) {
+      const hit = AI_OUTLINE_TYPES.find(({ keys }) => keys.some((k) => line.includes(k)));
+      if (!hit) continue;
+      const countM = line.match(/(\d+)\s*题/);
+      const count = countM ? Number(countM[1]) : 0;
+      if (!count) continue;
+      const ptsM = line.match(/每题\s*(\d+)\s*分/) || line.match(/(\d+)\s*分\s*\/\s*题/);
+      const points = ptsM ? Number(ptsM[1]) : 2;
+
+      // 难度：支持 1-2 / 1,2 / 1、2 等
+      const difficulties = new Set<number>();
+      const dM = line.match(/难度\s*([0-9]+(?:\s*[-~、,]\s*[0-9]+)*)/);
+      if (dM) {
+        for (const part of dM[1].split(/[,、]/).map((p) => p.trim()).filter(Boolean)) {
+          const rm = part.match(/^(\d+)\s*[-~]\s*(\d+)$/);
+          if (rm) {
+            for (let d = Number(rm[1]); d <= Number(rm[2]); d++) difficulties.add(d);
+          } else {
+            const n = Number(part);
+            if (!Number.isNaN(n)) difficulties.add(n);
+          }
+        }
+      }
+      const diff = Array.from(difficulties).filter((d) => d >= 1 && d <= 3);
+      const cur = cfg[hit.type] || { count: 0, points, difficulties: [] as number[] };
+      cur.count += count;
+      cur.points = points;
+      if (diff.length) cur.difficulties = diff;
+      cfg[hit.type] = cur;
+    }
+    return cfg;
+  };
+
+  // AI 组卷：解析组卷大纲 → 复用「智能组卷」从课程题库选题 → 打开预览（含数量满足情况）
+  const handleAiGenerate = async () => {
+    const outline = aiOutline.trim();
+    if (!outline) {
+      message.warning("请输入组卷大纲");
+      return;
+    }
+    const courseId = (examData as any)?.data?.courseId;
+    if (!courseId) {
+      message.warning("考试未关联课程，无法组卷");
+      return;
+    }
+
+    const exerciseConfig = parseOutline(outline);
+    if (Object.keys(exerciseConfig).length === 0) {
+      message.warning("未能从大纲中识别题型，请检查格式（如：单选题 3 题 每题 2 分 难度 1-2）");
+      return;
+    }
+
+    // 同步到 composeConfig（供预览弹窗显示每题型分值/小计）
+    setComposeConfig((prev) =>
+      prev.map((c) => {
+        const p = exerciseConfig[c.questionType];
+        return p
+          ? {
+              ...c,
+              enabled: true,
+              count: Math.min(c.maxCount || p.count, p.count),
+              pointsPerQuestion: p.points,
+              difficulties: p.difficulties,
+            }
+          : { ...c, enabled: false, count: 0 };
+      })
+    );
+
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setIsPartialSuccess(false);
+    try {
+      const result = await previewExam(
+        { orgSchema: tenant, courseId, exerciseConfig },
+        getHeaders(user),
+      );
+
+      if (result.success) {
+        setPreviewSections(result.sections);
+        setPreviewError(null);
+        setIsPartialSuccess(false);
+      } else {
+        const hasPartialData = result.sections?.some((s) => s.actualCount > 0) ?? false;
+        setPreviewSections(result.sections || []);
+        setIsPartialSuccess(!hasPartialData);
+        setPreviewError(result.message);
+      }
+      closeAiModal();
+      setPreviewDialogOpen(true);
+    } catch (e: any) {
+      message.error(`组卷失败：${e?.message || e}`);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const handleBatchAddExercises = () => {
     if (selectedExercisesMap.size === 0) {
       message.warning("请至少选择一道习题");
@@ -809,7 +928,13 @@ export default function ExamExercises() {
         extra={
           <Space>
             <Button
-              icon={<StarFilled style={{ color: "#9c27b0" }} />}
+              icon={<RobotOutlined />}
+              onClick={() => setAiComposeOpen(true)}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              AI 组卷
+            </Button>
+            <Button
               onClick={async () => {
                 const courseId = (examData as any)?.data?.courseId;
                 if (!courseId) {
@@ -1616,6 +1741,38 @@ export default function ExamExercises() {
             </Button>
           </Space>
         </div>
+      </Modal>
+
+      <Modal
+        title="AI 组卷（按大纲从题库选题）"
+        open={aiComposeOpen}
+        onCancel={() => {
+          if (aiGenerating) return;
+          closeAiModal();
+        }}
+        width={720}
+        okText={aiGenerating ? "生成中..." : "生成并预览"}
+        confirmLoading={aiGenerating}
+        okButtonProps={{ disabled: !aiOutline.trim() || aiGenerating }}
+        onOk={handleAiGenerate}
+        cancelText="取消"
+      >
+        <p style={{ color: "#64748b", marginBottom: 8 }}>
+          粘贴组卷大纲，按题型/数量/难度从**课程题库**中选题组卷（与「智能组卷」相同，只是用文本描述）。题库不足时会尽量满足并提示。例如：
+        </p>
+        <pre style={{ background: "#f6f8fc", borderRadius: 8, padding: 12, fontSize: 13, color: "#475569", marginBottom: 12 }}>
+{`单选题 3 题 每题 2 分 难度 1-2
+判断题 2 题 每题 2 分 难度 1
+填空题 1 题 每题 2 分 难度 2
+问答题 1 题 每题 10 分 难度 3`}
+        </pre>
+        <Input.TextArea
+          rows={6}
+          value={aiOutline}
+          onChange={(e) => setAiOutline(e.target.value)}
+          placeholder="在此粘贴组卷大纲..."
+          disabled={aiGenerating}
+        />
       </Modal>
     </AppPage>
   );
