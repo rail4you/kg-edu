@@ -770,12 +770,13 @@
 }
 
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-table {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-table-thead > tr > th {
   background: #f6f8fc !important;
   color: var(--pu-muted) !important;
+  font-size: 15px !important;
   font-weight: 500 !important;
   padding: 14px !important;
   border-bottom: 1px solid var(--pu-line) !important;
@@ -786,6 +787,7 @@
 }
 
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-table-tbody > tr > td {
+  font-size: 15px !important;
   padding: 17px 14px !important;
   border-bottom: 1px solid var(--pu-line-soft) !important;
 }

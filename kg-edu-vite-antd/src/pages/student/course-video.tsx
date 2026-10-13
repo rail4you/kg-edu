@@ -17,7 +17,6 @@ import {
 } from "antd";
 import {
   PlayCircleOutlined,
-  ShareAltOutlined,
   LinkOutlined,
   VideoCameraOutlined,
   MessageOutlined,
@@ -28,6 +27,11 @@ import {
   BulbOutlined,
   BookOutlined,
   EditOutlined,
+  FolderOutlined,
+  FileTextOutlined,
+  RobotOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -41,6 +45,9 @@ import {
   updateDiscussion,
   deleteDiscussion,
   listCourseInfos,
+  listKnowledges,
+  listExercises,
+  listFiles,
   getUser,
 } from "@/lib/ash_rpc";
 import type { DiscussionResourceSchema } from "@/lib/ash_rpc";
@@ -48,7 +55,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
 import FilePreview from "@/components/FilePreview";
 import VideoAnalysisPanel from "@/components/video/VideoAnalysisPanel";
-import { ProtoCard, ProgressBar, ProtoTag } from "@/components/proto";
+import { ProtoCard, ProgressBar } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
 
 const { Title, Text, Paragraph } = Typography;
@@ -125,6 +132,7 @@ export default function CourseVideoPage() {
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTab, setCurrentTab] = useState("1");
+  const [chapterTab, setChapterTab] = useState("note");
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [chapterSearchText, setChapterSearchText] = useState("");
 
@@ -133,6 +141,15 @@ export default function CourseVideoPage() {
   const [editingDiscussion, setEditingDiscussion] = useState<DiscussionResourceSchema | null>(null);
   const [evaluationRating, setEvaluationRating] = useState<number>(5);
   const [discussionContent, setDiscussionContent] = useState("");
+
+  // 课程笔记：按章节保存到 localStorage
+  const notesKey =
+    user?.id && selectedCourseId
+      ? `course_video_notes:${currentTenant?.schemaName || ""}:${user.id}:${selectedCourseId}`
+      : "";
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [noteDraft, setNoteDraft] = useState("");
+  const [hasVideoAnalysis, setHasVideoAnalysis] = useState(false);
 
   const mainVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -328,6 +345,23 @@ export default function CourseVideoPage() {
     return items;
   }, [searchedChapterTree]);
 
+  // 含视频的章节列表（用章节名，时间取该章节所有视频总时长）
+  const chaptersWithVideos = useMemo(() => {
+    const out: { chapter: any; videos: Video[]; totalDuration: number }[] = [];
+    const walk = (nodes: any[]) => {
+      for (const n of nodes) {
+        const videos = (n.videos || []) as Video[];
+        if (videos.length > 0) {
+          const totalDuration = videos.reduce((sum, v) => sum + (v.duration || 0), 0);
+          out.push({ chapter: n, videos, totalDuration });
+        }
+        if (n.children?.length) walk(n.children);
+      }
+    };
+    walk(searchedChapterTree);
+    return out;
+  }, [searchedChapterTree]);
+
   // 课程详细信息（教学目标、课程结构等）
   const { data: courseInfoData } = useQuery({
     queryKey: ["courseInfo-video", selectedCourseId, currentTenant?.id],
@@ -382,6 +416,129 @@ export default function CourseVideoPage() {
       ? linksData.data
       : (linksData.data as any)?.results || []
     : [];
+
+  // 章节资源 / 练习：教师端配置数据（知识点按章节归属，习题/文件挂到知识点）
+  const { data: knowledgesData } = useQuery({
+    queryKey: ["course-knowledges-video", selectedCourseId, currentTenant?.id],
+    queryFn: () =>
+      selectedCourseId
+        ? listKnowledges({
+            tenant: currentTenant?.schemaName || "",
+            fields: ["id", "chapterId"],
+            filter: { courseId: { eq: selectedCourseId } },
+            page: { limit: 500, offset: 0 },
+            headers: getAuthHeaders(user),
+          })
+        : null,
+    enabled: !!selectedCourseId && !!currentTenant && !!user,
+  });
+  const knowledges = knowledgesData?.success ? extractArrayData(knowledgesData) : [];
+  const knowledgeChapterMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (knowledges as any[]).forEach((k) => {
+      if (k?.id && k?.chapterId) map[k.id] = k.chapterId;
+    });
+    return map;
+  }, [knowledges]);
+
+  const { data: exercisesData } = useQuery({
+    queryKey: ["course-exercises-video", selectedCourseId, currentTenant?.id],
+    queryFn: () =>
+      selectedCourseId
+        ? listExercises({
+            tenant: currentTenant?.schemaName || "",
+            fields: ["id", "title", "questionContent", "questionType", "options", "answer", "answerExplanation", "knowledgeResourceId"],
+            filter: { courseId: { eq: selectedCourseId } },
+            page: { limit: 500, offset: 0 },
+            headers: getAuthHeaders(user),
+          })
+        : null,
+    enabled: !!selectedCourseId && !!currentTenant && !!user,
+  });
+  const exercises = exercisesData?.success ? extractArrayData(exercisesData) : [];
+
+  const { data: filesData } = useQuery({
+    queryKey: ["course-files-video", selectedCourseId, currentTenant?.id],
+    queryFn: () =>
+      selectedCourseId
+        ? listFiles({
+            tenant: currentTenant?.schemaName || "",
+            fields: ["id", "filename", "fileType", "path", "assetId", "knowledgeResourceId"],
+            filter: { courseId: { eq: selectedCourseId } },
+            page: { limit: 500, offset: 0 },
+            headers: getAuthHeaders(user),
+          })
+        : null,
+    enabled: !!selectedCourseId && !!currentTenant && !!user,
+  });
+  const files = filesData?.success ? extractArrayData(filesData) : [];
+
+  const currentChapterId = currentVideo?.chapterId || chapters[0]?.id || "";
+  const currentChapter = chapters.find((c) => c.id === currentChapterId) || null;
+  const currentChapterTitle = currentChapter?.title || "";
+
+  const chapterExercises = useMemo(
+    () => (exercises as any[]).filter((e) => knowledgeChapterMap[e.knowledgeResourceId] === currentChapterId),
+    [exercises, knowledgeChapterMap, currentChapterId],
+  );
+  const chapterFiles = useMemo(
+    () => (files as any[]).filter((f) => knowledgeChapterMap[f.knowledgeResourceId] === currentChapterId),
+    [files, knowledgeChapterMap, currentChapterId],
+  );
+  const chapterVideos = useMemo(
+    () => allVideos.filter((v) => v.chapterId === currentChapterId),
+    [allVideos, currentChapterId],
+  );
+
+  // 笔记：按课程+章节从 localStorage 读取
+  useEffect(() => {
+    if (!notesKey) {
+      setNotes({});
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(notesKey);
+      setNotes(raw ? JSON.parse(raw) : {});
+    } catch {
+      setNotes({});
+    }
+  }, [notesKey]);
+
+  // 切换章节时载入该章节草稿
+  useEffect(() => {
+    setNoteDraft(notes[currentChapterId] || "");
+  }, [currentChapterId, notes]);
+
+  const saveNote = () => {
+    if (!notesKey || !currentChapterId) return;
+    const next = { ...notes, [currentChapterId]: noteDraft };
+    setNotes(next);
+    try {
+      localStorage.setItem(notesKey, JSON.stringify(next));
+      message.success("笔记已保存");
+    } catch {
+      message.error("笔记保存失败");
+    }
+  };
+
+  // 当前视频是否有 AI 解析结果（有则在最后一个 tab 显示）
+  useEffect(() => {
+    let active = true;
+    setHasVideoAnalysis(false);
+    if (!currentVideo?.id || !currentTenant?.schemaName) return;
+    const qs = `tenant=${encodeURIComponent(currentTenant.schemaName)}&videoType=video&videoId=${encodeURIComponent(currentVideo.id)}`;
+    fetch(`/api/video-analysis/by-video?${qs}`, { headers: getAuthHeaders(user) as Record<string, string> })
+      .then((r) => r.json())
+      .then((meta) => {
+        if (active) setHasVideoAnalysis(meta?.data?.status === "done");
+      })
+      .catch(() => {
+        if (active) setHasVideoAnalysis(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [currentVideo?.id, currentTenant?.schemaName, user]);
 
   const { data: discussionsData, isLoading: discussionsLoading } = useQuery({
     queryKey: ["discussions", selectedCourseId, currentTenant?.id],
@@ -561,7 +718,14 @@ export default function CourseVideoPage() {
     { key: "1", label: "课程视频", icon: <PlayCircleOutlined /> },
     { key: "0", label: "课程简介", icon: <BookOutlined /> },
     { key: "3", label: "课程评价", icon: <MessageOutlined /> },
-    { key: "4", label: "相关资源", icon: <LinkOutlined /> },
+  ];
+
+  // 视频下方「基于章节」的分栏 tab（课程笔记优先，AI 解析最后且仅有数据时显示）
+  const chapterTabs = [
+    { key: "note", label: "课程笔记", icon: <EditOutlined /> },
+    { key: "resource", label: "学习资料", icon: <FolderOutlined /> },
+    { key: "exercise", label: "章节练习", icon: <FileTextOutlined /> },
+    ...(hasVideoAnalysis ? [{ key: "ai", label: "AI 解析", icon: <RobotOutlined /> }] : []),
   ];
 
   // ==================== 渲染视频播放器 ====================
@@ -717,29 +881,30 @@ export default function CourseVideoPage() {
   const renderTabContent = () => {
     // 课程视频 Tab（主 Tab）
     if (currentTab === "1") {
-      // === 两栏布局：左侧章节目录，右侧视频与元数据（原型风格） ===
-      const currentFlatIndex = flatVideoItems.findIndex((it) => it.video.id === currentVideo?.id);
+      // === 两栏布局：左侧章节（含视频），右侧视频播放 ===
       const watchedCount = flatVideoItems.filter((it) => completedSet.has(it.video.id)).length;
       const progressPct = flatVideoItems.length > 0 ? Math.round((watchedCount / flatVideoItems.length) * 100) : 0;
-      const currentChapterTitle = currentFlatIndex >= 0 ? flatVideoItems[currentFlatIndex]?.chapterTitle : undefined;
 
-      const selectFlatVideo = (index: number) => {
-        const item = flatVideoItems[index];
-        if (!item) return;
+      const activeChapter = chaptersWithVideos.find((c) => c.videos.some((v) => v.id === currentVideo?.id));
+      const activeChapterTitle = activeChapter?.chapter?.title;
+      const activeVideos = activeChapter?.videos || [];
+      const videoIndex = activeVideos.findIndex((v) => v.id === currentVideo?.id);
+
+      const playVideo = (video: Video) => {
         const el = mainVideoRef.current;
         // 点击/打开视频：保存当前播放位置，并把打开的视频记为已观看（进度随之更新）
         updateProgress((p) => {
           const next: CourseProgress = {
             ...p,
             positions: el && currentVideo ? { ...p.positions, [currentVideo.id]: el.currentTime } : p.positions,
-            lastVideoId: item.video.id,
+            lastVideoId: video.id,
           };
-          if (!next.completed.includes(item.video.id)) {
-            next.completed = [...next.completed, item.video.id];
+          if (!next.completed.includes(video.id)) {
+            next.completed = [...next.completed, video.id];
           }
           return next;
         });
-        setCurrentVideo(item.video);
+        setCurrentVideo(video);
         setIsPlaying(true);
       };
 
@@ -761,12 +926,10 @@ export default function CourseVideoPage() {
           >
             <div style={{ padding: "14px 16px", borderBottom: `1px solid ${colors.border}` }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650, color: colors.textPrimary }}>章节目录</h3>
-              <p style={{ margin: "6px 0 8px", fontSize: 12, color: colors.textSecondary }}>
-                共 {flatVideoItems.length} 个视频
-              </p>
               <Input
                 size="small"
-                placeholder="搜索视频..."
+                style={{ marginTop: 8 }}
+                placeholder="搜索章节..."
                 prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
                 allowClear
                 value={chapterSearchText}
@@ -775,16 +938,17 @@ export default function CourseVideoPage() {
             </div>
 
             <div style={{ flex: 1, overflow: "auto", padding: 8 }}>
-              {flatVideoItems.length === 0 ? (
+              {chaptersWithVideos.length === 0 ? (
                 <Empty description="暂无视频" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ marginTop: 24 }} />
               ) : (
-                flatVideoItems.map((item, idx) => {
-                  const active = item.video.id === currentVideo?.id;
+                chaptersWithVideos.map(({ chapter, videos, totalDuration }) => {
+                  const active = chapter.id === currentVideo?.chapterId;
+                  const allDone = videos.length > 0 && videos.every((v) => completedSet.has(v.id));
                   return (
                     <button
-                      key={item.video.id}
+                      key={chapter.id}
                       type="button"
-                      onClick={() => selectFlatVideo(idx)}
+                      onClick={() => playVideo(videos[0])}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -802,14 +966,14 @@ export default function CourseVideoPage() {
                         fontWeight: active ? 600 : 400,
                       }}
                     >
-                      <span style={{ width: 14, color: completedSet.has(item.video.id) ? colors.primary : "#c0c4cc" }}>
-                        {completedSet.has(item.video.id) ? "✓" : ""}
+                      <span style={{ width: 14, color: allDone ? colors.primary : "#c0c4cc" }}>
+                        {allDone ? "✓" : ""}
                       </span>
                       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {stripVideoNumber(item.video.title) || item.video.id.slice(0, 8)}
+                        {chapter.title}
                       </span>
-                      {item.video.duration ? (
-                        <span style={{ fontSize: 11, color: colors.textSecondary }}>{formatDuration(item.video.duration)}</span>
+                      {totalDuration ? (
+                        <span style={{ fontSize: 11, color: colors.textSecondary }}>{formatDuration(totalDuration)}</span>
                       ) : null}
                     </button>
                   );
@@ -823,60 +987,74 @@ export default function CourseVideoPage() {
             </div>
           </div>
 
-          {/* 右侧：视频 + 元数据 */}
-          <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: "auto", padding: isMobile ? 12 : 20, display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* 右侧：视频 + 章节分栏 */}
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: "auto", padding: isMobile ? 12 : 20, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650, color: colors.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {stripVideoNumber(currentVideo?.title) || "未命名视频"}
+              </h3>
+              {activeVideos.length > 1 ? (
+                <span style={{ flexShrink: 0, fontSize: 12, color: colors.textSecondary }}>
+                  本章共 {activeVideos.length} 个视频
+                </span>
+              ) : null}
+            </div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               {renderVideoPlayer()}
             </div>
 
-            <ProtoCard>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 650, color: colors.textPrimary }}>
-                  {stripVideoNumber(currentVideo?.title) || "未命名视频"}
-                </h2>
-                <Button type="text" icon={<ShareAltOutlined />} onClick={handleShare} />
+            {activeVideos.length > 1 ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+                <Button
+                  shape="circle"
+                  size="small"
+                  icon={<LeftOutlined />}
+                  disabled={videoIndex <= 0}
+                  onClick={() => videoIndex > 0 && playVideo(activeVideos[videoIndex - 1])}
+                />
+                <span style={{ fontSize: 12, color: colors.textSecondary }}>{videoIndex + 1} / {activeVideos.length}</span>
+                <Button
+                  shape="circle"
+                  size="small"
+                  icon={<RightOutlined />}
+                  disabled={videoIndex < 0 || videoIndex >= activeVideos.length - 1}
+                  onClick={() => {
+                    if (currentVideo) markCompleted(currentVideo.id);
+                    if (videoIndex >= 0 && videoIndex < activeVideos.length - 1) {
+                      playVideo(activeVideos[videoIndex + 1]);
+                    }
+                  }}
+                />
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {currentVideo?.duration ? <ProtoTag tone="gray">时长 {formatDuration(currentVideo.duration)}</ProtoTag> : null}
-                {currentChapterTitle ? <ProtoTag tone="blue">{currentChapterTitle}</ProtoTag> : null}
-              </div>
-              {currentVideo && (
-                <div style={{ marginTop: 16 }}>
-                  <VideoAnalysisPanel
-                    videoId={currentVideo.id}
-                    tenant={currentTenant?.schemaName || ""}
-                    headers={getAuthHeaders(user) as Record<string, string>}
-                    onSeek={(sec) => {
-                      if (mainVideoRef.current) {
-                        mainVideoRef.current.currentTime = sec;
-                        mainVideoRef.current.play().catch(() => {});
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </ProtoCard>
+            ) : null}
 
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-              <Button
-                disabled={currentFlatIndex <= 0}
-                onClick={() => currentFlatIndex > 0 && selectFlatVideo(currentFlatIndex - 1)}
-              >
-                上一节
-              </Button>
-              <Button
-                type="primary"
-                disabled={currentFlatIndex < 0 || currentFlatIndex >= flatVideoItems.length - 1}
-                onClick={() => {
-                  if (currentVideo) markCompleted(currentVideo.id);
-                  if (currentFlatIndex >= 0 && currentFlatIndex < flatVideoItems.length - 1) {
-                    selectFlatVideo(currentFlatIndex + 1);
-                  }
-                }}
-              >
-                完成并播放下一节
-              </Button>
-            </div>
+            {/* 基于章节的分栏：课程笔记 / 学习资料 / 章节练习 / AI 解析 */}
+            <ProtoCard>
+              <div className="pu-tabs" style={{ marginBottom: 16, marginTop: 0 }}>
+                {chapterTabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    className={`pu-tabs__item${chapterTab === t.key ? " is-active" : ""}`}
+                    onClick={() => setChapterTab(t.key)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 2px",
+                      whiteSpace: "nowrap",
+                      background: "transparent",
+                      border: 0,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ fontSize: 15, lineHeight: 1 }}>{t.icon}</span>
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+              {renderChapterPanel()}
+            </ProtoCard>
           </div>
         </div>
       );
@@ -1100,40 +1278,159 @@ export default function CourseVideoPage() {
       );
     }
 
-    // 相关资源
-    if (currentTab === "4") {
+    return null;
+  };
+
+  // 视频下方「基于章节」的分栏内容（课程笔记 / 学习资料 / 章节练习 / AI 解析）
+  const renderChapterPanel = () => {
+    // 学习资料（教师端配置：章节文件 / 相关链接）
+    if (chapterTab === "resource") {
+      const empty = chapterFiles.length === 0 && links.length === 0;
+      const rowStyle: React.CSSProperties = {
+        display: "flex", alignItems: "center", gap: 14, padding: 14,
+        background: "#fff", borderRadius: 10, border: "1px solid var(--pu-line)",
+      };
       return (
         <div style={{ padding: isMobile ? "12px" : "24px 28px", background: colors.pageBg, height: "100%", overflow: "auto" }}>
-          {linksLoading ? (
-            <Spin size="large" />
-          ) : links.length === 0 ? (
-            <Empty description={<span style={{ color: colors.textSecondary }}>暂无相关资源</span>} />
+          {currentChapterTitle ? (
+            <div style={{ marginBottom: 12, fontSize: 13, color: colors.textSecondary }}>当前章节：{currentChapterTitle}</div>
+          ) : null}
+          {empty ? (
+            <Empty description={<span style={{ color: colors.textSecondary }}>该章节暂无学习资料</span>} />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {chapterFiles.map((f) => (
+                <div key={f.id} style={rowStyle}>
+                  <Avatar style={{ background: "#0ea5e9", borderRadius: 10 }} icon={<FolderOutlined />} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ color: colors.textPrimary, display: "block", fontWeight: 500 }}>{f.filename}</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{(f.fileType || "文件").toUpperCase()}</Text>
+                  </div>
+                  <Button
+                    type="link"
+                    onClick={() =>
+                      setPreviewDialog({
+                        open: true,
+                        file: {
+                          url: f.path || f.assetId || "",
+                          name: f.filename,
+                          type: (f.filename?.split(".").pop() || "").toLowerCase(),
+                        },
+                      })
+                    }
+                  >
+                    预览
+                  </Button>
+                </div>
+              ))}
               {links.map((link: any) => (
-                <div
-                  key={link.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    padding: 14,
-                    background: "#fff",
-                    borderRadius: 10,
-                    border: "1px solid var(--pu-line)",
-                  }}
-                >
+                <div key={link.id} style={rowStyle}>
                   <Avatar style={{ background: colors.primary, borderRadius: 10 }} icon={<LinkOutlined />} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Text style={{ color: colors.textPrimary, display: "block", fontWeight: 500 }}>{link.title}</Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{link.url}</Text>
                   </div>
-                  <Button type="link" onClick={() => window.open(link.url, "_blank")}>
-                    访问
-                  </Button>
+                  <Button type="link" onClick={() => window.open(link.url, "_blank")}>访问</Button>
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      );
+    }
+
+    // 章节练习（教师端配置：该章节知识点下的习题）
+    if (chapterTab === "exercise") {
+      return (
+        <div style={{ padding: isMobile ? "12px" : "24px 28px", background: colors.pageBg, height: "100%", overflow: "auto" }}>
+          {currentChapterTitle ? (
+            <div style={{ marginBottom: 12, fontSize: 13, color: colors.textSecondary }}>当前章节：{currentChapterTitle}</div>
+          ) : null}
+          {chapterExercises.length === 0 ? (
+            <Empty description={<span style={{ color: colors.textSecondary }}>该章节暂无练习</span>} />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {chapterExercises.map((ex: any, idx: number) => {
+                const options = ex.options && typeof ex.options === "object"
+                  ? Object.entries(ex.options as Record<string, unknown>)
+                  : [];
+                return (
+                  <div key={ex.id} style={{ background: "#fff", borderRadius: 10, border: "1px solid var(--pu-line)", padding: 16 }}>
+                    <div style={{ fontWeight: 600, color: colors.textPrimary, marginBottom: 8 }}>
+                      {idx + 1}. {ex.title || "练习"}
+                    </div>
+                    <Paragraph style={{ whiteSpace: "pre-wrap", color: colors.textPrimary, marginBottom: options.length ? 10 : 12 }}>
+                      {ex.questionContent}
+                    </Paragraph>
+                    {options.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+                        {options.map(([key, val]) => (
+                          <div key={key} style={{ fontSize: 13, color: colors.textSecondary }}>{key}. {String(val)}</div>
+                        ))}
+                      </div>
+                    )}
+                    {ex.answer ? (
+                      <details>
+                        <summary style={{ cursor: "pointer", color: colors.primary, fontSize: 13 }}>查看答案</summary>
+                        <div style={{ marginTop: 8, fontSize: 13, color: colors.textPrimary, whiteSpace: "pre-wrap" }}>
+                          {ex.answer}
+                          {ex.answerExplanation ? (
+                            <div style={{ marginTop: 6, color: colors.textSecondary }}>解析：{ex.answerExplanation}</div>
+                          ) : null}
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // 课程笔记（按章节，保存到 localStorage）
+    if (chapterTab === "note") {
+      return (
+        <div style={{ padding: isMobile ? "12px" : "24px 28px", background: colors.pageBg, height: "100%", overflow: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: colors.textSecondary }}>
+              {currentChapterTitle ? `当前章节：${currentChapterTitle}` : "选择一个章节以记录笔记"}
+            </div>
+            <Button type="primary" onClick={saveNote} disabled={!currentChapterId}>保存笔记</Button>
+          </div>
+          <Input.TextArea
+            value={noteDraft}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            placeholder="记录此刻的理解与灵感……"
+            autoSize={{ minRows: 10, maxRows: 22 }}
+            style={{ fontSize: 14, lineHeight: 1.9 }}
+          />
+          <div style={{ marginTop: 8, fontSize: 12, color: colors.textSecondary }}>
+            笔记按章节保存在本地浏览器（localStorage），不会上传。
+          </div>
+        </div>
+      );
+    }
+
+    // AI 解析（有数据时才作为最后一个 tab 展示）
+    if (chapterTab === "ai") {
+      return (
+        <div style={{ padding: isMobile ? "12px" : "24px 28px", background: colors.pageBg, height: "100%", overflow: "auto" }}>
+          {currentVideo ? (
+            <VideoAnalysisPanel
+              videoId={currentVideo.id}
+              tenant={currentTenant?.schemaName || ""}
+              headers={getAuthHeaders(user) as Record<string, string>}
+              onSeek={(sec) => {
+                if (mainVideoRef.current) {
+                  mainVideoRef.current.currentTime = sec;
+                  mainVideoRef.current.play().catch(() => {});
+                }
+              }}
+            />
+          ) : (
+            <Empty description={<span style={{ color: colors.textSecondary }}>请先选择一个视频</span>} />
           )}
         </div>
       );

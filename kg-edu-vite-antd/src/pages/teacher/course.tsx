@@ -6,12 +6,12 @@ import {
   Button,
   Row,
   Col,
-  Tag,
   Modal,
   Form,
   Input,
   Select,
   Switch,
+  Tag,
   message,
   Popconfirm,
   Empty,
@@ -30,7 +30,6 @@ import {
   EyeOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
-  BgColorsOutlined,
   ArrowLeftOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
@@ -91,6 +90,7 @@ export default function CourseManagementPage() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
@@ -265,6 +265,9 @@ export default function CourseManagementPage() {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       message.success(t("common.deleteSuccess"));
     },
+    onError: () => {
+      message.error(t("common.deleteFailed"));
+    },
   });
 
   // 颜色主题更新 mutation
@@ -438,27 +441,27 @@ export default function CourseManagementPage() {
       dataIndex: "semester",
       key: "semester",
       className: "course-mobile-table-hide",
-      render: (semester) => semester ? <Tag>{semester}</Tag> : "-",
+      render: (semester) => semester || "-",
     },
     {
       title: "学分",
       dataIndex: "credits",
       key: "credits",
       className: "course-mobile-table-hide",
-      render: (credits) => credits ? <Tag color="orange">{credits}{t("pages.course.credits")}</Tag> : "-",
+      render: (credits) => credits ? `${credits}${t("pages.course.credits")}` : "-",
     },
     {
       title: "专业",
       dataIndex: "major",
       key: "major",
       className: "course-mobile-table-hide",
-      render: (major) => major ? <Tag color="purple">{major}</Tag> : "-",
+      render: (major) => major || "-",
     },
     {
       title: "状态",
       dataIndex: "publishStatus",
       key: "publishStatus",
-      render: (status) => status ? <Tag color="green">{t("pages.course.published")}</Tag> : <Tag>{t("pages.course.draft")}</Tag>,
+      render: (status) => status ? t("pages.course.published") : t("pages.course.draft"),
     },
     {
       title: "操作",
@@ -517,6 +520,24 @@ export default function CourseManagementPage() {
           <Button onClick={() => { setSearchText(""); setStatusFilter("全部"); setCurrentPage(1); }}>
             重置
           </Button>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+            <Space.Compact>
+              <Button
+                type={viewMode === "card" ? "primary" : "default"}
+                icon={<AppstoreOutlined />}
+                onClick={() => setViewMode("card")}
+              >
+                卡片
+              </Button>
+              <Button
+                type={viewMode === "table" ? "primary" : "default"}
+                icon={<UnorderedListOutlined />}
+                onClick={() => setViewMode("table")}
+              >
+                表格
+              </Button>
+            </Space.Compact>
+          </div>
         </div>
 
         {isLoading ? (
@@ -530,6 +551,90 @@ export default function CourseManagementPage() {
           />
         ) : filteredCourses.length === 0 ? (
           <ProtoEmpty title="未找到匹配的课程" description="尝试调整搜索或筛选条件。" />
+        ) : viewMode === "card" ? (
+          <>
+            <Row gutter={[16, 16]}>
+              {paginatedCourses.map((course: Course) => (
+                <Col xs={24} sm={12} lg={8} xl={6} key={course.id}>
+                  <Card
+                    style={{ borderRadius: 12, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+                    styles={{ body: { padding: 0, flex: 1, display: "flex", flexDirection: "column" } }}
+                    hoverable
+                    onClick={(e) => {
+                      if (e.target.closest(".ant-modal-root")) return;
+                      navigate(`/teacher/dashboard/course/${course.id}`);
+                    }}
+                  >
+                    <div style={{ position: "relative", height: 140, flexShrink: 0 }}>
+                      {course.imageUrl ? (
+                        <img alt={course.title} src={course.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #234968 0%, #4a7fb5 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <ReadOutlined style={{ fontSize: 36, color: "#fff" }} />
+                        </div>
+                      )}
+                      <div style={{
+                        position: "absolute", bottom: 0, left: 0, right: 0,
+                        background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
+                        padding: "24px 12px 8px",
+                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+                      }}>
+                        <span style={{ color: "#fff", fontSize: 12, opacity: 0.95 }}>{course.semester || ""}</span>
+                        {course.credits && (
+                          <span style={{ color: "#fff", fontSize: 11 }}>{course.credits}{t("pages.course.credits")}</span>
+                        )}
+                      </div>
+                      {course.publishStatus && (
+                        <Tag color="green" style={{ position: "absolute", top: 8, right: 8, margin: 0, fontSize: 11 }}>
+                          {t("pages.course.published")}
+                        </Tag>
+                      )}
+                    </div>
+
+                    <div style={{ padding: "14px 16px 12px", flex: 1, display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                        <Text strong style={{ fontSize: 15, lineHeight: 1.4, flex: 1, minWidth: 0 }} ellipsis={{ tooltip: course.title }}>
+                          {course.title}
+                        </Text>
+                        {course.major && (
+                          <span style={{ margin: 0, flexShrink: 0, fontSize: 12, color: "#64748b" }}>{course.major}</span>
+                        )}
+                      </div>
+                      <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0, fontSize: 12, color: "#8c8c8c", lineHeight: 1.6, flex: 1 }}>
+                        {course.description || t("pages.course.noDescription")}
+                      </Paragraph>
+                    </div>
+
+                    <div style={{ padding: "8px 12px 12px", display: "flex", justifyContent: "flex-end" }}>
+                      <Space size={4}>
+                        <Button type="link" size="small" icon={<EyeOutlined />} onClick={(e) => { e.stopPropagation(); navigate(`/teacher/dashboard/course/${course.id}`); }}>
+                          查看
+                        </Button>
+                        <ReadonlyActionButton type="link" size="small" icon={<EditOutlined />} onClick={(e) => { e.stopPropagation(); handleEdit(course); }}>
+                          {t("common.edit")}
+                        </ReadonlyActionButton>
+                        <Popconfirm title={t("common.confirmDelete")} onConfirm={(e) => { e?.stopPropagation(); deleteMutation.mutate(course.id); }}>
+                          <ReadonlyActionButton type="link" size="small" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()}>
+                            {t("common.delete")}
+                          </ReadonlyActionButton>
+                        </Popconfirm>
+                      </Space>
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+            <div className="pu-table-footer">
+              <span>共 {filteredCourses.length} 门课程</span>
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={filteredCourses.length}
+                onChange={setCurrentPage}
+                showSizeChanger={false}
+              />
+            </div>
+          </>
         ) : (
           <>
             <Table
