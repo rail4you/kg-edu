@@ -197,7 +197,7 @@ export default function CheckInManagement() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return createSession({
+      const result = await createSession({
         tenant: tenant!,
         fields: ["id", "title", "description", "status", "token", "startedAt", "courseId"],
         input: {
@@ -208,6 +208,18 @@ export default function CheckInManagement() {
         },
         headers: getAuthHeaders(user) as Record<string, string>,
       });
+
+      if (!result.success) {
+        const errors = (result as any).errors as
+          | Array<{ message?: string }>
+          | undefined;
+        const msg =
+          errors?.map((e) => e.message).filter(Boolean).join("，") ||
+          "创建失败";
+        throw new Error(msg);
+      }
+
+      return result;
     },
     onSuccess: () => {
       message.success("签到创建成功");
@@ -222,12 +234,24 @@ export default function CheckInManagement() {
 
   const closeMutation = useMutation({
     mutationFn: async (sessionId: string) => {
-      return closeSession({
+      const result = await closeSession({
         tenant: tenant!,
         fields: ["id", "status", "endedAt"],
         primaryKey: sessionId,
         headers: getAuthHeaders(user) as Record<string, string>,
       });
+
+      if (!result.success) {
+        const errors = (result as any).errors as
+          | Array<{ message?: string }>
+          | undefined;
+        const msg =
+          errors?.map((e) => e.message).filter(Boolean).join("，") ||
+          "关闭失败";
+        throw new Error(msg);
+      }
+
+      return result;
     },
     onSuccess: () => {
       message.success("签到已关闭");
