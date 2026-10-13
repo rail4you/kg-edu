@@ -78,6 +78,22 @@ docker compose -f docker-compose.yml up -d db backend 2>&1 | tail -3
 REMOTE_EOF
 ok "backend 重启中（约 30-60 秒恢复）"
 
+# ── Step 3.5: 标准迁移（public + tenant） ──────────────────
+step "Step 3.5/4: 标准迁移（bin/migrate + migrate_tenants）..."
+# bin/migrate 只调用 KgEdu.Release.migrate()，仅跑 public schema；
+# tenant schemas 必须额外调用 migrate_tenants() 才能跑 tenant_migrations。
+# KgEdu.Release.migrate_all() 同时跑两者，这里采用等价分步（与 deploy-zikeyunsu.sh 一致）。
+# 不跑此步会导致 tenant 表 schema 永远落后于 release（详见 2026-10-13 签到 bugfix）。
+ssh -o StrictHostKeyChecking=no "$REMOTE_HOST" bash -s << 'MIGRATE_EOF'
+set -e
+echo "  [3.5.a] bin/migrate (public schema)…"
+docker exec kg-edu-backend /app/bin/migrate 2>&1 | tail -3
+echo ""
+echo "  [3.5.b] migrate_tenants() (all tenant schemas)…"
+docker exec kg-edu-backend /app/bin/kg_edu eval "KgEdu.Release.migrate_tenants()" 2>&1 | tail -12
+MIGRATE_EOF
+ok "迁移完成（public + 所有 tenant schema 同步 release）"
+
 # ── Step 4: 验证 ──────────────────────────────────────────────
 step "Step 4/4: 验证..."
 ssh -o StrictHostKeyChecking=no "$REMOTE_HOST" bash -s << 'CHECK_EOF'

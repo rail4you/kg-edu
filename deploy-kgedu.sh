@@ -423,6 +423,23 @@ DEPLOY_EOF
 ok "服务已启动"
 
 # ================================================================
+# Step 6.5: 每次部署都跳迁移（保护公共 + tenant 双 schema）
+# bin/migrate 只跑 public schema；tenant schemas 在每次发布后必须额外跑 migrate_tenants。
+# 不跑会导致 tenant 表（check_in_sessions、face_check_logs 等）随发布越落越远
+# （详见 2026-10-13 签到 bugfix）。
+# ================================================================
+step "Step 6.5/8: 标准迁移（public + 所有 tenant）..."
+ssh -o StrictHostKeyChecking=no "$REMOTE" bash -s << 'MIGRATE_EOF'
+set -e
+echo "  [6.5.a] bin/migrate (public schema)…"
+docker exec kg-edu-backend /app/bin/migrate 2>&1 | tail -3
+echo ""
+echo "  [6.5.b] migrate_tenants() (所有 tenant schemas)…"
+docker exec kg-edu-backend /app/bin/kg_edu eval "KgEdu.Release.migrate_tenants()" 2>&1 | tail -12
+MIGRATE_EOF
+ok "迁移完成（public + tenant schema 与 release 同步）"
+
+# ================================================================
 # Step 7: 验证部署
 # ================================================================
 step "Step 7/8: 验证部署..."
