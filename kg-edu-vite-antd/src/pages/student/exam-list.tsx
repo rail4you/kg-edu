@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { Typography, Button, Spin, Alert, Row, Col, Empty } from 'antd';
-import { PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Typography, Button, Spin, Alert, Row, Col, Empty, Space } from 'antd';
+import { PlayCircleOutlined, ArrowLeftOutlined, CameraOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/auth/auth-context';
 import { getCurrentTenant } from '@/lib/tenant';
 import { getExamsByCourse } from '@/lib/ash_rpc';
 import { getHeaders, extractArrayData } from '@/utils/api-helpers';
 import { PageHead, ProtoTag } from "@/components/proto";
+import ExamMonitorModal from "@/components/exam/ExamMonitorModal";
 
 const { Text } = Typography;
 
@@ -26,6 +28,7 @@ export default function ExamList() {
   const navigate = useNavigate();
   const { courseId } = useParams();
   const currentTenant = getCurrentTenant();
+  const [monitorExam, setMonitorExam] = useState<Exam | null>(null);
 
   const { data: examsResult, isLoading, error } = useQuery({
     queryKey: ['exams', 'course', courseId],
@@ -151,19 +154,34 @@ export default function ExamList() {
                   )}
                 </div>
 
-                <Button
-                  type="primary"
-                  icon={<PlayCircleOutlined />}
-                  onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
-                  style={{ marginTop: 18, width: '100%' }}
-                >
-                  开始考试
-                </Button>
+                <Space style={{ marginTop: 18, width: '100%' }} direction="vertical" size={8}>
+                  <Button
+                    type="primary"
+                    icon={<PlayCircleOutlined />}
+                    onClick={() => navigate(`/dashboard/exam-taking/${exam.id}`)}
+                    style={{ width: '100%' }}
+                  >
+                    开始考试
+                  </Button>
+                  <Button
+                    icon={<CameraOutlined />}
+                    onClick={() => setMonitorExam(exam)}
+                    style={{ width: '100%' }}
+                  >
+                    监控
+                  </Button>
+                </Space>
               </section>
             </Col>
           ))}
         </Row>
       )}
+
+      <ExamMonitorModal
+        open={!!monitorExam}
+        exam={monitorExam ? { id: monitorExam.id, title: monitorExam.title } : null}
+        onClose={() => setMonitorExam(null)}
+      />
     </div>
   );
 }

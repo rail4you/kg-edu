@@ -160,6 +160,8 @@
   border-radius: 5px 5px 0 0;
   position: relative;
   min-width: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .teacher-dashboard .bar:nth-child(2n) {
@@ -168,6 +170,14 @@
 
 .teacher-dashboard .bar:hover {
   background: var(--td-blue);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(94, 131, 239, 0.35);
+  filter: brightness(1.05);
+}
+
+.teacher-dashboard .bar:hover span {
+  color: var(--td-blue);
+  font-weight: 600;
 }
 
 .teacher-dashboard .bar span {
@@ -224,6 +234,26 @@
   color: var(--td-blue);
   flex-shrink: 0;
   font-weight: 600;
+}
+
+/* 待办事项跳转箭头 */
+.teacher-dashboard .todo-arrow {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--td-muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.teacher-dashboard .todo-arrow:hover {
+  color: #fff;
+  background: var(--td-blue);
+  transform: translateX(2px);
 }
 
 /* ---------- 目录标题（我的课程） ---------- */

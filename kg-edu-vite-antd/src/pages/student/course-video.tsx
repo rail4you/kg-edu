@@ -32,6 +32,8 @@ import {
   RobotOutlined,
   LeftOutlined,
   RightOutlined,
+  EyeOutlined,
+  CloseCircleFilled,
 } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -57,6 +59,9 @@ import FilePreview from "@/components/FilePreview";
 import VideoAnalysisPanel from "@/components/video/VideoAnalysisPanel";
 import { ProtoCard, ProgressBar } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
+import FaceMonitorDock, { type FaceMonitorHandle, type FaceScene } from "@/components/exam/FaceMonitorDock";
+import FaceSettingsButton from "@/components/exam/FaceSettingsButton";
+import { loadFaceSettings, saveFaceSettings, type FaceCheckSettings } from "@/lib/face-settings";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -153,6 +158,32 @@ export default function CourseVideoPage() {
 
   const mainVideoRef = useRef<HTMLVideoElement>(null);
 
+  // 人脸监控抓拍
+  const [faceMonitorOn, setFaceMonitorOn] = useState(false);
+  const faceDockRef = useRef<FaceMonitorHandle>(null);
+  const playedVideosRef = useRef<Set<string>>(new Set());
+  const [faceSettings, setFaceSettings] = useState<FaceCheckSettings>(() => loadFaceSettings());
+  const [faceOk, setFaceOk] = useState<boolean | null>(null);
+  // 「不允许学习」模式下，识别失败即禁用右侧学习内容
+  const faceBlocked = faceMonitorOn && faceSettings.mode === "block" && faceOk === false;
+
+  useEffect(() => {
+    saveFaceSettings(faceSettings);
+  }, [faceSettings]);
+
+  const handleFaceViolation = useCallback((scene: FaceScene) => {
+    const el = mainVideoRef.current;
+    if (el && !el.paused) el.pause();
+    message.warning(`人脸识别失败（${scene}），请正对摄像头后继续播放`);
+  }, []);
+
+  // 进入课程时抓拍（开启监控后）
+  useEffect(() => {
+    if (!faceMonitorOn || !selectedCourseId) return;
+    const t = window.setTimeout(() => faceDockRef.current?.captureNode("entry"), 1500);
+    return () => window.clearTimeout(t);
+  }, [faceMonitorOn, selectedCourseId]);
+
   // 观看进度持久化：记录已观看视频、每个视频的播放位置、最后观看的视频
   interface CourseProgress {
     completed: string[];
@@ -206,6 +237,25 @@ export default function CourseVideoPage() {
       );
     },
     [updateProgress],
+  );
+
+  // 视频完成：需先开启人脸监控并通过识别（含截图记录），失败则不计入完成
+  const completeVideo = useCallback(
+    async (videoId: string) => {
+      if (!faceMonitorOn) {
+        message.warning("请先开启人脸监控后再完成本节视频");
+        return false;
+      }
+      const pass = await faceDockRef.current?.verify("video_end");
+      if (!pass) {
+        message.error("人脸识别未通过，本节完成进度未记录");
+        return false;
+      }
+      markCompleted(videoId);
+      message.success("人脸识别通过，本节已完成");
+      return true;
+    },
+    [faceMonitorOn, markCompleted],
   );
 
   const stopMainVideo = useCallback(() => {
@@ -782,7 +832,17 @@ export default function CourseVideoPage() {
                   }));
                 }
               }}
-              onEnded={() => markCompleted(currentVideo.id)}
+              onPlay={() => {
+                const id = currentVideo.id;
+                const played = playedVideosRef.current.has(id);
+                faceDockRef.current?.captureNode(played ? "video_resume" : "video_start");
+                playedVideosRef.current.add(id);
+              }}
+              onPause={() => faceDockRef.current?.captureNode("video_playing")}
+              onSeeked={() => faceDockRef.current?.captureNode("video_playing")}
+              onEnded={() => {
+                completeVideo(currentVideo.id);
+              }}
             >
               您的浏览器不支持视频播放
             </video>
@@ -892,18 +952,12 @@ export default function CourseVideoPage() {
 
       const playVideo = (video: Video) => {
         const el = mainVideoRef.current;
-        // 点击/打开视频：保存当前播放位置，并把打开的视频记为已观看（进度随之更新）
-        updateProgress((p) => {
-          const next: CourseProgress = {
-            ...p,
-            positions: el && currentVideo ? { ...p.positions, [currentVideo.id]: el.currentTime } : p.positions,
-            lastVideoId: video.id,
-          };
-          if (!next.completed.includes(video.id)) {
-            next.completed = [...next.completed, video.id];
-          }
-          return next;
-        });
+        // 点击/打开视频：保存当前播放位置（完成状态需人脸识别通过后记录）
+        updateProgress((p) => ({
+          ...p,
+          positions: el && currentVideo ? { ...p.positions, [currentVideo.id]: el.currentTime } : p.positions,
+          lastVideoId: video.id,
+        }));
         setCurrentVideo(video);
         setIsPlaying(true);
       };
@@ -988,7 +1042,32 @@ export default function CourseVideoPage() {
           </div>
 
           {/* 右侧：视频 + 章节分栏 */}
-          <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: "auto", padding: isMobile ? 12 : 20, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 0, minHeight: 0, overflow: "auto", padding: isMobile ? 12 : 20, display: "flex", flexDirection: "column", gap: 12, pointerEvents: faceBlocked ? "none" : "auto" }}>
+            {faceBlocked && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 20,
+                  pointerEvents: "auto",
+                  background: "rgba(255,255,255,0.78)",
+                  backdropFilter: "blur(1px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  textAlign: "center",
+                  padding: 24,
+                }}
+              >
+                <CloseCircleFilled style={{ fontSize: 42, color: "#ff4d4f" }} />
+                <Title level={5} style={{ margin: 0 }}>
+                  人脸识别失败，学习已暂停
+                </Title>
+                <Text type="secondary">请正对摄像头，识别通过后自动恢复</Text>
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650, color: colors.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {stripVideoNumber(currentVideo?.title) || "未命名视频"}
@@ -1019,7 +1098,7 @@ export default function CourseVideoPage() {
                   icon={<RightOutlined />}
                   disabled={videoIndex < 0 || videoIndex >= activeVideos.length - 1}
                   onClick={() => {
-                    if (currentVideo) markCompleted(currentVideo.id);
+                    if (currentVideo) completeVideo(currentVideo.id);
                     if (videoIndex >= 0 && videoIndex < activeVideos.length - 1) {
                       playVideo(activeVideos[videoIndex + 1]);
                     }
@@ -1561,6 +1640,16 @@ export default function CourseVideoPage() {
               </button>
             );
           })}
+          <Button
+            size="small"
+            type={faceMonitorOn ? "primary" : "default"}
+            icon={<EyeOutlined />}
+            style={{ marginLeft: "auto", flexShrink: 0 }}
+            onClick={() => setFaceMonitorOn((v) => !v)}
+          >
+            {faceMonitorOn ? "监控中" : "监控"}
+          </Button>
+          <FaceSettingsButton settings={faceSettings} onChange={setFaceSettings} />
         </div>
       </div>
 
@@ -1815,6 +1904,18 @@ export default function CourseVideoPage() {
           </div>
         )}
       </Modal>
+
+      <FaceMonitorDock
+        ref={faceDockRef}
+        enabled={faceMonitorOn}
+        courseId={selectedCourseId || null}
+        videoId={currentVideo?.id || null}
+        videoName={currentVideo?.title || null}
+        settings={faceSettings}
+        onViolation={handleFaceViolation}
+        onFaceStatus={setFaceOk}
+        onClose={() => setFaceMonitorOn(false)}
+      />
     </div>
   );
 }

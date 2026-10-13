@@ -40,6 +40,7 @@ defmodule KgEdu.Activity do
       rpc_action :list_activity_logs_by_action_type, :by_action_type
       rpc_action :list_activity_logs_by_resource_type, :by_resource_type
       rpc_action :list_activity_logs_by_time_range, :by_time_range
+      rpc_action :list_activity_logs_by_day, :by_day
       rpc_action :get_view_count_distribution, :view_count_distribution
     end
   end

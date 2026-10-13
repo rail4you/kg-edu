@@ -54,6 +54,7 @@ defmodule KgEdu.Attendance do
       rpc_action(:list_face_checks, :read)
       rpc_action(:list_face_checks_by_user, :by_user)
       rpc_action(:list_face_checks_by_course, :by_course)
+      rpc_action(:destroy_face_check, :destroy)
     end
   end
 

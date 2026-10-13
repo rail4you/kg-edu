@@ -36,6 +36,7 @@ defmodule KgEdu.Activity.ActivityLog do
     define :list_activity_logs_by_action_type, action: :by_action_type
     define :list_activity_logs_by_resource_type, action: :by_resource_type
     define :list_activity_logs_by_time_range, action: :by_time_range
+    define :list_activity_logs_by_day, action: :by_day
     define :get_view_count_distribution, action: :view_count_distribution
   end
 
@@ -73,6 +74,13 @@ defmodule KgEdu.Activity.ActivityLog do
       argument :end_date, :date, allow_nil?: false
 
       filter expr(inserted_at >= ^arg(:start_date) and inserted_at <= ^arg(:end_date))
+    end
+
+    read :by_day do
+      description "按天读取活动记录（精确到 datetime 区间 [start, end)）"
+      argument :start, :utc_datetime, allow_nil?: false
+      argument :end, :utc_datetime, allow_nil?: false
+      filter expr(inserted_at >= ^arg(:start) and inserted_at < ^arg(:end))
     end
 
     read :view_count_distribution do

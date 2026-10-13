@@ -26,6 +26,15 @@ defmodule KgEduWeb.Endpoint do
     gzip: not code_reloading?,
     only: KgEduWeb.static_paths()
 
+  # MediaPipe 人脸检测资源（wasm + 模型）：本地自托管，随镜像部署，避免外网依赖。
+  # 放在 priv/static 之外，避免被 phx.digest 重命名（前端使用固定路径引用）。
+  # 构建时由 build-test.sh 从前端 dist/mediapipe 拷贝而来。
+  plug Plug.Static,
+    at: "/mediapipe",
+    from: {:kg_edu, "priv/mediapipe"},
+    gzip: false,
+    headers: [{"cache-control", "public, max-age=31536000, immutable"}]
+
   # NOTE: Tidewave dev toolbar disabled (toolbar: false) to avoid Chrome<=86
   # Tailwind v4 / color-mix incompat; MCP server (/tidewave/mcp) is still live.
   if Mix.env() == :dev do

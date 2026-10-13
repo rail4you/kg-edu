@@ -321,5 +321,7 @@ defmodule KgEdu.Knowledge do
     resource(KgEdu.Knowledge.Experiment)
     resource(KgEdu.Knowledge.ExperimentKnowledgeResource)
     resource(KgEdu.Knowledge.ExperimentAbility)
+    resource(KgEdu.Knowledge.ProctorSession)
+    resource(KgEdu.Knowledge.ProctorSnapshot)
   end
 end

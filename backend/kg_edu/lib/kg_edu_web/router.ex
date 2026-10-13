@@ -166,7 +166,12 @@ defmodule KgEduWeb.Router do
     post "/tts/synthesize", TtsController, :synthesize
     # P1: 考试监考抓拍
     get "/proctor/exams", ProctorController, :exams
+    get "/proctor/exams/:id/students", ProctorController, :students
     get "/proctor/exams/:id/snapshots", ProctorController, :snapshots
+    post "/proctor/session/start", ProctorController, :start_session
+    post "/proctor/session/frame", ProctorController, :report_frame
+    post "/proctor/session/stop", ProctorController, :stop_session
+    post "/proctor/snapshots", ProctorController, :capture
     # P2: 视频 AI 解析
     post "/video-analysis/analyze", VideoAnalysisController, :analyze
     get "/video-analysis", VideoAnalysisController, :index

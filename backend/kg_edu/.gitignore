@@ -41,3 +41,6 @@ kg_edu-*.tar
 npm-debug.log
 /assets/node_modules/
 
+
+# MediaPipe 人脸检测资源（由 build-test.sh 从前端 dist/mediapipe 拷贝）
+/priv/mediapipe/

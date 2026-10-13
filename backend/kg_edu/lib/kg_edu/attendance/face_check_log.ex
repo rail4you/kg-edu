@@ -32,11 +32,14 @@ defmodule KgEdu.Attendance.FaceCheckLog do
     define :list_face_checks_by_course, action: :by_course
   end
 
+  preparations do
+    prepare build(sort: [inserted_at: :desc])
+  end
+
   actions do
     defaults [:read, :destroy]
-
     create :create do
-      accept [:user_id, :scene, :result, :snapshot_url, :course_id, :video_id, :note]
+      accept [:user_id, :scene, :result, :snapshot_url, :course_id, :video_id, :video_title, :note]
     end
 
     read :by_user do
@@ -103,6 +106,11 @@ defmodule KgEdu.Attendance.FaceCheckLog do
     end
 
     attribute :video_id, :uuid do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :video_title, :string do
       allow_nil? true
       public? true
     end

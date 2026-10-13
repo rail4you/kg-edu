@@ -696,12 +696,14 @@ export type ExamExerciseResourceSchema = {
 // StudentExam Schema
 export type StudentExamResourceSchema = {
   __type: "Resource";
-  __primitiveFields: "id" | "examId" | "studentId" | "status" | "score" | "passed" | "startedAt" | "submittedAt";
+  __primitiveFields: "id" | "examId" | "studentId" | "status" | "score" | "totalScore" | "passingScore" | "passed" | "startedAt" | "submittedAt";
   id: UUID;
   examId: UUID;
   studentId: UUID;
   status: "in_progress" | "submitted" | "graded";
   score: number;
+  totalScore: number;
+  passingScore: number;
   passed: boolean;
   startedAt: UtcDateTime | null;
   submittedAt: UtcDateTime | null;
@@ -976,7 +978,7 @@ export type EmailMessageResourceSchema = {
 // CheckInSession Schema
 export type CheckInSessionResourceSchema = {
   __type: "Resource";
-  __primitiveFields: "id" | "title" | "description" | "token" | "status" | "startedAt" | "endedAt" | "createdById";
+  __primitiveFields: "id" | "title" | "description" | "token" | "status" | "startedAt" | "endedAt" | "createdById" | "courseId";
   id: UUID;
   title: string;
   description: string | null;
@@ -985,7 +987,9 @@ export type CheckInSessionResourceSchema = {
   startedAt: UtcDateTimeUsec;
   endedAt: UtcDateTimeUsec | null;
   createdById: UUID;
+  courseId: UUID | null;
   createdBy: { __type: "Relationship"; __resource: UserResourceSchema; };
+  course: { __type: "Relationship"; __resource: CourseResourceSchema | null; };
   checkInRecords: { __type: "Relationship"; __array: true; __resource: CheckInRecordResourceSchema; };
 };
 
@@ -1010,7 +1014,7 @@ export type CheckInRecordResourceSchema = {
 // FaceCheckLog Schema
 export type FaceCheckLogResourceSchema = {
   __type: "Resource";
-  __primitiveFields: "id" | "userId" | "scene" | "result" | "snapshotUrl" | "courseId" | "videoId" | "note";
+  __primitiveFields: "id" | "userId" | "scene" | "result" | "snapshotUrl" | "courseId" | "videoId" | "videoTitle" | "note";
   id: UUID;
   userId: UUID | null;
   scene: "entry" | "video_start" | "video_playing" | "video_resume" | "video_end" | "timed" | "random";
@@ -1018,6 +1022,7 @@ export type FaceCheckLogResourceSchema = {
   snapshotUrl: string | null;
   courseId: UUID | null;
   videoId: UUID | null;
+  videoTitle: string | null;
   note: string | null;
 };
 
@@ -4273,6 +4278,26 @@ export type StudentExamFilterInput = {
     in?: Array<number>;
   };
 
+  totalScore?: {
+    eq?: number;
+    notEq?: number;
+    greaterThan?: number;
+    greaterThanOrEqual?: number;
+    lessThan?: number;
+    lessThanOrEqual?: number;
+    in?: Array<number>;
+  };
+
+  passingScore?: {
+    eq?: number;
+    notEq?: number;
+    greaterThan?: number;
+    greaterThanOrEqual?: number;
+    lessThan?: number;
+    lessThanOrEqual?: number;
+    in?: Array<number>;
+  };
+
   passed?: {
     eq?: boolean;
     notEq?: boolean;
@@ -5299,8 +5324,16 @@ export type CheckInSessionFilterInput = {
     in?: Array<UUID>;
   };
 
+  courseId?: {
+    eq?: UUID;
+    notEq?: UUID;
+    in?: Array<UUID>;
+  };
+
 
   createdBy?: UserFilterInput;
+
+  course?: CourseFilterInput;
 
   checkInRecords?: CheckInRecordFilterInput;
 
@@ -5401,6 +5434,12 @@ export type FaceCheckLogFilterInput = {
     eq?: UUID;
     notEq?: UUID;
     in?: Array<UUID>;
+  };
+
+  videoTitle?: {
+    eq?: string;
+    notEq?: string;
+    in?: Array<string>;
   };
 
   note?: {
@@ -67588,6 +67627,163 @@ export async function validateListConversations(
 }
 
 
+export type UpdateConversationInput = {
+  title: string;
+  aiCommandId?: UUID | null;
+};
+
+export type UpdateConversationValidationErrors = {
+  title?: string[];
+  aiCommandId?: string[];
+};
+
+export const updateConversationZodschema = z.object({
+  title: z.string().min(1),
+  aiCommandId: z.uuid().optional(),
+});
+
+export type UpdateConversationFields = UnifiedFieldSelection<AIConversationResourceSchema>[];
+
+type InferUpdateConversationResult<
+  Fields extends UpdateConversationFields,
+> = InferResult<AIConversationResourceSchema, Fields>;
+
+export type UpdateConversationResult<Fields extends UpdateConversationFields> = | { success: true; data: InferUpdateConversationResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function updateConversation<Fields extends UpdateConversationFields>(
+  config: {
+  primaryKey: UUID;
+  input: UpdateConversationInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<UpdateConversationResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("update_conversation", config);
+  }
+
+  const payload = {
+    action: "update_conversation",
+    primaryKey: config.primaryKey,
+    input: config.input,
+    fields: config.fields
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("update_conversation", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as UpdateConversationResult<Fields>;
+}
+
+
+export type ValidateUpdateConversationResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateUpdateConversation(
+  config: {
+  primaryKey: string;
+  input: UpdateConversationInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateUpdateConversationResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("update_conversation", config);
+  }
+
+  const payload = {
+    action: "update_conversation",
+    primaryKey: config.primaryKey,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateUpdateConversationResult;
+}
+
+
 
 export type DeleteConversationResult = | { success: true; data: {}; }
 | {
@@ -72520,6 +72716,166 @@ export async function validateListActivityLogsByTimeRange(
 }
 
 
+export type ListActivityLogsByDayInput = {
+  start: UtcDateTime;
+  end: UtcDateTime;
+};
+
+export type ListActivityLogsByDayValidationErrors = {
+  start?: string[];
+  end?: string[];
+};
+
+export const listActivityLogsByDayZodschema = z.object({
+  start: z.iso.datetime(),
+  end: z.iso.datetime(),
+});
+
+export type ListActivityLogsByDayFields = UnifiedFieldSelection<ActivityLogResourceSchema>[];
+type InferListActivityLogsByDayResult<
+  Fields extends ListActivityLogsByDayFields,
+> = Array<InferResult<ActivityLogResourceSchema, Fields>>;
+
+export type ListActivityLogsByDayResult<Fields extends ListActivityLogsByDayFields> = | { success: true; data: InferListActivityLogsByDayResult<Fields>; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function listActivityLogsByDay<Fields extends ListActivityLogsByDayFields>(
+  config: {
+  tenant: string;
+  input: ListActivityLogsByDayInput;
+  hookCtx?: ActionHookContext;
+  fields: Fields;
+  filter?: ActivityLogFilterInput;
+  sort?: string;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ListActivityLogsByDayResult<Fields>> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("list_activity_logs_by_day", config);
+  }
+
+  const payload = {
+    action: "list_activity_logs_by_day",
+    tenant: config.tenant,
+    input: config.input,
+    fields: config.fields,
+    ...(config.filter && { filter: config.filter }),
+    ...(config.sort && { sort: config.sort })
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("list_activity_logs_by_day", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ListActivityLogsByDayResult<Fields>;
+}
+
+
+export type ValidateListActivityLogsByDayResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateListActivityLogsByDay(
+  config: {
+  tenant: string;
+  input: ListActivityLogsByDayInput;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateListActivityLogsByDayResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("list_activity_logs_by_day", config);
+  }
+
+  const payload = {
+    action: "list_activity_logs_by_day",
+    tenant: config.tenant,
+    input: config.input
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateListActivityLogsByDayResult;
+}
+
+
 export type GetViewCountDistributionFields = UnifiedFieldSelection<ActivityLogResourceSchema>[];
 type InferGetViewCountDistributionResult<
   Fields extends GetViewCountDistributionFields,
@@ -75196,18 +75552,21 @@ export async function validateMarkAsRead(
 export type CreateSessionInput = {
   title: string;
   description?: string | null;
+  courseId?: UUID | null;
   createdById: UUID;
 };
 
 export type CreateSessionValidationErrors = {
   title?: string[];
   description?: string[];
+  courseId?: string[];
   createdById?: string[];
 };
 
 export const createSessionZodschema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
+  courseId: z.uuid().optional(),
   createdById: z.uuid(),
 });
 
@@ -76929,6 +77288,7 @@ export type LogFaceCheckInput = {
   snapshotUrl?: string | null;
   courseId?: UUID | null;
   videoId?: UUID | null;
+  videoTitle?: string | null;
   note?: string | null;
 };
 
@@ -76939,6 +77299,7 @@ export type LogFaceCheckValidationErrors = {
   snapshotUrl?: string[];
   courseId?: string[];
   videoId?: string[];
+  videoTitle?: string[];
   note?: string[];
 };
 
@@ -76949,6 +77310,7 @@ export const logFaceCheckZodschema = z.object({
   snapshotUrl: z.string().optional(),
   courseId: z.uuid().optional(),
   videoId: z.uuid().optional(),
+  videoTitle: z.string().optional(),
   note: z.string().optional(),
 });
 
@@ -77580,6 +77942,141 @@ export async function validateListFaceChecksByCourse(
   }
 
   return result as ValidateListFaceChecksByCourseResult;
+}
+
+
+
+export type DestroyFaceCheckResult = | { success: true; data: {}; }
+| {
+    success: false;
+    errors: Array<{
+      type: string;
+      message: string;
+      fieldPath?: string;
+      details: Record<string, string>;
+    }>;
+  }
+;
+
+export async function destroyFaceCheck(
+  config: {
+  tenant: string;
+  primaryKey: UUID;
+  hookCtx?: ActionHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<DestroyFaceCheckResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeRequest) {
+    processedConfig = await RpcHooks.beforeRequest("destroy_face_check", config);
+  }
+
+  const payload = {
+    action: "destroy_face_check",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/run", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  if (RpcHooks.afterRequest) {
+  await RpcHooks.afterRequest("destroy_face_check", response, result, processedConfig);
+}
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as DestroyFaceCheckResult;
+}
+
+
+export type ValidateDestroyFaceCheckResult =
+  | { success: true }
+  | {
+      success: false;
+      errors: Array<{
+        type: string;
+        message: string;
+        field?: string;
+        fieldPath?: string;
+        details?: Record<string, any>;
+      }>;
+    };
+
+
+export async function validateDestroyFaceCheck(
+  config: {
+  tenant: string;
+  primaryKey: string;
+  hookCtx?: ValidationHookContext;
+  headers?: Record<string, string>;
+  fetchOptions?: RequestInit;
+  customFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+): Promise<ValidateDestroyFaceCheckResult> {
+  let processedConfig = config;
+  if (RpcHooks.beforeValidationRequest) {
+    processedConfig = await RpcHooks.beforeValidationRequest("destroy_face_check", config);
+  }
+
+  const payload = {
+    action: "destroy_face_check",
+    tenant: config.tenant,
+    primaryKey: config.primaryKey
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...processedConfig.headers,
+    ...config.headers,
+  };
+
+  const fetchFunction = config.customFetch || processedConfig.customFetch || fetch;
+  const fetchOptions: RequestInit = {
+    ...processedConfig.fetchOptions,
+    ...config.fetchOptions,
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  };
+
+  const response = await fetchFunction("/rpc/validate", fetchOptions);
+
+  const result = response.ok ? await response.json() : null;
+
+  
+
+  if (!response.ok) {
+    return {
+      success: false,
+      errors: [{ type: "network", message: response.statusText, details: {} }],
+    };
+  }
+
+  return result as ValidateDestroyFaceCheckResult;
 }
 
 

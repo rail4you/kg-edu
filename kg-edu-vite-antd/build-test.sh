@@ -25,6 +25,8 @@ pkill -f "vite" 2>/dev/null || true
 sleep 1
 
 bun install
+# 同步 MediaPipe 人脸检测资源到 public/mediapipe（wasm 来自依赖；模型首次需下载或预置）
+bash scripts/sync-mediapipe-assets.sh || echo "WARN: MediaPipe 资源同步失败，人脸检测可能不可用"
 # 去掉 @vitejs/plugin-legacy 后单次构建即可，4GB 足够（之前双构建才需 8GB）
 NODE_OPTIONS="--max-old-space-size=4096" bunx vite build
 
@@ -46,6 +48,11 @@ cd "$BACKEND_DIR"
 git clean -fdX priv/static
 mkdir -p priv/static
 cp -r "$FRONTEND_DIR/dist/"* priv/static/
+
+# MediaPipe 人脸检测资源（wasm + 模型）单独放置，避免被 phx.digest 重命名。
+# endpoint.ex 通过 Plug.Static at: "/mediapipe" 从 priv/mediapipe 提供。
+rm -rf priv/mediapipe
+cp -r "$FRONTEND_DIR/dist/mediapipe" priv/mediapipe
 
 echo "==> Running phx.digest..."
 MIX_ENV=prod mix phx.digest

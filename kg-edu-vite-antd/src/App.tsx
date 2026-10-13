@@ -31,6 +31,7 @@ import TeacherCustomForm from "./pages/teacher/custom-form";
 import TeacherAiPractice from "./pages/teacher/ai-practice";
 import TeacherSmartPortal from "./pages/teacher/smart-portal";
 import TeacherFaceCheck from "./pages/teacher/face-check";
+import TeacherActivityLogs from "./pages/teacher/activity-logs";
 import TeacherAssistantPlugins from "./pages/teacher/assistant-plugins";
 import TeacherResearchTrack from "./pages/teacher/research-track";
 import TeacherTts from "./pages/teacher/tts";
@@ -339,6 +340,7 @@ export default function App() {
         <Route path="ai-practice" element={<TeacherAiPractice />} />
         <Route path="smart-portal" element={<TeacherSmartPortal />} />
         <Route path="face-check" element={<TeacherFaceCheck />} />
+        <Route path="activity" element={<TeacherActivityLogs />} />
         <Route path="assistant-plugins" element={<TeacherAssistantPlugins />} />
         <Route path="research-track" element={<TeacherResearchTrack />} />
         <Route path="tts" element={<TeacherTts />} />

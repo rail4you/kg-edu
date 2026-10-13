@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .playwright-cli/
+
+# Local dev TLS certs (mkcert)
+.certs/
+
+# MediaPipe 人脸检测资源（离线自托管，构建时由 npm run sync:mediapipe 生成，不入库）
+public/mediapipe/

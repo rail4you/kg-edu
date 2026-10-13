@@ -4,6 +4,7 @@ import {
   TeamOutlined,
   BookOutlined,
   FileTextOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import { Button, Empty, message } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -146,8 +147,14 @@ export default function TeacherDashboard() {
                   <div
                     key={day.date}
                     className="bar"
-                    style={{ "--h": `${Math.round((day.count / weekMax) * 100)}%` } as CSSProperties}
-                    title={`${day.label}：${day.count} 次`}
+                    style={{ "--h": `${Math.round((day.count / weekMax) * 100)}%`, cursor: "pointer" } as CSSProperties}
+                    title={`${day.label}：${day.count} 次（点击查看当天记录）`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/teacher/dashboard/activity?date=${day.date}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") navigate(`/teacher/dashboard/activity?date=${day.date}`);
+                    }}
                   >
                     <span>{day.label}</span>
                   </div>
@@ -185,7 +192,13 @@ export default function TeacherDashboard() {
                   <h3>{item.title}</h3>
                   <p>{item.desc}</p>
                 </div>
-                <Button onClick={() => navigate(item.path)}>处理</Button>
+                <RightOutlined
+                  className="todo-arrow"
+                  onClick={() => navigate(item.path)}
+                  role="button"
+                  aria-label="处理"
+                  title="处理"
+                />
               </div>
             ))
           )}

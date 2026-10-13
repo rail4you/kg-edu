@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -8,6 +9,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = 8081;
+
+// 本地 HTTPS：用于摄像头 (getUserMedia) 等需要安全上下文的场景。
+// 默认关闭（HTTP，便于 Tidewave/工具接入，且 localhost 下摄像头本就可用）。
+// 需要局域网设备访问时：VITE_HTTPS=true ./dev.sh restart frontend
+const CERT_DIR = path.resolve(__dirname, ".certs");
+const certFile = path.join(CERT_DIR, "dev-cert.pem");
+const keyFile = path.join(CERT_DIR, "dev-key.pem");
+const httpsEnabled =
+  process.env.VITE_HTTPS === "true" &&
+  fs.existsSync(certFile) &&
+  fs.existsSync(keyFile);
 
 export default defineConfig({
   plugins: [
@@ -35,6 +47,9 @@ export default defineConfig({
   server: {
     port: PORT,
     host: true,
+    https: httpsEnabled
+      ? { key: fs.readFileSync(keyFile), cert: fs.readFileSync(certFile) }
+      : undefined,
     proxy: {
       "/api/copilotkit": {
         target: "http://127.0.0.1:3000",

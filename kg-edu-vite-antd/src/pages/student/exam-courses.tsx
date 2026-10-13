@@ -3,13 +3,14 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Card, Button, Typography, Spin, Tag, Alert, Space, Row, Col, Table, Select, Segmented, Popover, Grid, Tooltip } from 'antd';
-import { PlayCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, AppstoreOutlined, UnorderedListOutlined, CalendarOutlined, InfoCircleOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, AppstoreOutlined, UnorderedListOutlined, CalendarOutlined, InfoCircleOutlined, ScheduleOutlined, CameraOutlined } from '@ant-design/icons';
 import { useAuth } from '@/auth/auth-context';
 import { getAuthHeaders } from '@/lib/auth';
 import { getCurrentTenant } from '@/lib/tenant';
 import { myCourses, getExamsByCourse, listCourses, getStudentExamsByStudent } from '@/lib/ash_rpc';
 import { themeColors as colors } from "@/styles/theme";
 import { PageHead } from "@/components/proto";
+import ExamMonitorModal from "@/components/exam/ExamMonitorModal";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -58,6 +59,8 @@ export default function ExamCourses() {
 
   // 视图状态
   const [viewMode, setViewMode] = useState<'card' | 'list'>('list');
+  // 监控弹窗
+  const [monitorExam, setMonitorExam] = useState<Exam | null>(null);
   // 过滤状态
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [passFilter, setPassFilter] = useState<string>('all');
@@ -575,6 +578,14 @@ export default function ExamCourses() {
                             查看成绩
                           </Button>
                         )}
+                        <Button
+                          block
+                          icon={<CameraOutlined />}
+                          style={{ marginTop: 8 }}
+                          onClick={() => setMonitorExam(exam)}
+                        >
+                          监控
+                        </Button>
                       </div>
                     </Card>
                   </Col>
@@ -740,6 +751,16 @@ export default function ExamCourses() {
                       );
                     },
                   },
+                  {
+                    title: '监控',
+                    key: 'monitor',
+                    width: 90,
+                    render: (_: any, exam: Exam) => (
+                      <Button size="small" icon={<CameraOutlined />} onClick={() => setMonitorExam(exam)}>
+                        监控
+                      </Button>
+                    ),
+                  },
                 ]}
               />
               </div>
@@ -747,6 +768,12 @@ export default function ExamCourses() {
           )}
           </div>
         </div>
+
+        <ExamMonitorModal
+          open={!!monitorExam}
+          exam={monitorExam ? { id: monitorExam.id, title: monitorExam.title } : null}
+          onClose={() => setMonitorExam(null)}
+        />
       </div>
     );
   }
