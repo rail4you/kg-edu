@@ -284,12 +284,21 @@ export default function IdeologicalGraphChart({
       </div>
       {/* Chart */}
       <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-        {highlightedGraphData.nodes?.length > 0 ? (
-          <div
-            ref={chartRef}
-            style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, inset: 0, backgroundColor: "white", overflow: "hidden" }}
-          />
-        ) : (
+        <div
+          ref={chartRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            inset: 0,
+            backgroundColor: "white",
+            overflow: "hidden",
+            visibility: highlightedGraphData.nodes?.length > 0 ? "visible" : "hidden",
+          }}
+        />
+        {!highlightedGraphData.nodes?.length && (
           <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, inset: 0, display: "flex", justifyContent: "center", alignItems: "center" }}>
             <Empty description="暂无图谱数据，请选择课程后添加知识点和案例" />
           </div>

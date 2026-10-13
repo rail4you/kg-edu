@@ -471,14 +471,10 @@ export default function MajorCompetency() {
       )}
 
       {/* Graph or Empty State */}
-      {isLoading ? (
-        <Card style={{ textAlign: "center" }}>
-          <div style={{ padding: "60px 0" }}><Spin size="large" /></div>
-        </Card>
-      ) : hasGraph && !generateMutation.isPending ? (
+      {!generateMutation.isPending ? (
         <Card
           style={{ overflow: "hidden" }}
-          styles={{ body: { padding: 0 } }}
+          styles={{ body: { padding: 0, position: "relative" } }}
         >
           <div
             ref={chartRef}
@@ -486,21 +482,54 @@ export default function MajorCompetency() {
               width: "100%",
               height: "calc(100vh - 340px)",
               minHeight: 400,
+              visibility: hasGraph && !isLoading ? "visible" : "hidden",
             }}
           />
-        </Card>
-      ) : !generateMutation.isPending ? (
-        <Card style={{ textAlign: "center" }}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size={4}>
-                <Text type="secondary">
-                  点击上方「AI 生成图谱」按钮，基于专业信息和岗位数据自动生成能力素质图谱
-                </Text>
-              </Space>
-            }
-          />
+          {isLoading && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "white",
+              }}
+            >
+              <div style={{ padding: "60px 0" }}><Spin size="large" /></div>
+            </div>
+          )}
+          {!isLoading && !hasGraph && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "white",
+              }}
+            >
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <Space direction="vertical" size={4}>
+                    <Text type="secondary">
+                      点击上方「AI 生成图谱」按钮，基于专业信息和岗位数据自动生成能力素质图谱
+                    </Text>
+                  </Space>
+                }
+              />
+            </div>
+          )}
         </Card>
       ) : null}
 

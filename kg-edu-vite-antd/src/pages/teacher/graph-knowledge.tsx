@@ -851,11 +851,28 @@ export default function TeacherGraphKnowledgeView({
             position: "relative",
           }}
         >
-          {!effectiveCourseId ? (
+          <div
+            ref={chartRef}
+            style={{
+              width: "100%",
+              height: "100%",
+              backgroundColor: "white",
+              overflow: "hidden",
+              visibility:
+                effectiveCourseId && filteredRelationsData && filteredRelationsData.nodes?.length > 0
+                  ? "visible"
+                  : "hidden",
+            }}
+          />
+          {!effectiveCourseId && (
             <div
               style={{
-                width: "100%",
-                height: "100%",
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                inset: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -864,21 +881,16 @@ export default function TeacherGraphKnowledgeView({
             >
               <Empty description="请选择一个课程来查看知识关系图谱" />
             </div>
-          ) : filteredRelationsData && filteredRelationsData.nodes?.length > 0 ? (
-            <div
-              ref={chartRef}
-              style={{
-                width: "100%",
-                height: "100%",
-                backgroundColor: "white",
-                overflow: "hidden",
-              }}
-            />
-          ) : filteredRelationsData && filteredRelationsData.nodes?.length === 0 ? (
+          )}
+          {effectiveCourseId && filteredRelationsData && filteredRelationsData.nodes?.length === 0 && (
             <div
               style={{
-                width: "100%",
-                height: "100%",
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                inset: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -887,7 +899,7 @@ export default function TeacherGraphKnowledgeView({
             >
               <Empty description="该课程暂无知识关系数据" />
             </div>
-          ) : null}
+          )}
 
           {drawerOpen && (
             <div
