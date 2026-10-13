@@ -40,7 +40,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
@@ -63,7 +63,6 @@ export default function HomeworkManagementPage() {
     loading: coursesLoading,
     courseId: selectedCourse,
   } = useCurrentCourse();
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -619,14 +618,6 @@ export default function HomeworkManagementPage() {
       )}
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Input
             className="pu-search"

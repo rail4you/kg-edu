@@ -22,10 +22,9 @@ export default function MMChaptersPage() {
       title="章节管理"
       description="管理课程章节结构"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;章节管理</>}
+      actions={<ContextSelector showCourse />}
     >
 <style>{`@media(max-width:768px){.mm-chapters-page-wrap{padding:12px!important}.mm-chapters-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-
-      <ContextSelector showCourse />
 
       {mmId && courseId ? (
         <MMChapterManager tenant={tenant!} courseId={courseId} headers={headers} />

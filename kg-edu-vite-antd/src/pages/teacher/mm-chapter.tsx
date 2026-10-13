@@ -510,12 +510,12 @@ export default function MMChapterManager({ tenant, courseId, headers }: MMChapte
               const num = generateChapterNumber(record.path);
               return num ? <Tag color="blue" style={{ fontSize: isMobile ? 11 : 12, lineHeight: isMobile ? "18px" : undefined, padding: isMobile ? "0 5px" : undefined }}>{num}</Tag> : null;
             })()}
-            <FolderOutlined style={{ color: "#722ed1", fontSize: isMobile ? 14 : 16, flexShrink: 0 }} />
+            <FolderOutlined style={{ color: "#faad14", fontSize: isMobile ? 14 : 16, flexShrink: 0 }} />
             <Tooltip title={text} mouseEnterDelay={0.3}>
               <span style={{ fontSize: isMobile ? 13 : 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{text}</span>
             </Tooltip>
             {hasChildren && (
-              <Tag color="purple" style={{ fontSize: isMobile ? 10 : 12, lineHeight: isMobile ? "18px" : undefined, padding: isMobile ? "0 5px" : undefined }}>{children.length} 子章节</Tag>
+              <Tag color="blue" style={{ fontSize: isMobile ? 10 : 12, lineHeight: isMobile ? "18px" : undefined, padding: isMobile ? "0 5px" : undefined }}>{children.length} 子章节</Tag>
             )}
           </div>
         );

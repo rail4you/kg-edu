@@ -587,7 +587,7 @@ export default function MMExerciseManager({ tenant, courseId, headers }: MMExerc
             placement="right"
           >
             <Space style={{ cursor: "pointer" }}>
-              <FileTextOutlined style={{ color: "#722ed1" }} />
+              <FileTextOutlined style={{ color: "#2859df" }} />
               <span>{text}</span>
             </Space>
           </Popover>
@@ -603,7 +603,7 @@ export default function MMExerciseManager({ tenant, courseId, headers }: MMExerc
         const info = QUESTION_TYPE_LABELS[v];
         const colorMap: Record<string, string> = {
           multiple_choice: "blue",
-          multiple_response: "purple",
+          multiple_response: "geekblue",
           true_false: "cyan",
           fill_in_blank: "orange",
           essay: "green",
@@ -689,7 +689,7 @@ export default function MMExerciseManager({ tenant, courseId, headers }: MMExerc
                     dataSource={exercises}
                     rowKey="id"
                     loading={isLoading}
-                    pagination={false}
+                    pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 条` }}
                     size="middle"
                     locale={{ emptyText: <Empty description="暂无习题" /> }}
                   />

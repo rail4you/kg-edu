@@ -22,10 +22,9 @@ export default function MMExercisesPage() {
       title="习题管理"
       description="管理课程习题"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;习题管理</>}
+      actions={<ContextSelector showCourse />}
     >
 <style>{`@media(max-width:768px){.mm-exercises-page-wrap{padding:12px!important}.mm-exercises-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-
-      <ContextSelector showCourse />
 
       {mmId && courseId ? (
         <MMExerciseManager tenant={tenant!} courseId={courseId} headers={headers} />

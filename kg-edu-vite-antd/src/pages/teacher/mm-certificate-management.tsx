@@ -323,8 +323,8 @@ export default function MMCertificateManagement() {
       className="mm-certificate-management-wrap"
       title="证书管理"
       description="设计证书模板并管理证书"
+      actions={<ContextSelector />}
     >
-      <ContextSelector />
       <Empty description={
         <span>
           请在上方选择一个微专业<br />
@@ -368,36 +368,47 @@ export default function MMCertificateManagement() {
       description="设计证书模板，右侧实时预览效果"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;证书模板</>}
       actions={
-        canEdit ? (
-          <Space>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              loading={saveTemplateMutation.isPending}
-              onClick={() => saveTemplateMutation.mutate()}
-            >
-              保存模板
-            </Button>
-            {editTemplateId && (
-              <Popconfirm title="确定删除模板？" onConfirm={async () => {
-                await deleteCertificateTemplate({ tenant: tenant!, primaryKey: editTemplateId, headers });
-                queryClient.invalidateQueries({ queryKey: ["mm-cert-template", microMajorId] });
-                message.success("模板已删除");
-              }}>
-                <Button danger icon={<DeleteOutlined />}>删除模板</Button>
-              </Popconfirm>
-            )}
-          </Space>
-        ) : undefined
+        <>
+          {canEdit && (
+            <Space>
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                loading={saveTemplateMutation.isPending}
+                onClick={() => saveTemplateMutation.mutate()}
+              >
+                保存模板
+              </Button>
+              {editTemplateId && (
+                <Popconfirm title="确定删除模板？" onConfirm={async () => {
+                  await deleteCertificateTemplate({ tenant: tenant!, primaryKey: editTemplateId, headers });
+                  queryClient.invalidateQueries({ queryKey: ["mm-cert-template", microMajorId] });
+                  message.success("模板已删除");
+                }}>
+                  <Button danger icon={<DeleteOutlined />}>删除模板</Button>
+                </Popconfirm>
+              )}
+            </Space>
+          )}
+          <ContextSelector />
+        </>
       }
     >
-      <style>{`@media(max-width:768px){.mm-certificate-management-wrap{padding:12px!important}.mm-cert-layout{grid-template-columns:1fr!important}}`}</style>
+      <style>{`
+.mm-cert-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(320px,1fr);gap:20px;align-items:stretch;height:calc(100vh - 265px)}
+.mm-cert-layout > .ant-card{height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.mm-cert-layout > .ant-card > .ant-card-head{flex:0 0 auto}
+.mm-cert-layout > .ant-card > .ant-card-body{flex:1 1 auto;min-height:0;overflow-y:auto}
+@media(max-width:768px){
+.mm-certificate-management-wrap{padding:12px!important}
+.mm-cert-layout{grid-template-columns:1fr!important;height:auto}
+.mm-cert-layout > .ant-card > .ant-card-body{overflow-y:visible}
+}`}</style>
 
-      <ContextSelector />
       {templateLoading ? (
         <Card><Spin /></Card>
       ) : (
-        <div className="mm-cert-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.7fr) minmax(320px,1fr)", gap: 20, alignItems: "start" }}>
+        <div className="mm-cert-layout">
           <Card title="基本配置">
             <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <div>

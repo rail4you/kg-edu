@@ -69,7 +69,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 import { getCurrentTenant } from "@/lib/tenant";
 import { extractArrayData } from "@/utils/api-helpers";
 import * as XLSX from "xlsx";
@@ -185,7 +185,6 @@ export default function ChapterManagement() {
   const { canEdit } = useEditPermission();
 
   const { courses, courseId: selectedCourseId } = useCurrentCourse();
-  const [subtab, setSubtab] = useState("all");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<ChapterRow | null>(null);
   const [form] = Form.useForm();
@@ -907,14 +906,6 @@ export default function ChapterManagement() {
       )}
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <Button

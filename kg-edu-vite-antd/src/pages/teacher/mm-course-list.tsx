@@ -38,11 +38,9 @@ import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { AppPage } from "@/components/proto";
-import { themeColors } from "@/styles/theme";
 
 const { Text } = Typography;
 const { TextArea } = Input;
-const BLUE = themeColors.primary;
 
 interface MicroMajorCourse {
   id: string;
@@ -307,8 +305,8 @@ const MicroMajorCourseList = forwardRef<MicroMajorCourseListHandle, MicroMajorCo
             {record.imageUrl ? (
               <img src={record.imageUrl} alt={record.title} style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 4, flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 60, height: 40, background: BLUE, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <ReadOutlined style={{ color: "#fff" }} />
+              <div style={{ width: 60, height: 40, background: "#EEF1F5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <ReadOutlined style={{ color: "#94A3B8" }} />
               </div>
             )}
             <Tooltip title={record.title} mouseEnterDelay={0.3}>
@@ -322,7 +320,7 @@ const MicroMajorCourseList = forwardRef<MicroMajorCourseListHandle, MicroMajorCo
         dataIndex: "semester",
         key: "semester",
         responsive: ["md"],
-        render: (semester) => semester ? <Tag color={BLUE}>{semester}</Tag> : "-",
+        render: (semester) => semester ? <Tag>{semester}</Tag> : "-",
       },
       {
         title: "学分",
@@ -330,21 +328,21 @@ const MicroMajorCourseList = forwardRef<MicroMajorCourseListHandle, MicroMajorCo
         key: "credits",
         responsive: ["md"],
         width: 100,
-        render: (credits) => credits ? <Tag color={BLUE}>{credits} 学分</Tag> : "-",
+        render: (credits) => credits ? <Tag>{credits} 学分</Tag> : "-",
       },
       {
         title: "专业",
         dataIndex: "major",
         key: "major",
         responsive: ["lg"],
-        render: (major) => major ? <Tag color={BLUE}>{major}</Tag> : "-",
+        render: (major) => major ? <Tag>{major}</Tag> : "-",
       },
       {
         title: "状态",
         dataIndex: "publishStatus",
         key: "publishStatus",
         width: 90,
-        render: (status) => status ? <Tag color={BLUE}>已发布</Tag> : <Tag>草稿</Tag>,
+        render: (status) => status ? <Tag>已发布</Tag> : <Tag>草稿</Tag>,
       },
       {
         title: "操作",
@@ -387,8 +385,14 @@ const MicroMajorCourseList = forwardRef<MicroMajorCourseListHandle, MicroMajorCo
 
     const pageBody = (
       <>
-        <style>{`.mm-course-table .ant-pagination-item-active{background:${BLUE}!important;border-color:${BLUE}!important}.mm-course-table .ant-pagination-item-active a{color:#fff!important}.mm-course-table .ant-pagination-item:hover{border-color:${BLUE}}.mm-course-table .ant-pagination-item:hover a{color:${BLUE}}.mm-course-table .ant-pagination-item a{color:${BLUE}}`}</style>
         <Card className="mm-course-table">
+          {canEdit && (
+            <div style={{ marginBottom: 16 }}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                新增课程
+              </Button>
+            </div>
+          )}
           <Table
             columns={tableColumns}
             dataSource={courses}
@@ -405,7 +409,7 @@ const MicroMajorCourseList = forwardRef<MicroMajorCourseListHandle, MicroMajorCo
               showTotal: (total) => `共 ${total} 条`,
             }}
             locale={{
-              emptyText: <Empty description={canEdit ? "暂无课程，请点击右上角「新增课程」" : "暂无课程"} />,
+              emptyText: <Empty description={canEdit ? "暂无课程，点击「新增课程」添加" : "暂无课程"} />,
             }}
           />
         </Card>
@@ -426,13 +430,6 @@ const MicroMajorCourseList = forwardRef<MicroMajorCourseListHandle, MicroMajorCo
           title={`${microMajor?.name || "微专业"} — 课程管理`}
           description="管理微专业下的课程"
           breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;课程管理</>}
-          actions={
-            canEdit ? (
-              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                新增课程
-              </Button>
-            ) : undefined
-          }
         >
           {pageBody}
         </AppPage>

@@ -8,7 +8,7 @@ import { ArrowLeftOutlined, ReloadOutlined, CameraOutlined } from "@ant-design/i
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -47,7 +47,6 @@ export default function FaceCheck() {
   }, [user, tenant]);
 
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-  const [subtab, setSubtab] = useState("all");
 
   const examsQuery = useQuery({
     queryKey: ["proctor-exams", tenant],
@@ -112,14 +111,6 @@ export default function FaceCheck() {
       }
     >
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Select
             style={{ width: 320 }}

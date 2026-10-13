@@ -44,7 +44,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -91,7 +91,6 @@ export default function BookInfoPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<BookType | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
@@ -714,14 +713,6 @@ export default function BookInfoPage() {
             />
           )}
 
-          <ProtoTabs
-            items={[
-              { id: "all", label: "全部记录" },
-              { id: "recent", label: "最近更新" },
-            ]}
-            active={subtab}
-            onChange={setSubtab}
-          />
           <div className="pu-filters">
             <Select
               style={{ width: 200 }}

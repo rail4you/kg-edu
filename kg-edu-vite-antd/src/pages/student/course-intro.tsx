@@ -5,7 +5,6 @@ import {
   Button,
   Spin,
   Empty,
-  Modal,
 } from "antd";
 import {
   BookOutlined,
@@ -40,6 +39,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import FilePreview from "@/components/FilePreview";
 import { ProtoCard, ProtoTag, StatGrid } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
+import BookContentPreview from "@/components/BookContentPreview";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -396,7 +396,7 @@ export default function CourseIntroPage() {
                 gap: 8,
                 padding: level === 0 ? "10px 14px" : "7px 12px",
                 borderRadius: ds.radiusMD,
-                background: style.bg,
+                background: "transparent",
               }}
             >
               {chapterNumber && (
@@ -404,8 +404,8 @@ export default function CourseIntroPage() {
                   style={{
                     fontSize: 10,
                     fontWeight: 700,
-                    color: "#fff",
-                    background: style.accent,
+                    color: style.color,
+                    background: "transparent",
                     borderRadius: 6,
                     padding: "1px 7px",
                     lineHeight: "18px",
@@ -468,6 +468,22 @@ export default function CourseIntroPage() {
 
   return (
     <div className="pu-page">
+      <style>{`
+.book-content-html{font-size:13px;line-height:1.9;color:${ds.onSurfaceVariant}}
+.book-content-html h1{font-size:17px;font-weight:650;color:${ds.onSurface};margin:14px 0 8px}
+.book-content-html h2{font-size:15px;font-weight:650;color:${ds.onSurface};margin:12px 0 6px}
+.book-content-html h3{font-size:14px;font-weight:600;color:${ds.onSurface};margin:10px 0 6px}
+.book-content-html p{margin:0 0 10px}
+.book-content-html ul,.book-content-html ol{margin:0 0 10px;padding-left:20px}
+.book-content-html img{max-width:100%}
+.book-content-html table{border-collapse:collapse;width:100%;font-size:12px}
+.book-content-html td,.book-content-html th{border:1px solid #e3e9f1;padding:4px 8px}
+.panel-fill{display:flex;flex-direction:column;height:calc(100vh - 260px);min-height:520px}
+.panel-fill > .pu-card-title{flex:0 0 auto}
+.book-fill-card .book-list{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;height:100%}
+.book-fill-card .book-item{display:flex;flex-direction:column;min-height:0;flex:1}
+.book-fill-card .book-preview{flex:1;min-height:0;overflow-y:auto}
+      `}</style>
       {/* ═══════════════════ 课程信息 ═══════════════════ */}
       <ProtoCard className="pu-intro-card">
         <div>
@@ -1007,11 +1023,12 @@ export default function CourseIntroPage() {
       {/* ═══════════════════ 课程内容 ═══════════════════ */}
       <div className="pu-grid pu-grid--two">
         <ProtoCard
+          className="panel-fill"
           title="课程模块"
           extra={<span style={{ fontSize: 12, color: ds.muted }}>共 {chapters.length} 个章节</span>}
         >
           {chapterTree && chapterTree.length > 0 ? (
-            <div style={{ maxHeight: 660, overflowY: "auto", paddingRight: 6 }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingRight: 6 }}>
               {renderChapterCards(chapterTree)}
             </div>
           ) : (
@@ -1020,92 +1037,107 @@ export default function CourseIntroPage() {
         </ProtoCard>
 
         <ProtoCard
+          className="panel-fill book-fill-card"
           title="课程教材"
           extra={<span style={{ fontSize: 12, color: ds.muted }}>共 {booksData?.length || 0} 本</span>}
         >
           {booksData && booksData.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {booksData.map((book: any) => (
-                <div
-                  key={book.id}
-                  style={{
-                    background: "#f6f8fb",
-                    borderRadius: 10,
-                    padding: 14,
-                    display: "flex",
-                    gap: 14,
-                    transition: "background 0.2s",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = ds.primaryLight; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#f6f8fb"; }}
-                >
-                  {book.coverImage ? (
-                    <img
-                      src={book.coverImage}
-                      alt={book.title}
-                      style={{
-                        width: 64, height: 88, borderRadius: 6,
-                        objectFit: "cover", flexShrink: 0,
-                        border: `1px solid ${colors.border}`,
-                      }}
-                    />
-                  ) : (
+            <div className="book-list">
+              {booksData.map((book: any) => {
+                const fileName = book.attachment?.split("/").pop() || "";
+                const ext = fileName.split(".").pop()?.toLowerCase() || "";
+                const isPdf = ext === "pdf";
+                return (
+                  <div
+                    key={book.id}
+                    className="book-item"
+                    style={{
+                      background: "#f6f8fb",
+                      borderRadius: 10,
+                      padding: 14,
+                    }}
+                  >
+                    <div style={{ display: "flex", gap: 14 }}>
+                      {book.coverImage ? (
+                        <img
+                          src={book.coverImage}
+                          alt={book.title}
+                          style={{
+                            width: 64, height: 88, borderRadius: 6,
+                            objectFit: "cover", flexShrink: 0,
+                            border: `1px solid ${colors.border}`,
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 64, height: 88, borderRadius: 6, flexShrink: 0,
+                            background: "#e7e8e9",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}
+                        >
+                          <BookOutlined style={{ fontSize: 24, color: ds.muted }} />
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: ds.onSurface, marginBottom: 6, lineHeight: 1.4 }}>
+                          {book.title}
+                        </div>
+                        {book.author && (
+                          <Text style={{ fontSize: 12, color: ds.muted, display: "block", marginBottom: 3 }}>
+                            作者: {book.author}
+                          </Text>
+                        )}
+                        {book.publisher && (
+                          <Text style={{ fontSize: 12, color: ds.muted, display: "block" }}>
+                            出版社: {book.publisher}
+                          </Text>
+                        )}
+                        {book.attachment && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<PaperClipOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const typeMap: Record<string, string> = {
+                                pdf: "application/pdf",
+                                doc: "application/msword",
+                                docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                ppt: "application/vnd.ms-powerpoint",
+                                pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                              };
+                              setPreviewFile({
+                                url: book.attachment,
+                                name: fileName || "附件",
+                                type: typeMap[ext] || "application/octet-stream",
+                                isPdf,
+                              });
+                            }}
+                            style={{ padding: 0, marginTop: 8, fontSize: 12 }}
+                          >
+                            在新窗口预览
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
                     <div
+                      className="book-preview"
                       style={{
-                        width: 64, height: 88, borderRadius: 6, flexShrink: 0,
-                        background: "#e7e8e9",
-                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginTop: 12,
+                        background: "#fff", border: "1px solid #e3e9f1", borderRadius: 8, padding: "14px 16px",
                       }}
                     >
-                      <BookOutlined style={{ fontSize: 24, color: ds.muted }} />
+                      {book.attachment ? (
+                        <BookContentPreview url={book.attachment} name={fileName} />
+                      ) : (
+                        <div style={{ fontSize: 12, color: ds.muted }}>暂无附件内容。</div>
+                      )}
                     </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: ds.onSurface, marginBottom: 6, lineHeight: 1.4 }}>
-                      {book.title}
-                    </div>
-                    {book.author && (
-                      <Text style={{ fontSize: 12, color: ds.muted, display: "block", marginBottom: 3 }}>
-                        作者: {book.author}
-                      </Text>
-                    )}
-                    {book.publisher && (
-                      <Text style={{ fontSize: 12, color: ds.muted, display: "block" }}>
-                        出版社: {book.publisher}
-                      </Text>
-                    )}
-                    {book.attachment && (
-                      <Button
-                        type="link"
-                        size="small"
-                        icon={<PaperClipOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const fileName = book.attachment.split("/").pop() || "附件";
-                          const ext = fileName.split(".").pop()?.toLowerCase() || "";
-                          const isPdf = ext === "pdf";
-                          const typeMap: Record<string, string> = {
-                            pdf: "application/pdf",
-                            doc: "application/msword",
-                            docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            ppt: "application/vnd.ms-powerpoint",
-                            pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                          };
-                          setPreviewFile({
-                            url: book.attachment,
-                            name: fileName,
-                            type: typeMap[ext] || "application/octet-stream",
-                            isPdf,
-                          });
-                        }}
-                        style={{ padding: 0, marginTop: 8, fontSize: 12 }}
-                      >
-                        预览附件
-                      </Button>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <Empty description="暂无教材信息" />
@@ -1113,32 +1145,12 @@ export default function CourseIntroPage() {
         </ProtoCard>
       </div>
 
-      {/* File Preview Modal */}
-      {previewFile && (
-        <Modal
-          title={previewFile.name}
-          open={!!previewFile}
-          onCancel={() => setPreviewFile(null)}
-          footer={null}
-          width={previewFile.isPdf ? "90vw" : 800}
-          style={{ top: 20 }}
-          styles={{ body: { height: "80vh", padding: 0 } }}
-        >
-          {previewFile.isPdf ? (
-            <iframe
-              src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
-              style={{ width: "100%", height: "100%", border: "none" }}
-              title="PDF 预览"
-            />
-          ) : (
-            <FilePreview
-              open={!!previewFile}
-              onClose={() => setPreviewFile(null)}
-              file={previewFile}
-            />
-          )}
-        </Modal>
-      )}
+      {/* File Preview Modal —— 直接使用 FilePreview（其自带弹窗），避免嵌套多余窗口 */}
+      <FilePreview
+        open={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        file={previewFile || { url: "", name: "", type: "" }}
+      />
     </div>
   );
 }

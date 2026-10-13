@@ -38,7 +38,7 @@ import type { DiscussionResourceSchema } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import { useCourses } from "@/hooks/use-courses";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -49,7 +49,6 @@ export default function CourseEvaluationPage() {
   const { user, loading: authLoading } = useAuth();
   const currentTenant = getCurrentTenant();
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedDiscussion, setSelectedDiscussion] =
@@ -278,14 +277,6 @@ export default function CourseEvaluationPage() {
       />
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Select
             value={selectedCourseId || undefined}

@@ -30,7 +30,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useTranslate } from "@/locales/use-locales";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -52,7 +52,6 @@ export default function CourseCategoryPage() {
   const { t } = useTranslate("teacher");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -298,14 +297,6 @@ export default function CourseCategoryPage() {
       <style>{`@media(max-width:768px){.cat-mobile-hide{display:none!important}.cat-action-text{display:none!important}}`}</style>
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Input
             className="pu-search"

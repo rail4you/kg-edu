@@ -22,9 +22,9 @@ export default function MMChapterContentPage() {
       title="章节内容关联"
       description="关联章节与课程内容"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;章节内容关联</>}
+      actions={<ContextSelector showCourse coursesWithChaptersOnly />}
     >
 <style>{`@media(max-width:768px){.mm-chapter-content-page-wrap{padding:12px!important}.mm-chapter-content-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <ContextSelector showCourse coursesWithChaptersOnly />
 
       {mmId && courseId ? (
         <MMChapterContentManager tenant={tenant!} courseId={courseId} headers={headers} />

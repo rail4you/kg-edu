@@ -41,7 +41,7 @@ import { useCurrentCourse } from "@/hooks/use-current-course";
 import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import ActionDropdown from "@/components/ActionDropdown";
 import { useEditPermission } from "@/hooks/use-edit-permission";
-import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -71,7 +71,6 @@ export default function ExperimentManagement() {
   const { canEdit } = useEditPermission();
   const [searchText, setSearchText] = useState("");
   const { courses, courseId: selectedCourseId } = useCurrentCourse();
-  const [subtab, setSubtab] = useState("all");
 
   // 获取选中课程的实验列表
   const { data: experimentsResult, isLoading } = useQuery({
@@ -366,14 +365,6 @@ export default function ExperimentManagement() {
       )}
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Input
             className="pu-search"

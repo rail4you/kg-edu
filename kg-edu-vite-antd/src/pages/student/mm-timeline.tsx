@@ -27,7 +27,7 @@ import { PageHead, ProtoCard } from "@/components/proto";
 const { Text } = Typography;
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {
-  mm_video_view: <VideoCameraOutlined style={{ color: "#722ed1" }} />,
+  mm_video_view: <VideoCameraOutlined style={{ color: "#2859df" }} />,
   mm_exercise_submit: <FileTextOutlined style={{ color: "#52c41a" }} />,
   mm_resource_download: <FileOutlined style={{ color: "#2859df" }} />,
 };
@@ -39,7 +39,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  mm_video_view: "#722ed1",
+  mm_video_view: "#2859df",
   mm_exercise_submit: "#52c41a",
   mm_resource_download: "#2859df",
 };

@@ -22,9 +22,9 @@ export default function MMHomeworksPage() {
       title="作业管理"
       description="管理微专业课程作业"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;作业管理</>}
+      actions={<ContextSelector showCourse />}
     >
 <style>{`@media(max-width:768px){.mm-homeworks-page-wrap{padding:12px!important}.mm-homeworks-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <ContextSelector showCourse />
 
       {mmId && courseId ? (
         <MMHomeworkManager tenant={tenant!} courseId={courseId} headers={headers} user={user} />

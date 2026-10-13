@@ -36,7 +36,7 @@ import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useTranslate } from "@/locales/use-locales";
 import type { ColumnsType } from "antd/es/table";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -67,7 +67,6 @@ export default function TeacherAssignCoursePage() {
   const { canEdit } = useEditPermission();
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [selectedTeacher, setSelectedTeacher] = useState<string>("");
@@ -289,14 +288,6 @@ export default function TeacherAssignCoursePage() {
       <style>{`@media(max-width:768px){.asgn-mobile-hide{display:none!important}}`}</style>
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Input
             className="pu-search"

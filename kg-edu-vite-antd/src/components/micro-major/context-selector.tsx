@@ -162,7 +162,7 @@ export default function ContextSelector({ showCourse = false, coursesWithChapter
   );
 
   return (
-    <div className="pu-filters">
+    <div className="pu-filters pu-filters--flush">
       <SwitchButton
         title="切换微专业"
         buttonLabel="切换微专业"

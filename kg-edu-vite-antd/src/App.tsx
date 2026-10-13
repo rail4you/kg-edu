@@ -120,7 +120,7 @@ import MMCertificateManagement from "./pages/teacher/mm-certificate-management";
 import StudentGroupTask from "./pages/student/group-task";
 
 
-import StudentFront from "./pages/student/front";
+import CourseDetail from "./pages/student/course-detail";
 import StudentOverview from "./pages/student/overview";
 import StudentExperimentCourses from "./pages/student/experiment-courses";
 import StudentExperimentDetail from "./pages/student/experiment-detail";
@@ -283,6 +283,7 @@ export default function App() {
         <Route path=":microMajorId/students" element={<RedirectToStudentMgmt />} />
         <Route path="certificate-management/:microMajorId" element={<MMCertificateManagement />} />
         <Route path="certificates" element={<MMCertificateManagement />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="/student/mm-course" element={<StudentMMCoursePage />} />
       <Route path="/student/mm-timeline" element={<StudentMMTimeline />} />
@@ -423,7 +424,7 @@ export default function App() {
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
-      <Route path="/dashboard/front" element={<StudentFront />} />
+      <Route path="/dashboard/front" element={<CourseDetail />} />
       {/* Student check-in page - publicly accessible without auth */}
       {/* URL format: /student/check-in/:tenantSchema/:token */}
       <Route path="/student/check-in/:tenantSchema/:token" element={<StudentCheckIn />} />

@@ -22,10 +22,9 @@ export default function MMVideosPage() {
       title="视频管理"
       description="管理课程视频资源"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;视频管理</>}
+      actions={<ContextSelector showCourse />}
     >
 <style>{`@media(max-width:768px){.mm-videos-page-wrap{padding:12px!important}.mm-videos-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-
-      <ContextSelector showCourse />
 
       {mmId && courseId ? (
         <MMVideoManager tenant={tenant!} courseId={courseId} headers={headers} />

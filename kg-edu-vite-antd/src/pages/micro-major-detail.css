@@ -214,10 +214,10 @@
 }
 
 /* Course table */
-.mm-course-table {
+.mm-detail-top .mm-course-table {
   margin: -30px;
 }
-.mm-course-table .ant-table-thead > tr > th {
+.mm-detail-top .mm-course-table .ant-table-thead > tr > th {
   background: #f5f8fc !important;
   color: #42546e;
   font-size: 13px;
@@ -225,11 +225,11 @@
   padding: 16px 22px;
   border-bottom: 1px solid #e3e9f1 !important;
 }
-.mm-course-table .ant-table-tbody > tr > td {
+.mm-detail-top .mm-course-table .ant-table-tbody > tr > td {
   padding: 18px 22px;
   border-bottom: 1px solid #eef2f6 !important;
 }
-.mm-course-table .ant-table-tbody > tr:hover > td {
+.mm-detail-top .mm-course-table .ant-table-tbody > tr:hover > td {
   background: #f8fbff !important;
 }
 .mm-course-info {
@@ -411,7 +411,7 @@
   .mm-detail-card--feature .ant-card-body {
     padding: 20px;
   }
-  .mm-course-table {
+  .mm-detail-top .mm-course-table {
     margin: -20px;
   }
   .mm-teacher-list {

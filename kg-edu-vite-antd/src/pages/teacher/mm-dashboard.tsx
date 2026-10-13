@@ -405,7 +405,7 @@ export default function MicroMajorDashboard() {
           dataSource={microMajors}
           rowKey="id"
           loading={isLoading}
-          pagination={false}
+          pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 条` }}
           size="middle"
           scroll={{ x: 900 }}
         />

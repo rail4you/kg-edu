@@ -408,7 +408,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
   // ---- Render ----
 
   const videoColumns: TableColumnsType<VideoItem> = [
-    { title: "视频标题", dataIndex: "title", key: "title", render: (v: string) => <Tooltip title={v || "-"} mouseEnterDelay={0.3}><span style={{ fontSize: isMobile ? 13 : 14, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v || "-"}</span></Tooltip> },
+    { title: "视频标题", dataIndex: "title", key: "title", render: (v: string) => <Tooltip title={v || "-"} mouseEnterDelay={0.3}><span style={{ fontSize: isMobile ? 14 : 15, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v || "-"}</span></Tooltip> },
     {
       title: "操作", key: "actions", width: isMobile ? 50 : 80,
       render: (_: any, record: VideoItem) => (
@@ -421,7 +421,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
   ];
 
   const exerciseColumns: TableColumnsType<ExerciseItem> = [
-    { title: "习题标题", dataIndex: "title", key: "title", render: (v: string) => <Tooltip title={v || "-"} mouseEnterDelay={0.3}><span style={{ fontSize: isMobile ? 13 : 14, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v || "-"}</span></Tooltip> },
+    { title: "习题标题", dataIndex: "title", key: "title", render: (v: string) => <Tooltip title={v || "-"} mouseEnterDelay={0.3}><span style={{ fontSize: isMobile ? 14 : 15, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v || "-"}</span></Tooltip> },
     {
       title: "操作", key: "actions", width: isMobile ? 50 : 80,
       render: (_: any, record: ExerciseItem) => (
@@ -434,7 +434,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
   ];
 
   const homeworkColumns: TableColumnsType<HomeworkItem> = [
-    { title: "作业标题", dataIndex: "title", key: "title", render: (v: string) => <Tooltip title={v || "-"} mouseEnterDelay={0.3}><span style={{ fontSize: isMobile ? 13 : 14, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v || "-"}</span></Tooltip> },
+    { title: "作业标题", dataIndex: "title", key: "title", render: (v: string) => <Tooltip title={v || "-"} mouseEnterDelay={0.3}><span style={{ fontSize: isMobile ? 14 : 15, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v || "-"}</span></Tooltip> },
     {
       title: "分数", dataIndex: "score", key: "score", width: 60, responsive: ["md"],
       render: (v: string | null) => v ? `${v}分` : "-",
@@ -455,7 +455,6 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
       {/* Left panel: chapter tree */}
       <Card
         title="章节列表"
-        size="small"
         style={{ width: isMobile ? "100%" : 300, flexShrink: 0, height: isMobile ? undefined : "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
         styles={{ body: { padding: 0, flex: 1, overflow: "auto" } }}
       >
@@ -481,7 +480,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
               onMouseEnter={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "#f9f9f9"; }}
               onMouseLeave={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "transparent"; }}
             >
-              <Text style={{ fontSize: 13, flex: 1 }} ellipsis>
+              <Text style={{ fontSize: 15, flex: 1 }} ellipsis>
                 {generateChapterNumber(ch.path) ? `${generateChapterNumber(ch.path)} ` : ""}{ch.title}
               </Text>
             </div>
@@ -492,7 +491,6 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
       {/* Right panel: content */}
       <Card
         title={selectedChapter ? `章节内容: ${selectedChapter.title}` : "请选择一个章节"}
-        size={isMobile ? "small" : "small"}
         style={{ flex: 1, height: isMobile ? undefined : "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
         styles={{ body: { padding: isMobile ? 8 : 12, flex: 1, overflow: "auto" } }}
       >
@@ -512,7 +510,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
                 ),
                 children: (
                   <div>
-                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "flex-end" }}>
+                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "flex-start" }}>
                       <Button size={isMobile ? "small" : "small"} type="primary" icon={<LinkOutlined />}
                         onClick={() => { setSelectedVideoIds([]); setLinkVideoOpen(true); }}
                         style={canEdit ? undefined : { display: "none" }}>
@@ -524,7 +522,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
                       dataSource={chapterVideos}
                       rowKey="id"
                       loading={videosLoading}
-                      size="small"
+                      size="middle"
                       pagination={false}
                       locale={{ emptyText: <Empty description="暂未关联视频" /> }}
                     />
@@ -541,7 +539,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
                 ),
                 children: (
                   <div>
-                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "flex-end" }}>
+                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "flex-start" }}>
                       <Button size={isMobile ? "small" : "small"} type="primary" icon={<LinkOutlined />}
                         onClick={() => { setSelectedExerciseIds([]); setLinkExerciseOpen(true); }}
                         style={canEdit ? undefined : { display: "none" }}>
@@ -553,7 +551,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
                       dataSource={chapterExercises}
                       rowKey="id"
                       loading={exercisesLoading}
-                      size="small"
+                      size="middle"
                       pagination={false}
                       locale={{ emptyText: <Empty description="暂未关联习题" /> }}
                     />
@@ -570,7 +568,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
                 ),
                 children: (
                   <div>
-                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "flex-end" }}>
+                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "flex-start" }}>
                       <Button size={isMobile ? "small" : "small"} type="primary" icon={<LinkOutlined />}
                         onClick={() => { setSelectedHomeworkIds([]); setLinkHomeworkOpen(true); }}
                         style={canEdit ? undefined : { display: "none" }}>
@@ -582,7 +580,7 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
                       dataSource={chapterHomeworks}
                       rowKey="id"
                       loading={homeworksLoading}
-                      size="small"
+                      size="middle"
                       pagination={false}
                       locale={{ emptyText: <Empty description="暂未关联作业" /> }}
                     />

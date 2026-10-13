@@ -42,7 +42,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 import { getHeaders, extractArrayData } from "@/utils/api-helpers";
 import { useCurrentCourse } from "@/hooks/use-current-course";
 import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
@@ -258,7 +258,6 @@ export default function ExercisePage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [importing, setImporting] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [subtab, setSubtab] = useState("all");
   const [analyzingExerciseId, setAnalyzingExerciseId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -888,14 +887,6 @@ export default function ExercisePage() {
       <style>{`@media(max-width:768px){.pu-page .ant-table-cell{padding:6px 4px!important}}`}</style>
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Input
             className="pu-search"

@@ -76,9 +76,9 @@ const FILE_TYPE_COLORS: Record<string, string> = {
   ppt: "orange",
   pptx: "orange",
   txt: "default",
-  mp4: "purple",
-  avi: "purple",
-  mov: "purple",
+  mp4: "geekblue",
+  avi: "geekblue",
+  mov: "geekblue",
   zip: "cyan",
   rar: "cyan",
   image: "gold",
@@ -432,7 +432,7 @@ export default function MMResourceManager({ tenant, courseId, headers }: MMResou
               dataSource={resources}
               rowKey="id"
               loading={isLoading}
-              pagination={false}
+              pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 条` }}
               size="middle"
               locale={{ emptyText: <Empty description="暂无资源" /> }}
             />

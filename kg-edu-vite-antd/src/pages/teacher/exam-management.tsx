@@ -42,7 +42,7 @@ import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch"
 import dayjs from "dayjs";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -79,7 +79,6 @@ export default function ExamManagementPage() {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [searchText, setSearchText] = useState("");
   const { courses, courseId: selectedCourseId } = useCurrentCourse();
-  const [subtab, setSubtab] = useState("all");
   const [examDateRange, setExamDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
   const [deadlineFilter, setDeadlineFilter] = useState<"before" | "after" | undefined>();
   const [formData, setFormData] = useState<{
@@ -507,14 +506,6 @@ export default function ExamManagementPage() {
       <style>{`@media(max-width:768px){.exam-management-wrap{padding:12px!important}.exam-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Input
             className="pu-search"

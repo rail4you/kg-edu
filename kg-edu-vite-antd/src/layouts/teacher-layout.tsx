@@ -447,7 +447,7 @@ export default function TeacherLayout() {
                 minWidth: 0,
               }}
             >
-              {branding.app_title} · 教师端
+              智慧课程
             </span>
           </div>
 

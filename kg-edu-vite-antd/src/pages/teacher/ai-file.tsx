@@ -45,7 +45,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { useCourses } from "@/hooks/use-courses";
 import FilePreview from "@/components/FilePreview";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -130,7 +130,6 @@ export default function AIFilePage() {
   const [fileToDelete, setFileToDelete] = useState<FileData | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [subtab, setSubtab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -273,14 +272,6 @@ export default function AIFilePage() {
       breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;AI文件</>}
     >
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
 
         <div className="pu-filters">
           <Select

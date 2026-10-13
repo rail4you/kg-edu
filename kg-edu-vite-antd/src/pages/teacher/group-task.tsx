@@ -17,7 +17,7 @@ import { useCurrentCourse } from "@/hooks/use-current-course";
 import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -99,7 +99,6 @@ export default function GroupTaskPage() {
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
   const { courseId: selectedCourseId } = useCurrentCourse();
-  const [subtab, setSubtab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -361,14 +360,6 @@ export default function GroupTaskPage() {
     >
 <style>{`@media(max-width:768px){.group-task-wrap{padding:12px!important}.group-task-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <Button

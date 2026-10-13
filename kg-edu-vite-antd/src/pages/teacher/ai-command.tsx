@@ -45,7 +45,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 import TemplateSelector from "@/components/ai-command-templates/TemplateSelector";
 import type { AITemplate } from "@/config/aiCommandTemplates";
 
@@ -103,7 +103,6 @@ export default function AiCommand() {
   const [commandToDelete, setCommandToDelete] = useState<string | null>(null);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
 
   const {
@@ -283,14 +282,6 @@ export default function AiCommand() {
       }
     >
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
 
         <div className="pu-filters">
           <Input

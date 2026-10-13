@@ -914,9 +914,9 @@ export default function MicroMajorStudentManagement() {
       title="微专业学生管理"
       description="管理报名、结业与证书"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;微专业学生管理</>}
+      actions={<ContextSelector />}
     >
 <style>{`@media(max-width:768px){.mm-student-management-wrap{padding:12px!important}.mm-student-management-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <ContextSelector />
 
       {!mmId ? (
         <Card><Empty description="请在上方选择一个微专业" /></Card>
@@ -930,14 +930,6 @@ export default function MicroMajorStudentManagement() {
                   {microMajor?.name || "微专业"} - 学生管理
                 </Title>
               </Space>
-              <div style={{ marginTop: 4 }}>
-                <Text type="secondary">
-                  学习中 {activeEnrollments.length} 名，
-                  <Text style={{ color: "#52c41a" }}>已结业 {completedEnrollments.length} 名</Text>，
-                  <Text style={{ color: "#faad14" }}>待审核 {pendingEnrollments.length} 名</Text>，
-                  <Text type="secondary">已拒绝 {rejectedEnrollments.length} 名</Text>
-                </Text>
-              </div>
             </Col>
           </Row>
 

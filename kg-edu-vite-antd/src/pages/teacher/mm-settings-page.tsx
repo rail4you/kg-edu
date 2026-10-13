@@ -16,16 +16,18 @@ export default function MMSettingsPage() {
       title="基本设置"
       description="配置微专业基础信息"
       actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
+        <>
+          <ContextSelector />
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/micro-major/dashboard")}
+          />
+        </>
       }
     >
 <style>{`@media(max-width:768px){.mm-settings-page-wrap{padding:12px!important}.mm-settings-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <ContextSelector />
 
       {mmId ? (
         <MicroMajorSettingsInner mmId={mmId} />

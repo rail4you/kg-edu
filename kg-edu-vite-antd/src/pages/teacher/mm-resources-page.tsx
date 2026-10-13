@@ -22,10 +22,9 @@ export default function MMResourcesPage() {
       title="资源管理"
       description="管理课程资源"
       breadcrumb={<>微专业&nbsp;&nbsp;/&nbsp;&nbsp;资源管理</>}
+      actions={<ContextSelector showCourse />}
     >
 <style>{`@media(max-width:768px){.mm-resources-page-wrap{padding:12px!important}.mm-resources-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-
-      <ContextSelector showCourse />
 
       {mmId && courseId ? (
         <MMResourceManager tenant={tenant!} courseId={courseId} headers={headers} />

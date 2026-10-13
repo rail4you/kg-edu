@@ -51,7 +51,7 @@ import { ReadonlyActionButton } from "@/components/readonly-action-button";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders } from "@/utils/api-helpers";
 import { useTranslate } from "@/locales/use-locales";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -89,7 +89,6 @@ export default function CourseManagementPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [subtab, setSubtab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
   const [currentPage, setCurrentPage] = useState(1);
@@ -499,14 +498,6 @@ export default function CourseManagementPage() {
       }
     >
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
 
         <div className="pu-filters">
           <Input

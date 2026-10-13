@@ -39,7 +39,7 @@ import { extractArrayData } from "@/utils/api-helpers";
 import { useNavigate } from "react-router-dom";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -69,7 +69,6 @@ export default function StudentEnrollmentPage() {
   const queryClient = useQueryClient();
   const { canEdit } = useEditPermission();
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [subtab, setSubtab] = useState("all");
   const [listSearch, setListSearch] = useState("");
   const [addStudentModalVisible, setAddStudentModalVisible] = useState<boolean>(false);
   const [searchText, setSearchText] = useState("");
@@ -382,14 +381,6 @@ export default function StudentEnrollmentPage() {
       `}</style>
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Select
             style={{ width: 240 }}

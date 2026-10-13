@@ -31,6 +31,7 @@
 .pu-app {
   width: 100%;
   color: var(--pu-ink);
+  font-size: 15px;
 }
 
 .pu-page {
@@ -182,24 +183,24 @@
 }
 
 .pu-card-title h2 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 650;
   color: var(--pu-ink);
 }
 
 .pu-card-title h3 {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 650;
   color: var(--pu-ink);
 }
 
 .pu-card h2 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 650;
 }
 
 .pu-card h3 {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 650;
 }
 
@@ -486,7 +487,7 @@
   white-space: nowrap;
   padding: 12px 2px;
   color: var(--pu-muted);
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   transition: color 0.16s;
   border-bottom: 3px solid transparent;
@@ -519,13 +520,13 @@
 }
 
 .pu-item h3 {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--pu-ink);
 }
 
 .pu-item p {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--pu-muted);
   margin-top: 4px;
   line-height: 1.7;
@@ -807,13 +808,26 @@
   border-radius: 8px !important;
 }
 
-:is(.pu-page, .pu-page-fill, .pu-app) .ant-pagination-item-active {
-  background: var(--pu-blue);
+:is(.pu-page, .pu-page-fill, .pu-app) .ant-pagination-item a {
+  color: #374151;
+}
+
+:is(.pu-page, .pu-page-fill, .pu-app) .ant-pagination-item:hover {
   border-color: var(--pu-blue);
 }
 
+:is(.pu-page, .pu-page-fill, .pu-app) .ant-pagination-item:hover a {
+  color: var(--pu-blue);
+}
+
+:is(.pu-page, .pu-page-fill, .pu-app) .ant-pagination-item-active {
+  border-color: var(--pu-blue);
+  background: var(--pu-blue-soft);
+}
+
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-pagination-item-active a {
-  color: #fff !important;
+  color: var(--pu-blue) !important;
+  font-weight: 600;
 }
 
 :is(.pu-page, .pu-page-fill, .pu-app) .ant-tabs-top > .ant-tabs-nav::before {

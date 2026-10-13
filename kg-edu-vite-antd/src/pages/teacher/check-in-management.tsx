@@ -42,7 +42,7 @@ import { useEditPermission } from "@/hooks/use-edit-permission";
 import { useCurrentCourse } from "@/hooks/use-current-course";
 import { CurrentCourseSwitch } from "@/components/teacher/current-course-switch";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid, ProtoCard, ProtoTabs, ProtoEmpty } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoEmpty } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -116,7 +116,6 @@ export default function CheckInManagement() {
   const { canEdit } = useEditPermission();
   const { courses, courseId: currentCourseId } = useCurrentCourse();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [subtab, setSubtab] = useState("all");
   const [recordsDialogOpen, setRecordsDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<CheckInSession | null>(
@@ -459,14 +458,6 @@ export default function CheckInManagement() {
       />
 
       <ProtoCard>
-        <ProtoTabs
-          items={[
-            { id: "all", label: "全部记录" },
-            { id: "recent", label: "最近更新" },
-          ]}
-          active={subtab}
-          onChange={setSubtab}
-        />
         <div className="pu-filters">
           <Button
             type="primary"

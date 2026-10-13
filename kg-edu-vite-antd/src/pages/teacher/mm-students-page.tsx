@@ -18,16 +18,18 @@ export default function MMStudentsPage() {
       title="学生管理"
       description="查看微专业学生与进度"
       actions={
-        <Button
-          className="teacher-page-back-btn"
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/micro-major/dashboard")}
-        />
+        <>
+          <ContextSelector />
+          <Button
+            className="teacher-page-back-btn"
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/micro-major/dashboard")}
+          />
+        </>
       }
     >
 <style>{`@media(max-width:768px){.mm-students-page-wrap{padding:12px!important}.mm-students-page-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
-      <ContextSelector />
 
       {mmId ? (
         <MicroMajorStudentsInner mmId={mmId} />

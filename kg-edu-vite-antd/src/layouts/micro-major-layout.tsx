@@ -1,12 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button, Grid } from "antd";
-import { ProLayout } from "@ant-design/pro-components";
+import { Button, Grid, Input, Modal } from "antd";
 import {
   ApartmentOutlined,
   BookOutlined,
   TeamOutlined,
-  ArrowLeftOutlined,
   VideoCameraOutlined,
   FileTextOutlined,
   FileOutlined,
@@ -16,110 +14,195 @@ import {
   FilePdfOutlined,
   MenuOutlined,
   UserOutlined,
+  SearchOutlined,
+  DownOutlined,
+  RightOutlined,
+  EnterOutlined,
 } from "@ant-design/icons";
-import { UserMenu } from "@/components/layout/user-menu";
 import { MobileFullMenu } from "@/components/layout/mobile-full-menu";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
-import { useAuth } from "@/auth/auth-context";
+import { UserManualModal } from "@/components/layout/user-manual-modal";
+import GlobalFooter from "@/components/layout/global-footer";
 import { themeColors as colors } from "@/styles/theme";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useBranding } from "@/hooks/use-branding";
-import type { MenuDataItem } from "@ant-design/pro-components";
+import { getCurrentTenant } from "@/lib/tenant";
 
-// ✅ Static menu — all items always have fixed routes, no dynamic path computation
-// Each page handles its own context via URL search params internally
-const MENU_ITEMS: MenuDataItem[] = [
-  {
-    key: "mm-group", name: "微专业管理", icon: <DashboardOutlined />,
-    children: [
-      { key: "dashboard", path: "/micro-major/dashboard", name: "微专业管理" },
-      { key: "student-management", path: "/micro-major/student-management", name: "微专业学生管理", icon: <TeamOutlined /> },
-      { key: "certificates", path: "/micro-major/certificates", name: "证书模板", icon: <FilePdfOutlined /> },
-    ],
-  },
-  {
-    key: "course-group", name: "课程管理", icon: <ReadOutlined />,
-    children: [
-      { key: "courses", path: "/micro-major/courses", name: "课程管理" },
-      { key: "chapters", path: "/micro-major/chapters", name: "章节管理" },
-      { key: "chapter-content", path: "/micro-major/chapter-content", name: "章节内容关联" },
-    ],
-  },
-  {
-    key: "resource-group", name: "课程资源管理", icon: <FileOutlined />,
-    children: [
-      { key: "videos", path: "/micro-major/videos", name: "视频管理" },
-      { key: "exercises", path: "/micro-major/exercises", name: "习题管理" },
-      { key: "resources", path: "/micro-major/resources", name: "资源管理" },
-      { key: "homework", path: "/micro-major/homework", name: "作业管理" },
-    ],
-  },
-  {
-    key: "analytics-group", name: "分析统计", icon: <ApartmentOutlined />,
-    children: [
-      { key: "analytics", path: "/micro-major/analytics", name: "微专业学习分析" },
-    ],
-  },
-  { key: "home", path: "/teacher/module-home", name: "返回首页", icon: <ArrowLeftOutlined /> },
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+  group: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { path: "/micro-major/dashboard", label: "微专业管理", icon: <DashboardOutlined />, group: "微专业管理" },
+  { path: "/micro-major/student-management", label: "微专业学生管理", icon: <TeamOutlined />, group: "微专业管理" },
+  { path: "/micro-major/certificates", label: "证书模板", icon: <FilePdfOutlined />, group: "微专业管理" },
+
+  { path: "/micro-major/courses", label: "课程管理", icon: <ReadOutlined />, group: "课程管理" },
+  { path: "/micro-major/chapters", label: "章节管理", icon: <BookOutlined />, group: "课程管理" },
+  { path: "/micro-major/chapter-content", label: "章节内容关联", icon: <FileTextOutlined />, group: "课程管理" },
+
+  { path: "/micro-major/videos", label: "视频管理", icon: <VideoCameraOutlined />, group: "课程资源管理" },
+  { path: "/micro-major/exercises", label: "习题管理", icon: <EditOutlined />, group: "课程资源管理" },
+  { path: "/micro-major/resources", label: "资源管理", icon: <FileOutlined />, group: "课程资源管理" },
+  { path: "/micro-major/homework", label: "作业管理", icon: <FileOutlined />, group: "课程资源管理" },
+
+  { path: "/micro-major/analytics", label: "微专业学习分析", icon: <ApartmentOutlined />, group: "分析统计" },
+];
+
+const GROUP_ORDER = ["微专业管理", "课程管理", "课程资源管理", "分析统计"];
+
+const MOBILE_MENU_ITEMS = [
+  ...NAV_ITEMS.map((it) => ({ key: it.path, label: it.label })),
 ];
 
 export default function MicroMajorLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const branding = useBranding();
   usePageTitle();
   const bp = Grid.useBreakpoint();
   const isMobile = !bp.md;
+  const currentTenant = getCurrentTenant();
 
-  const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const ALL_KEYS = ["mm-group", "course-group", "resource-group", "analytics-group"];
-  const [openKeys, setOpenKeys] = useState<string[]>(ALL_KEYS);
+  const [navSearch, setNavSearch] = useState("");
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  const [commandVisible, setCommandVisible] = useState(false);
+  const [commandSearch, setCommandSearch] = useState("");
+  const [commandIndex, setCommandIndex] = useState(0);
 
-  // 保持所有菜单始终展开
-  const handleOpenChange = (keys: string[]) => {
-    // 如果某个菜单被关闭了，重新打开它（保持全部展开）
-    const allOpen = ALL_KEYS.every(k => keys.includes(k));
-    if (!allOpen) {
-      setOpenKeys(ALL_KEYS);
-    } else {
-      setOpenKeys(keys);
-    }
+  const navGroups = useMemo(() => {
+    return GROUP_ORDER.map((label) => ({
+      label,
+      items: NAV_ITEMS.filter((it) => it.group === label),
+    })).filter((g) => g.items.length > 0);
+  }, []);
+
+  const toggleGroup = useCallback((label: string) => {
+    setCollapsedGroups((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+    );
+  }, []);
+
+  const visibleGroups = useMemo(() => {
+    const kw = navSearch.trim().toLowerCase();
+    if (!kw) return navGroups;
+    return navGroups
+      .map((g) => ({ ...g, items: g.items.filter((it) => it.label.toLowerCase().includes(kw)) }))
+      .filter((g) => g.items.length > 0);
+  }, [navGroups, navSearch]);
+
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const commandItems = useMemo(() => {
+    const kw = commandSearch.trim().toLowerCase();
+    return kw ? NAV_ITEMS.filter((it) => it.label.toLowerCase().includes(kw)) : NAV_ITEMS;
+  }, [commandSearch]);
+
+  useEffect(() => {
+    setCommandIndex(0);
+  }, [commandSearch]);
+
+  const handleCommandSelect = useCallback(
+    (path: string) => {
+      navigate(path);
+      setCommandVisible(false);
+      setCommandSearch("");
+      setCommandIndex(0);
+    },
+    [navigate]
+  );
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCommandVisible((v) => !v);
+        setCommandSearch("");
+        setCommandIndex(0);
+      }
+      if (e.key === "Escape" && commandVisible) {
+        setCommandVisible(false);
+        setCommandSearch("");
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [commandVisible]);
+
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    setMobileMenuOpen(false);
   };
 
-  // Fix sider position
-  useEffect(() => {
-    const styleId = "mm-layout-sider-fix";
-    let style = document.getElementById(styleId) as HTMLStyleElement;
-    if (!style) {
-      style = document.createElement("style");
-      style.id = styleId;
-      document.head.appendChild(style);
-    }
-    style.textContent = `
-      .ant-pro-layout .ant-layout-sider {
-        top: ${isMobile ? 64 : 76}px !important;
-        height: calc(100vh - ${isMobile ? 64 : 76}px) !important;
-      }
-      .ant-pro-layout .ant-layout-sider .ant-layout-sider-children {
-        height: calc(100vh - ${isMobile ? 64 : 76}px) !important;
-      }
-    `;
-    return () => {
-      style.remove();
-    };
-  }, [isMobile]);
+  const renderNav = () => (
+    <aside className="pu-aside">
+      <div className="pu-scope">
+        <small>当前机构</small>
+        <b title={currentTenant?.name || "未选择机构"}>
+          {currentTenant?.name || "未选择机构"}
+        </b>
+      </div>
+
+      <Input
+        className="pu-nav-search"
+        prefix={<SearchOutlined style={{ color: "#9aa7ba" }} />}
+        placeholder="查找功能页面"
+        value={navSearch}
+        onChange={(e) => setNavSearch(e.target.value)}
+        allowClear
+      />
+
+      {visibleGroups.map((group) => {
+        const collapsed = !navSearch.trim() && collapsedGroups.includes(group.label);
+        return (
+          <div key={group.label}>
+            <button
+              type="button"
+              className="pu-nav-group pu-nav-group__toggle"
+              onClick={() => toggleGroup(group.label)}
+              aria-expanded={!collapsed}
+            >
+              <span>{group.label}</span>
+              {collapsed ? <RightOutlined /> : <DownOutlined />}
+            </button>
+            {!collapsed && group.items.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                className={`pu-nav-link${isActive(item.path) ? " active" : ""}`}
+                onClick={() => handleNavClick(item.path)}
+              >
+                <span className="pu-nav-icon">{item.icon}</span>
+                <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        );
+      })}
+
+      {visibleGroups.length === 0 && (
+        <div style={{ padding: "16px 12px", color: colors.textSecondary, fontSize: 13 }}>
+          没有匹配的功能页面
+        </div>
+      )}
+    </aside>
+  );
 
   return (
-    <div className="mm-layout" style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div className="mm-layout" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--pu-bg, #f5f7fb)" }}>
       <style>{`
 @media(max-width:768px){
-.mm-layout .mm-topbar{padding:0 12px!important;height:64px!important}
+.mm-layout .mm-topbar{padding:0 12px!important;min-height:64px!important}
 .mm-layout .mm-brand-text{display:none!important}
 .mm-layout .mm-topbar-title{font-size:14px!important}
 .mm-layout .mm-logo{height:36px!important}
-.mm-layout .teacher-page-back-btn{display:none!important}
 }
 @media(min-width:769px){
 .mm-layout .mm-mobile-menu-btn{display:none!important}
@@ -129,7 +212,9 @@ export default function MicroMajorLayout() {
       <div
         className="mm-topbar"
         style={{
-          height: isMobile ? 64 : 76,
+          position: "sticky",
+          top: 0,
+          minHeight: isMobile ? 64 : 76,
           flexShrink: 0,
           background: "#FFFFFF",
           display: "grid",
@@ -137,9 +222,8 @@ export default function MicroMajorLayout() {
           alignItems: "center",
           padding: isMobile ? "0 12px" : "0 40px",
           zIndex: 1000,
-          position: "relative",
           boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          columnGap: 8,
+          columnGap: isMobile ? 8 : 16,
         }}
       >
         <div
@@ -153,13 +237,6 @@ export default function MicroMajorLayout() {
           }}
           onClick={() => navigate("/teacher/module-home")}
         >
-          <Button
-            className="teacher-page-back-btn"
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={(e) => { e.stopPropagation(); navigate("/teacher/module-home"); }}
-            style={{ color: "#722ed1", padding: "4px 8px", fontSize: isMobile ? 14 : 16, flexShrink: 0 }}
-          />
           {!isMobile && (
             <img
               src={branding.logo_dark}
@@ -186,12 +263,48 @@ export default function MicroMajorLayout() {
           <ModuleSwitcher active="micro-major" />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 12, justifySelf: "end" }}>
+          <div
+            onClick={() => {
+              setCommandVisible(true);
+              setCommandSearch("");
+              setCommandIndex(0);
+            }}
+            style={{
+              display: isMobile ? "none" : "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "6px 12px",
+              borderRadius: 8,
+              background: "#F3F4F6",
+              border: "1px solid transparent",
+              cursor: "pointer",
+              height: 36,
+            }}
+          >
+            <SearchOutlined style={{ color: colors.textSecondary, fontSize: 15 }} />
+            <span style={{ color: colors.textSecondary, fontSize: 14, fontWeight: 500 }}>搜索</span>
+            <kbd
+              style={{
+                background: "#FFFFFF",
+                padding: "1px 5px",
+                borderRadius: 4,
+                border: "1px solid #E1E3E4",
+                fontSize: 11,
+                fontFamily: "monospace",
+                color: colors.textSecondary,
+              }}
+            >
+              ⌘K
+            </kbd>
+          </div>
+          {!isMobile && <UserManualModal role="teacher" />}
           <Button
-              type="text"
-              icon={<UserOutlined style={{ fontSize: 16, color: colors.textPrimary }} />}
-              onClick={() => navigate("/teacher/profile")}
-              aria-label="账户"
-            />
+            type="text"
+            icon={<UserOutlined style={{ fontSize: 16, color: colors.textPrimary }} />}
+            onClick={() => navigate("/micro-major/profile")}
+            aria-label="账户"
+          />
           {isMobile && (
             <Button
               type="text"
@@ -207,71 +320,96 @@ export default function MicroMajorLayout() {
       <MobileFullMenu
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        items={[
-          { key: "/teacher/module-home", label: "返回首页" },
-          { key: "/micro-major/dashboard", label: "微专业管理" },
-          { key: "/micro-major/student-management", label: "微专业学生管理" },
-          { key: "/micro-major/certificates", label: "证书模板" },
-          { key: "/micro-major/courses", label: "课程管理" },
-          { key: "/micro-major/chapters", label: "章节管理" },
-          { key: "/micro-major/chapter-content", label: "章节内容关联" },
-          { key: "/micro-major/videos", label: "视频管理" },
-          { key: "/micro-major/exercises", label: "习题管理" },
-          { key: "/micro-major/resources", label: "资源管理" },
-          { key: "/micro-major/homework", label: "作业管理" },
-          { key: "/micro-major/analytics", label: "学习分析" },
-        ]}
+        items={MOBILE_MENU_ITEMS}
         activeKey={location.pathname}
         sectionTitle="微专业管理"
       />
 
       {/* Main content with sidebar */}
-      <div style={{ flex: 1, overflow: "auto" }}>
-        <ProLayout
-          title={false}
-          logo={false}
-          layout="side"
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          openKeys={openKeys}
-          onOpenChange={handleOpenChange}
-          location={{ pathname: location.pathname }}
-          route={{ path: "/", routes: MENU_ITEMS }}
-          menuItemRender={(item, dom) => (
-            <div
-              onClick={() => {
-                if (item.path) navigate(item.path);
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              {dom}
+      <div className="pu-shell pu-shell--teacher">
+        {!isMobile && renderNav()}
+
+        <main className="pu-workspace">
+          <div
+            data-scroll-container
+            style={{ flex: 1, minHeight: "calc(100vh - 76px)", display: "flex", flexDirection: "column" }}
+          >
+            <div className="pu-app" style={{ flex: 1 }}>
+              <Outlet />
             </div>
-          )}
-          headerRender={false}
-          menuHeaderRender={() => (
-            <div style={{ padding: "12px 16px", textAlign: "center" }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#722ed1" }}>
-                <ApartmentOutlined style={{ marginRight: 6 }} />
-                微专业导航
-              </div>
-            </div>
-          )}
-          token={{
-            sider: {
-              colorMenuBackground: "#fff",
-              colorTextMenu: "#333",
-              colorTextMenuActive: "#722ed1",
-              colorTextMenuSelected: "#722ed1",
-            },
-          }}
-          fixSiderbar
-          style={{ height: "100%" }}
-          contentStyle={{ padding: 0, height: "100%", overflow: "auto" }}
-          footerRender={false}
-        >
-          <Outlet />
-        </ProLayout>
+          </div>
+          <GlobalFooter />
+        </main>
       </div>
+
+      {/* Command Palette */}
+      <Modal
+        open={commandVisible}
+        onCancel={() => {
+          setCommandVisible(false);
+          setCommandSearch("");
+        }}
+        footer={null}
+        centered
+        closable={false}
+        width={520}
+        styles={{ body: { padding: 0 } }}
+        style={{ top: 80 }}
+      >
+        <Input
+          autoFocus
+          prefix={<SearchOutlined style={{ color: colors.primary, fontSize: 16 }} />}
+          placeholder="搜索导航页面..."
+          value={commandSearch}
+          onChange={(e) => setCommandSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setCommandIndex((prev) => Math.min(prev + 1, commandItems.length - 1));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setCommandIndex((prev) => Math.max(prev - 1, 0));
+            } else if (e.key === "Enter" && commandItems.length > 0) {
+              handleCommandSelect(commandItems[commandIndex].path);
+            }
+          }}
+          style={{ height: 52, fontSize: 15, border: "none", borderBottom: "1px solid #f0f0f0" }}
+          bordered={false}
+        />
+        <div style={{ maxHeight: 380, overflow: "auto" }}>
+          {commandItems.length === 0 ? (
+            <div style={{ padding: 32, color: "#999", textAlign: "center" }}>没有匹配的页面</div>
+          ) : (
+            commandItems.map((item, idx) => {
+              const isSelected = idx === commandIndex;
+              return (
+                <div
+                  key={item.path}
+                  onClick={() => handleCommandSelect(item.path)}
+                  onMouseEnter={() => setCommandIndex(idx)}
+                  style={{
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: isSelected ? `${colors.primary}08` : "transparent",
+                    borderLeft: isSelected ? `3px solid ${colors.primary}` : "3px solid transparent",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 16, color: colors.primary }}>{item.icon}</span>
+                  <span style={{ fontWeight: 500, color: isSelected ? colors.primary : "#333", flex: 1 }}>
+                    {item.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#9aa7ba" }}>{item.group}</span>
+                  {isSelected && <EnterOutlined style={{ fontSize: 14, color: colors.primary }} />}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -35,6 +35,7 @@ import {
   StatGrid,
 } from "@/components/proto";
 import FilePreview from "@/components/FilePreview";
+import BookContentPreview from "@/components/BookContentPreview";
 
 const { Text, Paragraph } = Typography;
 
@@ -547,35 +548,50 @@ export default function CourseOverview({ params }: CourseOverviewProps) {
           <div>
             <h2>课程教材</h2>
             {book ? (
-              <ListItem
-                title={book.title}
-                description={[book.publish, "课程教材"].filter(Boolean).join(" · ")}
-                extra={
-                  <Space size={4}>
-                    {book.attachment && (
-                      <Button
-                        type="link"
-                        size="small"
-                        onClick={() => {
-                          const filename = book.attachment.split("/").pop() || "attachment";
-                          setPreviewFile({ url: book.attachment, name: filename, type: filename.split(".").pop() || "" });
-                        }}
-                      >
-                        预览
-                      </Button>
-                    )}
-                    {book.attachment && (
-                      <Button
-                        type="link"
-                        size="small"
-                        onClick={() => handleDownloadAttachment(book.attachment, book.title)}
-                      >
-                        下载
-                      </Button>
-                    )}
-                  </Space>
-                }
-              />
+              <>
+                <ListItem
+                  title={book.title}
+                  description={[book.publish, "课程教材"].filter(Boolean).join(" · ")}
+                  extra={
+                    <Space size={4}>
+                      {book.attachment && (
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => {
+                            const filename = book.attachment.split("/").pop() || "attachment";
+                            setPreviewFile({ url: book.attachment, name: filename, type: filename.split(".").pop() || "" });
+                          }}
+                        >
+                          预览
+                        </Button>
+                      )}
+                      {book.attachment && (
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => handleDownloadAttachment(book.attachment, book.title)}
+                        >
+                          下载
+                        </Button>
+                      )}
+                    </Space>
+                  }
+                />
+                {book.attachment && (
+                  <div
+                    style={{
+                      marginTop: 15, maxHeight: 420, overflowY: "auto",
+                      background: "#fff", border: "1px solid #e3e9f1", borderRadius: 8, padding: "14px 16px",
+                    }}
+                  >
+                    <BookContentPreview
+                      url={book.attachment}
+                      name={book.attachment.split("/").pop() || "教材"}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <Empty description="本课程暂未指定教材" style={{ marginTop: 16 }} />
             )}
