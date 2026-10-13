@@ -29,7 +29,7 @@ import {
   SearchOutlined,
   FileTextOutlined
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders } from "@/utils/api-helpers";
@@ -70,7 +70,19 @@ export default function ExperimentManagement() {
   const navigate = useNavigate();
   const { canEdit } = useEditPermission();
   const [searchText, setSearchText] = useState("");
-  const { courses, courseId: selectedCourseId } = useCurrentCourse();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const courseIdParam = searchParams.get("courseId");
+  const { courses, courseId: selectedCourseId, setCourseId } = useCurrentCourse();
+
+  useEffect(() => {
+    if (!courseIdParam || courses.length === 0) return;
+    if (courses.some((c) => c.id === courseIdParam)) {
+      setCourseId(courseIdParam);
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("courseId");
+    setSearchParams(next, { replace: true });
+  }, [courseIdParam, courses, searchParams, setSearchParams, setCourseId]);
 
   // 获取选中课程的实验列表
   const { data: experimentsResult, isLoading } = useQuery({
@@ -378,7 +390,13 @@ export default function ExperimentManagement() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate("/teacher/dashboard/experiment-form/new")}
+            onClick={() =>
+              navigate(
+                `/teacher/dashboard/experiment-form/new${
+                  selectedCourseId ? `?courseId=${selectedCourseId}` : ""
+                }`,
+              )
+            }
             style={{ marginLeft: "auto", ...(canEdit ? {} : { display: "none" }) }}
           >
             创建实验

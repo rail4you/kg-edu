@@ -28,7 +28,7 @@ import {
   SearchOutlined,
   BookOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { getAuthHeaders } from "@/lib/auth";
 import { uploadFileViaServer } from "@/lib/oss-upload";
@@ -48,6 +48,7 @@ import {
   buildCSRFHeaders,
 } from "@/lib/ash_rpc";
 import { useCourses } from "@/hooks/use-courses";
+import { AppPage } from "@/components/proto";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -323,6 +324,8 @@ export default function ExperimentForm() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const courseIdParam = searchParams.get("courseId");
 
   const isEditMode = id !== "new" && id !== undefined;
   const experimentId = isEditMode ? id : null;
@@ -333,6 +336,13 @@ export default function ExperimentForm() {
   >([]);
   const [selectedAbilities, setSelectedAbilities] = useState<Ability[]>([]);
   const [uploadProgress, setUploadProgress] = useState(false);
+
+  useEffect(() => {
+    if (isEditMode || !courseIdParam) return;
+    setFormData((prev) =>
+      prev.courseId ? prev : { ...prev, courseId: courseIdParam },
+    );
+  }, [isEditMode, courseIdParam]);
 
   const { courses: coursesResult, loading: coursesLoading } = useCourses({
     fields: ["id", "title"],
@@ -882,6 +892,12 @@ export default function ExperimentForm() {
     <AppPage
       title={isEditMode ? "编辑实验" : "创建实验"}
       description="填写实验基本信息、详情与关联内容"
+      breadcrumb={
+        <>
+          智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;实验管理&nbsp;&nbsp;/&nbsp;&nbsp;
+          {isEditMode ? "编辑实验" : "创建实验"}
+        </>
+      }
       actions={
         <Button
           icon={<ArrowLeftOutlined />}
@@ -891,7 +907,7 @@ export default function ExperimentForm() {
         </Button>
       }
     >
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+        <div style={{ width: "100%" }}>
           <Card style={{ padding: 24 }}>
             <Title level={5} style={{ marginBottom: 16, fontWeight: 600 }}>
               基本信息
