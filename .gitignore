@@ -28,6 +28,8 @@ backend/kg_edu/priv/static/mediapipe/
 deploy-logs/
 /kg-edu-vite-antd/tmp/
 /.pi/
+/compact-opencode-db.sh
+"\346\230\223\350\257\276\347\250\213-\345\256\213\346\225\264\344\272\244\344\272\222\345\216\237\345\236\213.html"
 # 保留源文件 backend/kg_edu/priv/static/files/template.xlsx
 backend/kg_edu/priv/static/assets/
 backend/kg_edu/priv/static/fonts/
