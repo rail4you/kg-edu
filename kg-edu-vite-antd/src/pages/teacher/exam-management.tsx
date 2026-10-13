@@ -398,98 +398,109 @@ export default function ExamManagementPage() {
     const deadlineValidation = validateDeadline();
 
     return (
-      <Form layout="vertical">
-        <Form.Item 
-          label="考试名称" 
-          required
-          extra="请输入3个字符以上的考试名称"
-          validateStatus={formData.title && formData.title.trim().length < 3 ? "error" : ""}
-          help={formData.title && formData.title.trim().length < 3 ? "考试名称至少需要3个字符" : undefined}
-          rules={[
-            { required: true, message: "请输入考试名称" },
-            { min: 3, message: "考试名称至少需要3个字符" }
-          ]}
-        >
-          <Input
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="请输入考试名称（至少3个字符）"
-          />
-        </Form.Item>
-        <Form.Item label="关联课程">
-          <Select
-            value={formData.courseId || undefined}
-            onChange={(v) => setFormData({ ...formData, courseId: v })}
-            options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
-            placeholder="选择课程"
-            allowClear
-          />
-        </Form.Item>
-        <Form.Item label="考试类型" required>
-          <Select
-            value={formData.examType}
-            onChange={(v) => setFormData({ ...formData, examType: v })}
-            options={Object.entries(examTypeMap).map(([k, v]) => ({
-              value: k,
-              label: v.label,
-            }))}
-          />
-        </Form.Item>
-        <Form.Item label="考试时间">
-          <DatePicker
-            showTime={{ format: "HH:mm" }}
-            format="YYYY-MM-DD HH:mm"
-            value={formData.examDate ? dayjs(formData.examDate, "YYYY-MM-DD HH:mm") : null}
-            onChange={(date) =>
-              setFormData({ ...formData, examDate: date ? date.format("YYYY-MM-DDTHH:mm") : "" })
-            }
-            style={{ width: "100%" }}
-            placeholder="选择考试时间"
-          />
-        </Form.Item>
-        <Form.Item label="考试时长(分钟)">
-          <InputNumber
-            min={1}
-            value={formData.durationMinutes}
-            onChange={(v) =>
-              setFormData({ ...formData, durationMinutes: v || 60 })
-            }
-          />
-        </Form.Item>
-        <Form.Item
-          label="截止时间"
-          validateStatus={!deadlineValidation.valid ? "error" : ""}
-          help={!deadlineValidation.valid ? deadlineValidation.message : "截止时间必须晚于考试结束时间（考试时间+考试时长）"}
-        >
-          <DatePicker
-            showTime={{ format: "HH:mm" }}
-            format="YYYY-MM-DD HH:mm"
-            value={formData.deadlineAt ? dayjs(formData.deadlineAt, "YYYY-MM-DD HH:mm") : null}
-            onChange={(date) =>
-              setFormData({ ...formData, deadlineAt: date ? date.format("YYYY-MM-DDTHH:mm") : "" })
-            }
-            style={{ width: "100%" }}
-            placeholder="选择截止时间"
-          />
-        </Form.Item>
-        <Form.Item label="及格分数">
-          <InputNumber
-            min={0}
-            max={100}
-            value={formData.passingScore}
-            onChange={(v) => setFormData({ ...formData, passingScore: v || 60 })}
-          />
-        </Form.Item>
-        <Form.Item label="描述">
-          <TextArea
-            rows={2}
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            placeholder="考试描述"
-          />
-        </Form.Item>
+      <Form layout="vertical" size="large" className="exam-form">
+        <style>{`
+          .exam-form .ant-form-item-label > label { font-size: 15px; font-weight: 500; }
+          .exam-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+          .exam-form-grid .full { grid-column: 1 / -1; }
+          @media (max-width: 560px) { .exam-form-grid { grid-template-columns: 1fr; } }
+        `}</style>
+        <div className="exam-form-grid">
+          <Form.Item
+            className="full"
+            label="考试名称"
+            required
+            extra="请输入3个字符以上的考试名称"
+            validateStatus={formData.title && formData.title.trim().length < 3 ? "error" : ""}
+            help={formData.title && formData.title.trim().length < 3 ? "考试名称至少需要3个字符" : undefined}
+            rules={[
+              { required: true, message: "请输入考试名称" },
+              { min: 3, message: "考试名称至少需要3个字符" }
+            ]}
+          >
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="请输入考试名称（至少3个字符）"
+            />
+          </Form.Item>
+          <Form.Item label="关联课程">
+            <Select
+              value={formData.courseId || undefined}
+              onChange={(v) => setFormData({ ...formData, courseId: v })}
+              options={(Array.isArray(courses) ? courses : []).map((c: any) => ({ value: c.id, label: c.title }))}
+              placeholder="选择课程"
+              allowClear
+            />
+          </Form.Item>
+          <Form.Item label="考试类型" required>
+            <Select
+              value={formData.examType}
+              onChange={(v) => setFormData({ ...formData, examType: v })}
+              options={Object.entries(examTypeMap).map(([k, v]) => ({
+                value: k,
+                label: v.label,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label="考试时间">
+            <DatePicker
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
+              value={formData.examDate ? dayjs(formData.examDate, "YYYY-MM-DD HH:mm") : null}
+              onChange={(date) =>
+                setFormData({ ...formData, examDate: date ? date.format("YYYY-MM-DDTHH:mm") : "" })
+              }
+              style={{ width: "100%" }}
+              placeholder="选择考试时间"
+            />
+          </Form.Item>
+          <Form.Item label="考试时长(分钟)">
+            <InputNumber
+              min={1}
+              value={formData.durationMinutes}
+              onChange={(v) =>
+                setFormData({ ...formData, durationMinutes: v || 60 })
+              }
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item
+            label="截止时间"
+            validateStatus={!deadlineValidation.valid ? "error" : ""}
+            help={!deadlineValidation.valid ? deadlineValidation.message : "截止时间必须晚于考试结束时间（考试时间+考试时长）"}
+          >
+            <DatePicker
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
+              value={formData.deadlineAt ? dayjs(formData.deadlineAt, "YYYY-MM-DD HH:mm") : null}
+              onChange={(date) =>
+                setFormData({ ...formData, deadlineAt: date ? date.format("YYYY-MM-DDTHH:mm") : "" })
+              }
+              style={{ width: "100%" }}
+              placeholder="选择截止时间"
+            />
+          </Form.Item>
+          <Form.Item label="及格分数">
+            <InputNumber
+              min={0}
+              max={100}
+              value={formData.passingScore}
+              onChange={(v) => setFormData({ ...formData, passingScore: v || 60 })}
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item className="full" label="描述">
+            <TextArea
+              rows={3}
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="考试描述"
+            />
+          </Form.Item>
+        </div>
       </Form>
     );
   };

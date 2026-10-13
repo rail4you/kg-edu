@@ -30,7 +30,6 @@ import {
   FilterOutlined,
   ReloadOutlined,
   WarningOutlined,
-  CheckCircleOutlined,
   CloseCircleOutlined,
   StarFilled,
   DeleteOutlined,
@@ -44,7 +43,7 @@ import {
   updateExamExercise,
   getExam,
 } from "@/lib/ash_rpc";
-import { previewExam, generateAiExercise } from "@/lib/agent_api";
+import { previewExam } from "@/lib/agent_api";
 import type { PreviewSection, PreviewExercise } from "@/lib/agent_api";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -52,7 +51,7 @@ import { useAuth } from "@/auth/auth-context";
 import { useCourses } from "@/hooks/use-courses";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage, StatGrid, ProtoCard, ProtoTabs } from "@/components/proto";
 
 const { Title, Text } = Typography;
 
@@ -117,13 +116,19 @@ const questionTypeOptions = [
 
 const translateQuestionType = (type: string) => {
   const typeMap: Record<string, string> = {
-    essay: "问答题",
-    multiple_choice: "选择题",
-    text: "文本题",
+    multiple_choice: "单选题",
+    multiple_response: "多选题",
+    multi_choice: "多选题",
     true_false: "判断题",
     fill_in_blank: "填空题",
+    fill_blank: "填空题",
+    essay: "问答题",
+    short_answer: "简答题",
+    term_definition: "名词解释",
+    case_study: "案例题",
+    text: "文本题",
   };
-  return typeMap[type] || type;
+  return typeMap[type] || questionTypeNames[type] || type;
 };
 
 export default function ExamExercises() {
@@ -164,9 +169,6 @@ export default function ExamExercises() {
   >([]);
   const [loadingExerciseStats, setLoadingExerciseStats] = useState(false);
   const [composeConfig, setComposeConfig] = useState<ComposeConfigItem[]>([]);
-  // P1: 组卷大纲文本 + 单题 AI 重出 loading
-  const [outlineText, setOutlineText] = useState("");
-  const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
 
   const tenant = currentTenant?.schemaName || "";
 
@@ -650,112 +652,6 @@ export default function ExamExercises() {
     setAutoComposeOpen(true);
   };
 
-  // P1: 解析组卷大纲文本 → 填充智能组卷配置
-  // 支持行格式如：单选题 5题 每题2分 难度1,2 ／ 多选 3 2
-  const handleParseOutline = () => {
-    const typeKeywords: Array<{ keys: string[]; type: string }> = [
-      { keys: ["单选"], type: "multiple_choice" },
-      { keys: ["多选"], type: "multiple_response" },
-      { keys: ["判断"], type: "true_false" },
-      { keys: ["填空"], type: "fill_in_blank" },
-      { keys: ["问答", "简答", "论述"], type: "essay" },
-      { keys: ["名词解释"], type: "term_definition" },
-      { keys: ["案例"], type: "case_study" },
-    ];
-    const lines = outlineText.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (lines.length === 0) {
-      message.warning("请先粘贴组卷大纲");
-      return;
-    }
-    let matched = 0;
-    const next = composeConfig.map((c) => ({ ...c, enabled: false, count: 0 }));
-    for (const line of lines) {
-      const hit = typeKeywords.find(({ keys }) => keys.some((k) => line.includes(k)));
-      if (!hit) continue;
-      const idx = next.findIndex((c) => c.questionType === hit.type);
-      if (idx < 0) continue;
-      const countMatch = line.match(/(\d+)\s*题/);
-      const nums = (line.match(/\d+/g) || []).map(Number);
-      const count = countMatch ? Number(countMatch[1]) : nums[0] || 0;
-      const pointsMatch = line.match(/每题\s*(\d+)\s*分/) || line.match(/(\d+)\s*分\s*\/\s*题/);
-      const points = pointsMatch ? Number(pointsMatch[1]) : nums[1] || next[idx].pointsPerQuestion || 2;
-      const diffMatch = line.match(/难度\s*([1-5,\s、-]+)/);
-      let difficulties = next[idx].difficulties;
-      if (diffMatch) {
-        const parts = diffMatch[1].split(/[,\s、]+/).map(Number).filter((n) => n >= 1 && n <= 5);
-        if (parts.length > 0) difficulties = [...new Set(parts)];
-      }
-      next[idx] = {
-        ...next[idx],
-        enabled: true,
-        count: Math.min(next[idx].maxCount || count, count),
-        pointsPerQuestion: points,
-        difficulties,
-      };
-      matched += 1;
-    }
-    if (matched === 0) {
-      message.warning("未能从大纲中识别题型，请检查格式（如：单选题 5题 每题2分 难度1,2）");
-      return;
-    }
-    setComposeConfig(next);
-    message.success(`已按大纲填充 ${matched} 类题型配置`);
-  };
-
-  // P1: 预览中对单题 AI 重新出题（同题型/难度新生成一题并替换该行）
-  const handleRegenerateOne = async (section: PreviewSection, exercise: PreviewExercise) => {
-    const courseId = (examData as any)?.data?.courseId;
-    if (!courseId) {
-      message.warning("无法确定课程，暂不能重新出题");
-      return;
-    }
-    const config = composeConfig.find((c) => c.questionType === section.questionType);
-    setRegeneratingIds((prev) => new Set(prev).add(exercise.id));
-    try {
-      const result = await generateAiExercise({
-        tenant,
-        input: {
-          courseId,
-          knowledgeName: (examData as any)?.data?.title || "",
-          exerciseType: section.questionType,
-          number: 1,
-          difficulty: config?.difficulties?.[0] || 3,
-        },
-        headers: getHeaders(user),
-      });
-      const created = (result as any)?.data?.data;
-      const fresh = Array.isArray(created) ? created[0] : null;
-      if (result.success && fresh?.id) {
-        setPreviewSections((prev) =>
-          prev.map((s) =>
-            s.questionType === section.questionType
-              ? {
-                  ...s,
-                  actualCount: s.actualCount,
-                  exercises: s.exercises.map((ex) =>
-                    ex.id === exercise.id
-                      ? { ...ex, id: fresh.id, title: fresh.title || ex.title }
-                      : ex,
-                  ),
-                }
-              : s,
-          ),
-        );
-        message.success("已重新出一题并替换");
-      } else {
-        message.error((result as any)?.message || "重新出题失败");
-      }
-    } catch (e) {
-      message.error("重新出题失败，请稍后重试");
-    } finally {
-      setRegeneratingIds((prev) => {
-        const nextSet = new Set(prev);
-        nextSet.delete(exercise.id);
-        return nextSet;
-      });
-    }
-  };
-
   const handleRemoveFromPreview = (exerciseId: string) => {
     setRemovedExerciseIds(prev => new Set(prev).add(exerciseId));
   };
@@ -809,25 +705,30 @@ export default function ExamExercises() {
 
   const examExerciseColumns: ColumnsType<ExamExercise> = [
     {
-      title: "顺序",
-      dataIndex: "order",
-      key: "order",
-      width: 80,
+      title: "序号",
+      key: "index",
+      width: 64,
+      align: "center",
+      render: (_: any, __: any, index: number) => index + 1,
     },
     {
       title: "习题标题",
       key: "title",
       width: 300,
       render: (_, record) => (
-        <div>
-          <Tooltip title={record.exercise?.title || "未知标题"} mouseEnterDelay={0.3}>
-            <Text strong style={{ display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", verticalAlign: "bottom" }}>{record.exercise?.title || "未知标题"}</Text>
-          </Tooltip>
-          <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {translateQuestionType(record.exercise?.questionType || "")}
-          </Text>
-        </div>
+        <Tooltip title={record.exercise?.title || "未知标题"} mouseEnterDelay={0.3}>
+          <Text strong style={{ display: "inline-block", maxWidth: "100%", fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", verticalAlign: "bottom" }}>{record.exercise?.title || "未知标题"}</Text>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "题型",
+      key: "questionType",
+      width: 110,
+      render: (_, record) => (
+        <Text style={{ fontSize: 15 }}>
+          {translateQuestionType(record.exercise?.questionType || "")}
+        </Text>
       ),
     },
     {
@@ -836,7 +737,7 @@ export default function ExamExercises() {
       key: "points",
       width: 100,
       render: (points: number) => (
-        <Text strong style={{ color: "#1890ff" }}>
+        <Text strong style={{ fontSize: 15 }}>
           {points} 分
         </Text>
       ),
@@ -850,9 +751,7 @@ export default function ExamExercises() {
           title="确定要移除这道习题吗？"
           onConfirm={() => removeMutation.mutate(record.exerciseId)}
         >
-          <ReadonlyActionButton type="text" danger icon={<MinusOutlined />} size="small">
-            移除
-          </ReadonlyActionButton>
+          <ReadonlyActionButton type="link" style={{ padding: 0 }}>移除</ReadonlyActionButton>
         </Popconfirm>
       ),
     },
@@ -873,107 +772,71 @@ export default function ExamExercises() {
 
   return (
     <AppPage
-      title={
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-          习题管理
-          {(examData as any)?.data && (
-            <Tag color="blue">{(examData as any).data.title}</Tag>
-          )}
-        </span>
+      title="习题管理"
+      description={
+        (examData as any)?.data?.title
+          ? `考试：${(examData as any).data.title} · 维护考试题目与分值`
+          : "维护考试题目与分值"
       }
-      description="维护考试题目与分值"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;考试管理&nbsp;&nbsp;/&nbsp;&nbsp;习题管理</>}
       actions={
-        <Space>
-          <Button
-            type="text"
-            className="teacher-page-back-btn"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard/exam-management")}
-          />
-          <Button
-            icon={<StarFilled style={{ color: "#9c27b0" }} />}
-            onClick={async () => {
-              const courseId = (examData as any)?.data?.courseId;
-              if (!courseId) {
-                message.warning("考试未关联课程，无法使用智能组卷");
-                return;
-              }
-              await fetchExerciseTypeStats(courseId);
-              setAutoComposeOpen(true);
-            }}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            智能组卷
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setSelectedExercisesMap(new Map());
-              setSelectedQuestionType("all");
-              setCurrentPage(0);
-              setSearchQuery("");
-              setAddDialogOpen(true);
-            }}
-            style={canEdit ? undefined : { display: "none" }}
-          >
-            添加习题
-          </Button>
-        </Space>
+        <Button
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/teacher/dashboard/exam-management")}
+        >
+          返回考试
+        </Button>
       }
     >
       <StatGrid
         columns={3}
         items={[
           { label: "已添加习题", value: examExercisesResult?.length || 0 },
-          { label: "总分", value: (examData as any)?.data?.totalScore || 100 },
+          {
+            label: "总分",
+            value: (examExercisesResult || []).reduce(
+              (sum, ee) => sum + (ee.points || 0),
+              0,
+            ),
+          },
           { label: "及格分", value: (examData as any)?.data?.passingScore || 0 },
         ]}
       />
 
-      <Card
-        style={{ height: "100%" }}
-        styles={{
-          body: {
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-          },
-        }}
-      >
-          <div
-            style={{
-              padding: 16,
-              borderBottom: "1px solid #e0e0e0",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Space>
-              <Text type="secondary">筛选:</Text>
-              {["all", "multiple_choice", "fill_in_blank", "essay"].map(
-                (type) => (
-                  <Button
-                    key={type}
-                    size="small"
-                    type={
-                      tableQuestionTypeFilter === type ? "primary" : "default"
-                    }
-                    onClick={() => setTableQuestionTypeFilter(type)}
-                  >
-                    {type === "all"
-                      ? "全部"
-                      : type === "multiple_choice"
-                        ? "选择题"
-                        : type === "fill_in_blank"
-                          ? "填空题"
-                          : "问答题"}
-                  </Button>
-                ),
-              )}
-            </Space>
+      <ProtoCard
+        title="习题列表"
+        extra={
+          <Space>
+            <Button
+              icon={<StarFilled style={{ color: "#9c27b0" }} />}
+              onClick={async () => {
+                const courseId = (examData as any)?.data?.courseId;
+                if (!courseId) {
+                  message.warning("考试未关联课程，无法使用智能组卷");
+                  return;
+                }
+                await fetchExerciseTypeStats(courseId);
+                setAutoComposeOpen(true);
+              }}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              智能组卷
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setSelectedExercisesMap(new Map());
+                setSelectedQuestionType("all");
+                setCurrentPage(0);
+                setSearchQuery("");
+                setAddDialogOpen(true);
+              }}
+              style={canEdit ? undefined : { display: "none" }}
+            >
+              添加习题
+            </Button>
             <Popconfirm
               title={`确定要清除所有 ${examExercisesResult?.length || 0} 道习题吗？此操作不可撤销。`}
               onConfirm={() => clearAllMutation.mutate()}
@@ -996,33 +859,44 @@ export default function ExamExercises() {
                 清除所有
               </Button>
             </Popconfirm>
-          </div>
+          </Space>
+        }
+      >
+        <ProtoTabs
+          items={[
+            { id: "all", label: "全部" },
+            { id: "multiple_choice", label: "选择题" },
+            { id: "fill_in_blank", label: "填空题" },
+            { id: "essay", label: "问答题" },
+          ]}
+          active={tableQuestionTypeFilter as any}
+          onChange={(v) => setTableQuestionTypeFilter(v as string)}
+        />
 
-          {isLoadingExamExercises ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100%",
-              }}
-            >
-              <Spin size="large" />
-            </div>
-          ) : (
-            <Table
-              columns={examExerciseColumns}
-              dataSource={filteredExamExercises}
-              rowKey="id"
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total) => `共 ${total} 条`,
-              }}
-              style={{ flex: 1 }}
-            />
-          )}
-        </Card>
+        {isLoadingExamExercises ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 48,
+            }}
+          >
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Table
+            columns={examExerciseColumns}
+            dataSource={filteredExamExercises}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `共 ${total} 条`,
+            }}
+          />
+        )}
+      </ProtoCard>
 
       <Modal
         title={
@@ -1125,6 +999,7 @@ export default function ExamExercises() {
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
+                              fontSize: 15,
                             }}
                           >
                             {exercise.title}
@@ -1137,7 +1012,7 @@ export default function ExamExercises() {
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                               color: "#666",
-                              fontSize: 12,
+                              fontSize: 13,
                             }}
                           >
                             {exercise.questionContent}
@@ -1151,6 +1026,16 @@ export default function ExamExercises() {
                       </div>
                     );
                   },
+                },
+                {
+                  title: "题型",
+                  key: "questionType",
+                  width: 110,
+                  render: (_, exercise: any) => (
+                    <Text style={{ fontSize: 15 }}>
+                      {questionTypeNames[exercise.questionType] || exercise.questionType || "-"}
+                    </Text>
+                  ),
                 },
                 {
                   title: "分值",
@@ -1352,49 +1237,16 @@ export default function ExamExercises() {
       </Modal>
 
       <Modal
-        title={
-          <Space>
-            <StarFilled style={{ color: "#9c27b0" }} />
-            <span>智能组卷</span>
-          </Space>
-        }
+        title="智能组卷"
         open={autoComposeOpen}
         onCancel={() => setAutoComposeOpen(false)}
         footer={null}
-        width={700}
+        width={900}
       >
         <div style={{ marginBottom: 24 }}>
           <Text type="secondary">
             系统将自动从课程题库中随机选择指定数量的习题组成试卷。
           </Text>
-        </div>
-
-        {/* P1: 组卷大纲 → 一键填充配置 */}
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 16,
-            background: "#f6f0ff",
-            borderRadius: 8,
-            border: "1px solid #d3adf7",
-          }}
-        >
-          <Text strong>组卷大纲</Text>
-          <Text type="secondary" style={{ marginLeft: 8 }}>
-            每行一类题型，如：单选题 5题 每题2分 难度1,2
-          </Text>
-          <Input.TextArea
-            rows={3}
-            value={outlineText}
-            onChange={(e) => setOutlineText(e.target.value)}
-            placeholder={"单选题 5题 每题2分 难度1,2\n判断题 5题 每题2分 难度1\n问答题 2题 每题10分 难度3"}
-            style={{ marginTop: 8 }}
-          />
-          <div style={{ marginTop: 8, textAlign: "right" }}>
-            <Button type="primary" ghost onClick={handleParseOutline}>
-              按大纲填充配置
-            </Button>
-          </div>
         </div>
 
         {loadingExerciseStats ? (
@@ -1462,7 +1314,7 @@ export default function ExamExercises() {
                   </Text>
                 </div>
 
-                <div style={{ display: "flex", gap: 24, paddingLeft: 32 }}>
+                <div style={{ display: "flex", gap: 20, paddingLeft: 32, alignItems: "flex-end", flexWrap: "nowrap" }}>
                   <div>
                     <Text type="secondary">题目数量</Text>
                     <InputNumber
@@ -1510,7 +1362,7 @@ export default function ExamExercises() {
                           value.length > 0 ? value : [1, 2, 3],
                         )
                       }
-                      style={{ width: 180, marginTop: 8 }}
+                      style={{ width: 220, marginTop: 8 }}
                       options={[
                         { value: 1, label: "简单" },
                         { value: 2, label: "中等" },
@@ -1536,9 +1388,8 @@ export default function ExamExercises() {
             <div
               style={{
                 marginTop: 24,
-                padding: 16,
-                background: "#e6f7ff",
-                borderRadius: 8,
+                paddingTop: 16,
+                borderTop: "1px solid #e0e0e0",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -1570,7 +1421,6 @@ export default function ExamExercises() {
                 取消
               </Button>
               <Button
-                type="primary"
                 icon={previewLoading ? <Spin size="small" /> : <StarFilled />}
                 onClick={handlePreviewCompose}
                 disabled={
@@ -1578,7 +1428,6 @@ export default function ExamExercises() {
                   loadingExerciseStats ||
                   composeConfig.length === 0
                 }
-                style={{ background: "#9c27b0" }}
               >
                 {previewLoading ? "组卷中..." : "预览组卷结果"}
               </Button>
@@ -1589,15 +1438,22 @@ export default function ExamExercises() {
 
       <Modal
         title={
-          <Space>
-            <CheckCircleOutlined style={{ color: "#52c41a" }} />
-            <span>组卷预览</span>
-            <Tag color="blue">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              paddingRight: 24,
+            }}
+          >
+            <span style={{ fontSize: 20, fontWeight: 700 }}>组卷预览</span>
+            <Tag color="blue" style={{ marginRight: 0 }}>
               共{" "}
               {previewSections.reduce((sum, s) => sum + s.exercises.length, 0)}{" "}
               题
             </Tag>
-          </Space>
+          </div>
         }
         open={previewDialogOpen}
         onCancel={() => setPreviewDialogOpen(false)}
@@ -1620,7 +1476,7 @@ export default function ExamExercises() {
           </div>
         )}
 
-        <div className="exam-exercises-wrap" style={{ padding: 24 }}>
+        <div className="exam-exercises-wrap" style={{ padding: 0 }}>
 <style>{`@media(max-width:768px){.exam-exercises-wrap{padding:12px!important}.exam-exercises-wrap .ant-table-cell{padding:6px 4px!important}}`}</style>
           {previewSections.length === 0 ? (
             <div style={{ textAlign: "center", padding: 32 }}>
@@ -1689,19 +1545,10 @@ export default function ExamExercises() {
                         gap: 8,
                       }}
                     >
-                      <Text strong style={{ color: "#1890ff", minWidth: 30 }}>
+                      <Text strong style={{ color: "#1890ff", minWidth: 30, fontSize: 15 }}>
                         {exerciseIndex + 1}.
                       </Text>
-                      <Text style={{ flex: 1 }}>{exercise.title}</Text>
-                      <Tooltip title="AI 重新出一题并替换">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<ReloadOutlined />}
-                          loading={regeneratingIds.has(exercise.id)}
-                          onClick={() => handleRegenerateOne(section, exercise)}
-                        />
-                      </Tooltip>
+                      <Text style={{ flex: 1, fontSize: 15 }}>{exercise.title}</Text>
                       <Button
                         type="text"
                         danger
@@ -1762,7 +1609,6 @@ export default function ExamExercises() {
                 ) === 0
               }
               loading={addMutation.isPending}
-              style={{ background: "#9c27b0" }}
             >
               {addMutation.isPending
                 ? "添加中..."
