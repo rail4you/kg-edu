@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Empty,
   Spin,
-  Tag,
   Timeline,
   Typography,
   Select,
@@ -55,7 +54,7 @@ interface ActivityItem {
   insertedAt?: string;
 }
 
-export default function StudentMMTimeline() {
+export default function StudentMMTimeline({ embedded }: { embedded?: boolean } = {}) {
   const { user, tenant } = useAuth();
   const headers = getAuthHeaders(user) as Record<string, string>;
   const [selectedMMId, setSelectedMMId] = useState<string | null>(null);
@@ -129,89 +128,97 @@ export default function StudentMMTimeline() {
     return Array.from(map.values());
   }, [enrollments]);
 
+  const mmSelect = (
+    <Select
+      style={{ minWidth: 200 }}
+      placeholder="全部微专业"
+      value={selectedMMId}
+      onChange={setSelectedMMId}
+      allowClear
+      options={mmOptions.map(mm => ({ value: mm.id, label: mm.name }))}
+    />
+  );
+
+  const body = isLoading ? (
+    <div style={{ textAlign: "center", padding: 48 }}><Spin size="large" /></div>
+  ) : activities.length === 0 ? (
+    <ProtoCard>
+      <Empty description="暂无学习记录，开始学习后记录会显示在此处" />
+    </ProtoCard>
+  ) : (
+    <ProtoCard>
+      {Object.entries(groupedByDate).map(([date, items]) => (
+        <div key={date} style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#666",
+              marginBottom: 12,
+              paddingBottom: 8,
+              borderBottom: "1px solid #edf0f5",
+            }}
+          >
+            {date}
+          </div>
+          <Timeline
+            items={items.map((item) => ({
+              color: ACTION_COLORS[item.actionType] || "#999",
+              dot: ACTION_ICONS[item.actionType] || undefined,
+              children: (
+                <div>
+                  <Space>
+                    <Text>{ACTION_LABELS[item.actionType] || item.actionType}</Text>
+                    {item.microMajorCourseTitle && (
+                      <Text strong>{item.microMajorCourseTitle}</Text>
+                    )}
+                  </Space>
+                  {item.microMajorName && (
+                    <div>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        <ApartmentOutlined style={{ marginRight: 4 }} />
+                        {item.microMajorName}
+                      </Text>
+                    </div>
+                  )}
+                  {item.insertedAt && (
+                    <div>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {new Date(item.insertedAt).toLocaleTimeString("zh-CN")}
+                      </Text>
+                    </div>
+                  )}
+                  {item.actionType === "mm_exercise_submit" && item.metadata?.is_correct !== undefined && (
+                    <div>
+                      <Text>{item.metadata.is_correct ? "✓ 回答正确" : "✗ 回答错误"}</Text>
+                    </div>
+                  )}
+                </div>
+              ),
+            }))}
+          />
+        </div>
+      ))}
+    </ProtoCard>
+  );
+
+  if (embedded) {
+    return (
+      <div>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end" }}>{mmSelect}</div>
+        {body}
+      </div>
+    );
+  }
+
   return (
     <div className="pu-page">
       <PageHead
         title="学习动态"
         description="记录你在微专业中的视频观看、习题完成与资源下载"
-        actions={
-          <Select
-            style={{ minWidth: 200 }}
-            placeholder="全部微专业"
-            value={selectedMMId}
-            onChange={setSelectedMMId}
-            allowClear
-            options={mmOptions.map(mm => ({ value: mm.id, label: mm.name }))}
-          />
-        }
+        actions={mmSelect}
       />
-
-      {isLoading ? (
-        <div style={{ textAlign: "center", padding: 48 }}><Spin size="large" /></div>
-      ) : activities.length === 0 ? (
-        <ProtoCard>
-          <Empty description="暂无学习记录，开始学习后记录会显示在此处" />
-        </ProtoCard>
-      ) : (
-        <ProtoCard>
-          {Object.entries(groupedByDate).map(([date, items]) => (
-            <div key={date} style={{ marginBottom: 24 }}>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#666",
-                  marginBottom: 12,
-                  paddingBottom: 8,
-                  borderBottom: "1px solid #edf0f5",
-                }}
-              >
-                {date}
-              </div>
-              <Timeline
-                items={items.map((item) => ({
-                  color: ACTION_COLORS[item.actionType] || "#999",
-                  dot: ACTION_ICONS[item.actionType] || undefined,
-                  children: (
-                    <div>
-                      <Space>
-                        <Tag color={ACTION_COLORS[item.actionType] || "default"}>
-                          {ACTION_LABELS[item.actionType] || item.actionType}
-                        </Tag>
-                        {item.microMajorCourseTitle && (
-                          <Text strong>{item.microMajorCourseTitle}</Text>
-                        )}
-                      </Space>
-                      {item.microMajorName && (
-                        <div>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            <ApartmentOutlined style={{ marginRight: 4 }} />
-                            {item.microMajorName}
-                          </Text>
-                        </div>
-                      )}
-                      {item.insertedAt && (
-                        <div>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {new Date(item.insertedAt).toLocaleTimeString("zh-CN")}
-                          </Text>
-                        </div>
-                      )}
-                      {item.actionType === "mm_exercise_submit" && item.metadata?.is_correct !== undefined && (
-                        <div>
-                          <Tag color={item.metadata.is_correct ? "success" : "error"}>
-                            {item.metadata.is_correct ? "✓ 回答正确" : "✗ 回答错误"}
-                          </Tag>
-                        </div>
-                      )}
-                    </div>
-                  ),
-                }))}
-              />
-            </div>
-          ))}
-        </ProtoCard>
-      )}
+      {body}
     </div>
   );
 }

@@ -33,6 +33,7 @@ export default function StudentMMCourseInLayout() {
       >
         返回微专业
       </Button>
+      <div className="pu-breadcrumb">学生学习空间&nbsp;&nbsp;/&nbsp;&nbsp;我的微专业</div>
       <StudentMMCourse tenant={tenant} mmCourseId={mmCourseId} mmId={mmId} headers={headers} />
     </div>
   );

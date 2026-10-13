@@ -112,6 +112,16 @@ export default function ContextSelector({ showCourse = false, coursesWithChapter
   });
   const microMajors = (mmData as { id: string; name: string; status?: string }[]) || [];
 
+  // 默认选中一个当前微专业（URL 与 sessionStorage 都没有时，取第一个）
+  useEffect(() => {
+    if (mmId) return;
+    if (microMajors.length === 0) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("mmId", microMajors[0].id);
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microMajors, mmId]);
+
   // Fetch courses for selected micro major
   const { data: coursesData } = useQuery({
     queryKey: ["mm-ctx-courses", mmId],

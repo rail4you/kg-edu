@@ -455,7 +455,7 @@ export default function StudentDataForms() {
           </div>
         </div>
         <Button
-          type={pending ? "primary" : "default"}
+          type="default"
           icon={pending ? <EditOutlined /> : <FileTextOutlined />}
           size="large"
           style={{ flexShrink: 0, minWidth: 120 }}

@@ -12,6 +12,9 @@ import {
   Spin,
   Space,
   Collapse,
+  Segmented,
+  Table,
+  Descriptions,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -23,7 +26,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useEditPermission } from "@/hooks/use-edit-permission";
 import { ReadonlyActionButton } from "@/components/readonly-action-button";
-import { AppPage, StatGrid } from "@/components/proto";
+import { AppPage } from "@/components/proto";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAuthHeaders } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -35,6 +38,18 @@ import {
 } from "@/lib/ash_rpc";
 
 const { Title, Text } = Typography;
+
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  multiple_choice: "选择题",
+  single_choice: "单选题",
+  multi_choice: "多选题",
+  true_false: "判断题",
+  fill_blank: "填空题",
+  short_answer: "简答题",
+  essay: "问答题",
+};
+
+const questionTypeLabel = (t?: string) => (t ? QUESTION_TYPE_LABEL[t] || t : "题目");
 
 interface AIGradingResponse {
   analysis: string;
@@ -68,6 +83,7 @@ export default function ExamGradeDetail() {
   const [scores, setScores] = useState<Record<string, string>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
   const [isGrading, setIsGrading] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [aiGradingResults, setAiGradingResults] = useState<
     Record<string, AIGradingResponse>
   >({});
@@ -650,62 +666,92 @@ export default function ExamGradeDetail() {
   return (
     <AppPage
       title="批改答卷"
-      description={`学生: ${studentExam.student?.name || "Unknown"}`}
+      description="批改学生答卷：可逐题评分，或使用自动批改选择题/AI 评分辅助。"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;智能批改&nbsp;&nbsp;/&nbsp;&nbsp;批改答卷</>}
       actions={
         <Space size={8} wrap>
           <Button
             type="text"
-            className="teacher-page-back-btn"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate(-1)}
-            title="返回"
-          />
-          <Tag
-            icon={
-              studentExam.status === "graded" ? (
-                <CheckCircleOutlined />
-              ) : undefined
-            }
-            color={studentExam.status === "graded" ? "success" : "warning"}
           >
-            {studentExam.status === "graded" ? "已批改" : "待批改"}
-          </Tag>
-          <Tag color={studentExam.passed ? "success" : "error"}>
-            {studentExam.passed ? "及格" : "不及格"}
-          </Tag>
-          <ReadonlyActionButton
-            type="primary"
-            size="small"
-            icon={<StarOutlined />}
-            onClick={handleAutoGradeMultipleChoice}
-            style={{ backgroundColor: "#722ed1", borderColor: "#722ed1" }}
-          >
-            自动批改选择题
-          </ReadonlyActionButton>
+            返回考试
+          </Button>
         </Space>
       }
     >
-      <StatGrid
-        columns={2}
-        items={[
-          { label: "当前得分", value: totalScore },
-          { label: "满分", value: maxTotalScore },
-        ]}
-      />
+      <div
+        className="exam-info-table"
+        style={{
+          background: "#fff",
+          border: "1px solid var(--pu-line, #e3e9f1)",
+          borderRadius: 12,
+          padding: "14px 16px",
+          marginBottom: 16,
+          boxShadow: "0 1px 3px rgba(16,24,40,0.05)",
+        }}
+      >
+        <style>{`
+          .exam-info-table .ant-descriptions-view { border: 1px solid #c8d3e0 !important; border-radius: 8px; overflow: hidden; }
+          .exam-info-table .ant-descriptions-view > table { border-collapse: collapse; }
+          .exam-info-table .ant-descriptions-row > th,
+          .exam-info-table .ant-descriptions-row > td { border-color: #c8d3e0 !important; border-width: 1px !important; }
+        `}</style>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 12 }}>
+          答卷信息
+        </div>
+        <Descriptions
+          bordered
+          size="small"
+          column={3}
+          labelStyle={{ width: 110, background: "#eef2f8", fontWeight: 600, color: "#475569" }}
+          contentStyle={{ minWidth: 160, background: "#fff" }}
+        >
+          <Descriptions.Item label="学生">
+            {studentExam.student?.name || "Unknown"}
+          </Descriptions.Item>
+          <Descriptions.Item label="批改状态">
+            {studentExam.status === "graded" ? "已批改" : "待批改"}
+          </Descriptions.Item>
+          <Descriptions.Item label="是否及格">
+            {studentExam.passed ? "及格" : "不及格"}
+          </Descriptions.Item>
+          <Descriptions.Item label="当前得分">{totalScore}</Descriptions.Item>
+          <Descriptions.Item label="满分">{maxTotalScore}</Descriptions.Item>
+        </Descriptions>
+      </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          {answers.length === 0 ? (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+          <ReadonlyActionButton
+            size="large"
+            icon={<StarOutlined />}
+            onClick={handleAutoGradeMultipleChoice}
+          >
+            自动批改选择题
+          </ReadonlyActionButton>
+          <Segmented
+            value={viewMode}
+            onChange={(v) => setViewMode(v as "card" | "table")}
+            options={[
+              { label: "卡片", value: "card" },
+              { label: "表格", value: "table" },
+            ]}
+          />
+        </div>
+        {answers.length === 0 ? (
             <Card>
               <div style={{ padding: 32, textAlign: "center" }}>
                 <Text type="secondary">该答卷暂无题目</Text>
               </div>
             </Card>
-          ) : (
+          ) : viewMode === "card" ? (
             answers
               .sort((a, b) => a.order - b.order)
               .map((answer, index) => (
                 <Card
                   key={answer.id}
+                  id={`answer-${answer.id}`}
                   style={{ marginBottom: 16 }}
                   styles={{ body: { padding: 16 } }}
                 >
@@ -718,18 +764,28 @@ export default function ExamGradeDetail() {
                     }}
                   >
                     <div style={{ flexGrow: 1 }}>
-                      <Space size={4} style={{ marginBottom: 8 }}>
-                        <Tag color="blue">第 {index + 1} 题</Tag>
-                        <Tag>{answer.maxPoints} 分</Tag>
-                        <Tag>{answer.questionType}</Tag>
-                        {answer.graded && <Tag color="success">已批改</Tag>}
-                      </Space>
-                      <Title
-                        level={5}
-                        style={{ margin: 0, fontWeight: 600, marginBottom: 8 }}
+                      <div
+                        style={{
+                          marginBottom: 8,
+                          fontSize: 16,
+                          fontWeight: 700,
+                          color: "#1a1c1e",
+                          lineHeight: 1.6,
+                        }}
                       >
-                        {answer.title}
-                      </Title>
+                        {index + 1}. {answer.title}
+                        <span
+                          style={{
+                            marginLeft: 10,
+                            fontSize: 14,
+                            fontWeight: 500,
+                            color: "#8a9199",
+                          }}
+                        >
+                          {questionTypeLabel(answer.questionType)} · {answer.maxPoints} 分
+                          {answer.graded ? " · 已批改" : ""}
+                        </span>
+                      </div>
                       {answer.questionContent && (
                         <Text
                           type="secondary"
@@ -943,9 +999,7 @@ export default function ExamGradeDetail() {
                                         分
                                       </Title>
                                       <ReadonlyActionButton
-                                        type="primary"
                                         size="small"
-                                        style={{ background: "#52c41a" }}
                                         onClick={() =>
                                           handleApplyAIScore(
                                             answer.id,
@@ -1057,6 +1111,68 @@ export default function ExamGradeDetail() {
                   </div>
                 </Card>
               ))
+          ) : (
+            <Table
+              rowKey="id"
+              dataSource={[...answers].sort((a, b) => a.order - b.order)}
+              pagination={false}
+              columns={[
+                {
+                  title: "题号",
+                  key: "no",
+                  width: 90,
+                  render: (_: any, __: any, i: number) => `第 ${i + 1} 题`,
+                },
+                {
+                  title: "题型",
+                  dataIndex: "questionType",
+                  width: 120,
+                  render: (v: string) => <Tag>{questionTypeLabel(v)}</Tag>,
+                },
+                {
+                  title: "满分",
+                  dataIndex: "maxPoints",
+                  width: 90,
+                  render: (v: number) => `${v} 分`,
+                },
+                {
+                  title: "得分",
+                  key: "score",
+                  width: 90,
+                  render: (_: any, r: ExerciseAnswer) =>
+                    typeof r.pointsEarned === "number" ? r.pointsEarned : "-",
+                },
+                {
+                  title: "状态",
+                  key: "status",
+                  width: 110,
+                  render: (_: any, r: ExerciseAnswer) => (
+                    <Tag>{r.graded ? "已批改" : "待批改"}</Tag>
+                  ),
+                },
+                {
+                  title: "操作",
+                  key: "action",
+                  render: (_: any, r: ExerciseAnswer) => (
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setViewMode("card");
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById(`answer-${r.id}`)
+                              ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                          60
+                        );
+                      }}
+                    >
+                      批改
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           )}
         </div>
 
@@ -1079,7 +1195,6 @@ export default function ExamGradeDetail() {
             总分: {totalScore} / {maxTotalScore}
           </Text>
           <ReadonlyActionButton
-            type="primary"
             onClick={handleGradeAll}
             disabled={isGrading || gradeAnswerMutation.isPending}
             icon={<CheckCircleOutlined />}

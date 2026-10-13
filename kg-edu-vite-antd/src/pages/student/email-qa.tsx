@@ -880,6 +880,12 @@ export default function EmailQA({ courseId }: { courseId?: string }) {
 
   return (
     <div className="pu-page" style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ flexShrink: 0 }}>
+        <PageHead
+          title="邮件问答"
+          description="向老师提问，查看往来邮件与解答。"
+        />
+      </div>
       <div style={{ flex: 1, overflow: "auto" }}>
         {viewMode === "list" ? renderListView() : renderComposeView()}
       </div>

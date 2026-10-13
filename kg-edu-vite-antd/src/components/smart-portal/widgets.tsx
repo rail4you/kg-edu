@@ -712,7 +712,7 @@ export const AiPracticeWidget: React.FC<BlockRenderProps> = ({ block, onNavigate
         {rolePrompt && <p className="sp-ai-practice__role">角色设定：{rolePrompt}</p>}
       </div>
       <Button
-        type="primary"
+        type="default"
         className="sp-ai-practice__cta"
         onClick={startPractice}
       >

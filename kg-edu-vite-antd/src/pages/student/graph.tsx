@@ -21,10 +21,10 @@ import {
   Statistic,
   Select,
   Grid,
-  Segmented,
   List,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { PageHead, ProtoTabs } from "@/components/proto";
 import {
   ApartmentOutlined,
   NodeIndexOutlined,
@@ -1183,106 +1183,25 @@ export default function Page() {
         height: 0,
       }}
     >
-      {/* 顶栏：标题 + 主 Tab（左侧） */}
-      <div style={{
-        background: "#fff",
-        borderRadius: 14,
-        border: "1px solid var(--pu-line)",
-        margin: isMobile ? "0 0 4px" : "0 0 10px",
-        padding: isMobile ? "10px 12px" : "14px 18px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, flexWrap: "wrap" }}>
-          {returnUrl && (
-            <span
-              onClick={() => navigate(returnUrl)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                padding: isMobile ? "3px 10px 3px 8px" : "5px 16px 5px 12px",
-                borderRadius: 5,
-                background: `${colors.primary}10`,
-                color: colors.primary,
-                cursor: "pointer",
-                flexShrink: 0,
-                transition: "all 0.15s",
-                fontSize: isMobile ? 13 : 14,
-                fontWeight: 600,
-                border: `1px solid ${colors.primary}25`,
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = colors.primary;
-                el.style.color = "#fff";
-                el.style.borderColor = colors.primary;
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = `${colors.primary}10`;
-                el.style.color = colors.primary;
-                el.style.borderColor = `${colors.primary}25`;
-              }}
-            >
-              <LeftOutlined style={{ fontSize: isMobile ? 13 : 14 }} />
-              返回推荐
-            </span>
-          )}
-          <h1 style={{ fontSize: isMobile ? 17 : 20, fontWeight: 650, margin: 0, lineHeight: 1.4 }}>
-            图谱总览
-          </h1>
-          {!isMobile && (
-            <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>
-              把知识、能力与资源连接起来，形成清晰的学习路径。
-            </p>
-          )}
-          <div style={{ flex: 1 }} />
-          {/* 主 Tab 放右侧，醒目大尺寸 */}
-          <Segmented
-            className="graph-main-tabs"
-            value={mainTab}
-            onChange={(v) => handleMainChange(v as MainTabKey)}
-            options={MAIN_TABS.map((t) => ({ value: t.value, label: t.label }))}
-            size="large"
-            style={{
-              flexShrink: 0,
-              fontWeight: 700,
-              fontSize: 15,
-            }}
-          />
-          <style>{`
-            .graph-main-tabs.ant-segmented { background: #f3f5f9; padding: 4px; border-radius: 9999px; }
-            .graph-main-tabs .ant-segmented-item { font-size: 14px; font-weight: 600; padding: 2px 6px; border-radius: 9999px; min-width: 104px; text-align: center; }
-            .graph-main-tabs .ant-segmented-item-selected { background: ${colors.primary}; color: #fff !important; }
-            .graph-main-tabs .ant-segmented-item-label { font-size: 14px; font-weight: 600; }
-          `}</style>
-          <div style={{ flex: 1 }} />
-          {mainTab === "knowledge" && courseId && (
-            <>
-              {coursesLoading ? (
-                <Spin size="small" />
-              ) : (
-                <Tag style={{
-                  margin: 0,
-                  fontSize: 12,
-                  background: `${colors.primary}0a`,
-                  color: colors.primary,
-                  border: `1px solid ${colors.primary}20`,
-                  borderRadius: 6,
-                  lineHeight: "22px",
-                  padding: "0 10px",
-                  maxWidth: 180,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  fontWeight: 600,
-                }}>
-                  {courseName || "当前课程"}
-                </Tag>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      {returnUrl && (
+        <Button
+          type="text"
+          icon={<LeftOutlined />}
+          onClick={() => navigate(returnUrl)}
+          style={{ paddingLeft: 0, marginBottom: 4, color: colors.primary, fontWeight: 600 }}
+        >
+          返回推荐
+        </Button>
+      )}
+      <PageHead
+        title="图谱总览"
+        description="把知识、能力与资源连接起来，形成清晰的学习路径。"
+      />
+      <ProtoTabs
+        items={MAIN_TABS.map((t) => ({ id: t.value, label: t.label }))}
+        active={mainTab}
+        onChange={(v) => handleMainChange(v as MainTabKey)}
+      />
 
       {/* 主体：布局不变（课程侧边栏 / 岗位图谱） */}
       {mainTab === "job" ? (
@@ -1328,7 +1247,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               flexShrink: 0,
-              width: 168,
+              width: 190,
               background: "#fff",
               borderRadius: 14,
               border: "1px solid var(--pu-line)",
@@ -1347,12 +1266,12 @@ export default function Page() {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 9,
-                      padding: "9px 11px",
+                      gap: 10,
+                      padding: "11px 13px",
                       borderRadius: 8,
                       border: "none",
                       cursor: "pointer",
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: isActive ? 650 : 400,
                       color: isActive ? colors.primary : "#596b84",
                       background: isActive ? "#eaf0ff" : "transparent",
@@ -1368,7 +1287,7 @@ export default function Page() {
                       if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
                     }}
                   >
-                    <span style={{ fontSize: 14 }}>{tab.icon}</span>
+                    <span style={{ fontSize: 16 }}>{tab.icon}</span>
                     {tab.label}
                   </button>
                 );
@@ -1388,14 +1307,14 @@ export default function Page() {
             border: isMobile ? "none" : "1px solid var(--pu-line)",
           }}>
             {!isMobile && courseId && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderBottom: "1px solid var(--pu-line)", background: "#f6f8fc" }}>
-                <ClusterOutlined style={{ color: colors.primary }} />
-                <span style={{ fontSize: 12, color: "#5f6368" }}>当前课程</span>
-                <Tag style={{ margin: 0, fontSize: 12, background: `${colors.primary}0a`, color: colors.primary, border: `1px solid ${colors.primary}20`, borderRadius: 6, padding: "0 8px", fontWeight: 600 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 18px", borderBottom: "1px solid var(--pu-line)", background: "#f6f8fc" }}>
+                <ClusterOutlined style={{ color: colors.primary, fontSize: 16 }} />
+                <span style={{ fontSize: 15, color: "#5f6368" }}>当前课程</span>
+                <Tag style={{ margin: 0, fontSize: 15, background: `${colors.primary}0a`, color: colors.primary, border: `1px solid ${colors.primary}20`, borderRadius: 6, padding: "0 8px", fontWeight: 600 }}>
                   {courseName || "加载中..."}
                 </Tag>
                 <div style={{ flex: 1 }} />
-                <span style={{ fontSize: 11, color: "#999", display: "flex", gap: 6 }}>
+                <span style={{ fontSize: 14, color: "#999", display: "flex", gap: 6 }}>
                   {knowledgePointsCount} 知识点 · {knowledgeRelationsCount} 关联
                 </span>
               </div>

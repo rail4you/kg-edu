@@ -34,7 +34,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { changePassword, updateUser, myCourses, myMicroMajorEnrollments } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
 import { uploadFile } from "@/lib/oss-upload";
-import { AppPage, ProtoCard } from "@/components/proto";
+import { AppPage, ProtoCard, PageScopeProvider } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -238,71 +238,63 @@ export default function ProfilePage() {
   return (
     <AppPage title="个人中心" description="维护你的个人资料、头像与账号安全">
       {isStudent && (
-        <ProtoCard
-          title="我的学习"
-          style={{ marginBottom: 24 }}
-          extra={<Text type="secondary">点击卡片即可进入</Text>}
-        >
-          <div className="pu-section-title">我的课程</div>
-          {enrolledCourses.length > 0 ? (
-            <>
-              <div className="profile-learn-grid">
+        <div className="profile-learn-columns" style={{ marginBottom: 24 }}>
+          <ProtoCard title="我的课程" extra={<Text type="secondary">点击进入</Text>}>
+            {enrolledCourses.length > 0 ? (
+              <>
                 {(coursesExpanded ? enrolledCourses : enrolledCourses.slice(0, 3)).map((course) => (
-                  <button
+                  <div
                     key={course.id}
-                    type="button"
-                    className="profile-learn-card"
+                    className="pu-item"
+                    style={{ cursor: "pointer" }}
                     onClick={() => enterCourse(course.id)}
                   >
-                    <span className="profile-learn-card__body">
-                      <span className="profile-learn-card__title">{course.title || "未命名课程"}</span>
-                      {course.major && <span className="profile-learn-card__meta">{course.major}</span>}
-                    </span>
-                    <span className="profile-learn-card__arrow"><ArrowRightOutlined /></span>
-                  </button>
+                    <div className="pu-item__body">
+                      <h3>{course.title || "未命名课程"}</h3>
+                      {course.major && <p>{course.major}</p>}
+                    </div>
+                    <ArrowRightOutlined style={{ color: "#94a3b8", flexShrink: 0 }} />
+                  </div>
                 ))}
-              </div>
-              {enrolledCourses.length > 3 && (
-                <button type="button" className="profile-learn-more" onClick={() => setCoursesExpanded((v) => !v)}>
-                  {coursesExpanded ? "收起" : `展开全部 ${enrolledCourses.length} 门课程`}
-                </button>
-              )}
-            </>
-          ) : (
-            <Text type="secondary">暂无选课</Text>
-          )}
+                {enrolledCourses.length > 3 && (
+                  <button type="button" className="profile-learn-more" onClick={() => setCoursesExpanded((v) => !v)}>
+                    {coursesExpanded ? "收起" : `展开全部 ${enrolledCourses.length} 门课程`}
+                  </button>
+                )}
+              </>
+            ) : (
+              <Text type="secondary">暂无选课</Text>
+            )}
+          </ProtoCard>
 
-          <div className="pu-section-title" style={{ marginTop: 24 }}>我的微专业</div>
-          {enrolledMajors.length > 0 ? (
-            <>
-              <div className="profile-learn-grid">
+          <ProtoCard title="我的微专业" extra={<Text type="secondary">点击进入</Text>}>
+            {enrolledMajors.length > 0 ? (
+              <>
                 {(majorsExpanded ? enrolledMajors : enrolledMajors.slice(0, 3)).map((item) => (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
-                    className="profile-learn-card is-major"
+                    className="pu-item"
+                    style={{ cursor: "pointer" }}
                     onClick={() => item.microMajor?.id && enterMajor(item.microMajor.id)}
                   >
-                    <span className="profile-learn-card__body">
-                      <span className="profile-learn-card__title">{item.microMajor?.name || "微专业"}</span>
-                      <span className="profile-learn-card__meta">
-                        {item.status === "completed" ? "已完成" : item.status === "active" ? "学习中" : "待审核"}
-                      </span>
-                    </span>
-                    <span className="profile-learn-card__arrow"><ArrowRightOutlined /></span>
-                  </button>
+                    <div className="pu-item__body">
+                      <h3>{item.microMajor?.name || "微专业"}</h3>
+                      <p>{item.status === "completed" ? "已完成" : item.status === "active" ? "学习中" : "待审核"}</p>
+                    </div>
+                    <ArrowRightOutlined style={{ color: "#94a3b8", flexShrink: 0 }} />
+                  </div>
                 ))}
-              </div>
-              {enrolledMajors.length > 3 && (
-                <button type="button" className="profile-learn-more" onClick={() => setMajorsExpanded((v) => !v)}>
-                  {majorsExpanded ? "收起" : `展开全部 ${enrolledMajors.length} 个微专业`}
-                </button>
-              )}
-            </>
-          ) : (
-            <Text type="secondary">暂无微专业</Text>
-          )}
-        </ProtoCard>
+                {enrolledMajors.length > 3 && (
+                  <button type="button" className="profile-learn-more" onClick={() => setMajorsExpanded((v) => !v)}>
+                    {majorsExpanded ? "收起" : `展开全部 ${enrolledMajors.length} 个微专业`}
+                  </button>
+                )}
+              </>
+            ) : (
+              <Text type="secondary">暂无微专业</Text>
+            )}
+          </ProtoCard>
+        </div>
       )}
 
       <Row gutter={[24, 24]}>
@@ -561,7 +553,9 @@ export function StandaloneProfile() {
       </div>
 
       <div style={{ flex: 1 }}>
-        <ProfilePage />
+        <PageScopeProvider label="学生学习空间">
+          <ProfilePage />
+        </PageScopeProvider>
       </div>
 
       <GlobalFooter />

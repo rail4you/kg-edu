@@ -37,7 +37,7 @@ import {
 } from "@/lib/ash_rpc";
 import { getAuthHeaders } from "@/lib/auth";
 import FilePreview from "@/components/FilePreview";
-import { ProtoCard, ProtoTag, StatGrid } from "@/components/proto";
+import { ProtoCard, ProtoTag, StatGrid, PageHead } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
 import BookContentPreview from "@/components/BookContentPreview";
 
@@ -468,6 +468,10 @@ export default function CourseIntroPage() {
 
   return (
     <div className="pu-page">
+      <PageHead
+        title="课程概览"
+        description="了解课程目标、知识结构与学习安排。"
+      />
       <style>{`
 .book-content-html{font-size:13px;line-height:1.9;color:${ds.onSurfaceVariant}}
 .book-content-html h1{font-size:17px;font-weight:650;color:${ds.onSurface};margin:14px 0 8px}

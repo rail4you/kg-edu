@@ -57,7 +57,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { extractArrayData } from "@/utils/api-helpers";
 import FilePreview from "@/components/FilePreview";
 import VideoAnalysisPanel from "@/components/video/VideoAnalysisPanel";
-import { ProtoCard, ProgressBar } from "@/components/proto";
+import { ProtoCard, ProgressBar, PageHead } from "@/components/proto";
 import { themeColors as colors } from "@/styles/theme";
 import FaceMonitorDock, { type FaceMonitorHandle, type FaceScene } from "@/components/exam/FaceMonitorDock";
 import FaceSettingsButton from "@/components/exam/FaceSettingsButton";
@@ -1591,6 +1591,13 @@ export default function CourseVideoPage() {
         overflow: "hidden",
       }}
     >
+      {/* 页头：面包屑 + 标题 + 描述 */}
+      <div style={{ flexShrink: 0, padding: isMobile ? "10px 8px 0" : "14px 16px 0" }}>
+        <PageHead
+          title="课程视频"
+          description="观看章节视频，掌握课程内容并记录学习进度。"
+        />
+      </div>
       {/* 顶部导航栏：课程名 + Tab 切换 */}
       <div
         style={{

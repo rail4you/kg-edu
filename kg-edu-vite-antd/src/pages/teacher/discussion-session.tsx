@@ -976,6 +976,7 @@ export default function DiscussionSessionManagement() {
     <AppPage
       title="实时课程讨论"
       description="创建实时讨论会话并查看学生参与情况"
+      breadcrumb={<>智慧课程&nbsp;&nbsp;/&nbsp;&nbsp;实时课程讨论</>}
     >
       <Card>
         <Table

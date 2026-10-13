@@ -7,7 +7,6 @@ import {
   Typography,
   Select,
   Space,
-  Tag,
   message,
   Popconfirm,
   Modal,
@@ -259,7 +258,7 @@ export default function ExamManagementPage() {
       width: 100,
       align: "left",
       render: (t) => (
-        <Tag color={examTypeMap[t]?.color}>{examTypeMap[t]?.label || t}</Tag>
+        <span style={{ fontSize: 15 }}>{examTypeMap[t]?.label || t}</span>
       ),
     },
     { title: "关联课程", dataIndex: "courseName", key: "courseName", width: 150, ellipsis: true },

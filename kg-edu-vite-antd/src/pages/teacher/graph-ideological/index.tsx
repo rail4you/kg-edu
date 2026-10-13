@@ -834,13 +834,13 @@ export default function GraphIdeologicalView({ courseId: externalCourseId, hideM
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             style={{
-              padding: "10px 16px",
+              padding: "13px 18px",
               border: "none",
               borderBottom: activeTab === tab.key ? `2px solid var(--pu-blue)` : "2px solid transparent",
               background: "transparent",
               color: activeTab === tab.key ? "var(--pu-blue)" : "var(--pu-muted)",
               fontWeight: activeTab === tab.key ? 600 : 400,
-              fontSize: 14,
+              fontSize: 16,
               cursor: "pointer",
               outline: "none",
               whiteSpace: "nowrap",

@@ -66,19 +66,6 @@
   min-height: 0;
 }
 
-.pu-page-fill .pu-head {
-  margin-bottom: 12px;
-}
-
-.pu-page-fill .pu-head h1 {
-  font-size: 22px;
-}
-
-.pu-page-fill .pu-head p {
-  font-size: 12px;
-  margin-top: 2px;
-}
-
 .pu-breadcrumb {
   font-size: 13px;
   color: #77869a;
@@ -1510,6 +1497,23 @@
 
 .profile-learn-more:hover {
   background: #f5f7fa;
+}
+
+/* 我的学习：两栏（我的课程 / 我的微专业） */
+.profile-learn-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.profile-learn-columns .pu-item:last-of-type {
+  border-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .profile-learn-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ---------- 顶栏账户入口（头像 + 名称，无容器） ---------- */

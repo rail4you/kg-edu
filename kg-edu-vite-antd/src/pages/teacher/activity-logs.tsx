@@ -27,7 +27,6 @@ interface ActivityRow {
   id: string;
   userId: string;
   actionType: string;
-  resourceType: string;
   resourceId: string;
   metadata: Record<string, any> | null;
   insertedAt: string;
@@ -58,7 +57,6 @@ export default function TeacherActivityLogs() {
           "id",
           "userId",
           "actionType",
-          "resourceType",
           "resourceId",
           "metadata",
           "insertedAt",
@@ -128,12 +126,6 @@ export default function TeacherActivityLogs() {
                   dataIndex: "actionType",
                   width: 160,
                   render: (v: string) => <Tag color="blue">{ACTION_LABEL[v] || v}</Tag>,
-                },
-                {
-                  title: "资源类型",
-                  dataIndex: "resourceType",
-                  width: 160,
-                  render: (v: string) => v || "-",
                 },
               ]}
             />

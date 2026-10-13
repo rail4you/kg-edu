@@ -690,11 +690,11 @@ export default function StudentJobCompetencyGraph() {
       {isMobile ? (
         <div style={{ background: "#fff", padding: 8, borderBottom: "1px solid #edf0f5" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 12, color: "#374151", fontWeight: 700 }}>所属专业</div>
+            <div style={{ fontSize: 14, color: "#374151", fontWeight: 700 }}>所属专业</div>
             {majors.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#9aa0a6", padding: "6px 0" }}>当前课程暂无匹配专业</div>
+              <div style={{ fontSize: 14, color: "#9aa0a6", padding: "6px 0" }}>当前课程暂无匹配专业</div>
             ) : (
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1c1e", padding: "2px 0" }}>{majors[0].name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1c1e", padding: "2px 0" }}>{majors[0].name}</div>
             )}
             <Select
               placeholder="选择岗位"
@@ -716,28 +716,28 @@ export default function StudentJobCompetencyGraph() {
           </div>
         </div>
       ) : (
-        <div style={{ width: 268, flexShrink: 0, background: "#fff", borderRight: "1px solid #edf0f5", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ width: 290, flexShrink: 0, background: "#fff", borderRight: "1px solid #edf0f5", display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid #edf0f5", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #C0392B 0%, #8e2a22 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, flexShrink: 0 }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #C0392B 0%, #8e2a22 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, flexShrink: 0 }}>
               <ApartmentOutlined />
             </span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1c1e", lineHeight: 1.1 }}>选择图谱</span>
-              <span style={{ fontSize: 11, color: "#8a9199" }}>{majors.length === 0 ? "暂无匹配专业" : majors[0].name} · {jobs.length} 个岗位</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1c1e", lineHeight: 1.2 }}>选择图谱</span>
+              <span style={{ fontSize: 13, color: "#8a9199" }}>{majors.length === 0 ? "暂无匹配专业" : majors[0].name} · {jobs.length} 个岗位</span>
             </div>
           </div>
           <div style={{ padding: "12px 14px", borderBottom: "1px solid #edf0f5", background: "#fafbfc" }}>
-            <div style={{ fontSize: 12, color: "#374151", marginBottom: 8, fontWeight: 700, letterSpacing: 0.3 }}>所属专业</div>
+            <div style={{ fontSize: 14, color: "#374151", marginBottom: 8, fontWeight: 700, letterSpacing: 0.3 }}>所属专业</div>
             {majors.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#9aa0a6", padding: "6px 0" }}>当前课程暂无匹配专业</div>
+              <div style={{ fontSize: 14, color: "#9aa0a6", padding: "6px 0" }}>当前课程暂无匹配专业</div>
             ) : (
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1c1e", padding: "6px 10px", background: "#fff", borderRadius: 8, border: "1px solid #eef2f7" }}>{majors[0].name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1c1e", padding: "6px 10px", background: "#fff", borderRadius: 8, border: "1px solid #eef2f7" }}>{majors[0].name}</div>
             )}
           </div>
           <div style={{ flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", paddingTop: 4 }}>
-            <div style={{ padding: "8px 14px 6px", fontSize: 10, color: "#9aa0a6", fontWeight: 700, letterSpacing: 0.8 }}>岗位列表</div>
+            <div style={{ padding: "8px 14px 6px", fontSize: 12, color: "#9aa0a6", fontWeight: 700, letterSpacing: 0.8 }}>岗位列表</div>
             {jobs.length === 0 ? (
-              <div style={{ padding: "10px 14px", fontSize: 12, color: "#9aa0a6" }}>暂无岗位</div>
+              <div style={{ padding: "10px 14px", fontSize: 14, color: "#9aa0a6" }}>暂无岗位</div>
             ) : (
               <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 4 }}>
                 {jobs.map((j) => {
@@ -761,21 +761,21 @@ export default function StudentJobCompetencyGraph() {
                       onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#f8fafc"; }}
                       onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
                     >
-                      <span style={{ width: 28, height: 28, borderRadius: 7, background: isActive ? "#2859df" : "#f1f5f9", color: isActive ? "#fff" : "#64748b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>
+                      <span style={{ width: 30, height: 30, borderRadius: 7, background: isActive ? "#2859df" : "#f1f5f9", color: isActive ? "#fff" : "#64748b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>
                         <ApartmentOutlined />
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? "#1e3a8a" : "#1f2428", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{j.title}</span>
+                      <span style={{ fontSize: 15, fontWeight: isActive ? 600 : 500, color: isActive ? "#1e3a8a" : "#1f2428", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{j.title}</span>
                       {isActive && <span style={{ width: 6, height: 6, borderRadius: 9999, background: "#2859df", flexShrink: 0 }} />}
                     </div>
                   );
                 })}
               </div>
             )}
-            <div style={{ padding: "14px 14px 6px", fontSize: 10, color: "#9aa0a6", fontWeight: 700, letterSpacing: 0.8, marginTop: 4, borderTop: "1px solid #f5f7fb" }}>图谱</div>
+            <div style={{ padding: "14px 14px 6px", fontSize: 12, color: "#9aa0a6", fontWeight: 700, letterSpacing: 0.8, marginTop: 4, borderTop: "1px solid #f5f7fb" }}>图谱</div>
             {graphsLoading ? (
               <div style={{ padding: 12, textAlign: "center" }}><Spin size="small" /></div>
             ) : graphs.length === 0 ? (
-              <div style={{ padding: "8px 14px", fontSize: 12, color: "#9aa0a6" }}>{jobId ? "该岗位暂无图谱" : "请先选择岗位"}</div>
+              <div style={{ padding: "8px 14px", fontSize: 14, color: "#9aa0a6" }}>{jobId ? "该岗位暂无图谱" : "请先选择岗位"}</div>
             ) : (
               <div style={{ padding: "0 8px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
                 {graphs.map((g) => {
@@ -799,7 +799,7 @@ export default function StudentJobCompetencyGraph() {
                       onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#f8fafc"; }}
                       onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
                     >
-                      <div style={{ flex: 1, fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? "#1e40af" : "#1f2428", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.name}</div>
+                      <div style={{ flex: 1, fontSize: 15, fontWeight: isActive ? 600 : 500, color: isActive ? "#1e40af" : "#1f2428", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.name}</div>
                       {isActive && <span style={{ width: 6, height: 6, borderRadius: 9999, background: "#2859df", flexShrink: 0 }} />}
                     </div>
                   );
@@ -809,11 +809,11 @@ export default function StudentJobCompetencyGraph() {
           </div>
           {graphId && (
             <div style={{ padding: 10, borderTop: "1px solid #edf0f5", background: "#fafafa" }}>
-              <div style={{ fontSize: 11, color: "#999", marginBottom: 6, fontWeight: 600 }}>统计</div>
+              <div style={{ fontSize: 13, color: "#999", marginBottom: 6, fontWeight: 600 }}>统计</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <Tag color="#E67E22" style={{ margin: 0, fontSize: 11 }}>{tasks.length} 任务</Tag>
-                <Tag color="#F39C12" style={{ margin: 0, fontSize: 11 }}>{abilities.length} 能力</Tag>
-                <Tag color="#3498DB" style={{ margin: 0, fontSize: 11 }}>{links.length} 知识点</Tag>
+                <Tag color="#E67E22" style={{ margin: 0, fontSize: 13 }}>{tasks.length} 任务</Tag>
+                <Tag color="#F39C12" style={{ margin: 0, fontSize: 13 }}>{abilities.length} 能力</Tag>
+                <Tag color="#3498DB" style={{ margin: 0, fontSize: 13 }}>{links.length} 知识点</Tag>
               </div>
             </div>
           )}

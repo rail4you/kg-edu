@@ -456,35 +456,54 @@ export default function MMChapterContentManager({ tenant, courseId, headers }: M
       <Card
         title="章节列表"
         style={{ width: isMobile ? "100%" : 300, flexShrink: 0, height: isMobile ? undefined : "100%", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(16,24,40,0.1)" }}
-        styles={{ body: { padding: 0, flex: 1, overflow: "auto" } }}
+        styles={{ body: { padding: 0, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 } }}
       >
-        {chaptersLoading ? (
-          <div style={{ textAlign: "center", padding: 24 }}><Spin /></div>
-        ) : flatChapters.length === 0 ? (
-          <Empty description="暂无章节" style={{ padding: 24 }} />
-        ) : (
-          flatChapters.map((ch) => (
-            <div
-              key={ch.id}
-              onClick={() => setSelectedChapterId(ch.id)}
-              style={{
-                padding: "8px 12px 8px " + (12 + ch.level * 20) + "px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: selectedChapterId === ch.id ? themeColors.primaryLightBg : "transparent",
-                borderLeft: selectedChapterId === ch.id ? `3px solid ${themeColors.primary}` : "3px solid transparent",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "#f9f9f9"; }}
-              onMouseLeave={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "transparent"; }}
-            >
-              <Text style={{ fontSize: 15, flex: 1 }} ellipsis>
-                {generateChapterNumber(ch.path) ? `${generateChapterNumber(ch.path)} ` : ""}{ch.title}
-              </Text>
-            </div>
-          ))
+        <div style={{ flex: 1, overflow: "auto" }}>
+          {chaptersLoading ? (
+            <div style={{ textAlign: "center", padding: 24 }}><Spin /></div>
+          ) : flatChapters.length === 0 ? (
+            <Empty description="暂无章节" style={{ padding: 24 }} />
+          ) : (
+            flatChapters.map((ch) => (
+              <div
+                key={ch.id}
+                onClick={() => setSelectedChapterId(ch.id)}
+                style={{
+                  padding: "8px 12px 8px " + (12 + ch.level * 20) + "px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: selectedChapterId === ch.id ? themeColors.primaryLightBg : "transparent",
+                  borderLeft: selectedChapterId === ch.id ? `3px solid ${themeColors.primary}` : "3px solid transparent",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "#f9f9f9"; }}
+                onMouseLeave={(e) => { if (selectedChapterId !== ch.id) e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Text style={{ fontSize: 15, flex: 1 }} ellipsis>
+                  {generateChapterNumber(ch.path) ? `${generateChapterNumber(ch.path)} ` : ""}{ch.title}
+                </Text>
+              </div>
+            ))
+          )}
+        </div>
+        {!chaptersLoading && flatChapters.length > 0 && (
+          <div
+            style={{
+              marginTop: "auto",
+              minHeight: 120,
+              padding: "20px 18px",
+              borderTop: "1px solid #f0f0f0",
+              background: "#fafbfd",
+              color: "#94a3b8",
+              fontSize: 15,
+              lineHeight: 1.9,
+            }}
+          >
+            <div style={{ fontWeight: 600, color: "#64748b", marginBottom: 8, fontSize: 16 }}>小提示</div>
+            选择左侧章节后，可在右侧关联视频、习题与作业，逐步完善该章节的学习内容。
+          </div>
         )}
       </Card>
 

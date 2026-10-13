@@ -17,7 +17,6 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import {
   CheckCircleOutlined,
-  RobotOutlined,
   ThunderboltOutlined,
   StarOutlined,
   ArrowLeftOutlined,
@@ -509,14 +508,14 @@ export default function ExamGrading() {
       dataIndex: "studentName",
       key: "studentName",
       width: 150,
-      align: "center",
+      align: "left",
     },
     {
       title: "提交时间",
       dataIndex: "submittedAt",
       key: "submittedAt",
       width: 180,
-      align: "center",
+      align: "left",
       render: (v) => (v ? new Date(v).toLocaleString("zh-CN") : "未提交"),
     },
     {
@@ -524,7 +523,7 @@ export default function ExamGrading() {
       dataIndex: "score",
       key: "score",
       width: 100,
-      align: "center",
+      align: "left",
       render: (v) => (
         <Text strong style={{ color: v >= 60 ? "#52c41a" : "#ff4d4f" }}>
           {v}
@@ -536,7 +535,7 @@ export default function ExamGrading() {
       dataIndex: "status",
       key: "status",
       width: 120,
-      align: "center",
+      align: "left",
       render: (status: StudentExam["status"]) => {
         const config = statusMap[status] || { label: status, color: "default" };
         return (
@@ -554,7 +553,7 @@ export default function ExamGrading() {
       dataIndex: "passed",
       key: "passed",
       width: 100,
-      align: "center",
+      align: "left",
       render: (passed: boolean, record) => {
         if (record.status !== "graded") return <Text type="secondary">-</Text>;
         return (
@@ -568,28 +567,35 @@ export default function ExamGrading() {
       title: "操作",
       key: "actions",
       width: 280,
-      align: "center",
-      render: (_, record) => (
-        <Space>
-          <Button
-            size="small"
-            onClick={() => navigate(`/teacher/dashboard/exam-grade-detail/${record.id}`)}
-          >
-            {record.status === "graded" ? "查看" : "批改"}
-          </Button>
-          {record.status === "submitted" && (
-            <ReadonlyActionButton
-              type="primary"
+      align: "left",
+      render: (_, record) => {
+        if (record.status === "in_progress") {
+          return (
+            <Button size="small" disabled>
+              未提交
+            </Button>
+          );
+        }
+        return (
+          <Space>
+            <Button
               size="small"
-              icon={<StarOutlined />}
-              style={{ backgroundColor: "#722ed1", borderColor: "#722ed1" }}
-              onClick={() => handleAIAutoGrade(record)}
+              onClick={() => navigate(`/teacher/dashboard/exam-grade-detail/${record.id}`)}
             >
-              AI自动批改
-            </ReadonlyActionButton>
-          )}
-        </Space>
-      ),
+              {record.status === "graded" ? "查看" : "批改"}
+            </Button>
+            {record.status === "submitted" && (
+              <ReadonlyActionButton
+                size="small"
+                icon={<StarOutlined />}
+                onClick={() => handleAIAutoGrade(record)}
+              >
+                AI自动批改
+              </ReadonlyActionButton>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
@@ -668,21 +674,6 @@ export default function ExamGrading() {
       description="AI 辅助批改学生答卷"
       actions={
         <Space>
-          <Button
-            type="text"
-            className="teacher-page-back-btn"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/teacher/dashboard")}
-          />
-          <ReadonlyActionButton
-            type="primary"
-            icon={<RobotOutlined />}
-            onClick={handleAutoGrade}
-            loading={autoGrading}
-            style={{ backgroundColor: "#722ed1", borderColor: "#722ed1" }}
-          >
-            {autoGrading ? "AI批改中..." : "AI自动批改"}
-          </ReadonlyActionButton>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/teacher/dashboard/exam-management")}

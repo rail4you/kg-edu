@@ -20,6 +20,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { myMicroMajorEnrollments, myApplications, myCertificates, getTemplateByMicroMajor } from "@/lib/ash_rpc";
 import { extractArrayData } from "@/utils/api-helpers";
 import { PageHead, ProtoTag } from "@/components/proto";
+import StudentMMTimeline from "./mm-timeline";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -80,6 +81,7 @@ export default function StudentMicroMajors() {
   // 证书预览
   const [certPreviewOpen, setCertPreviewOpen] = useState(false);
   const [previewCert, setPreviewCert] = useState<StudentCertificate | null>(null);
+  const [timelineOpen, setTimelineOpen] = useState(false);
 
   // 已分配/已批准的微专业
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery({
@@ -320,14 +322,9 @@ export default function StudentMicroMajors() {
         title="我的微专业"
         description="查看已报名的微专业学习进度与结业证书。"
         actions={
-          <>
-            <Button icon={<HistoryOutlined />} onClick={() => navigate("/student/mm-timeline")}>
-              学习动态
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/micro-majors")}>
-              报名微专业
-            </Button>
-          </>
+          <Button icon={<HistoryOutlined />} onClick={() => setTimelineOpen(true)}>
+            学习动态
+          </Button>
         }
       />
 
@@ -557,6 +554,18 @@ export default function StudentMicroMajors() {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* 学习动态弹窗 */}
+      <Modal
+        title="学习动态"
+        open={timelineOpen}
+        onCancel={() => setTimelineOpen(false)}
+        footer={null}
+        width={720}
+        destroyOnClose
+      >
+        <StudentMMTimeline embedded />
       </Modal>
     </div>
   );

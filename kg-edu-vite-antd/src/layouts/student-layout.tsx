@@ -32,6 +32,7 @@ import GlobalFooter from "@/components/layout/global-footer";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useBranding } from "@/hooks/use-branding";
 import { themeColors as colors } from "@/styles/theme";
+import { PageScopeProvider } from "@/components/proto";
 import { getAllCourses } from "@/lib/ash_rpc";
 import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
@@ -448,12 +449,14 @@ export default function StudentLayout() {
         {!isMobile && renderNav()}
 
         <main className="pu-workspace">
-          <div
-            data-outlet-scroll
-            style={{ flex: 1, minHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}
-          >
-            <Outlet />
-          </div>
+            <div
+              data-outlet-scroll
+              style={{ flex: 1, minHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}
+            >
+              <PageScopeProvider label="学生学习空间">
+                <Outlet />
+              </PageScopeProvider>
+            </div>
           <GlobalFooter />
         </main>
       </div>

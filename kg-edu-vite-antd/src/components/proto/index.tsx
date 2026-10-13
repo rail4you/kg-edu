@@ -4,7 +4,15 @@
  * 设计参照：易课程-完整交互原型.html
  * 仅负责样式与布局，不包含任何数据逻辑，替换时可直接套用。
  */
-import React, { type CSSProperties, type ReactNode } from "react";
+import React, { createContext, useContext, type CSSProperties, type ReactNode } from "react";
+
+/* ---------------- 页面作用域（用于自动面包屑，如「学生学习空间 / 图谱总览」） ---------------- */
+
+export const PageScopeContext = createContext<string | null>(null);
+
+export function PageScopeProvider({ label, children }: { label: string; children: ReactNode }) {
+  return <PageScopeContext.Provider value={label}>{children}</PageScopeContext.Provider>;
+}
 
 /* ---------------- 页面头部 ---------------- */
 
@@ -13,18 +21,33 @@ export interface PageHeadProps {
   description?: ReactNode;
   actions?: ReactNode;
   eyebrow?: ReactNode;
+  breadcrumb?: ReactNode;
 }
 
-export function PageHead({ title, description, actions, eyebrow }: PageHeadProps) {
+export function PageHead({ title, description, actions, eyebrow, breadcrumb }: PageHeadProps) {
+  const scope = useContext(PageScopeContext);
+  const crumbs =
+    breadcrumb ??
+    (scope && typeof title === "string" && title.trim()
+      ? (
+          <>
+            {scope}&nbsp;&nbsp;/&nbsp;&nbsp;{title}
+          </>
+        )
+      : null);
+
   return (
-    <div className="pu-head">
-      <div style={{ minWidth: 0 }}>
-        {eyebrow ? <div className="pu-eyebrow">{eyebrow}</div> : null}
-        <h1>{title}</h1>
-        {description ? <p>{description}</p> : null}
+    <>
+      {crumbs ? <div className="pu-breadcrumb">{crumbs}</div> : null}
+      <div className="pu-head">
+        <div style={{ minWidth: 0 }}>
+          {eyebrow ? <div className="pu-eyebrow">{eyebrow}</div> : null}
+          <h1>{title}</h1>
+          {description ? <p>{description}</p> : null}
+        </div>
+        {actions ? <div className="pu-head__actions">{actions}</div> : null}
       </div>
-      {actions ? <div className="pu-head__actions">{actions}</div> : null}
-    </div>
+    </>
   );
 }
 
@@ -58,10 +81,11 @@ export function AppPage({
       className={`${fill ? "pu-page-fill" : "pu-page"}${className ? ` ${className}` : ""}`}
       style={style}
     >
-      {breadcrumb ? <div className="pu-breadcrumb">{breadcrumb}</div> : null}
-      {title !== undefined && (
-        <PageHead title={title} description={description} actions={actions} eyebrow={eyebrow} />
-      )}
+      {title !== undefined ? (
+        <PageHead title={title} description={description} actions={actions} eyebrow={eyebrow} breadcrumb={breadcrumb} />
+      ) : breadcrumb ? (
+        <div className="pu-breadcrumb">{breadcrumb}</div>
+      ) : null}
       {children}
     </div>
   );

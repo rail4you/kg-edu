@@ -36,9 +36,6 @@
 .sp-ai-practice__scene {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: #e8eeff;
   color: var(--pu-blue, #2859df);
   font-size: 12px;
   font-weight: 600;

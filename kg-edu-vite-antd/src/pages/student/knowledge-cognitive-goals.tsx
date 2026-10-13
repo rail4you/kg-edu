@@ -39,6 +39,7 @@ import { useAuth } from "@/auth/auth-context";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getHeaders } from "@/utils/api-helpers";
 import { themeColors as colors } from "@/styles/theme";
+import { PageHead } from "@/components/proto";
 
 const { Text } = Typography;
 
@@ -762,6 +763,12 @@ export default function StudentKnowledgeCognitiveGoals() {
 
   return (
     <div className="pu-page-fill" style={{ height: "100%", overflow: "hidden" }}>
+      <div style={{ flexShrink: 0 }}>
+        <PageHead
+          title="认知目标"
+          description="从知识到能力的认知层级分布，把握学习重点。"
+        />
+      </div>
       {/* 统计卡片 */}
       <div style={{ flexShrink: 0, marginBottom: 16 }}>
         <div className="pu-grid pu-grid--stats" style={{ marginBottom: 14, gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))" }}>
