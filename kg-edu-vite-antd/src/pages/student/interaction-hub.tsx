@@ -385,7 +385,7 @@ export default function StudentInteractionHubPage() {
 
       {/* ── 课程讨论 ── */}
       {activeTab === "discussions" && (
-        <div className="pu-grid pu-grid--two">
+        <div className="pu-grid">
           <ProtoCard>
             {sessionsError && (
               <Alert type="error" showIcon style={{ marginBottom: 16 }} message="加载课堂讨论失败" description={(sessionsError as Error).message} />
@@ -453,13 +453,6 @@ export default function StudentInteractionHubPage() {
                 ))}
               </>
             )}
-          </ProtoCard>
-
-          <ProtoCard title="交流提示">
-            <p style={{ color: "var(--pu-muted)", margin: "20px 0" }}>
-              描述具体的课程、章节与问题，有助于获得更准确的反馈。
-            </p>
-            <div className="pu-note">此处发布的内容仅在课堂互动内展示。</div>
           </ProtoCard>
         </div>
       )}

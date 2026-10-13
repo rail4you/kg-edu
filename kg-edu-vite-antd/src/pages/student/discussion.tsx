@@ -25,7 +25,6 @@ import {
   DownOutlined,
   UpOutlined,
   ArrowLeftOutlined,
-  CommentOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "@/auth/auth-context";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -473,41 +472,25 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
   }
 
   return (
-    <div className={embedded ? "" : "pu-page"} style={{ minHeight: embedded ? "auto" : undefined, background: embedded ? "transparent" : undefined }}>
-      {/* Embedded mode: back button + header */}
+    <div className="pu-page" style={{ minHeight: embedded ? "auto" : undefined, background: embedded ? "transparent" : undefined }}>
+      {/* Embedded mode: header (main title stays at the same position as the interaction page) */}
       {embedded && (
-        <div style={{ marginBottom: 16 }}>
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/dashboard/interaction#discussions")}
-            style={{ color: colors.primary, padding: "4px 0", marginBottom: 8 }}
-          >
-            返回讨论列表
-          </Button>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Space style={{ marginBottom: 4 }}>
-                <Tag color="blue" style={{ margin: 0 }}>
-                  <CommentOutlined /> 课堂讨论
-                </Tag>
-              </Space>
-              <Title level={3} style={{ margin: "8px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {session.title}
-              </Title>
-            </div>
-            <Tag color={isSessionActive ? "green" : "default"} style={{ margin: 0, flexShrink: 0 }}>
-              {isSessionActive ? "进行中" : "已关闭"}
-            </Tag>
-          </div>
-        </div>
+        <PageHead
+          title={session.title}
+          description="参与课堂讨论，分享你的观点与疑问"
+          actions={
+            <>
+              <Button
+                type="text"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate("/dashboard/interaction#discussions")}
+                style={{ color: colors.primary }}
+              >
+                返回讨论列表
+              </Button>
+            </>
+          }
+        />
       )}
 
       {/* Standalone mode: proto page head */}
@@ -622,7 +605,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
         </Drawer>
       )}
 
-      <div style={{ display: "flex", padding: embedded ? 0 : isMobile ? 12 : 24, gap: isMobile ? 12 : 24 }}>
+      <div style={{ display: "flex", padding: 0, gap: isMobile ? 12 : 24 }}>
         {!isMobile && !embedded && (
           <div style={{ width: 240, flexShrink: 0 }}>
             <Card
@@ -706,7 +689,7 @@ export default function StudentDiscussionPage({ embedded }: StudentDiscussionPro
         <div style={{ flex: 1, minWidth: 0 }}>
           <Card style={embedded ? { borderRadius: 20 } : undefined} bodyStyle={isMobile ? { padding: 12 } : undefined}>
             <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-              <Title level={5} style={{ margin: 0 }}>
+              <Title level={5} style={{ margin: 0, fontSize: 18 }}>
                 讨论区 {discussions.length > 0 && <Badge count={discussions.length} style={{ marginLeft: 8 }} />}
               </Title>
               {isSessionActive && (
@@ -906,7 +889,7 @@ function DiscussionItem({
       <div style={{ width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 4 }}>
           <Avatar size="small" icon={<UserOutlined />} style={{ background: isTeacher(discussionUser) ? "#2859df" : undefined, marginRight: 8 }} />
-          <Text strong style={{ fontSize: isMobile ? 13 : 14 }}>
+          <Text strong style={{ fontSize: 15 }}>
             {discussionUser.id === user?.id
               ? discussionUser.name || user.displayName || user.email?.split('@')[0] || "我"
               : discussionUser.name || (discussionUser.email ? discussionUser.email.split('@')[0] : "匿名用户")}
@@ -916,16 +899,16 @@ function DiscussionItem({
               老师
             </Tag>
           )}
-          <Text type="secondary" style={{ marginLeft: "auto", fontSize: 12 }}>
+          <Text type="secondary" style={{ marginLeft: "auto", fontSize: 13 }}>
             {discussion.insertedAt ? new Date(discussion.insertedAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
           </Text>
         </div>
-        <Title level={5} style={{ margin: "8px 0", fontSize: isMobile ? 15 : undefined }}>
+        <Title level={5} style={{ margin: "8px 0", fontSize: isMobile ? 16 : 17 }}>
           {discussion.title}
         </Title>
         <Paragraph
           ellipsis={{ rows: isMobile ? 2 : 3 }}
-          style={{ margin: 0, color: "#666", fontSize: isMobile ? 13 : 14 }}
+          style={{ margin: 0, color: "#666", fontSize: 15 }}
         >
           {discussion.content}
         </Paragraph>
@@ -935,17 +918,17 @@ function DiscussionItem({
           <Button
             type="link"
             size="small"
-            style={{ padding: 0, fontSize: 13, color: "#2859df" }}
+            style={{ padding: 0, fontSize: 14, color: "#2859df" }}
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? "收起回复" : "回复列表"}
-            {expanded ? <UpOutlined style={{ fontSize: 10, marginLeft: 4 }} /> : <DownOutlined style={{ fontSize: 10, marginLeft: 4 }} />}
+            {expanded ? <UpOutlined style={{ fontSize: 11, marginLeft: 4 }} /> : <DownOutlined style={{ fontSize: 11, marginLeft: 4 }} />}
           </Button>
           {isSessionActive && (
             <Button
               type="link"
               size="small"
-              style={{ padding: 0, fontSize: 13, color: "#2859df" }}
+              style={{ padding: 0, fontSize: 14, color: "#2859df" }}
               onClick={() => {
                 setExpanded(true);
                 setShowReplyInput(!showReplyInput);
@@ -964,7 +947,7 @@ function DiscussionItem({
                 <Spin size="small" />
               </div>
             ) : replies.length === 0 ? (
-              <Text type="secondary" style={{ fontSize: 13 }}>暂无回复</Text>
+              <Text type="secondary" style={{ fontSize: 14 }}>暂无回复</Text>
             ) : (
               replies.map((reply) => {
                 const teacher = isTeacher(reply.user);
@@ -981,7 +964,7 @@ function DiscussionItem({
                   >
                     <div style={{ display: "flex", alignItems: "center", marginBottom: 4, gap: 6, flexWrap: "wrap" }}>
                       <Avatar size="small" icon={<UserOutlined />} style={{ background: teacher ? "#2859df" : undefined }} />
-                      <Text strong style={{ fontSize: 13 }}>
+                      <Text strong style={{ fontSize: 14 }}>
                         {reply.user?.id === user?.id
                           ? reply.user?.name || "我"
                           : reply.user?.name || (reply.user?.email ? reply.user.email.split('@')[0] : "匿名用户")}
@@ -991,11 +974,11 @@ function DiscussionItem({
                           老师
                         </Tag>
                       )}
-                      <Text type="secondary" style={{ marginLeft: "auto", fontSize: 11 }}>
+                      <Text type="secondary" style={{ marginLeft: "auto", fontSize: 12 }}>
                         {reply.insertedAt ? new Date(reply.insertedAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
                       </Text>
                     </div>
-                    <Text style={{ fontSize: 13, color: "#333", whiteSpace: "pre-wrap" }}>{reply.content}</Text>
+                    <Text style={{ fontSize: 14, color: "#333", whiteSpace: "pre-wrap" }}>{reply.content}</Text>
                   </div>
                 );
               })
@@ -1009,7 +992,7 @@ function DiscussionItem({
                   onChange={(e) => setReplyContent(e.target.value)}
                   placeholder="输入回复内容..."
                   rows={2}
-                  style={{ flex: 1, fontSize: 13 }}
+                  style={{ flex: 1, fontSize: 14 }}
                 />
                 <Button
                   type="primary"

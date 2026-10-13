@@ -123,7 +123,7 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
   if (hasSubmitted) {
     const isGraded = existingSubmission?.status === "graded";
     return (
-      <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 760, margin: "0 auto" }}>
+      <div className="pu-page" style={embedded ? undefined : { maxWidth: 760, margin: "0 auto" }}>
         {embedded && (
           <Button
             type="text"
@@ -136,10 +136,10 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
         )}
         <ProtoCard>
           <div className="pu-eyebrow">小组任务</div>
-          <h2 style={{ fontSize: 20, fontWeight: 650, color: "var(--pu-ink)", margin: "4px 0 12px" }}>
+          <h2 style={{ fontSize: 24, fontWeight: 650, color: "var(--pu-ink)", margin: "4px 0 12px" }}>
             {task.title}
           </h2>
-          <div className="pu-tags" style={{ marginBottom: 18 }}>
+          <div className="pu-tags pu-tags--plain" style={{ marginBottom: 18 }}>
             <ProtoTag tone="green">小组任务</ProtoTag>
             <ProtoTag tone="blue">{TASK_TYPE_LABELS[task.taskType] || task.taskType}</ProtoTag>
             {isGraded ? (
@@ -149,7 +149,7 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
             )}
           </div>
           {task.description && (
-            <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.8, marginBottom: 18 }}>
+            <p style={{ color: "var(--pu-muted)", fontSize: 15, lineHeight: 1.8, marginBottom: 18 }}>
               {task.description}
             </p>
           )}
@@ -184,10 +184,10 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
                 <span style={{ fontSize: 30, fontWeight: 650, color: existingSubmission.score >= 60 ? "var(--pu-green)" : "var(--pu-red)" }}>
                   {existingSubmission.score}
                 </span>
-                <span style={{ color: "var(--pu-muted)", fontSize: 13 }}>/ 100</span>
+                <span style={{ color: "var(--pu-muted)", fontSize: 14 }}>/ 100</span>
               </div>
               {existingSubmission?.feedback && (
-                <p style={{ margin: 0, color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.75 }}>
+                <p style={{ margin: 0, color: "var(--pu-muted)", fontSize: 15, lineHeight: 1.75 }}>
                   教师评语：{existingSubmission.feedback}
                 </p>
               )}
@@ -203,7 +203,7 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
       ? `/login?role=student&redirect=/dashboard/interaction/task/${token}`
       : `/login?role=student&redirect=/student/group-task/${tenantSchema}/${token}`;
     return (
-      <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 600, margin: "0 auto" }}>
+      <div className="pu-page" style={embedded ? undefined : { maxWidth: 600, margin: "0 auto" }}>
         <ProtoEmpty
           title="请先登录"
           description="登录后才能参与分组任务"
@@ -215,7 +215,7 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
 
   if (!activeGroup) {
     return (
-      <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 600, margin: "0 auto" }}>
+      <div className="pu-page" style={embedded ? undefined : { maxWidth: 600, margin: "0 auto" }}>
         {embedded && (
           <Button
             type="text"
@@ -235,7 +235,7 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
   }
 
   return (
-    <div className={embedded ? "" : "pu-page"} style={embedded ? undefined : { maxWidth: 760, margin: "0 auto" }}>
+    <div className="pu-page" style={embedded ? undefined : { maxWidth: 760, margin: "0 auto" }}>
       {embedded && (
         <Button
           type="text"
@@ -248,16 +248,16 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
       )}
       <ProtoCard>
         <div className="pu-eyebrow">小组任务</div>
-        <h2 style={{ fontSize: 20, fontWeight: 650, color: "var(--pu-ink)", margin: "4px 0 12px" }}>
+        <h2 style={{ fontSize: 24, fontWeight: 650, color: "var(--pu-ink)", margin: "4px 0 12px" }}>
           {task.title}
         </h2>
-        <div className="pu-tags" style={{ marginBottom: 18 }}>
+        <div className="pu-tags pu-tags--plain" style={{ marginBottom: 18 }}>
           <ProtoTag tone="green">小组任务</ProtoTag>
           <ProtoTag tone="blue">{TASK_TYPE_LABELS[task.taskType] || task.taskType}</ProtoTag>
           {task.status === "active" ? <ProtoTag tone="green">进行中</ProtoTag> : <ProtoTag tone="red">已结束</ProtoTag>}
         </div>
         {task.description && (
-          <p style={{ color: "var(--pu-muted)", fontSize: 14, lineHeight: 1.8, marginBottom: 18 }}>
+          <p style={{ color: "var(--pu-muted)", fontSize: 15, lineHeight: 1.8, marginBottom: 18 }}>
             {task.description}
           </p>
         )}
@@ -267,7 +267,7 @@ export default function StudentGroupTask({ embedded }: StudentGroupTaskProps) {
         {task.status === "active" ? (
           <>
             <div style={{ marginBottom: 14 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--pu-ink)" }}>提交内容</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "var(--pu-ink)" }}>提交内容</span>
               <Input.TextArea
                 value={content}
                 onChange={e => setContent(e.target.value)}
